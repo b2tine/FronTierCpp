@@ -146,7 +146,8 @@ struct EQN_PARAMS
     bool perturb_const_inlet_bdry {false};
     
 /////////////////////////////    
-//TODO: Move to cAirfoil
+//TODO: Move to cAirfoil -- could get from af_params held by the front
+//      in the CFABRIC_CARTESIAN class ...
     boolean with_porosity;
     double porosity;
     PORO_SCHEME poro_scheme;
@@ -252,11 +253,6 @@ struct RIEMANN_INPUT
 /*********************************************************************/
 
 
-class SOLVER;
-class G_CARTESIAN;
-
-//typedef class G_CARTESIAN G_CARTESIAN_EB;
-
 /*
 enum VISITED_TYPE 
 {
@@ -266,19 +262,6 @@ enum VISITED_TYPE
     FULL_VISITED
 };
 */
-
-//TODO: Move to cAirfoil
-//copied in from ../solver/solver.h for use with af_find_state_at_crossing()
-enum
-{
-    NO_PDE_BOUNDARY = 0,
-    CONST_V_PDE_BOUNDARY = 1,
-    CONST_P_PDE_BOUNDARY,
-    NEUMANN_PDE_BOUNDARY,
-    DIRICHLET_PDE_BOUNDARY,
-    MOVING_BOUNDARY,
-    MIXED_PDE_BOUNDARY
-};
 
 struct FIELD
 {
@@ -310,7 +293,6 @@ struct FSWEEP
 
 class L_RECTANGLE 
 {
-    //TODO: Should make many of these private
 public:
 	int comp {-1};
 	int m_index {-1};
@@ -532,20 +514,6 @@ protected:
 	// 		initialization functions
 	// -------------------------------------------------------
     
-    /*
-    void setChannelFlowParams(char*);
-    void setRayleiTaylorParams(char*);
-	void setRichtmyerMeshkovParams(char*);
-	void setBubbleParams(char*);
-	void setImplosionParams(char*);
-	void setMTFusionParams(char*);
-	void setRiemProbParams(char*);
-	void setRiemProbParams1d(char*);
-	void setRiemProbParams2d(char*);
-	void setOnedParams(char*);
-	void setObliqueParams(char*);//no definition
-    */
-
 	void initChannelFlow(LEVEL_FUNC_PACK*,char*);
 	void initSinePertIntfc(LEVEL_FUNC_PACK*,char*);
 	void initRandPertIntfc(LEVEL_FUNC_PACK*,char*);

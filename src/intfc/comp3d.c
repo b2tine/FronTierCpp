@@ -4908,53 +4908,59 @@ LOCAL void shortest_distance3d_new(
 	    }	
 	    else if (judge3 <= 0 && judge8 >= 0 && judge9 <= 0)
 	    {
-		/*  Closest point is on side p2 -> p0 */
+		    /*  Closest point is on side p2 -> p0 */
 
-                tri_proj->d2 = sqr(pt[0]) + sqr(dist_point_line_2d(pt,p2,p0));
-		tri_proj->p1 = P2;
-                tri_proj->p2 = P0;
-		p_close[0] = 0;
-                p_close[1] = pt[1];
-                p_close[2] = pt[2];
+            tri_proj->d2 = sqr(pt[0]) + sqr(dist_point_line_2d(pt,p2,p0));
+		    tri_proj->p1 = P2;
+            tri_proj->p2 = P0;
+		    p_close[0] = 0;
+            p_close[1] = pt[1];
+            p_close[2] = pt[2];
 
-                if (judge3 == 0)
-		{
-		    a1 = 0;
-                    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
-                    a0 = 1 - a2;
+            if (judge3 == 0)
+            {
+                a1 = 0;
+                        a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+                        a0 = 1 - a2;
 
-		    rot_and_trans(p_close,p_temp,rot_matrix);
+                rot_and_trans(p_close,p_temp,rot_matrix);
 
-		    for (i = 0; i < 3; i++)
-                         tri_proj->dpt[i] = ptori[i] - p_close[i];
-		}
-		else
-		{
-		    PtoV(p_close,p0,v_temp2);
-                    PtoV(p_close,p2,v_temp1);
-                    Cross3d(v_temp2,v_temp1,v_temp);
-                    Cross3d(v_temp,v20,v_temp2);
-                    s_temp1 = Dot3d(v_temp1,v_temp2) / 
-			(sqrt(Dot3d(v_temp1,v_temp1)) * 
-			sqrt(Dot3d(v_temp2,v_temp2)));
-		    s_temp2 = sqrt(Dot3d(v_temp1,v_temp1)) * s_temp1;
-                    s_temp1 = s_temp2 / sqrt(Dot3d(v_temp2,v_temp2));
-                    Scal3d(s_temp1,v_temp2,v_temp);
-                    for (i = 0; i < 3; i++)
-                         p_close[i] += v_temp[i];
-
-                    a1 = 0;
-		    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
-		    a0 = 1 - a2;
-
-                    rot_and_trans(p_close,p_temp,rot_matrix);
-                    for (i = 0; i < 3; i++)
-                         tri_proj->dpt[i] = ptori[i] - p_close[i];
-		}
-
-                tri_proj->side = ONEDGE;
-                tri_proj->side_index = 2;
+                for (i = 0; i < 3; i++)
+                             tri_proj->dpt[i] = ptori[i] - p_close[i];
             }
+		    else
+            {
+                //TODO: Division by zero can occur if v_temp1 = 0 --> (p_close == p2)
+                //      or if v_temp2 = 0 ... 
+                PtoV(p_close,p0,v_temp2);
+                PtoV(p_close,p2,v_temp1);
+                Cross3d(v_temp2,v_temp1,v_temp);
+                Cross3d(v_temp,v20,v_temp2);
+                
+                /*
+                s_temp1 = Dot3d(v_temp1,v_temp2) / (sqrt(Dot3d(v_temp1,v_temp1)) * sqrt(Dot3d(v_temp2,v_temp2)));
+                s_temp2 = sqrt(Dot3d(v_temp1,v_temp1)) * s_temp1;
+                s_temp1 = s_temp2 / sqrt(Dot3d(v_temp2,v_temp2));
+                */
+
+                s_temp1 = Dot3d(v_temp1,v_temp2)/Dot3d(v_temp2,v_temp2);
+
+                Scal3d(s_temp1,v_temp2,v_temp);
+                for (i = 0; i < 3; i++)
+                     p_close[i] += v_temp[i];
+
+                a1 = 0;
+                a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+                a0 = 1 - a2;
+
+                rot_and_trans(p_close,p_temp,rot_matrix);
+                for (i = 0; i < 3; i++)
+                    tri_proj->dpt[i] = ptori[i] - p_close[i];
+            }
+
+            tri_proj->side = ONEDGE;
+            tri_proj->side_index = 2;
+        }
 	    else
 	    {
 		/* Closest point is p0 */

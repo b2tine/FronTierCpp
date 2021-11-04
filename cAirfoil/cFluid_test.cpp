@@ -104,8 +104,6 @@ int main(int argc, char **argv)
 
 	/* Initialize interface through level function */
 
-	g_cartesian.setProbParams(in_name);
-
 	if (!RestartRun)
 	{
 	    g_cartesian.setInitialIntfc(&level_func_pack,in_name);

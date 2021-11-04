@@ -38,10 +38,12 @@ private:
     void setElasticStatesRiem(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                             int*,int,int,int,int,int);
 
+    /*
     //TODO: Implement this
     void setElasticViscousGhostState(int* icoords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
             double* crx_coords, COMPONENT comp, double* intrp_coeffs,
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs) override;
+    */
 };
 
 

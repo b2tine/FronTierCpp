@@ -253,7 +253,6 @@ extern void read_cFluid_params(
 	    FT_ReadComparisonDomain(inname,eqn_params->f_basic);
 }	/* end read_cFluid_params */
 
-//void set_cFluid_params(char* inname, EQN_PARAMS* eqn_params)
 static void set_cFluid_params(FILE* infile, EQN_PARAMS* eqn_params)
 {
 	switch (eqn_params->prob_type)
@@ -404,7 +403,6 @@ void G_CARTESIAN::setInitialIntfc(
 	}
 }	/* end setInitialIntfc */
 
-//TODO: This could be made non-static -- could be used in some areas of code where acquiring states ...
 static void getAmbientState(
 	STATE *state,
 	EQN_PARAMS *eqn_params,
@@ -480,13 +478,9 @@ static void getAmbientState(
 			comp,state->dens,state->pres,state->engy);
 }	/* end getAmbientState */
 
-//void G_CARTESIAN::setChannelFlowParams(char *inname)
 static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	int i;
     int dim = eqn_params->dim;
-	//FILE *infile = fopen(inname,"r");
-	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char str[256];
 
@@ -514,7 +508,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     eqn_params->p1 = eqn_params->p2;
 
 	CursorAfterString(infile,"Enter gravity:");
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	{
 	    fscanf(infile,"%lf",&eqn_params->gravity[i]);
 	    (void) printf("%f ",eqn_params->gravity[i]);
@@ -534,9 +528,6 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     {
         eqn_params->tracked = NO;
     }
-
-    //fclose(infile);
-
 }	/* end setChannelFlowParams */
 
 void G_CARTESIAN::initChannelFlowStates()
@@ -570,8 +561,7 @@ void G_CARTESIAN::initChannelFlowStates()
     next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
     {
-        //TODO: This should be setting interface state and not using ambient state.
-        //      Need a function like getRigidBodyState()
+        //TODO: This should be setting interface state and not using ambient state?
 	    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
 	    getAmbientState(sl,eqn_params,Coords(p),negative_component(hs));
 	    getAmbientState(sr,eqn_params,Coords(p),positive_component(hs));
@@ -729,13 +719,9 @@ static double intfcPertHeight(
 	return z;
 }	/* end intfcPertHeight */
 
-//void G_CARTESIAN::setRayleiTaylorParams(char *inname)
 static void setRayleiTaylorParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	int i;
     int dim = eqn_params->dim;
-	//FILE *infile = fopen(inname,"r");
-	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char s[100], str[256];
 
@@ -764,7 +750,7 @@ static void setRayleiTaylorParams(FILE* infile, EQN_PARAMS* eqn_params)
 	fscanf(infile,"%lf",&eqn_params->rho1);
 	(void) printf("%f\n",eqn_params->rho1);
 	CursorAfterString(infile,"Enter gravity:");
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	{
 	    fscanf(infile,"%lf",&eqn_params->gravity[i]);
 	    (void) printf("%f ",eqn_params->gravity[i]);
@@ -780,9 +766,6 @@ static void setRayleiTaylorParams(FILE* infile, EQN_PARAMS* eqn_params)
 	    eqn_params->tracked = YES;
 	else
 	    eqn_params->tracked = NO;
-	
-    //fclose(infile);
-
 }	/* end initRayleiTaylorParams */
 
 void G_CARTESIAN::initRayleiTaylorStates()
@@ -848,13 +831,9 @@ void G_CARTESIAN::initRayleiTaylorStates()
 	scatMeshStates();
 }	/* end initRayleiTaylorStates */
 
-//void G_CARTESIAN::setRichtmyerMeshkovParams(char *inname)
 static void setRichtmyerMeshkovParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	int i;
     int dim = eqn_params->dim;
-	//FILE *infile = fopen(inname,"r");
-	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	char s[100], str[256];
 	double	pinf, einf, gamma;
 
@@ -886,7 +865,7 @@ static void setRichtmyerMeshkovParams(FILE* infile, EQN_PARAMS* eqn_params)
 	    eqn_params->v2[i] = 0.0; /* default initial velocity */
 	if (CursorAfterStringOpt(infile,"Enter velocity of top fluid:"))
 	{
-	    for (i = 0; i < dim; ++i)
+	    for (int i = 0; i < dim; ++i)
 	    {
 		fscanf(infile,"%lf",&eqn_params->v2[i]);
 		(void) printf("%f ",eqn_params->v2[i]);
@@ -897,7 +876,7 @@ static void setRichtmyerMeshkovParams(FILE* infile, EQN_PARAMS* eqn_params)
 	    eqn_params->v1[i] = 0.0;
 	if(CursorAfterStringOpt(infile,"Enter velocity of bottom fluid:"))
 	{
-	    for (i = 0; i < dim; ++i)
+	    for (int i = 0; i < dim; ++i)
 	    {
 		fscanf(infile,"%lf",&eqn_params->v1[i]);
 		(void) printf("%f ",eqn_params->v1[i]);
@@ -941,9 +920,6 @@ static void setRichtmyerMeshkovParams(FILE* infile, EQN_PARAMS* eqn_params)
             else
                 eqn_params->contact_stationary = NO;
         }
-
-    //fclose(infile);
-
 }	/* end setRayleiTaylorParams */
 
 void G_CARTESIAN::initRichtmyerMeshkovStates()
@@ -1348,7 +1324,7 @@ void G_CARTESIAN::initBubbleStates()
 	    break;
 	}
 	scatMeshStates();
-}	/* end initRayleiTaylorStates */
+}	/* end initBubbleStates */
 
 static void getBubbleState(
 	STATE *state,
@@ -1408,13 +1384,9 @@ static void getBubbleState(
 	}
 }	/* end getBubbleState */
 
-//void G_CARTESIAN::setBubbleParams(char *inname)
 static void setBubbleParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	int i;
     int dim = eqn_params->dim;
-	//FILE *infile = fopen(inname,"r");
-	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char s[100], str[256];
 
@@ -1443,7 +1415,7 @@ static void setBubbleParams(FILE* infile, EQN_PARAMS* eqn_params)
 	fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->p1);
 	(void) printf("%f %f\n",eqn_params->rho1,eqn_params->p1);
 	CursorAfterString(infile,"Enter gravity:");
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	{
 	    fscanf(infile,"%lf",&eqn_params->gravity[i]);
 	    (void) printf("%f ",eqn_params->gravity[i]);
@@ -1456,18 +1428,11 @@ static void setBubbleParams(FILE* infile, EQN_PARAMS* eqn_params)
 	    eqn_params->tracked = YES;
 	else
 	    eqn_params->tracked = NO;
-
-    //fclose(infile);
-
 }	/* end setBubbleParams */
 
-//void G_CARTESIAN::setImplosionParams(char *inname)
 static void setImplosionParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	int i;
     int dim = eqn_params->dim;
-	//FILE *infile = fopen(inname,"r");
-	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char s[100], str[256];
 
@@ -1499,7 +1464,7 @@ static void setImplosionParams(FILE* infile, EQN_PARAMS* eqn_params)
 	fscanf(infile,"%lf %lf",&eqn_params->rho0,&eqn_params->p0);
 	(void) printf("%f %f\n",eqn_params->rho0,eqn_params->p0);
 	CursorAfterString(infile,"Enter gravity:");
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	{
 	    fscanf(infile,"%lf",&eqn_params->gravity[i]);
 	    (void) printf("%f ",eqn_params->gravity[i]);
@@ -1512,18 +1477,11 @@ static void setImplosionParams(FILE* infile, EQN_PARAMS* eqn_params)
 	    eqn_params->tracked = YES;
 	else
 	    eqn_params->tracked = NO;
-	
-    //fclose(infile);
-
 }	/* end setImplosionParams */
 
-//void G_CARTESIAN::setMTFusionParams(char *inname)
 static void setMTFusionParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	int i;
     int dim = eqn_params->dim;
-	//FILE *infile = fopen(inname,"r");
-	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char s[100], str[256];
 
@@ -1552,7 +1510,7 @@ static void setMTFusionParams(FILE* infile, EQN_PARAMS* eqn_params)
 	fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->p1);
 	(void) printf("%f %f\n",eqn_params->rho1,eqn_params->p1);
 	CursorAfterString(infile,"Enter gravity:");
-	for (i = 0; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
 	{
 	    fscanf(infile,"%lf",&eqn_params->gravity[i]);
 	    (void) printf("%f ",eqn_params->gravity[i]);
@@ -1565,9 +1523,6 @@ static void setMTFusionParams(FILE* infile, EQN_PARAMS* eqn_params)
 	    eqn_params->tracked = YES;
 	else
 	    eqn_params->tracked = NO;
-	
-    //fclose(infile);
-
 }	/* end setMTFusionParams */
 
 void G_CARTESIAN::initImplosionIntfc(
@@ -2032,18 +1987,15 @@ void G_CARTESIAN::initRiemannProb(
 	fclose(infile);
 }	/* end initRiemannProb */
 
-//void G_CARTESIAN::setRiemProbParams(char *inname)
 static void setRiemProbParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
 	switch (eqn_params->dim)
 	{
 	case 1:
 	    setRiemProbParams1d(infile,eqn_params);
-	    //setRiemProbParams1d(inname);
 	    return;
 	case 2:
 	    setRiemProbParams2d(infile,eqn_params);
-	    //setRiemProbParams2d(inname);
 	    return;
     default:
         printf("\n\nERROR setRiemProbParams(): only 1d and 2d problems currently supported\n");
@@ -2051,11 +2003,8 @@ static void setRiemProbParams(FILE* infile, EQN_PARAMS* eqn_params)
 	}
 }	/* end setRiemProbParams */
 
-//void G_CARTESIAN::setRiemProbParams1d(char *inname)
 static void setRiemProbParams1d(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	//FILE *infile = fopen(inname,"r");
-	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char str[256];
 
@@ -2079,16 +2028,10 @@ static void setRiemProbParams1d(FILE* infile, EQN_PARAMS* eqn_params)
 	CursorAfterString(infile,"Enter left and right velocity:");
 	fscanf(infile,"%lf %lf",&eqn_params->v1[0],&eqn_params->v2[0]);
 	(void) printf("%f %f\n",eqn_params->v1[0],eqn_params->v2[0]);
-	
-    //fclose(infile);
-
 }	/* end setRiemProbParams1d */
 
-//void G_CARTESIAN::setRiemProbParams2d(char *inname)
 static void setRiemProbParams2d(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	//FILE *infile = fopen(inname,"r");
-	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char str[256];
 
@@ -2134,16 +2077,10 @@ static void setRiemProbParams2d(FILE* infile, EQN_PARAMS* eqn_params)
 	(void) printf("%f %f %f %f\n",
 			eqn_params->v0[1],eqn_params->v1[1],
 			eqn_params->v2[1],eqn_params->v3[1]);
-	
-    //fclose(infile);
-
 }	/* end setRiemProbParams2d */
 
-//void G_CARTESIAN::setOnedParams(char *inname)
 static void setOnedParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	//FILE *infile = fopen(inname,"r");
-	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char str[256];
 

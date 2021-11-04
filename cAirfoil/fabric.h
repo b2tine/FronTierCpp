@@ -143,6 +143,18 @@ struct AF_PARAMS
     double vol_diff {0.0};              //for refitting AABBTree
 }; 
 
+//for use with af_find_state_at_crossing()
+enum
+{
+    NO_PDE_BOUNDARY = 0,
+    CONST_V_PDE_BOUNDARY = 1,
+    CONST_P_PDE_BOUNDARY,
+    NEUMANN_PDE_BOUNDARY,
+    DIRICHLET_PDE_BOUNDARY,
+    MOVING_BOUNDARY,
+    MIXED_PDE_BOUNDARY
+};
+
 struct ELASTIC_SET
 {
 	Front *front;

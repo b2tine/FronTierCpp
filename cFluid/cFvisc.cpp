@@ -150,6 +150,9 @@ void G_CARTESIAN::setViscousGhostState(
                 comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);
     /*bool nip_found = nearest_interface_point(&ghost_coords[0],
+                comp,front->interf,NO_BOUNDARIES,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs);*/
+    /*bool nip_found = nearest_interface_point(&ghost_coords[0],
                 comp,front->interf,NO_SUBDOMAIN,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);*/
     
@@ -167,8 +170,8 @@ void G_CARTESIAN::setViscousGhostState(
             setDirichletViscousGhostState(vs,comp,intrp_coeffs,hse,hs);
             break;
         }
-        case NEUMANN_BOUNDARY:
         case MOVABLE_BODY_BOUNDARY:
+        case NEUMANN_BOUNDARY:
         {
             setNeumannViscousGhostState(icoords,m_vst,vs,&ghost_coords[0],
                     nip_coords,comp,intrp_coeffs,hse,hs);
@@ -176,6 +179,7 @@ void G_CARTESIAN::setViscousGhostState(
         }
         /*case ELASTIC_BOUNDARY:
         {
+            //TODO: IMPLEMENTATION
             //setElasticViscousGhostState(vs,comp,intrp_coeffs,hse,hs,state);
             break;
         }*/
