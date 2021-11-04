@@ -150,6 +150,9 @@ struct EQN_PARAMS
     boolean with_porosity;
     double porosity;
     PORO_SCHEME poro_scheme;
+
+    //bool no_fluid {false};
+
 //////////////////////////////
     
     //Base front for comparison

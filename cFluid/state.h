@@ -57,13 +57,13 @@ struct STATE : public FABRIC_STATE
     double momn[MAXD];              /* momentum density */
     double vel[MAXD];               /* Velocities */
     double vort;                    /* Vorticity in 2D */
-    //double vorticity[MAXDF]; //TODO: 3d vorticity vector
+    //double vorticity[MAXD]; //TODO: 3d vorticity vector
     
     EOS_PARAMS* eos;
     int dim;//TODO: can get rid of this?
     
-    double temperature;
     double mu;
+    double temperature;
 };  
 
 

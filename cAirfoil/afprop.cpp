@@ -1009,33 +1009,32 @@ static void passive_curve_propagation(
         {
             oldp = oldb->end;
             newp = newb->end;
-	    for (btris = Btris(oldb); btris && *btris; ++btris)
-	    {
-		hse = Hyper_surf_element((*btris)->tri);
-		hs = Hyper_surf((*btris)->surface);
-		FT_GetStatesAtPoint(oldp,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-		if (gas_comp(negative_component(hs)))
-		{
-		    oldst = (STATE*)left_state(oldp);
-		    btrist = (STATE*)sl;
-		}
-		else if (gas_comp(positive_component(hs)))
-		{
-		    oldst = (STATE*)right_state(oldp);
-		    btrist = (STATE*)sr;
-		}
-		for (i = 0; i < dim; ++i)
-		    btrist->vel[i] = oldst->vel[i];
-	    }
+	    
+            for (btris = Btris(oldb); btris && *btris; ++btris)
+            {
+                hse = Hyper_surf_element((*btris)->tri);
+                hs = Hyper_surf((*btris)->surface);
+                FT_GetStatesAtPoint(oldp,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+                if (gas_comp(negative_component(hs)))
+                {
+                    oldst = (STATE*)left_state(oldp);
+                    btrist = (STATE*)sl;
+                }
+                else if (gas_comp(positive_component(hs)))
+                {
+                    oldst = (STATE*)right_state(oldp);
+                    btrist = (STATE*)sr;
+                }
+    
+                for (i = 0; i < dim; ++i)
+                    btrist->vel[i] = oldst->vel[i];
+            }
+
             cFluid_point_propagate(front,wave,oldp,newp,
                         Hyper_surf_element(oldb->_btris[0]->tri),
                         Hyper_surf(oldb->_btris[0]->surface),dt,V);
-            /*
-            ifluid_point_propagate(front,wave,oldp,newp,
-                        Hyper_surf_element(oldb->_btris[0]->tri),
-                        Hyper_surf(oldb->_btris[0]->surface),dt,V);
-            */
         }
+
         if (debugging("trace"))
         {
             (void) printf("Leaving passive_curve_propagation()\n\n");
