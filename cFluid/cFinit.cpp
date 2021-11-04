@@ -48,8 +48,9 @@ extern void read_cFluid_params(
 	FILE *infile = fopen(inname,"r");
 	int i,dim = eqn_params->dim;
 
-	eqn_params->prob_type = ERROR_TYPE;
 	eqn_params->tracked = YES;		// Default
+	eqn_params->prob_type = ERROR_TYPE;
+
 	CursorAfterString(infile,"Enter problem type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
@@ -59,26 +60,26 @@ extern void read_cFluid_params(
 	    	eqn_params->prob_type = TWO_FLUID_BUBBLE;
 	    else if (string[10] == 'R' || string[10] == 'r')
 	    {
-		if (string[11] == 'T' || string[11] == 't')
-	    	    eqn_params->prob_type = TWO_FLUID_RT;
-		else if (string[11] == 'M' || string[11] == 'm')
-	    	    eqn_params->prob_type = TWO_FLUID_RM;
+            if (string[11] == 'T' || string[11] == 't')
+                    eqn_params->prob_type = TWO_FLUID_RT;
+            else if (string[11] == 'M' || string[11] == 'm')
+                    eqn_params->prob_type = TWO_FLUID_RM;
 	    }
 	} 
 	else if (string[0] == 'F' || string[0] == 'f')
 	{
-            if (string[12] == 'C' || string[12] =='c')
-            {
-                if (string[13] == 'I' || string[13] =='i')
-                    eqn_params->prob_type = FLUID_SOLID_CIRCLE;
-                else if (string[13] == 'Y' || string[13] =='y')
-                    eqn_params->prob_type = FLUID_SOLID_CYLINDER;
-            }
-            else if (string[12] == 'R' || string[12] =='r')
-                eqn_params->prob_type = FLUID_SOLID_RECT;
-            else if (string[12] == 'T' || string[12] =='t')
-                eqn_params->prob_type = FLUID_SOLID_TRIANGLE;
+        if (string[12] == 'C' || string[12] =='c')
+        {
+            if (string[13] == 'I' || string[13] =='i')
+                eqn_params->prob_type = FLUID_SOLID_CIRCLE;
+            else if (string[13] == 'Y' || string[13] =='y')
+                eqn_params->prob_type = FLUID_SOLID_CYLINDER;
         }
+        else if (string[12] == 'R' || string[12] =='r')
+            eqn_params->prob_type = FLUID_SOLID_RECT;
+        else if (string[12] == 'T' || string[12] =='t')
+            eqn_params->prob_type = FLUID_SOLID_TRIANGLE;
+    }
 	else if (string[0] == 'B' || string[0] == 'b')
 	    eqn_params->prob_type = BUBBLE_SURFACE;
 	else if (string[0] == 'I' || string[0] == 'i')
@@ -92,7 +93,7 @@ extern void read_cFluid_params(
 	else if (string[0] == 'O' || string[0] == 'o')
 	{
 	    if (string[1] == 'B' || string[1] == 'b')
-		eqn_params->prob_type = OBLIQUE_SHOCK_REFLECT;
+		    eqn_params->prob_type = OBLIQUE_SHOCK_REFLECT;
 	    else if (string[5] == 'S' || string[5] == 's')
 	    	eqn_params->prob_type = ONED_SSINE;
 	    else if (string[5] == 'B' || string[5] == 'b')
@@ -103,6 +104,12 @@ extern void read_cFluid_params(
 	else if (string[0] == 'C' || string[0] == 'c')
     {
         eqn_params->prob_type = CHANNEL_FLOW;
+    }
+
+    if (eqn_params->prob_type == ERROR_TYPE)
+    {
+        printf("eqn_params->prob_type == ERROR_TYPE\n");
+        LOC(); clean_up(ERROR);
     }
 
     printf("Available numerical schemes are:\n");
@@ -225,12 +232,6 @@ extern void read_cFluid_params(
                                 sizeof(F_BASIC_DATA));
             eqn_params->f_basic->dim = dim;
 	}
-
-    if (eqn_params->prob_type == ERROR_TYPE)
-    {
-        printf("eqn_params->prob_type == ERROR_TYPE\n");
-        LOC(); clean_up(ERROR);
-    }
 
 	fclose(infile);
 

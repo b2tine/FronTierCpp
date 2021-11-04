@@ -24,6 +24,19 @@ protected:
 
     void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int) override;
 
+private:
+
+    void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+                        int*,int,int,int,int,int);
+
+    void setElasticStatesRFB_normal(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+                            int*,int,int,int,int,int);
+
+    void setElasticStatesRFB(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+                            int*,int,int,int,int,int);
+
+    void setElasticStatesRiem(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+                            int*,int,int,int,int,int);
 };
 
 

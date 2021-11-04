@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     char test_name[100];
 
 	
-    G_CARTESIAN	g_cartesian(front);
+    G_CARTESIAN	g_cartesian(&front);
 
 
 	/* Initialize basic computational data */

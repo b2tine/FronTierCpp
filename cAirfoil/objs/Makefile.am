@@ -3,8 +3,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/cAirfoil \
 			  -I$(top_srcdir)/CGAL_Interface \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ @ARMA_CFLAGS@ \
 			  -I$(top_srcdir)/include \
-			  @MPI_CFLAGS@ \
-			  @HDF_CFLAGS@ @GD_CFLAGS@
+			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 
 AM_LDFLAGS = @CGAL_LIBS@ \
@@ -33,8 +32,7 @@ libcAirfoil_la_SOURCES = \
 ../modules.cpp \
 ../fabric_api.cpp \
 ../cFabric.h \
-../cFabric.cpp \
-../cFbasic.cpp
+../cFabric.cpp
 
 libcAirfoil_la_SOURCES += \
 ../CD_HSE.h \
@@ -43,8 +41,7 @@ libcAirfoil_la_SOURCES += \
 ../AABB.cpp \
 ../collid.h \
 ../dcollid.cpp \
-../dcollid3d.cpp \
-../dummy.cpp
+../dcollid3d.cpp
 
 
 libcAirfoil_la_LIBADD = $(top_builddir)/cFluid/objs/libcFluid.la

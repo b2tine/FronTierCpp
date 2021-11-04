@@ -4,9 +4,6 @@
 #include <FronTier.h>
 
 #include "cFabric.h"
-//#include <state.h>
-//#include <rigidbody.h>
-
 #include "fabric_sv.h"
 
 #include <map>
