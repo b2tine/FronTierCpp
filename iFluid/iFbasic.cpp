@@ -5334,8 +5334,14 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     /////////////////////////////////////////////////////////////////////////
     if (iFparams->use_eddy_visc == NO)
     {
+        //TODO: Is this correct?
         for (int j = 0; j < dim; ++j)
             v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
+            
+        //What about this?
+        //
+            //vel_ghost_rel[j] = vel_rel_tan[j] + vel_ghost_nor[j];
+            //v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
         return;
     }
     /////////////////////////////////////////////////////////////////////////
