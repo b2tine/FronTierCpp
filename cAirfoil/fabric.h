@@ -305,8 +305,6 @@ extern void resolve_wall_collision(Front*,SPRING_VERTEX*,int);
 
 // afcnpy.cpp
 extern void compute_total_canopy_force(Front*,double*,double*);
-extern int airfoil_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,
-                                double*);
 extern int af_find_state_at_crossing(Front*,int*,GRID_DIRECTION,
                         int,POINTER*,HYPER_SURF**,double*);
 extern void assign_node_field(NODE*,double**,double**,int*);

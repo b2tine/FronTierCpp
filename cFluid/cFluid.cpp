@@ -102,10 +102,8 @@ int main(int argc, char **argv)
 	
     if (debugging("trace")) printf("Passed read_cFluid_params()\n");
 
+
 	/* Initialize interface through level function */
-
-	g_cartesian.setProbParams(in_name);
-
 	if (!RestartRun)
 	{
 	    g_cartesian.setInitialIntfc(&level_func_pack,in_name);

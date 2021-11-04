@@ -590,6 +590,9 @@ private:
 
 // cFphys.cpp
 extern void read_cFluid_params(char*,EQN_PARAMS*);
+void set_cFluid_params(char*, EQN_PARAMS*);
+void setFabricParams(char*,EQN_PARAMS*);
+
 
 // cFsub.cpp
 extern double burger_flux(double,double,double);
@@ -668,9 +671,6 @@ private:
 
 // cFinit.cpp
 extern void insert_objects(Front*);
-
-void set_cFluid_params(char*, EQN_PARAMS*);
-void setFabricParams(char*,EQN_PARAMS*);
 
 void setRayleiTaylorParams(char*,EQN_PARAMS*);
 void setRichtmyerMeshkovParams(char*,EQN_PARAMS*);

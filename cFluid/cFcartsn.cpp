@@ -1392,6 +1392,7 @@ void G_CARTESIAN::augmentMovieVariables()
 
 }	/* end augmentMovieVariables */
 
+//TODO: use CursorAfterStringOpt() for all movie options defaulting to none
 void G_CARTESIAN::initMovieVariables()
 {
 	FILE *infile = fopen(InName(front),"r");
@@ -1723,6 +1724,7 @@ void G_CARTESIAN::computeVorticity()
     }
 }
 
+//TODO: Use this as model for 3d vorticity computation.
 double G_CARTESIAN::getVorticity(int i, int j)
 {
     int icoords[MAXD] = {i,j,0};
@@ -1765,20 +1767,22 @@ double G_CARTESIAN::getVorticity(int i, int j)
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                //TODO: Need to handle the flow through boundary
+                //TODO: Need to handle the flow through boundary differently?
                 u_edge[idir][nb] = getStateVel[(idir+1)%dim](intfc_state);
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                      wave_type(hs) == MOVABLE_BODY_BOUNDARY)
             {
-                //TODO: Use a higher order approximation (3 point one sided)
+                //TODO: Use a higher order approximation (3 point one sided)???
                 //      See iFluid computeDivSimple() for example.
+                //
+                //      Or should we get ghost vel by reflecting normal to interface?
                 u_edge[idir][nb] = vel[(idir+1)%dim][index];
             }
             else
             {
-                printf("getVorticity() ERROR: Unknown Boundary Type!\n");
-                LOC(); clean_up(EXIT_FAILURE);
+                //CONTACT DISCONTINUITY
+                u_edge[idir][nb] = vel[(idir+1)%dim][index_nb];
             }
         }
     }
@@ -1790,6 +1794,7 @@ double G_CARTESIAN::getVorticity(int i, int j)
 }
 
 /*
+//OLD boundary unaware -- division by zero density not protected
 double G_CARTESIAN::getVorticity(int i, int j)
 {
 	int index0,index00,index01,index10,index11;
@@ -1821,8 +1826,10 @@ double G_CARTESIAN::getVorticityX(int i, int j, int k)
 	double v00,v01,v10,v11;
 	double dy,dz;
 	double vorticity;
-	double *dens = field.dens;
-	double **momn = field.momn;
+
+    double **vel = field.vel;
+	    //double **momn = field.momn;
+        //double *dens = field.dens;
 
 	dy = top_h[1];
 	dz = top_h[2];
@@ -1831,10 +1838,18 @@ double G_CARTESIAN::getVorticityX(int i, int j, int k)
 	index01 = d_index3d(i,j+1,k,top_gmax);
 	index10 = d_index3d(i,j,k-1,top_gmax);
 	index11 = d_index3d(i,j,k+1,top_gmax);
+
+    v00 = -1.0*vel[2][index00];
+    v01 = vel[2][index01];
+    v10 = vel[1][index10];
+    v11 = -1.0*vel[1][index11];
+
+    /*
 	v00 = -momn[2][index00]/dens[index00];
 	v01 =  momn[2][index01]/dens[index01];
 	v10 =  momn[1][index10]/dens[index10];
 	v11 = -momn[1][index11]/dens[index11];
+    */
 
 	vorticity = (v00 + v01)/2.0/dz + (v10 + v11)/2.0/dy;
 	return vorticity;
@@ -1846,8 +1861,10 @@ double G_CARTESIAN::getVorticityY(int i, int j, int k)
 	double v00,v01,v10,v11;
 	double dx,dz;
 	double vorticity;
-	double *dens = field.dens;
-	double **momn = field.momn;
+
+    double **vel = field.vel;
+	    //double **momn = field.momn;
+        //double *dens = field.dens;
 
 	dx = top_h[0];
 	dz = top_h[2];
@@ -1856,10 +1873,18 @@ double G_CARTESIAN::getVorticityY(int i, int j, int k)
 	index01 = d_index3d(i,j,k+1,top_gmax);
 	index10 = d_index3d(i-1,j,k,top_gmax);
 	index11 = d_index3d(i+1,j,k,top_gmax);
+
+	v00 = -1.0*vel[0][index00];
+	v01 = vel[0][index01];
+	v10 = vel[2][index10];
+	v11 = -1.0*vel[2][index11];
+
+    /*
 	v00 = -momn[0][index00]/dens[index00];
 	v01 =  momn[0][index01]/dens[index01];
 	v10 =  momn[2][index10]/dens[index10];
 	v11 = -momn[2][index11]/dens[index11];
+    */
 
 	vorticity = (v00 + v01)/2.0/dx + (v10 + v11)/2.0/dz;
 	return vorticity;
@@ -1871,8 +1896,10 @@ double G_CARTESIAN::getVorticityZ(int i, int j, int k)
 	double v00,v01,v10,v11;
 	double dx,dy;
 	double vorticity;
-	double *dens = field.dens;
-	double **momn = field.momn;
+
+    double **vel = field.vel;
+	    //double **momn = field.momn;
+        //double *dens = field.dens;
 
 	dx = top_h[0];
 	dy = top_h[1];
@@ -1881,10 +1908,18 @@ double G_CARTESIAN::getVorticityZ(int i, int j, int k)
 	index01 = d_index3d(i+1,j,k,top_gmax);
 	index10 = d_index3d(i,j-1,k,top_gmax);
 	index11 = d_index3d(i,j+1,k,top_gmax);
+
+	v00 = -1.0*vel[1][index00];
+	v01 = vel[1][index01];
+	v10 = vel[0][index10];
+	v11 = -1.0*vel[0][index11];
+
+    /*
 	v00 = -momn[1][index00]/dens[index00];
 	v01 =  momn[1][index01]/dens[index01];
 	v10 =  momn[0][index10]/dens[index10];
 	v11 = -momn[0][index11]/dens[index11];
+    */
 
 	vorticity = (v00 + v01)/2.0/dy + (v10 + v11)/2.0/dx;
 	return vorticity;

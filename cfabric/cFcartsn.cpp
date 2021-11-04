@@ -1585,7 +1585,7 @@ void G_CARTESIAN::computeVorticity()
     for (int i = imin[0]; i <= imax[0]; i++)
 	{
         index = d_index3d(i,j,k,top_gmax);
-        if (!gas_comp(top_comp[index]))//TODO: or use cell_center[index].comp ??;
+        if (!gas_comp(top_comp[index]))
         {
             for (int l = 0; l < 3; ++l)
                 vorticity[l][index] = 0.0;

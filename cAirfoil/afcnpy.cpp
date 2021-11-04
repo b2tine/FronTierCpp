@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
 static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);
 static boolean is_pore(Front*,HYPER_SURF_ELEMENT*,double*);
-static void compute_total_canopy_force2d(Front*,double*,double*);
 static void compute_total_canopy_force3d(Front*,double*,double*);
 static void reduce_high_freq_vel(Front*,SURFACE*);
 static void smooth_vel(double*,POINT*,TRI*,SURFACE*);
@@ -97,24 +96,15 @@ extern void compute_total_canopy_force(
 	double *neg_force)
 {
 	int dim = front->rect_grid->dim;
-	switch (dim)
+	if (dim != 3)
 	{
-	case 2:
-	    compute_total_canopy_force2d(front,pos_force,neg_force);
-	    return;
-	case 3:
-	    compute_total_canopy_force3d(front,pos_force,neg_force);
-	    return;
-	}
-}	/* end compute_total_canopy_force */
+        printf("\n\nERROR compute_total_canopy_force(): dim must be equal to 3\n");
+        printf("\t dim = %d\n\n",dim);
+        LOC(); clean_up(EXIT_FAILURE);
+    }
 
-static void compute_total_canopy_force2d(
-	Front *front,
-        double *pos_force,
-        double *neg_force)
-{
-		
-}	/* end compute_total_canopy_force2d */
+    compute_total_canopy_force3d(front,pos_force,neg_force);
+}	/* end compute_total_canopy_force */
 
 static void compute_total_canopy_force3d(
 	Front *front,
@@ -164,19 +154,6 @@ static void compute_total_canopy_force3d(
 	if (debugging("trace"))
 	    (void) printf("Leaving compute_total_canopy_force3d()\n");
 }	/* end compute_total_canopy_force3d */
-
-int airfoil_velo(
-    POINTER params,
-    Front *front,
-    POINT *p,
-    HYPER_SURF_ELEMENT *hse,
-    HYPER_SURF *hs,
-    double *vel)
-{
-	/*TMP to be written*/
-    vel[0] = vel[1] = vel[2] = 0.0;
-	return YES;
-}
 
 int af_find_state_at_crossing(
     Front *front,

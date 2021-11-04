@@ -1139,7 +1139,16 @@ static  void neumann_point_propagate(
 	    newst->momn[i] = newst->dens*vel[i];
 	}
 
-    newst->eos = oldst->eos;
+    //TODO: need to make a hard copy of eos?
+    //memcpy(newst->eos,oldst->eos,sizeof(oldst->eos));
+    //
+    //TODO: ^NO -- problem likely is from not properly initializing
+    //             the STATEs of fixed rigid body.
+
+    //this is a work around for now...
+    newst->eos = &(eqn_params->eos[comp]);
+        //newst->eos = oldst->eos; //SEG FAULTS
+
 	newst->engy = EosEnergy(newst);
 	
     s = mag_vector(vel,dim);

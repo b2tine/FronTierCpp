@@ -21,8 +21,8 @@
 #define         GAS_COMP2		3
 #define         MAX_COMP        10
 
-#define		gas_comp(comp)   (((comp) == GAS_COMP1 || 	\
-		comp == GAS_COMP2) ? YES : NO)
+#define	gas_comp(comp) (((comp) == GAS_COMP1 || \
+            comp == GAS_COMP2) ? YES : NO)
 
 enum PROB_TYPE 
 {
@@ -352,9 +352,8 @@ public:
     double min_dt;
 	double hmin;			// smallest spacing
 
-	void setInitialIntfc(LEVEL_FUNC_PACK*,char*);// setup initial geometry
+    void setInitialIntfc(LEVEL_FUNC_PACK*,char*);// setup initial geometry
 	void setInitialStates(); 	// setup initial state
-	void setProbParams(char*); 	// setup initial state
 	void initMesh(void);		// setup the cartesian grid
 
     int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
@@ -482,20 +481,6 @@ protected:
 	void setDirichletStates(STATE*,SWEEP*,SWEEP*,HYPER_SURF*,int*,int,int,int,int);
 	void setNeumannStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,int,int);
     
-    /*
-    void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,int,int);//TODO: Need to implement/copy from cfabric
-    
-    void setElasticStatesRFB(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
-                        int*,int,int,int,int,int);
-
-    void setElasticStatesRFB_normal(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
-                            int*,int,int,int,int,int);
-
-    void setElasticStatesRiem(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
-                            int*,int,int,int,int,int);
-    */
-
-
 	/* Viscous flux */
     void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
     void fillViscousFluxStencil2d(int* icoords, SWEEP* m_vst, VStencil2d* vsten);
@@ -511,7 +496,7 @@ protected:
     
     /*
     //TODO: Implement this
-    void setElasticViscousGhostState(int* iccords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
+    virtual void setElasticViscousGhostState(int* icoords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
             double* crx_coords, COMPONENT comp, double* intrp_coeffs,
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
     */
@@ -546,6 +531,21 @@ protected:
     // -------------------------------------------------------
 	// 		initialization functions
 	// -------------------------------------------------------
+    
+    /*
+    void setChannelFlowParams(char*);
+    void setRayleiTaylorParams(char*);
+	void setRichtmyerMeshkovParams(char*);
+	void setBubbleParams(char*);
+	void setImplosionParams(char*);
+	void setMTFusionParams(char*);
+	void setRiemProbParams(char*);
+	void setRiemProbParams1d(char*);
+	void setRiemProbParams2d(char*);
+	void setOnedParams(char*);
+	void setObliqueParams(char*);//no definition
+    */
+
 	void initChannelFlow(LEVEL_FUNC_PACK*,char*);
 	void initSinePertIntfc(LEVEL_FUNC_PACK*,char*);
 	void initRandPertIntfc(LEVEL_FUNC_PACK*,char*);
@@ -555,12 +555,13 @@ protected:
 	void initProjectileIntfc2d(LEVEL_FUNC_PACK*,char*);
 	void initMTFusionIntfc(LEVEL_FUNC_PACK*,char*);
 	void initRiemannProb(LEVEL_FUNC_PACK*,char*);
+
+	void initChannelFlowStates();
 	void initRayleiTaylorStates();
 	void initRichtmyerMeshkovStates();
 	void initBubbleStates();
 	void initImplosionStates();
 	void initMTFusionStates();
-	void initChannelFlowStates(); //void initProjectileStates();
 	void initRiemProbStates();
 	void initBlastWaveStates();
 	void initShockSineWaveStates();
@@ -570,18 +571,8 @@ protected:
 	void initCylinderPlaneIntfc(LEVEL_FUNC_PACK*,char*);
 	void initObliqueIntfc(LEVEL_FUNC_PACK*,char*);
 	void initObliqueStates();
-	void setRayleiTaylorParams(char*);
-	void setRichtmyerMeshkovParams(char*);
-	void setBubbleParams(char*);
-	void setImplosionParams(char*);
-	void setMTFusionParams(char*);
-	void setChannelFlowParams(char*); //void setProjectileParams(char*);
-	void setRiemProbParams(char*);
-	void setRiemProbParams1d(char*);
-	void setRiemProbParams2d(char*);
-	void setOnedParams(char*);
-	void setObliqueParams(char*);
-	void readBaseFront(int i);
+	
+    void readBaseFront(int i);
 	void readBaseStates(char *restart_state_name);
 	void readFrontInteriorStates(char *restart_state_name);
 
@@ -636,6 +627,14 @@ protected:
 	void adjustGFMStates();
 };
 
+
+// cFinit.cpp
+extern void read_cFluid_params(char*,EQN_PARAMS*);
+extern void insert_objects(Front*);
+
+// cFcartsn.cpp
+extern void readFrontStates(Front*,char*);
+
 // cFsub.cpp
 extern double burger_flux(double,double,double);
 extern double linear_flux(double,double,double,double);
@@ -652,16 +651,8 @@ extern void cF_flowThroughBoundaryState3d(double*,HYPER_SURF*,Front*,POINTER,POI
 extern void cFluid_point_propagate(Front*,POINTER,POINT*,POINT*,
                         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 
-/*	rgbody.c functions */
-extern void cfluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,double*);
-extern void record_moving_body_data(char*,Front*);
-//TODO: Move the above function declarations and definitions into rigidbody.h/.cpp
-
-extern void read_cFluid_params(char*,EQN_PARAMS*);
-extern void readFrontStates(Front*,char*);
-
-extern void reflectVectorThroughPlane(double*,double*,double*,int);
 extern boolean reflectNeumannState(Front*,HYPER_SURF*,double*,COMPONENT,SWEEP*,STATE*);
+extern void reflectVectorThroughPlane(double*,double*,double*,int);
 
 // cFeos.cpp
 extern double EosPressure(STATE*);
@@ -680,8 +671,14 @@ extern boolean RiemannSolution(RIEMANN_INPUT,RIEMANN_SOLN*);
 extern boolean RiemannSolnAtXi(RIEMANN_SOLN*,RIEM_STATE*,double);
 
 /* Structures and functions for TVD scheme */
-extern	void TVD_flux(POINTER,SWEEP*,FSWEEP*,int);
-extern	void WENO_flux(POINTER,SWEEP*,FSWEEP*,int);
+extern void TVD_flux(POINTER,SWEEP*,FSWEEP*,int);
+extern void WENO_flux(POINTER,SWEEP*,FSWEEP*,int);
+
+/*	rgbody.c functions */
+//TODO: Move the above function declarations and definitions into rigidbody.h/.cpp
+extern void cfluid_compute_force_and_torque(Front*,HYPER_SURF*,double,double*,double*);
+extern void record_moving_body_data(char*,Front*);//NO DEFINITION
+
 
 //Unused?
 class EOS
@@ -696,36 +693,6 @@ private:
 
 	EOS_PARAMS *params;
 };
-
-
-//Unused?
-class COMPRESSIBLE_GAS_SOLVER
-{
-public: 
-
-    COMPRESSIBLE_GAS_SOLVER(Front &front);
-
-	void set_solver_domain(void);
-    void runge_kutta(void);
-    void solve(void);
-    void solve1d(void);
-    void solve2d(void);
-    void solve3d(void);
-
-private:
-
-    Front *front;
-
-    int dim;
-    COMPONENT *top_comp;
-    double *top_h;
-    int *top_gmax;
-    int imin,jmin,kmin;
-    int imax,jmax,kmax;
-};
-
-// cFinit.cpp
-extern void insert_objects(Front*);
 
 
 

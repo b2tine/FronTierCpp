@@ -23,8 +23,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "cFluid.h"
 
-static void getAmbientState(STATE*,EQN_PARAMS*,double*,COMPONENT);
+static void set_cFluid_params(FILE* infile, EQN_PARAMS* eqn_params);
 
+static void setChannelFlowParams(FILE*,EQN_PARAMS*);
+static void setRayleiTaylorParams(FILE*,EQN_PARAMS*);
+static void setRichtmyerMeshkovParams(FILE*,EQN_PARAMS*);
+static void setBubbleParams(FILE*,EQN_PARAMS*);
+static void setImplosionParams(FILE*,EQN_PARAMS*);
+static void setMTFusionParams(FILE*,EQN_PARAMS*);
+static void setRiemProbParams(FILE*,EQN_PARAMS*);
+static void setRiemProbParams1d(FILE*,EQN_PARAMS*);
+static void setRiemProbParams2d(FILE*,EQN_PARAMS*);
+static void setOnedParams(FILE*,EQN_PARAMS*);
+
+static void getAmbientState(STATE*,EQN_PARAMS*,double*,COMPONENT);
 static void getRTState(STATE*,EQN_PARAMS*,double*,COMPONENT);
 static void getRMState(STATE*,EQN_PARAMS*,double*,COMPONENT);
 static void getBubbleState(STATE*,EQN_PARAMS*,double*,COMPONENT);
@@ -54,7 +66,11 @@ extern void read_cFluid_params(
 	CursorAfterString(infile,"Enter problem type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
-	if (string[0] == 'T' || string[0] == 't')
+	if (string[0] == 'C' || string[0] == 'c')
+    {
+        eqn_params->prob_type = CHANNEL_FLOW;
+    }
+    else if (string[0] == 'T' || string[0] == 't')
 	{
 	    if (string[10] == 'B' || string[10] == 'b')
 	    	eqn_params->prob_type = TWO_FLUID_BUBBLE;
@@ -101,16 +117,14 @@ extern void read_cFluid_params(
 	    else if (string[5] == 'A' || string[5] == 'a')
 	    	eqn_params->prob_type = ONED_ASINE;
 	}
-	else if (string[0] == 'C' || string[0] == 'c')
-    {
-        eqn_params->prob_type = CHANNEL_FLOW;
-    }
 
     if (eqn_params->prob_type == ERROR_TYPE)
     {
         printf("eqn_params->prob_type == ERROR_TYPE\n");
         LOC(); clean_up(ERROR);
     }
+
+    set_cFluid_params(infile,eqn_params);
 
     printf("Available numerical schemes are:\n");
     printf("\tTVD_1st_order\n");
@@ -239,101 +253,100 @@ extern void read_cFluid_params(
 	    FT_ReadComparisonDomain(inname,eqn_params->f_basic);
 }	/* end read_cFluid_params */
 
-//TODO: rename to set_cFluid_params()
-void G_CARTESIAN::setProbParams(char *inname)
+//void set_cFluid_params(char* inname, EQN_PARAMS* eqn_params)
+static void set_cFluid_params(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	dim = front->rect_grid->dim;
-	eqn_params = (EQN_PARAMS*)front->extra1;
 	switch (eqn_params->prob_type)
-	{
-	case TWO_FLUID_RT:
-	    setRayleiTaylorParams(inname);
-	    break;
-	case TWO_FLUID_RM:
-	case TWO_FLUID_RM_RAND:
-	    setRichtmyerMeshkovParams(inname);
-	    break;
-	case TWO_FLUID_BUBBLE:
-	    setBubbleParams(inname);
-	    break;
-	case IMPLOSION:
-	    setImplosionParams(inname);
-	    break;
-	case MT_FUSION:
-	    setMTFusionParams(inname);
-	    break;
-	case PROJECTILE:
-	case FLUID_SOLID_CIRCLE:
-	case FLUID_SOLID_RECT:
-	case FLUID_SOLID_TRIANGLE:
-	case FLUID_SOLID_CYLINDER:
-    case CHANNEL_FLOW:
-	    setChannelFlowParams(inname); //setProjectileParams(inname);
-	    break;
-	case RIEMANN_PROB:
-	    setRiemProbParams(inname);
-	    break;
-	case ONED_BLAST:
-	case ONED_SSINE:
-	case ONED_ASINE:
-	    setOnedParams(inname);
-	    break;
-	case OBLIQUE_SHOCK_REFLECT:
-	    setRichtmyerMeshkovParams(inname);
-	    break;
-	default:
-	    printf("In setProbParams(), unknown problem type!\n");
-	    clean_up(ERROR);
-	}
-}	/* end setProbParams */
+    {
+        case PROJECTILE:
+        case FLUID_SOLID_CIRCLE:
+        case FLUID_SOLID_RECT:
+        case FLUID_SOLID_TRIANGLE:
+        case FLUID_SOLID_CYLINDER:
+        case CHANNEL_FLOW:
+            setChannelFlowParams(infile,eqn_params);
+            break;
+        case TWO_FLUID_RT:
+            setRayleiTaylorParams(infile,eqn_params);
+            break;
+        case TWO_FLUID_RM:
+        case TWO_FLUID_RM_RAND:
+            setRichtmyerMeshkovParams(infile,eqn_params);
+            break;
+        case TWO_FLUID_BUBBLE:
+            setBubbleParams(infile,eqn_params);
+            break;
+        case IMPLOSION:
+            setImplosionParams(infile,eqn_params);
+            break;
+        case MT_FUSION:
+            setMTFusionParams(infile,eqn_params);
+            break;
+        case RIEMANN_PROB:
+            setRiemProbParams(infile,eqn_params);
+            break;
+        case ONED_BLAST:
+        case ONED_SSINE:
+        case ONED_ASINE:
+            setOnedParams(infile,eqn_params);
+            break;
+        case OBLIQUE_SHOCK_REFLECT:
+            setRichtmyerMeshkovParams(infile,eqn_params);
+            break;
+        default:
+            printf("In setProbParams(), unknown problem type!\n");
+            LOC(); clean_up(ERROR);
+    }
+}	/* end set_cFluid_params */
 
 void G_CARTESIAN::setInitialStates()
 {
 	switch (eqn_params->prob_type)
-	{
-	case TWO_FLUID_RT:
-	    initRayleiTaylorStates();
-	    break;
-	case TWO_FLUID_RM:
-	case TWO_FLUID_RM_RAND:
-	    initRichtmyerMeshkovStates();
-	    break;
-	case TWO_FLUID_BUBBLE:
-	    initBubbleStates();
-	    break;
-	case IMPLOSION:
-	    initImplosionStates();
-	    break;
-	case MT_FUSION:
-	    initMTFusionStates();
-	    break;
-	case PROJECTILE:
-    case FLUID_SOLID_CIRCLE:
-    case FLUID_SOLID_RECT:
-    case FLUID_SOLID_TRIANGLE:
-    case FLUID_SOLID_CYLINDER:
-    case CHANNEL_FLOW:
-	    initChannelFlowStates(); //initProjectileStates();
-	    break;
-	case RIEMANN_PROB:
-	    initRiemProbStates();
-	    break;
-	case ONED_BLAST:
-	    initBlastWaveStates();
-	    break;
-	case ONED_SSINE:
-	    initShockSineWaveStates();
-	    break;
-	case ONED_ASINE:
-	    initAccuracySineWaveStates();
-	    break;
-	case OBLIQUE_SHOCK_REFLECT:
-	    initRichtmyerMeshkovStates();
-	    break;
-	default:
-	    (void) printf("In setInitialStates(), case not implemented!\n");
-	    clean_up(ERROR);
-	}
+    {
+        case PROJECTILE:
+        case FLUID_SOLID_CIRCLE:
+        case FLUID_SOLID_RECT:
+        case FLUID_SOLID_TRIANGLE:
+        case FLUID_SOLID_CYLINDER:
+        case CHANNEL_FLOW:
+            initChannelFlowStates();
+            break;
+        case TWO_FLUID_RT:
+            initRayleiTaylorStates();
+            break;
+        case TWO_FLUID_RM:
+        case TWO_FLUID_RM_RAND:
+            initRichtmyerMeshkovStates();
+            break;
+        case TWO_FLUID_BUBBLE:
+            initBubbleStates();
+            break;
+        case IMPLOSION:
+            initImplosionStates();
+            break;
+        case MT_FUSION:
+            initMTFusionStates();
+            break;
+        case RIEMANN_PROB:
+            initRiemProbStates();
+            break;
+        case ONED_BLAST:
+            initBlastWaveStates();
+            break;
+        case ONED_SSINE:
+            initShockSineWaveStates();
+            break;
+        case ONED_ASINE:
+            initAccuracySineWaveStates();
+            break;
+        case OBLIQUE_SHOCK_REFLECT:
+            initRichtmyerMeshkovStates();
+            break;
+        default:
+            (void) printf("In setInitialStates(), case not implemented!\n");
+            LOC(); clean_up(ERROR);
+    }
+
 	copyMeshStates();
 }	/* end setInitialStates */
 
@@ -341,7 +354,6 @@ void G_CARTESIAN::setInitialIntfc(
 	LEVEL_FUNC_PACK *level_func_pack,
 	char *inname)
 {
-	dim = front->rect_grid->dim;
 	eqn_params = (EQN_PARAMS*)front->extra1;
 	switch (eqn_params->prob_type)
 	{
@@ -413,12 +425,14 @@ static void getAmbientState(
 	if (debugging("ambient"))
 	    printf("Entering getAmbientState(), coords = %f %f\n",
 				coords[0],coords[1]);
-	dim = eqn_params->dim;
-
-	for (i = 0; i < dim; ++i)
-	    state->vel[i] = state->momn[i] = 0.0;
+	
+    dim = eqn_params->dim;
 	state->dim = dim;
-	eos = &(eqn_params->eos[comp]);
+	
+    for (i = 0; i < dim; ++i)
+	    state->vel[i] = state->momn[i] = 0.0;
+	
+    eos = &(eqn_params->eos[comp]);
 	state->eos = eos;
 	
 	switch (comp)
@@ -457,20 +471,22 @@ static void getAmbientState(
 	    state->engy = 0.0;
 	    break;
 	default:
-	    printf("ERROR: Unknown component %d in getAmbientState()!\n",
-				comp);
-	    clean_up(ERROR);
+	    printf("ERROR: Unknown component %d in getAmbientState()!\n",comp);
+	    LOC(); clean_up(ERROR);
 	}
+
 	if (debugging("ambient_state"))
 	    (void) printf("Leaving getAmbientState(): state = %d %f %f %f\n",
 			comp,state->dens,state->pres,state->engy);
 }	/* end getAmbientState */
 
-void G_CARTESIAN::setChannelFlowParams(char *inname)
+//void G_CARTESIAN::setChannelFlowParams(char *inname)
+static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
 	int i;
-	FILE *infile = fopen(inname,"r");
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    int dim = eqn_params->dim;
+	//FILE *infile = fopen(inname,"r");
+	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char str[256];
 
@@ -519,7 +535,8 @@ void G_CARTESIAN::setChannelFlowParams(char *inname)
         eqn_params->tracked = NO;
     }
 
-    fclose(infile);
+    //fclose(infile);
+
 }	/* end setChannelFlowParams */
 
 void G_CARTESIAN::initChannelFlowStates()
@@ -559,6 +576,7 @@ void G_CARTESIAN::initChannelFlowStates()
 	    getAmbientState(sl,eqn_params,Coords(p),negative_component(hs));
 	    getAmbientState(sr,eqn_params,Coords(p),positive_component(hs));
 	}
+
 	FT_MakeGridIntfc(front);
 	setDomain();
 
@@ -711,11 +729,13 @@ static double intfcPertHeight(
 	return z;
 }	/* end intfcPertHeight */
 
-void G_CARTESIAN::setRayleiTaylorParams(char *inname)
+//void G_CARTESIAN::setRayleiTaylorParams(char *inname)
+static void setRayleiTaylorParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
 	int i;
-	FILE *infile = fopen(inname,"r");
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    int dim = eqn_params->dim;
+	//FILE *infile = fopen(inname,"r");
+	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char s[100], str[256];
 
@@ -760,7 +780,9 @@ void G_CARTESIAN::setRayleiTaylorParams(char *inname)
 	    eqn_params->tracked = YES;
 	else
 	    eqn_params->tracked = NO;
-	fclose(infile);
+	
+    //fclose(infile);
+
 }	/* end initRayleiTaylorParams */
 
 void G_CARTESIAN::initRayleiTaylorStates()
@@ -826,13 +848,15 @@ void G_CARTESIAN::initRayleiTaylorStates()
 	scatMeshStates();
 }	/* end initRayleiTaylorStates */
 
-void G_CARTESIAN::setRichtmyerMeshkovParams(char *inname)
+//void G_CARTESIAN::setRichtmyerMeshkovParams(char *inname)
+static void setRichtmyerMeshkovParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	FILE *infile = fopen(inname,"r");
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	int i;
+    int dim = eqn_params->dim;
+	//FILE *infile = fopen(inname,"r");
+	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	char s[100], str[256];
 	double	pinf, einf, gamma;
-	int i, dim = FT_Dimension();
 
 	sprintf(str,"Enter gamma, pinf, einf of the fluid with comp %d:", 
 	             GAS_COMP1);
@@ -917,7 +941,9 @@ void G_CARTESIAN::setRichtmyerMeshkovParams(char *inname)
             else
                 eqn_params->contact_stationary = NO;
         }
-	fclose(infile);
+
+    //fclose(infile);
+
 }	/* end setRayleiTaylorParams */
 
 void G_CARTESIAN::initRichtmyerMeshkovStates()
@@ -1382,11 +1408,13 @@ static void getBubbleState(
 	}
 }	/* end getBubbleState */
 
-void G_CARTESIAN::setBubbleParams(char *inname)
+//void G_CARTESIAN::setBubbleParams(char *inname)
+static void setBubbleParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
 	int i;
-	FILE *infile = fopen(inname,"r");
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    int dim = eqn_params->dim;
+	//FILE *infile = fopen(inname,"r");
+	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char s[100], str[256];
 
@@ -1428,14 +1456,18 @@ void G_CARTESIAN::setBubbleParams(char *inname)
 	    eqn_params->tracked = YES;
 	else
 	    eqn_params->tracked = NO;
-	fclose(infile);
+
+    //fclose(infile);
+
 }	/* end setBubbleParams */
 
-void G_CARTESIAN::setImplosionParams(char *inname)
+//void G_CARTESIAN::setImplosionParams(char *inname)
+static void setImplosionParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
 	int i;
-	FILE *infile = fopen(inname,"r");
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    int dim = eqn_params->dim;
+	//FILE *infile = fopen(inname,"r");
+	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char s[100], str[256];
 
@@ -1480,14 +1512,18 @@ void G_CARTESIAN::setImplosionParams(char *inname)
 	    eqn_params->tracked = YES;
 	else
 	    eqn_params->tracked = NO;
-	fclose(infile);
-}	/* end setBubbleParams */
+	
+    //fclose(infile);
 
-void G_CARTESIAN::setMTFusionParams(char *inname)
+}	/* end setImplosionParams */
+
+//void G_CARTESIAN::setMTFusionParams(char *inname)
+static void setMTFusionParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
 	int i;
-	FILE *infile = fopen(inname,"r");
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    int dim = eqn_params->dim;
+	//FILE *infile = fopen(inname,"r");
+	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char s[100], str[256];
 
@@ -1529,7 +1565,9 @@ void G_CARTESIAN::setMTFusionParams(char *inname)
 	    eqn_params->tracked = YES;
 	else
 	    eqn_params->tracked = NO;
-	fclose(infile);
+	
+    //fclose(infile);
+
 }	/* end setMTFusionParams */
 
 void G_CARTESIAN::initImplosionIntfc(
@@ -1994,23 +2032,63 @@ void G_CARTESIAN::initRiemannProb(
 	fclose(infile);
 }	/* end initRiemannProb */
 
-void G_CARTESIAN::setRiemProbParams(char *inname)
+//void G_CARTESIAN::setRiemProbParams(char *inname)
+static void setRiemProbParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	switch (dim)
+	switch (eqn_params->dim)
 	{
 	case 1:
-	    setRiemProbParams1d(inname);
+	    setRiemProbParams1d(infile,eqn_params);
+	    //setRiemProbParams1d(inname);
 	    return;
 	case 2:
-	    setRiemProbParams2d(inname);
+	    setRiemProbParams2d(infile,eqn_params);
+	    //setRiemProbParams2d(inname);
 	    return;
+    default:
+        printf("\n\nERROR setRiemProbParams(): only 1d and 2d problems currently supported\n");
+        LOC(); clean_up(EXIT_FAILURE);
 	}
 }	/* end setRiemProbParams */
 
-void G_CARTESIAN::setRiemProbParams2d(char *inname)
+//void G_CARTESIAN::setRiemProbParams1d(char *inname)
+static void setRiemProbParams1d(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	FILE *infile = fopen(inname,"r");
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	//FILE *infile = fopen(inname,"r");
+	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	double		pinf,einf,gamma;
+	char str[256];
+
+	sprintf(str, "Enter gamma, pinf, einf of ambient air:");
+	CursorAfterString(infile,str);
+	fscanf(infile,"%lf %lf %lf",&gamma,&pinf,&einf);
+	(void) printf("%f %f %f\n",gamma,pinf,einf);
+	(eqn_params->eos[GAS_COMP1]).gamma = gamma;
+	(eqn_params->eos[GAS_COMP1]).pinf = pinf;
+	(eqn_params->eos[GAS_COMP1]).einf = einf;
+	(eqn_params->eos[GAS_COMP2]).gamma = gamma;
+	(eqn_params->eos[GAS_COMP2]).pinf = pinf;
+	(eqn_params->eos[GAS_COMP2]).einf = einf;
+	
+	CursorAfterString(infile,"Enter left and right density:");
+	fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->rho2);
+	(void) printf("%f %f\n",eqn_params->rho1,eqn_params->rho2);
+	CursorAfterString(infile,"Enter left and right pressure:");
+	fscanf(infile,"%lf %lf",&eqn_params->p1,&eqn_params->p2);
+	(void) printf("%f %f\n",eqn_params->p1,eqn_params->p2);
+	CursorAfterString(infile,"Enter left and right velocity:");
+	fscanf(infile,"%lf %lf",&eqn_params->v1[0],&eqn_params->v2[0]);
+	(void) printf("%f %f\n",eqn_params->v1[0],eqn_params->v2[0]);
+	
+    //fclose(infile);
+
+}	/* end setRiemProbParams1d */
+
+//void G_CARTESIAN::setRiemProbParams2d(char *inname)
+static void setRiemProbParams2d(FILE* infile, EQN_PARAMS* eqn_params)
+{
+	//FILE *infile = fopen(inname,"r");
+	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char str[256];
 
@@ -2056,43 +2134,16 @@ void G_CARTESIAN::setRiemProbParams2d(char *inname)
 	(void) printf("%f %f %f %f\n",
 			eqn_params->v0[1],eqn_params->v1[1],
 			eqn_params->v2[1],eqn_params->v3[1]);
-	fclose(infile);
+	
+    //fclose(infile);
+
 }	/* end setRiemProbParams2d */
 
-void G_CARTESIAN::setRiemProbParams1d(char *inname)
+//void G_CARTESIAN::setOnedParams(char *inname)
+static void setOnedParams(FILE* infile, EQN_PARAMS* eqn_params)
 {
-	FILE *infile = fopen(inname,"r");
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-	double		pinf,einf,gamma;
-	char str[256];
-
-	sprintf(str, "Enter gamma, pinf, einf of ambient air:");
-	CursorAfterString(infile,str);
-	fscanf(infile,"%lf %lf %lf",&gamma,&pinf,&einf);
-	(void) printf("%f %f %f\n",gamma,pinf,einf);
-	(eqn_params->eos[GAS_COMP1]).gamma = gamma;
-	(eqn_params->eos[GAS_COMP1]).pinf = pinf;
-	(eqn_params->eos[GAS_COMP1]).einf = einf;
-	(eqn_params->eos[GAS_COMP2]).gamma = gamma;
-	(eqn_params->eos[GAS_COMP2]).pinf = pinf;
-	(eqn_params->eos[GAS_COMP2]).einf = einf;
-	
-	CursorAfterString(infile,"Enter left and right density:");
-	fscanf(infile,"%lf %lf",&eqn_params->rho1,&eqn_params->rho2);
-	(void) printf("%f %f\n",eqn_params->rho1,eqn_params->rho2);
-	CursorAfterString(infile,"Enter left and right pressure:");
-	fscanf(infile,"%lf %lf",&eqn_params->p1,&eqn_params->p2);
-	(void) printf("%f %f\n",eqn_params->p1,eqn_params->p2);
-	CursorAfterString(infile,"Enter left and right velocity:");
-	fscanf(infile,"%lf %lf",&eqn_params->v1[0],&eqn_params->v2[0]);
-	(void) printf("%f %f\n",eqn_params->v1[0],eqn_params->v2[0]);
-	fclose(infile);
-}	/* end setRiemProbParams1d */
-
-void G_CARTESIAN::setOnedParams(char *inname)
-{
-	FILE *infile = fopen(inname,"r");
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	//FILE *infile = fopen(inname,"r");
+	//EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double		pinf,einf,gamma;
 	char str[256];
 

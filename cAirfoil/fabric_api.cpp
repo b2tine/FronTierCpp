@@ -118,11 +118,8 @@ extern void SMM_InitFluidSolver()
     F_BASIC_DATA* f_basic = SMM_GetBasicData();
     
     cf_params.dim = f_basic->dim;
-    //TODO: These functions should be a single call,
-    //      or rename read_cFluid_params...name is misleading
+    
     read_cFluid_params(f_basic->in_name,&cf_params);
-
-    //set_cFluid_params(f_basic->in_name,&cf_params);
 
     cf_params.with_porosity = af_params->with_porosity;
     cf_params.porosity = af_params->porosity;
@@ -136,12 +133,10 @@ extern void SMM_InitFluidSolver()
     read_dirichlet_bdry_data(InName(front),front);
 
     CFABRIC_CARTESIAN* g_cartesian = SMM_GetFluidSolver();
-    
-    g_cartesian->setProbParams(InName(front));
     g_cartesian->eqn_params = &cf_params;
     
     g_cartesian->findStateAtCrossing = af_find_state_at_crossing;
-    //g_cartesian->getInitialState = zero_state;
+        //g_cartesian->getInitialState = zero_state;
     
     g_cartesian->initMesh();
 
