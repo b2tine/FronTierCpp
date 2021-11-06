@@ -134,8 +134,14 @@ int main(int argc, char **argv)
 
 	front._compute_force_and_torque = ifluid_compute_force_and_torque;
 	l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
-    l_cartesian>initMesh();
-    l_cartesian->writeMeshFileVTK();
+
+    l_cartesian->initMesh();
+    
+    if (pp_numnodes() == 1)
+    {
+        l_cartesian->writeMeshFileVTK();
+            //l_cartesian->writeCompGridMeshFileVTK();
+    }
 	
     //TODO: Why not use iFluid ambient_state()?
     //      Can specify an ambient velocity with input file option.
