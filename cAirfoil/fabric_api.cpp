@@ -139,9 +139,12 @@ extern void SMM_InitFluidSolver()
         //g_cartesian->getInitialState = zero_state;
     
     g_cartesian->initMesh();
-    g_cartesian->writeMeshFileVTK();
-    g_cartesian->writeCompGridMeshFileVTK();
 
+    if (pp_numnodes() == 1)
+    {
+        g_cartesian->writeMeshFileVTK();
+        g_cartesian->writeCompGridMeshFileVTK();
+    }
 
     if (f_basic->RestartRun)
     {
@@ -739,7 +742,10 @@ extern void SMM_cFluidDriver()
         if (FT_IsDrawTime(front))
         {
             SMM_Plot();
-            g_cartesian->writeMeshComponentsVTK();
+            if (pp_numnodes() == 1)
+            {
+                g_cartesian->writeMeshComponentsVTK();
+            }
         }
 
         if (FT_TimeLimitReached(front))

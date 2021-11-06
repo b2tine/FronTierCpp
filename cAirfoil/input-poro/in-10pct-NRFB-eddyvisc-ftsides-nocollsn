@@ -3,7 +3,7 @@ Domain limit in 1-th dimension: 0 1
 Domain limit in 2-th dimension: 0 1
     Domain limit in 2-th dimensionXXX: 0 3
 
-Computational grid: 100 100 100
+Computational grid: 60 60 60
     Computational gridXXX: 50 50 50
     Computational gridXXX: 50 50 150
 
@@ -146,11 +146,12 @@ Type yes to turn off auto-redistribution: yes
 
 Enter yes for debugging: yes
 
-Enter the debugging string: proximity
-Enter the debugging string: collision
 Enter the debugging string: cfluid_dt
+Enter the debugging string: collision_off
+
+Enter the debugging stringX: proximity
+Enter the debugging stringX: collision
 
 Enter the debugging stringX: elastic_buffer
-Enter the debugging stringX: collision_off
 Enter the debugging stringX: trace
 

@@ -199,6 +199,15 @@ void G_CARTESIAN::writeMeshComponentsVTK()
 
     
     /*
+    //TODO: Using CELL_DATA to color the grid cells requires mapping
+    //      the indices of the topological grid nodes to the corresponding
+    //      cell centers of the computational grid.
+    //
+    //      Using POINT_DATA, as above, correctly places the components
+    //      and if the point size is made large they appears as if they
+    //      were using the CELL_DATA field of the computational grid
+    //        
+    //
     ////////////////////////////////////////////////////
     RECT_GRID* comp_grid = computational_grid(front->interf);
     int* ctop_gmax = comp_grid->gmax;
