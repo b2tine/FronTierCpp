@@ -34,7 +34,7 @@ Print interval: 0.01
 Movie frame interval: 0.005
 CFL factor: 0.5
 Redistribution interval: 10000000
-ype yes to turn off auto-redistribution: y
+type yes to turn off auto-redistribution: y
 
 //////////////////////////////////////////////////////////
 ///////////  Start parameters for cFluid  ////////////////
@@ -44,12 +44,8 @@ Enter problem type: CHANNEL_FLOW
 Enter numerical scheme for interior solver: WENO_4th_ORDER
 Enter order of point propagator: 4
 
-Enter gamma, pinf, einf of the fluid with comp 2: 1.4 0 0
-Enter gamma, pinf, einf of the fluid with comp 3: 1.4 0 0
-
-Enter density and pressure of ambient air1: 1.225 750
-Enter density and pressure of ambient air2: 1.225 750
-
+Enter gamma, pinf, einf of ambient air: 1.4 0 0
+Enter density and pressure of ambient air: 1.225 750
 Enter density and viscosity of the fluid: 1.225 0.000628
 
 Enter gravity: 0 0 0
@@ -63,6 +59,10 @@ Enter yes to use eddy viscosity: yes
 //////////////////////////////////////////////////////////
 /////////            Movie Options            ////////////
 //////////////////////////////////////////////////////////
+
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+Type y to make xy cross section movie: n
 
 Type y to make scalar density field movie: y
 Type y to make scalar pressure field movie: y
