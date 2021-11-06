@@ -686,6 +686,7 @@ extern void SMM_cFluidDriver()
         {
             coating_mono_hyper_surf(front);
             g_cartesian->applicationSetComponent();
+    //g_cartesian->writeMeshComponentsVTK();
         }
 
         FrontPreAdvance(front);
@@ -737,7 +738,10 @@ extern void SMM_cFluidDriver()
         }
 
         if (FT_IsDrawTime(front))
+        {
             SMM_Plot();
+            g_cartesian->writeMeshComponentsVTK();
+        }
 
         if (FT_TimeLimitReached(front))
         {

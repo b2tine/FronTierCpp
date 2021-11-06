@@ -29,7 +29,8 @@ libcFluid_la_SOURCES = \
 ../state.h \
 ../state.cpp \
 ../rigidbody.h \
-../rigidbody.cpp
+../rigidbody.cpp \
+../cFvisualization.cpp
 								
 
 if CGAL_INTFC_OPT

@@ -350,8 +350,12 @@ public:
 	void freeBaseFront();
 	void errFunction();
 
+
+    void writeMeshComponentsVTK();
+
+
 	// main step function
-	void solve(double dt);		
+	void solve(double dt);
 
 //private:
 protected:
