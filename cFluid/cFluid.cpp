@@ -162,6 +162,9 @@ int main(int argc, char **argv)
 	    printf("Passed FT_InitFrontVeloFunc()\n");
 
 	g_cartesian.initMesh();
+    g_cartesian.writeMeshFileVTK();
+    g_cartesian.writeCompGridMeshFileVTK();
+
     g_cartesian.initMovieVariables();
 
     if (RestartRun)

@@ -19,14 +19,12 @@ noinst_PROGRAMS = cairfoil \
 
 
 cairfoil_SOURCES = fabric_Cplus.cpp
-
 cairfoil_LDADD = $(builddir)/objs/libcAirfoil.la
 
 
 
 cFluid_test_SOURCES = cFluid_test.cpp
-
-cFluid_test_LDADD = $(builddir)/objs/libcAirfoil.la
+cFluid_test_LDADD = $(top_builddir)/cFluid/objs/libcFluid.la
 
 
 

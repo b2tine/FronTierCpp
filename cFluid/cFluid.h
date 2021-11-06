@@ -351,10 +351,10 @@ public:
 	void errFunction();
 
 
+    void writeMeshFileVTK();
+    void writeCompGridMeshFileVTK();
     void writeMeshComponentsVTK();
 
-
-	// main step function
 	void solve(double dt);
 
 //private:
@@ -481,12 +481,6 @@ protected:
             double* crx_coords, COMPONENT comp, double* intrp_coeffs,
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
     
-    /*
-    virtual void setElasticViscousGhostState(int* icoords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
-            double* crx_coords, COMPONENT comp, double* intrp_coeffs,
-            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
-    */
-
     void computeViscousFlux2d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
             double delta_t, VStencil2d* vsten);
 

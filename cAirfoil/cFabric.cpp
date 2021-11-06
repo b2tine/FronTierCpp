@@ -1609,8 +1609,8 @@ void CFABRIC_CARTESIAN::setViscousGhostState(
     /*
     //TODO: Can't find elastic interface -- why?
     bool nip_found = nearest_interface_point_within_range(&ghost_coords[0],
-                comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs,5);
+                comp,front->interf,NO_SUBDOMAIN,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs,3);
     */
     //TODO: Figure out which is the correct boundary enum.
     //      For parallel runs do we need to use NO_SUBDOMAIN?

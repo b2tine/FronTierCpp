@@ -55,13 +55,14 @@ EXPORT	void FT_Propagate(
 	{
 	    (void) printf("Entering FT_Propagate()\n");
 	}
+
 	if (front->grid_intfc == NULL)
 	{
 	    if (TwoStepIntfc(front) == YES)
-            {
-                if (front->old_grid_intfc != NULL)
-                    FT_FreeOldGridIntfc(front);
-            }
+        {
+            if (front->old_grid_intfc != NULL)
+                FT_FreeOldGridIntfc(front);
+        }
 	    FT_MakeGridIntfc(front);
 	}
 
@@ -74,9 +75,10 @@ EXPORT	void FT_Propagate(
 	{
 	    if (TwoStepIntfc(front) == YES)
 	    {
-                if (front->old_grid_intfc != NULL)
-                    FT_FreeOldGridIntfc(front);
-		front->old_grid_intfc = front->grid_intfc;
+            if (front->old_grid_intfc != NULL)
+                FT_FreeOldGridIntfc(front);
+            
+            front->old_grid_intfc = front->grid_intfc;
 	    	FT_MakeGridIntfc(front);
 	    }
 	    else
@@ -85,11 +87,13 @@ EXPORT	void FT_Propagate(
 	    	FT_MakeGridIntfc(front);
 	    }
 	}
+
 	if (front->comp_grid_intfc != NULL)
 	{
 	    FT_FreeCompGridIntfc(front);
 	    FT_MakeCompGridIntfc(front);
 	}
+
 	if (debugging("trace"))
 	    (void) printf("Leaving FT_Propagate()\n");
 }	/* end FT_Propagate */
@@ -573,18 +577,22 @@ EXPORT	void FT_MakeGridIntfc(
 	Front *front)
 {
 	Table *T;
-        COMPONENT *comps;
-	if (Tracking_algorithm(front) == SIMPLE_TRACKING)
-	    return;
+    COMPONENT *comps;
+
+    if (Tracking_algorithm(front) == SIMPLE_TRACKING) return;
+
 	if (debugging("grid_line_comp"))
-	    init_grid_debug(front);
-	communicate_default_comp(front);
-	front->grid_intfc = make_grid_intfc(front->interf,
-			EXPANDED_DUAL_GRID,NULL);
-	/* communicate the components */
-        T = table_of_interface(front->grid_intfc);
-        comps = T->components;
-        FT_ParallelExchGridIntArrayBuffer(comps,front);
+    {
+        init_grid_debug(front);
+    }
+
+    communicate_default_comp(front);
+	front->grid_intfc = make_grid_intfc(front->interf,EXPANDED_DUAL_GRID,NULL);
+	
+    /* communicate the components */
+    T = table_of_interface(front->grid_intfc);
+    comps = T->components;
+    FT_ParallelExchGridIntArrayBuffer(comps,front);
 }	/* end FT_MakeGridIntfc */
 
 EXPORT	void FT_MakeCompGridIntfc(

@@ -998,7 +998,7 @@ EXPORT	INTERFACE *make_grid_intfc(
 	for (i = 0; i < 3; ++i)
 	{
 	    smin[i] = 0;
-            smax[i] = topological_grid(grid_intfc).gmax[i];
+        smax[i] = topological_grid(grid_intfc).gmax[i];
 	}
 	
 	start_clock("insert_grid_intfc_crossings");

@@ -139,17 +139,17 @@ extern void SMM_InitFluidSolver()
         //g_cartesian->getInitialState = zero_state;
     
     g_cartesian->initMesh();
+    g_cartesian->writeMeshFileVTK();
+    g_cartesian->writeCompGridMeshFileVTK();
+
 
     if (f_basic->RestartRun)
     {
-        //TODO: cFluid needs a different resetFrontVelocity() function
-        //      than the one used in iFluid and airfoil
         if (f_basic->ReSetTime)
         {
             printf("RESET TIME FEATURE NOT AVAILABLE RIGHT NOW\n");
             clean_up(EXIT_FAILURE);
             g_cartesian->setInitialStates();
-            //rgb_init(&front,&rgb_params);
             //resetFrontVelocity(front);//TODO: or goes with fabric restart?
         }
         else
@@ -686,7 +686,6 @@ extern void SMM_cFluidDriver()
         {
             coating_mono_hyper_surf(front);
             g_cartesian->applicationSetComponent();
-    //g_cartesian->writeMeshComponentsVTK();
         }
 
         FrontPreAdvance(front);

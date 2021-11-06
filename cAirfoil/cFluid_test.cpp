@@ -162,6 +162,9 @@ int main(int argc, char **argv)
 	    printf("Passed FT_InitFrontVeloFunc()\n");
 
 	g_cartesian.initMesh();
+    g_cartesian.writeMeshFileVTK();
+    g_cartesian.writeCompGridMeshFileVTK();
+
     g_cartesian.initMovieVariables();
 
     if (RestartRun)
@@ -290,7 +293,14 @@ static  void gas_driver(
         if (FT_IsDrawTime(front))
         {
             FT_Draw(front);
+            /*
+            ////////////////////////////////////////////
+            g_cartesian.writeMeshComponentsVTK();
+            LOC(); clean_up(0);
+            ////////////////////////////////////////////
+            */
         }
+
         stop_clock("output");
 
         if (FT_TimeLimitReached(front))
