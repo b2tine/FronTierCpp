@@ -526,7 +526,6 @@ void CollisionSolver3d::resolveCollisionSubstep()
 	updateFinalPosition();
 
     //TODO: is this helping or hurting us?
-    /*
     // Zero out the relative velocity between adjacent mesh vertices
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
@@ -535,7 +534,6 @@ void CollisionSolver3d::resolveCollisionSubstep()
             //limitStrainVelGS();
                 //computeMaxSpeed(); //debug
     }
-    */
 
 	updateFinalVelocity();
 
@@ -1025,9 +1023,8 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
         
             //revertAverageVelocity();
 
-        //TODO: Don't think Gauss-Seidel updating appropriate -- jagged interface results
         computeImpactZoneJac(list);
-            //computeImpactZoneGS(list);
+        //computeImpactZoneGS(list);
     }
     stop_clock("computeImpactZone");
 

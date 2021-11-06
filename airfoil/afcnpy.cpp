@@ -2720,8 +2720,10 @@ static void setSurfVelocity(
             
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
+                    //sl->vel[j] = nor_speed*nor[j];
+                    //sr->vel[j] = nor_speed*nor[j];
             }
             
             if (max_nor_speed < fabs(nor_speed))
@@ -2870,8 +2872,10 @@ static void setCurveVelocity(
                 
                 for (j = 0; j < 3; ++j)
                 {
-                    sl->vel[j] = nor_speed*nor[j];
-                    sr->vel[j] = nor_speed*nor[j];
+                    sl->vel[j] = vel[j];
+                    sr->vel[j] = vel[j];
+                        //sl->vel[j] = nor_speed*nor[j];
+                        //sr->vel[j] = nor_speed*nor[j];
                 }
             }
         }
@@ -3000,8 +3004,10 @@ static void setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
+                    //sl->vel[j] = nor_speed*nor[j];
+                    //sr->vel[j] = nor_speed*nor[j];
             }
 		}
         
@@ -3045,8 +3051,10 @@ static void setNodeVelocity3d(
 
             for (j = 0; j < 3; ++j)
             {
-                sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
+                    //sl->vel[j] = nor_speed*nor[j];
+                    //sr->vel[j] = nor_speed*nor[j];
             }
         }
     }
