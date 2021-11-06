@@ -10,31 +10,31 @@ static double (*getStateMom[MAXD])(Locstate) =
 void CFABRIC_CARTESIAN::applicationSetComponent()
 {
 	int i,icrd[MAXD],ic;
-        int size = (int)cell_center.size();
+    int size = (int)cell_center.size();
 
-        // cell center components
-        for (i = 0; i < size; i++)
-        {
-            cell_center[i].comp =
-                        getComponent(cell_center[i].icoords);
-        }
-	if (debugging("set_shifted_states"))
+    // cell center components
+    for (i = 0; i < size; i++)
+    {
+        cell_center[i].comp = getComponent(cell_center[i].icoords);
+    }
+	
+    if (debugging("set_shifted_states"))
 	{
 	    printf("Sample component in applicationSetComponent()\n");
 	    if (dim == 3)
 	    {
-            	icrd[0] = top_gmax[0]/2;
-            	for (icrd[2] = 0; icrd[2] <= top_gmax[2]; ++icrd[2])
-            	{
-                    for (icrd[1] = 0; icrd[1] <= top_gmax[1]; ++icrd[1])
-                    {
-                        ic = d_index(icrd,top_gmax,dim);
-                        printf("%d",top_comp[ic]);
-                    }
-                    printf("\n");
-            	}
+            icrd[0] = top_gmax[0]/2;
+            for (icrd[2] = 0; icrd[2] <= top_gmax[2]; ++icrd[2])
+            {
+                for (icrd[1] = 0; icrd[1] <= top_gmax[1]; ++icrd[1])
+                {
+                    ic = d_index(icrd,top_gmax,dim);
+                    printf("%d",top_comp[ic]);
+                }
+                printf("\n");
+            }
 	    }
-        }
+    }
 }	/* end applicationSetComponent */
 
 void CFABRIC_CARTESIAN::applicationSetStates()
@@ -54,71 +54,69 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 	
 	setDomain();
 	for (i = 0; i < size; i++)
+    {
+        icoords = cell_center[i].icoords;
+        if (cell_center[i].comp != -1 && cell_center[i].comp != top_comp[i])
         {
-            icoords = cell_center[i].icoords;
-            if (cell_center[i].comp != -1 &&
-                cell_center[i].comp != top_comp[i])
+            for (j = 0; j < dim; ++j)
+                coords[j] = top_L[j] + icoords[j]*top_h[j];
+    
+            id = d_index(icoords,top_gmax,dim);
+            if (fabs(cell_center[i].comp - top_comp[i]) != 2) continue;
+
+            if (debugging("set_crossed_state"))
             {
-		for (j = 0; j < dim; ++j)
-		    coords[j] = top_L[j] + icoords[j]*top_h[j];
-		id = d_index(icoords,top_gmax,dim);
-		if (fabs(cell_center[i].comp - top_comp[i]) != 2)
-		    continue;
+                double r;
+                printf("\n");
+                printf("Shifted component:\n");
+                printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
+                printf("old comp = %d  new comp = %d\n",cell_center[i].comp,top_comp[i]);
+                r = sqrt(sqr(coords[0] - 7.0) + sqr(coords[1] - 7.0));
+                printf("Radius = %f\n",r);
+            }
 
-		if (debugging("set_crossed_state"))
-		{
-		    double r;
-		    printf("\n");
-		    printf("Shifted component:\n");
-		    printf("icoords = %d %d %d\n",icoords[0],icoords[1],
-					icoords[2]);
-		    printf("old comp = %d  new comp = %d\n",
-					cell_center[i].comp,top_comp[i]);
-		    r = sqrt(sqr(coords[0] - 7.0) + sqr(coords[1] - 7.0));
-		    printf("Radius = %f\n",r);
-		}
+            ave_comp = (cell_center[i].comp + top_comp[i])/2;
+            if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
+                        coords,NO_BOUNDARIES,p_intfc,t,&hse,&hs,2)) continue;
 
-		ave_comp = (cell_center[i].comp + top_comp[i])/2;
-		if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
-			coords,NO_BOUNDARIES,p_intfc,t,&hse,&hs,2))
-		    continue;
+            dist = 0.0;
+            for (j = 0; j < dim; ++j)
+                dist += sqr(coords[j] - p_intfc[j]);
+            dist = sqrt(dist);
+            
+            if (debugging("set_crossed_state"))
+            {
+                printf("coords  = %f %f %f\n",coords[0],coords[1],coords[2]);
+                printf("p_intfc = %f %f %f\n",p_intfc[0],p_intfc[1],p_intfc[2]);
+            }
 
-		dist = 0.0;
-		for (j = 0; j < dim; ++j)
-		    dist += sqr(coords[j] - p_intfc[j]);
-		dist = sqrt(dist);
-		if (debugging("set_crossed_state"))
-		{
-		    printf("coords  = %f %f %f\n",coords[0],coords[1],
-					coords[2]);
-		    printf("p_intfc = %f %f %f\n",p_intfc[0],p_intfc[1],
-					p_intfc[2]);
-		}
-		if (dist > top_h[0]*Time_step_factor(front))
-		{
-		    if (debugging("set_crossed_state"))
-			printf("external point: dist = %f\n",dist);
-		    continue;
-		}
+            if (dist > top_h[0]*Time_step_factor(front))
+            {
+                if (debugging("set_crossed_state"))
+                    printf("external point: dist = %f\n",dist);
+                continue;
+            }
 
-		FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
+            FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
 
-		if (debugging("set_crossed_state"))
-		{
-		    printf("Old velocity  : %f %f %f\n",vel[0][id],
-				vel[1][id],vel[2][id]);
-		    printf("Intfc velocity: %f %f %f\n",state.vel[0],
-			state.vel[1],state.vel[2]);
-		    printf("Old pressure   = %f  \n",
-				pres[id]);
-		    printf("Intfc pressure = %f  \n",
-				state.pres);
-		}
-		for (j = 0; j < dim; ++j)
-		    vel[j][id] = state.vel[j];
-	    }
+            if (debugging("set_crossed_state"))
+            {
+                printf("Old velocity  : %f %f %f\n",vel[0][id],
+                    vel[1][id],vel[2][id]);
+                printf("Intfc velocity: %f %f %f\n",state.vel[0],
+                state.vel[1],state.vel[2]);
+                printf("Old pressure   = %f  \n",
+                    pres[id]);
+                printf("Intfc pressure = %f  \n",
+                    state.pres);
+            }
+            
+            for (j = 0; j < dim; ++j)
+                vel[j][id] = state.vel[j];
         }
-	FT_FreeGridIntfc(front);
+    }
+	
+    FT_FreeGridIntfc(front);
 	FT_MakeGridIntfc(front);
 }	/* end applicationSetStates */
 
@@ -441,73 +439,73 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
 		else
 		{
 		    if (!status) /* extreme cases */
-		    {
-			double coords[MAXD], wtol[MAXD], tol[MAXD];
-			int ic_tmp[MAXD];
-			for (k = 0; k < dim; ++k)
-                            tol[k] = 2.0 * IG_TOL * top_h[k];
-			/* check neighbor in the opposite direction */
-			for (k = 0; k < dim; ++k)
-                            ic_tmp[k] = ic[k];
-                        ic_tmp[idir]--;
-			status = FT_StateStructAtGridCrossing(front,grid_intfc,
-					ic_tmp,rdir[idir],comp,(POINTER*)&state,
-					&hs,crx_coords);
-			if(!status)
-			{
-			    /* check second neighbor in the same direction */
-			    for (k = 0; k < dim; ++k)
+            {
+                double coords[MAXD], wtol[MAXD], tol[MAXD];
+                int ic_tmp[MAXD];
+                for (k = 0; k < dim; ++k)
+                                tol[k] = 2.0 * IG_TOL * top_h[k];
+                /* check neighbor in the opposite direction */
+                for (k = 0; k < dim; ++k)
                                 ic_tmp[k] = ic[k];
-                            ic_tmp[idir] += 2;
-                            status = FT_StateStructAtGridCrossing(front,
-                                        grid_intfc,ic_tmp,ldir[idir],comp,
-                                        (POINTER*)&state,&hs,crx_coords);
-			    if (!status)
-			    {
-				/* must be something wrong */
-		    	    	printf("In appendGhostBuffer() Case 0\n");
-		    	    	printf("ERROR: No crossing found!\n");
-		    	    	print_int_vector("ic=",ic,dim,"\n");
-		    	    	printf("direction: %s side %d\n",
-		           		grid_direction_name(ldir[idir]), nb);
-				clean_up(ERROR);
-			    }
-			    else
-			    {
-				/* check if crossing is close enough */
-			        boolean close_enough = YES;
-                                for (k = 0; k < dim; ++k)
-                                {
-                                    coords[k] = top_L[k]+ic_next[k]*top_h[k];
-                                    wtol[k] = crx_coords[k] - coords[k];
-                                    if (fabs(wtol[k]) > tol[k])
-                                        close_enough = NO;
-                                }
-                                if (!close_enough)
-                                {
-                                    (void) printf("ERROR: Not close enough!\n");
-                                    clean_up(ERROR);
-                                }
-			    }
-			}
-			else
-			{
-			    /* check if crossing is close enough */
-			    boolean close_enough = YES;
-			    for (k = 0; k < dim; ++k)
+                            ic_tmp[idir]--;
+                status = FT_StateStructAtGridCrossing(front,grid_intfc,
+                        ic_tmp,rdir[idir],comp,(POINTER*)&state,
+                        &hs,crx_coords);
+                if(!status)
                 {
-                    coords[k] = top_L[k] + ic[k] * top_h[k];
-                    wtol[k] = crx_coords[k] - coords[k];
-                    if (fabs(wtol[k]) > tol[k])
-                        close_enough = NO;
-                }
-                if (!close_enough)
-                {
-                    (void) printf("ERROR: Not close enough!\n");
+                    /* check second neighbor in the same direction */
+                    for (k = 0; k < dim; ++k)
+                                    ic_tmp[k] = ic[k];
+                                ic_tmp[idir] += 2;
+                                status = FT_StateStructAtGridCrossing(front,
+                                            grid_intfc,ic_tmp,ldir[idir],comp,
+                                            (POINTER*)&state,&hs,crx_coords);
+                    if (!status)
+                    {
+                    /* must be something wrong */
+                            printf("In appendGhostBuffer() Case 0\n");
+                            printf("ERROR: No crossing found!\n");
+                            print_int_vector("ic=",ic,dim,"\n");
+                            printf("direction: %s side %d\n",
+                            grid_direction_name(ldir[idir]), nb);
                     clean_up(ERROR);
-			    }
-            }
-		    
+                    }
+                    else
+                    {
+                    /* check if crossing is close enough */
+                        boolean close_enough = YES;
+                                    for (k = 0; k < dim; ++k)
+                                    {
+                                        coords[k] = top_L[k]+ic_next[k]*top_h[k];
+                                        wtol[k] = crx_coords[k] - coords[k];
+                                        if (fabs(wtol[k]) > tol[k])
+                                            close_enough = NO;
+                                    }
+                                    if (!close_enough)
+                                    {
+                                        (void) printf("ERROR: Not close enough!\n");
+                                        clean_up(ERROR);
+                                    }
+                    }
+                }
+                else
+                {
+                    /* check if crossing is close enough */
+                    boolean close_enough = YES;
+                    for (k = 0; k < dim; ++k)
+                    {
+                        coords[k] = top_L[k] + ic[k] * top_h[k];
+                        wtol[k] = crx_coords[k] - coords[k];
+                        if (fabs(wtol[k]) > tol[k])
+                            close_enough = NO;
+                    }
+                    if (!close_enough)
+                    {
+                        (void) printf("ERROR: Not close enough!\n");
+                        clean_up(ERROR);
+                    }
+                }
+                
             }
 
 		    switch (wave_type(hs))
@@ -559,6 +557,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
 	    
         }
 	    break;
+
 	case 1:
 	    for (i = 1; i <= nrad; ++i)  //nrad=3
 	    {
@@ -1299,8 +1298,12 @@ void CFABRIC_CARTESIAN::setElasticStatesRiem(
         HYPER_SURF* nearHs;
 
         status = FT_FindNearestIntfcPointInRange(front,comp_ghost,
-                coords_ghost,INCLUDE_BOUNDARIES,crx_coords,intrp_a,
+                coords_ghost,NO_BOUNDARIES,crx_coords,intrp_a,
                 &nearHse,&nearHs,5);
+        /*status = FT_FindNearestIntfcPointInRange(front,comp_ghost,
+                coords_ghost,INCLUDE_BOUNDARIES,crx_coords,intrp_a,
+                &nearHse,&nearHs,5);*/
+        
         
         if (!status) 
         {
@@ -1603,16 +1606,27 @@ void CFABRIC_CARTESIAN::setViscousGhostState(
     int ghost_index = d_index(vs->icoords,top_gmax,dim);
     auto ghost_coords = cell_center[ghost_index].getCoords();
     
-    //TODO: Figure out which is the correct boundary enum
+    /*
+    //TODO: Can't find elastic interface -- why?
+    bool nip_found = nearest_interface_point_within_range(&ghost_coords[0],
+                comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs,5);
+    */
+    //TODO: Figure out which is the correct boundary enum.
+    //      For parallel runs do we need to use NO_SUBDOMAIN?
+    
+    /*
     bool nip_found = nearest_interface_point(&ghost_coords[0],
                 comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);
-    /*bool nip_found = nearest_interface_point(&ghost_coords[0],
+                nip_coords,intrp_coeffs,&hse,&hs);*/
+    /*
+    bool nip_found = nearest_interface_point(&ghost_coords[0],
                 comp,front->interf,NO_BOUNDARIES,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);*/
-    /*bool nip_found = nearest_interface_point(&ghost_coords[0],
+                nip_coords,intrp_coeffs,&hse,&hs);
+    */
+    bool nip_found = nearest_interface_point(&ghost_coords[0],
                 comp,front->interf,NO_SUBDOMAIN,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);*/
+                nip_coords,intrp_coeffs,&hse,&hs);
     
     if (!nip_found)
     {
@@ -1661,11 +1675,6 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
         HYPER_SURF_ELEMENT* hse,
         HYPER_SURF* hs)
 {
-    /////////////////////////////////////////////////////////////////////////
-    printf("\n\nERROR setElasticViscousGhostState(): In Development\n");
-    LOC(); clean_up(EXIT_FAILURE);
-    /////////////////////////////////////////////////////////////////////////
-    
     double nor[MAXD] = {0.0};
     double vel_intfc[MAXD] = {0.0};
 
@@ -1768,8 +1777,7 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
     int index = d_index(icoords,top_gmax,dim);
     //TODO: ADD DEBUG BLOCK HERE -- LIKE setSlipBoundaryNIP()
 
-    //Interpolate Density and Momentum at the reflected point
-    //and compute the velocity.
+    //Interpolate Density and Momentum at the reflected point and compute the velocity.
     double dens_reflect;
     /*
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
@@ -1822,44 +1830,36 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
         vel_ghost[j] = vel_intfc[j] + vel_ghost_nor[j];
     }
 
-    //TODO: Need to interpolate the actual fluid state on otherside of the elastic boundary
-    //      at the location of the ghost point -- call this vel_real ...
-    //
-    //      Then we take porosity weighted average of vel_ghost and vel_real
-    //
-    //      i.e.   vel_poro = (1.0 - phi)*vel_ghost + phi*vel_real
+    //get the actual/real velocity on other side of the elastic boundary
+    //that is collocated with the ghost point
+    int ghost_index = d_index(vs->icoords,top_gmax,dim);
+        //int ghost_comp = vs->comp;
 
-    
-    
-    /*
-    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-    if (eqn_params->use_eddy_viscosity == NO)
+    double mom_real[MAXD];
+    double vel_real[MAXD];
+    double dens_real = m_vst->dens[ghost_index];
+
+    for (int j = 0; j < dim; ++j)
     {
-        //TODO: Is this correct?
-        for (int j = 0; j < dim; ++j)
-        {
-            vs->vel[j] = vel_reflect[j] + vel_ghost_nor[j];
+        mom_real[j] = m_vst->momn[j][ghost_index];
+        vel_real[j] = mom_real[j]/dens_real;
+    }
+    
+    //Take porosity weighted average of vel_ghost and vel_real
+    double vel_poro[MAXD];
+	double poro = eqn_params->porosity;
 
-            //What about this?
-            //
-            //  vel_ghost_rel[j] = vel_rel_tan[j] + vel_ghost_nor[j];
-            //  vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
-        }
-        return;
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_poro[j] = (1.0 - poro)*vel_ghost[j] + poro*vel_real[j];
+        vs->vel[j] = vel_poro[j];
     }
 
-    if (debugging("slip_boundary"))
-    {
-        fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
-        fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
-        fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
-        fprint_general_vector(stdout,"vel_rel_nor",vel_rel_nor,dim,"\n");
-        printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
-    }
-    */
+    //TODO: Debugging info
 }
 
-//void CFABRIC_CARTESIAN::setElasticViscousGhostState(
+//
+//void G_CARTESIAN::setNeumannViscousGhostState(
 //        int* icoords,
 //        SWEEP* m_vst,
 //        VSWEEP* vs,

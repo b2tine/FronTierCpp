@@ -262,9 +262,12 @@ static void CgalRectangular(
         }
         
         if (fixed_bdry == true)
+        {
             FT_InstallSurfEdge(*surf,FIXED_HSBDRY);
+        }
         else
         {
+            //This is when we want to selectively fix each edge of rect fabric interface
             FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
 
             to_split = false;

@@ -4068,6 +4068,10 @@ void G_CARTESIAN::appendGhostBuffer(
 			    }
                         }
 		    }
+
+        //TODO: Turn this switch block into a function called setGhostStates().
+        //      Then can override this base version in inherited calss CFABRIC_CARTESIAN
+        //      to add ELASTIC_BOUNDARY
 		    switch (wave_type(hs))
 		    {
 		    case NEUMANN_BOUNDARY:
@@ -4218,6 +4222,10 @@ void G_CARTESIAN::appendGhostBuffer(
 			    }
 			}
 		    }
+
+        //TODO: Turn this switch block into a function called setGhostStates().
+        //      Then can override this base version in inherited calss CFABRIC_CARTESIAN
+        //      to add ELASTIC_BOUNDARY
 		    switch (wave_type(hs))
 		    {
 		    case NEUMANN_BOUNDARY:
@@ -5821,7 +5829,8 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	scheme_params.artificial_compression = eqn_params->articomp;
 	for (i = 0; i < dim; ++i)
 	    icoords[i] = grid_icoords[i];
-	seg_min = imin[idir];
+	
+    seg_min = imin[idir];
 	while (seg_min <= imax[idir])
 	{
 	    for (; seg_min <= imax[idir]; ++seg_min)
@@ -5853,6 +5862,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
             	vst.momn[l][n+nrad] = 0.0;
 	    seg_max = i;
 	    n++;
+
 	    for (i = seg_min+1; i <= imax[idir]; i++)
 	    {
 		icoords[idir] = i;
@@ -5872,7 +5882,8 @@ void G_CARTESIAN::addFluxAlongGridLine(
 		}
 		seg_max = i;
 	    }
-	    icoords[idir] = seg_min;
+	    
+        icoords[idir] = seg_min;
 	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,0);
 	    icoords[idir] = seg_max;
 	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,1);
