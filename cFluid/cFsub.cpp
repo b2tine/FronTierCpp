@@ -861,6 +861,9 @@ extern void cF_flowThroughBoundaryState3d(
     newst->pres = oldst->pres;
     newst->dens = oldst->dens;
 
+    //TODO: Is this necessary for parallelization?
+    newst->eos = &eqn_params->eos[comp]; 
+
     //Normal
 	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
 
@@ -1028,6 +1031,7 @@ extern void cFluid_point_propagate(
         case MOVABLE_BODY_BOUNDARY:
             return rgbody_point_propagate(front,wave,oldp,newp,
                     oldhse,oldhs,dt,V);
+        case ELASTIC_BOUNDARY:
         case NEUMANN_BOUNDARY:
             return neumann_point_propagate(front,wave,oldp,newp,
                     oldhse,oldhs,dt,V);
@@ -1183,13 +1187,15 @@ static void dirichlet_point_propagate(
 	{
 	    newst = (STATE*)left_state(newp);
 	    comp = negative_component(oldhs);
-	    newst->eos = sl->eos;
+	        //newst->eos = sl->eos;
+        newst->eos = &(eqn_params->eos[comp]);
 	}
 	else if (gas_comp(positive_component(oldhs)))
 	{
 	    newst = (STATE*)right_state(newp);
 	    comp = positive_component(oldhs);
-	    newst->eos = sr->eos;
+	        //newst->eos = sr->eos;
+        newst->eos = &(eqn_params->eos[comp]);
 	}
 	if (newst == NULL) return;	// node point
 

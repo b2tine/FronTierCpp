@@ -440,12 +440,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 	double** vel,
 	double* v_slip)
 {
-    ///////////////////////////////////////////////////////////////////////
-        //printf("\nERROR setSlipBoundaryNIP(): function not implemented yet\n");
-        //LOC(); clean_up(EXIT_FAILURE);
-    ///////////////////////////////////////////////////////////////////////
-
-    
     //TODO: dir is unused here?
     GRID_DIRECTION dir[3][2] = {
         {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
@@ -481,15 +475,17 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     //TODO: Why does this fail for INCLUDE_BOUNDARIES and NO_SUBDOMAIN values?
     //      Conversely, why does it work with NO_BOUNDARIES in the backward facing
     //      step scenario -- to what degree is it working?
+    
+    /*
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-
+    */
     /*      
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    */
 
     //TODO: We should get the ring of tris around the nearest interface point,
     //      and possible consider other nearby interface points that are within

@@ -147,15 +147,16 @@ void G_CARTESIAN::setViscousGhostState(
     auto ghost_coords = cell_center[ghost_index].getCoords();
     
     //TODO: Figure out which is the correct boundary enum
+    /*
     bool nip_found = nearest_interface_point(&ghost_coords[0],
                 comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);
+                nip_coords,intrp_coeffs,&hse,&hs);*/
     /*bool nip_found = nearest_interface_point(&ghost_coords[0],
                 comp,front->interf,NO_BOUNDARIES,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);*/
-    /*bool nip_found = nearest_interface_point(&ghost_coords[0],
+    bool nip_found = nearest_interface_point(&ghost_coords[0],
                 comp,front->interf,NO_SUBDOMAIN,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);*/
+                nip_coords,intrp_coeffs,&hse,&hs);
     
     if (!nip_found)
     {
