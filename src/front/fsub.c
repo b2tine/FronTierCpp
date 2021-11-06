@@ -84,27 +84,36 @@ EXPORT	void	f_principal_tangent(
 	double			*nor,
 	double			*vdir)
 {
-	int	i, imax, imin;
 	int	dim = hs->interface->dim;
-	double	len;
-
-	for (i = 0; i < dim; ++i)
-	    vdir[i] = 0.0;
-	if (dim == 1)
+    if (dim == 1)
+    {
+        for (int i = 0; i < dim; ++i)
+            vdir[i] = 0.0;
 	    return;
+    }
 
-	imax = 0;	imin = dim-1;
-	for (i = 1; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
+	    vdir[i] = nor[i];
+	
+    int imax = 0;
+	for (int i = 1; i < dim; ++i)
 	{
 	    if (nor[i] > nor[imax])
 	    	imax = i;
+    }
+
+    int imin = 0;
+	for (int i = 1; i < dim; ++i)
+	{
 	    if (nor[i] < nor[imin])
 	    	imin = i;
 	}
-	vdir[imax] = -nor[imin];
+
+	vdir[imax] = -1.0*nor[imin];
 	vdir[imin] =  nor[imax];
-	len = mag_vector(vdir,dim);
-	for (i = 0; i < dim; ++i)
+	
+    double len = mag_vector(vdir,dim);
+	for (int i = 0; i < dim; ++i)
 	    vdir[i] /= len;
 }		/*end f_principal_tangent*/
 

@@ -1073,7 +1073,9 @@ static void coating_mono_hyper_surf3d(
 	if (debugging("trace"))
 	    (void) printf("Entering coating_mono_hyper_surf3d()\n");
 	immersed_surf = NULL;
-	for (s = grid_intfc->surfaces; s && *s; ++s)
+	
+    //TODO: Allow for more than one ELASTIC_BOUNDARY surface
+    for (s = grid_intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) == ELASTIC_BOUNDARY)
 	    {
@@ -1097,7 +1099,6 @@ static void coating_mono_hyper_surf3d(
         if (nearest_interface_point_within_range(coords,comp,grid_intfc,
 			NO_BOUNDARIES,NULL,p,t,&hse,&hs,3))
 	    {
-		
             if (wave_type(hs) != ELASTIC_BOUNDARY) continue;
 	    	
             nor = Tri_normal(Tri_of_hse(hse));
@@ -1122,6 +1123,7 @@ static void coating_mono_hyper_surf3d(
 		}
 	    }
 	}
+
 	if (debugging("coat_comp"))
 	{
 	    icoords[0] = top_gmax[0]/2;
@@ -1135,7 +1137,8 @@ static void coating_mono_hyper_surf3d(
 	    	printf("\n");
 	    }
 	}
-	if (debugging("immersed_surf") && front->step%1 == 0)
+	
+    if (debugging("immersed_surf") && front->step%1 == 0)
 	{
 	    int icrd_nb[MAXD],index_nb,n;
 	    POINTER l_state,u_state;
