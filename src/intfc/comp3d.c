@@ -1421,10 +1421,13 @@ LIB_LOCAL boolean long_nearest_similar_interface_point3d(
 LOCAL void shortest_distance3d(
 	TRI_PROJECTION	*tri_proj)
 {
-	shortest_distance3d_new(tri_proj);
-	/*
-	shortest_distance3d_old(tri_proj);
-	*/
+    //TODO: shortest_distance3d_new() appears to have problem
+    //      handling interface triangles that have normal vector
+    //      parallel to a direction vector of the coordinate system.
+    //      e.g. tri is parallel to xy plane.
+    
+    //shortest_distance3d_new(tri_proj);
+	    shortest_distance3d_old(tri_proj);
 }	/* end shortest_distance3d */
 
 LOCAL void shortest_distance3d_old(
@@ -4654,7 +4657,7 @@ LOCAL void shortest_distance3d_new(
 	nor = Tri_normal(tri);
 	for (i = 0; i < 3; i++)
 	     ptori[i] = pt[i] = tri_proj->pt[i];
-        tri_proj->pv = tri_proj->p1 = tri_proj->p2 = NULL;
+    tri_proj->pv = tri_proj->p1 = tri_proj->p2 = NULL;
 
         P0 = Point_of_tri(tri)[0]; 
 	for (i = 0; i < 3; i++)
@@ -4664,12 +4667,12 @@ LOCAL void shortest_distance3d_new(
 	     p1[i] = Coords(P1)[i];
         P2 = Point_of_tri(tri)[2]; 
 	for (i = 0; i < 3; i++)
-	     p2[i] = Coords(P2)[i];
+	    p2[i] = Coords(P2)[i];
 	
 	PtoV(p0,pt,dp0);
 
 	for (i = 0; i < 3; i++)
-             p_temp[i] = p0[i]; 
+        p_temp[i] = p0[i]; 
 
 	np = Dot3d(dp0,nor);
 	L = Dot3d(nor,nor); 
@@ -4920,8 +4923,8 @@ LOCAL void shortest_distance3d_new(
             if (judge3 == 0)
             {
                 a1 = 0;
-                        a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
-                        a0 = 1 - a2;
+                a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+                a0 = 1 - a2;
 
                 rot_and_trans(p_close,p_temp,rot_matrix);
 
@@ -4943,7 +4946,14 @@ LOCAL void shortest_distance3d_new(
                 s_temp1 = s_temp2 / sqrt(Dot3d(v_temp2,v_temp2));
                 */
 
-                s_temp1 = Dot3d(v_temp1,v_temp2)/Dot3d(v_temp2,v_temp2);
+                double sqr_mag = Dot3d(v_temp2,v_temp2);
+                if (sqr_mag == 0)
+                {
+                    printf("\nERROR: Dot3d(v_temp2,v_temp2) == 0\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                s_temp1 = Dot3d(v_temp1,v_temp2)/sqr_mag;
 
                 Scal3d(s_temp1,v_temp2,v_temp);
                 for (i = 0; i < 3; i++)
@@ -5270,7 +5280,7 @@ LOCAL  double edge_equation(
 	double dx, 
 	double dy)
 {
-	return ((x - lx) * dy- (y - ly) * dx);
+	return ((x - lx) * dy - (y - ly) * dx);
 }
 
 LOCAL void rotate_point(
