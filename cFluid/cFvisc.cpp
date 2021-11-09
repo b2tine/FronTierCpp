@@ -379,16 +379,22 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
     if (eqn_params->use_eddy_viscosity == NO)
     {
+        /*
         for (int j = 0; j < dim; ++j)
         {
             //TODO: Is this correct?
             vs->vel[j] = vel_reflect[j] + vel_ghost_nor[j];
-            
-            //What about this?
-            //
-            //  vel_ghost_rel[j] = vel_rel_tan[j] + vel_ghost_nor[j];
-            //  vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
         }
+        */
+            
+        //What about this?
+        double vel_ghost_rel[MAXD];
+        for (int j = 0; j < dim; ++j)
+        {
+            vel_ghost_rel[j] = vel_rel_tan[j] + vel_ghost_nor[j];
+            vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
+        }
+
         return;
     }
 

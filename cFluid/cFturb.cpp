@@ -652,16 +652,25 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
-    /*
     /////////////////////////////////////////////////////////////////////////
-    if (iFparams->use_eddy_visc == NO)
+    if (eqn_params->use_eddy_viscosity == NO)
     {
+        /*
         for (int j = 0; j < dim; ++j)
             v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
+        */
+
+        //What about this?
+        double vel_ghost_rel[MAXD] = {0.0};
+        for (int j = 0; j < dim; ++j)
+        {
+            vel_ghost_rel[j] = vel_rel_tan[j] + vel_ghost_nor[j];
+            v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
+        }
+
         return;
     }
     /////////////////////////////////////////////////////////////////////////
-    */
 
     if (debugging("slip_boundary"))
     {
@@ -716,7 +725,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
-    
     for (int j = 0; j < dim; ++j)
     {
         vel_ghost_tan[j] = vel_rel_tan[j]
