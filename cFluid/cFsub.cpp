@@ -191,6 +191,16 @@ static void promptForDirichletBdryState(
         }
         state->engy = EosEnergy(state);
 
+        /*
+        TODO: Implement this for turbulent inlet bodunary condition
+
+        if (CursorAfterStringOpt(infile,"Enter yes to add white noise:"))
+        {
+            fscanf(infile,"%s",s);
+            printf("%s\n",s);
+        }
+        */
+
 	    FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,hs[0],i_hs);
 	    for (i = 1; i < nhs; ++i)
         {
