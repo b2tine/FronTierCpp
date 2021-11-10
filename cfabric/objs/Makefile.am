@@ -47,13 +47,18 @@ libcfabric_la_SOURCES = \
 ../cFinit.cpp \
 ../cFsub.cpp \
 ../cFeos.cpp \
-../fluid.h \
-../fluidinit.cpp \
-../iFprop.cpp \
+../cFvisc.h \
+../cFvisc.cpp \
+../cFturb.h \
+../cFturb.cpp \
 ../rigidbody.h \
 ../rigidbody.cpp \
 ../modules.cpp \
 ../fabric_api.cpp
+
+#../fluid.h \
+#../fluidinit.cpp \
+#../iFprop.cpp
 
 
 

@@ -434,14 +434,6 @@ extern void elastic_point_propagate(
 	double **vel = cFparams->vel;
 	double *pres = cFparams->pres;
 
-    /*
-	F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
-    F_FIELD *field = Fparams->field;
-	double *vort = field->vort;
-	double **vel = field->vel;
-	double *pres = field->pres;
-    */
-	
     COMPONENT base_comp = positive_component(oldhs);
 	double pp[MAXD],pm[MAXD],nor[MAXD],h;
 	double area_dens = af_params->area_dens;
@@ -479,7 +471,7 @@ extern void elastic_point_propagate(
 
 	    if (debugging("rigid_canopy"))
             dv[i] = 0.0;
-        else if (front->step > 5)
+        else if (front->step > 5) //TODO: Do we need this for compressible fluid solver?
             dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
             
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
@@ -510,8 +502,6 @@ extern void airfoil_point_propagate(
         {
             return cFluid_point_propagate(
                     front,wave,oldp,newp,oldhse,oldhs,dt,V);
-            //return ifluid_point_propagate(
-              //      front,wave,oldp,newp,oldhse,oldhs,dt,V);
         }
 }       /* airfoil_point_propagate */
 
@@ -627,14 +617,6 @@ static void gore_point_propagate(
 	double mag_nor,branch_nor[MAXD],nor[MAXD];
 	double pm[MAXD],pp[MAXD],h;
 	 
-    /*
-    F_PARAMS *Fparams = (F_PARAMS*)front->extra1;
-	F_FIELD *field = Fparams->field;
-	
-    double **vel = field->vel;
-    double *pres = field->pres;
-    */
-
     EQN_PARAMS *cFparams = (EQN_PARAMS*)front->extra1;
     double **vel = cFparams->vel;
     double *pres = cFparams->pres;
@@ -734,18 +716,6 @@ static void mono_curve_propagation(
 	    (void) printf("Entering mono_curve_propagation()\n");
 	}
 
-	/*
-	oldb = oldc->first;
-	newb = newc->first;
-	oldp = oldb->start;
-	newp = newb->start;
-	for (btris = Btris(oldb); btris && *btris; ++btris)
-	{
-	    oldp->hse = oldhse = Hyper_surf_element((*btris)->tri);
-	    oldp->hs = oldhs = Hyper_surf((*btris)->surface);
-	    elastic_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
-	}
-	*/
 	for (oldb = oldc->first, newb = newc->first; oldb != NULL;
 		oldb = oldb->next, newb = newb->next)
 	{
@@ -944,7 +914,6 @@ static void rg_string_node_propagate(
 	}
 	
     cFluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
-    //ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
 
 	if (dt > 0.0)
 	{

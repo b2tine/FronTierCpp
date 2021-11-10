@@ -27,6 +27,7 @@ endif
 if CGAL_ARMA_OPT
 MAYBE_FABRIC = fabric
 MAYBE_CFABRIC = cfabric
+MAYBE_CAIRFOIL = cAirfoil
 endif
 
 if CGAL_INTFC_OPT
@@ -50,6 +51,7 @@ SUBDIRS = lib \
 		  timeSeries \
 		  $(MAYBE_CGAL_INTFC) \
 		  cFluid \
+		  $(MAYBE_CAIRFOIL) \
 		  $(MAYBE_SOLVER) \
 		  $(MAYBE_IFLUID) \
 		  $(MAYBE_CRYSTAL) \

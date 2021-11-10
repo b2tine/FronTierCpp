@@ -187,7 +187,6 @@ extern void SMM_StartUpStep()
             FrontPreAdvance(front); //is this supposed to be called?
             FT_Propagate(front);
             FT_RelinkGlobalIndex(front);
-	        //FT_InteriorPropagate(front);
 
             FT_SetOutputCounter(front);
             FT_SetTimeStep(front);

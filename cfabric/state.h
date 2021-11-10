@@ -68,6 +68,8 @@ struct CFSTATE : public FABRIC_STATE
     double momn[MAXD];              /* momentum density */
     double vel[MAXD];               /* Velocities */
     double vort;                    /* Vorticity in 2D */
+	double temperature;             /* For melting with flow problem */
+	double mu;			            /* For eddy viscosity */
     EOS_PARAMS* eos;
     int dim;
 };

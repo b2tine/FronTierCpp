@@ -39,10 +39,9 @@ static void contact_point_propagate(Front*,POINTER,POINT*,POINT*,
 static void rgbody_point_propagate(Front*,POINTER,POINT*,POINT*,
         HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 static void rgbody_point_propagate_in_vacuum(Front*,POINTER,POINT*,POINT*,
-                        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
+        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 static void rgbody_point_propagate_in_fluid(Front*,POINTER,POINT*,POINT*,
-                        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
-
+        HYPER_SURF_ELEMENT*,HYPER_SURF*,double,double*);
 
 static void cfluid_compute_force_and_torque2d(Front*,HYPER_SURF*,double,
                         double*,double*);
@@ -142,6 +141,73 @@ extern void read_dirichlet_bdry_data(
 	promptForDirichletBdryState(infile,front,hss,nhs,i_hs);
 	i_hs++;
 }	/* end read_dirichlet_bdry_data */
+
+static void promptForDirichletBdryState(
+	FILE *infile,
+	Front *front,
+	HYPER_SURF **hs,
+	int nhs,
+	int i_hs)
+{
+	static STATE *state;
+	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	char s[100];
+	COMPONENT comp;
+	int i,k,dim = front->rect_grid->dim;
+	POINTER func_params;
+
+	FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
+	state->dim = dim;
+
+	CursorAfterString(infile,"Enter type of Dirichlet boundary:");
+	fscanf(infile,"%s",s);
+	(void) printf("%s\n",s);
+	switch (s[0])
+	{
+	case 'c':			// Constant state
+	case 'C':
+	    comp = gas_comp(positive_component(hs[0])) ? 
+				positive_component(hs[0]) :
+				negative_component(hs[0]);
+	    state->eos = &(eqn_params->eos[comp]);
+	    CursorAfterString(infile,"Enter velocity:");
+	    for (k = 0; k < dim; ++k)
+	    {
+		fscanf(infile,"%lf",&state->vel[k]);
+		(void) printf("%f ",state->vel[k]);
+	    }
+	    (void) printf("\n");
+	    CursorAfterString(infile,"Enter pressure:");
+	    fscanf(infile,"%lf",&state->pres);
+	    (void) printf("%f\n",state->pres);
+	    CursorAfterString(infile,"Enter density:");
+	    fscanf(infile,"%lf",&state->dens);
+	    (void) printf("%f\n",state->dens);
+	    for (k = 0; k < dim; ++k)
+                       state->momn[k] = state->dens*state->vel[k];
+	    state->engy = EosEnergy(state);
+	    FT_InsertDirichletBoundary(front,NULL,NULL,NULL,
+			(POINTER)state,hs[0],i_hs);
+	    for (i = 1; i < nhs; ++i)
+		bstate_index(hs[i]) = bstate_index(hs[0]);
+	    break;
+	case 'f':			// Flow through state
+	case 'F':
+	    FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
+			"cF_flowThroughBoundaryState",NULL,NULL,hs[0],i_hs);
+	    for (i = 1; i < nhs; ++i)
+		bstate_index(hs[i]) = bstate_index(hs[0]);
+	    break;
+	case 'v':			// Flow through state
+	case 'V':
+	    get_variable_bdry_params(dim,infile,&func_params);
+	    FT_InsertDirichletBoundary(front,cF_variableBoundaryState,
+			"cF_variableBoundaryState",func_params,NULL,hs[0],i_hs);
+	    for (i = 1; i < nhs; ++i)
+		bstate_index(hs[i]) = bstate_index(hs[0]);
+	    break;
+	}
+} 	/* end  promptForDirichletBdryState */
 
 extern void cF_variableBoundaryState(
         double          *p0,
@@ -497,20 +563,20 @@ extern void cFluid_point_propagate(
 	{
         case MOVABLE_BODY_BOUNDARY:
             return rgbody_point_propagate(front,wave,oldp,newp,
-                    oldhse, oldhs,dt,V);
-        case NEUMANN_BOUNDARY:
+                    oldhse,oldhs,dt,V);
         case ELASTIC_BOUNDARY:
-            return neumann_point_propagate(front,wave,oldp,newp,oldhse,
-                        oldhs,dt,V);
+        case NEUMANN_BOUNDARY:
+            return neumann_point_propagate(front,wave,oldp,newp,
+                    oldhse,oldhs,dt,V);
         case DIRICHLET_BOUNDARY:
-            return dirichlet_point_propagate(front,wave,oldp,newp,oldhse,
-                        oldhs,dt,V);
+            return dirichlet_point_propagate(front,wave,oldp,newp,
+                    oldhse,oldhs,dt,V);
         case SUBDOMAIN_BOUNDARY:
         case PASSIVE_BOUNDARY:
-                return;
+            return;
         default:
-            return contact_point_propagate(front,wave,oldp,newp,oldhse,
-					oldhs,dt,V);
+            return contact_point_propagate(front,wave,oldp,newp,
+                    oldhse,oldhs,dt,V);
 	}
 }       /* cFluid_point_propagate */
 
@@ -584,9 +650,9 @@ static  void neumann_point_propagate(
 
 	for (i = 0; i < dim; ++i)
 	{
-            Coords(newp)[i] = Coords(oldp)[i] + dt*vel[i];
+        Coords(newp)[i] = Coords(oldp)[i] + dt*vel[i];
 	    newst->vel[i] = vel[i];
-            FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
+        FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
 	}
 	
     FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
@@ -627,7 +693,7 @@ static  void dirichlet_point_propagate(
     if (af_params->no_fluid == YES) return;
 
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-        int i, dim = front->rect_grid->dim;
+    int dim = front->rect_grid->dim;
 	STATE *sl,*sr,*newst = NULL;
 	STATE *bstate;
 	FLOW_THROUGH_PARAMS ft_params;
@@ -659,11 +725,13 @@ static  void dirichlet_point_propagate(
 	    bstate = (STATE*)boundary_state(oldhs);
 	    newst->dens = bstate->dens;
 	    newst->engy = bstate->engy;
-            for (i = 0; i < dim; ++i)
-	    	newst->vel[i] = bstate->vel[i];
-            newst->pres = bstate->pres;
-            newst->eos = bstate->eos;
-            newst->vort = 0.0;
+        for (int i = 0; i < dim; ++i)
+        {
+            newst->vel[i] = bstate->vel[i];
+        }   
+        newst->pres = bstate->pres;
+        newst->eos = bstate->eos;
+        newst->vort = 0.0;
 	    set_state_max_speed(front,newst,Coords(oldp));
 
 	    if (debugging("dirichlet_bdry"))
@@ -817,160 +885,6 @@ static void rgbody_point_propagate(
                 oldp,newp,oldhse,oldhs,dt,V);
 }	/* end rgbody_point_propagate */
 
-static void rgbody_point_propagate_in_vacuum(
-        Front *front,
-        POINTER wave,
-        POINT *oldp,
-        POINT *newp,
-        HYPER_SURF_ELEMENT *oldhse,
-        HYPER_SURF         *oldhs,
-        double              dt,
-        double              *V)
-{
-        double vel[MAXD];
-        int i, dim = front->rect_grid->dim;
-	double dn,*h = front->rect_grid->h;
-	double nor[MAXD],p1[MAXD];
-	double *p0 = Coords(oldp);
-	STATE *oldst,*newst;
-	POINTER sl,sr;
-	COMPONENT comp;
-
-	FT_GetStatesAtPoint(oldp,oldhse,oldhs,&sl,&sr);
-	if (gas_comp(negative_component(oldhs)))
-	{
-	    comp = negative_component(oldhs);
-	    oldst = (STATE*)sl;
-	    newst = (STATE*)left_state(newp);
-	}
-	else if (gas_comp(positive_component(oldhs)))
-	{
-	    comp = positive_component(oldhs);
-	    oldst = (STATE*)sr;
-	    newst = (STATE*)right_state(newp);
-	}
-
-        if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
-        {
-            if(!debugging("collision_off"))
-            {
-                for (i = 0; i < dim; ++i)
-                    newst->x_old[i] = Coords(oldp)[i];
-            }
-            
-            double omega_dt,crds_com[MAXD];
-            omega_dt = angular_velo(oldhs)*dt;
-
-            //TODO: test/verify
-            for (i = 0; i < dim; ++i)
-    	    {
-                vel[i] = center_of_mass_velo(oldhs)[i];
-                crds_com[i] = Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])
-				*0.5 - rotation_center(oldhs)[i];
-	    }
-            if (dim == 2)
-            {
-		vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
-			angular_velo(oldhs)*crds_com[0]*sin(omega_dt);
-		vel[1] +=  angular_velo(oldhs)*crds_com[0]*cos(omega_dt) -
-			angular_velo(oldhs)*crds_com[1]*sin(omega_dt);
-                for (i = 0; i < dim; ++i)
-                {
-                    Coords(newp)[i] = Coords(oldp)[i] + dt*(vel[i] + 
-					oldst->vel[i])*0.5;
-                    newst->vel[i] = vel[i];
-                    FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
-						Coords(newp),front);
-                }
-	    }
-	    else if (dim == 3)
-	    {
-		vel[0] += -p_angular_velo(oldhs)[2] * crds_com[1]
-                          +p_angular_velo(oldhs)[1] * crds_com[2];
-                vel[1] +=  p_angular_velo(oldhs)[2] * crds_com[0]
-                          -p_angular_velo(oldhs)[0] * crds_com[2];
-                vel[2] += -p_angular_velo(oldhs)[1] * crds_com[0]
-                          +p_angular_velo(oldhs)[0] * crds_com[1];
-		// propagate by euler parameters
-		if (motion_type(oldhs) == ROTATION ||
-		    motion_type(oldhs) == PRESET_ROTATION)
-		{
-                    double A[3][3],AI[3][3];
-                    double ep[4];
-                    int j,k;
-                    double initial[MAXD];
-                    for (i = 0; i< 4; i++)
-                        ep[i] = old_euler_params(oldhs)[i];
-                    AI[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
-                               - ep[2]*ep[2] - ep[3]*ep[3];
-                    AI[0][1] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
-                    AI[0][2] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
-                    AI[1][0] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
-                    AI[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
-                               + ep[2]*ep[2] - ep[3]*ep[3];
-                    AI[1][2] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
-                    AI[2][0] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
-                    AI[2][1] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
-                    AI[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
-                               - ep[2]*ep[2] + ep[3]*ep[3];
-                    for (j = 0; j < 3; j++)
-                    {
-                        initial[j] = 0.0;
-                        for (k = 0; k < 3; k++)
-                            initial[j] += AI[j][k]*crds_com[k];
-                    }
-                    for (i = 0; i< 4; i++)
-                        ep[i] = euler_params(oldhs)[i];
-                    A[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
-                              - ep[2]*ep[2] - ep[3]*ep[3];
-                    A[0][1] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
-                    A[0][2] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
-                    A[1][0] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
-                    A[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
-                              + ep[2]*ep[2] - ep[3]*ep[3];
-                    A[1][2] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
-                    A[2][0] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
-                    A[2][1] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
-                    A[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
-                              - ep[2]*ep[2] + ep[3]*ep[3];
-                    for (j = 0; j < 3; j++)
-                    {
-                        Coords(newp)[j] = rotation_center(oldhs)[j];
-                        for (k = 0; k < 3; k++)
-                            Coords(newp)[j] += A[j][k]*initial[k];
-                    }
-		}
-		else
-		    for (i = 0; i < dim; ++i)
-                        Coords(newp)[i] = Coords(oldp)[i] + 
-					dt*(vel[i] + oldst->vel[i])*0.5;
-		for (i = 0; i < dim; ++i)
-                {
-                    newst->vel[i] = vel[i];
-                    FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
-                                        Coords(newp),front);
-		}
-	    }
-        }
-        else
-        {
-            fourth_order_point_propagate(front,NULL,oldp,newp,oldhse,
-                                    oldhs,dt,vel);
-        }
-	
-        for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
-	
-        if(!debugging("collision_off"))
-        {
-            /* copy newst to the other STATE; used in collision solver */
-            if (gas_comp(negative_component(oldhs)))
-                std::copy(newst, newst+1, (STATE*)right_state(newp));
-            else if (gas_comp(positive_component(oldhs)))
-                std::copy(newst, newst+1, (STATE*)left_state(newp));
-        }
-        return;
-}       /* end end rgbody_point_propagate_in_vacuum */
-
 static void rgbody_point_propagate_in_fluid(
         Front *front,
         POINTER wave,
@@ -989,6 +903,7 @@ static void rgbody_point_propagate_in_fluid(
 	double *m_pres = eqn_params->pres;
 	double *m_dens = eqn_params->dens;
 	double *m_engy = eqn_params->engy;
+    double *m_mu = eqn_params->mu;
 	
     double nor[MAXD],p1[MAXD];
 	double *p0 = Coords(oldp);
@@ -1010,7 +925,7 @@ static void rgbody_point_propagate_in_fluid(
 	    newst = (STATE*)right_state(newp);
 	}
 
-    //TODO: need cFluid version of setStateViscosity()
+    //TODO: need cFluid version of setStateViscosity() ?
 	    //setStateViscosity(Fparams,newst,comp);
 
     FT_NormalAtPoint(oldp,front,nor,comp);
@@ -1130,7 +1045,10 @@ static void rgbody_point_propagate_in_fluid(
         for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
 	
         FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
-            getStatePres,&newst->pres,&oldst->pres);
+                getStatePres,&newst->pres,&oldst->pres);
+	
+        FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+                getStateMu,&newst->mu,&oldst->mu);
 	
         /*
         if (m_temp != NULL)
@@ -1151,6 +1069,158 @@ static void rgbody_point_propagate_in_fluid(
         return;
 }	/* end rgbody_point_propagate_in_fluid */
 
+static void rgbody_point_propagate_in_vacuum(
+        Front *front,
+        POINTER wave,
+        POINT *oldp,
+        POINT *newp,
+        HYPER_SURF_ELEMENT *oldhse,
+        HYPER_SURF         *oldhs,
+        double              dt,
+        double              *V)
+{
+        double vel[MAXD];
+        int i, dim = front->rect_grid->dim;
+	double dn,*h = front->rect_grid->h;
+	double nor[MAXD],p1[MAXD];
+	double *p0 = Coords(oldp);
+	STATE *oldst,*newst;
+	POINTER sl,sr;
+	COMPONENT comp;
+
+	FT_GetStatesAtPoint(oldp,oldhse,oldhs,&sl,&sr);
+	if (gas_comp(negative_component(oldhs)))
+	{
+	    comp = negative_component(oldhs);
+	    oldst = (STATE*)sl;
+	    newst = (STATE*)left_state(newp);
+	}
+	else if (gas_comp(positive_component(oldhs)))
+	{
+	    comp = positive_component(oldhs);
+	    oldst = (STATE*)sr;
+	    newst = (STATE*)right_state(newp);
+	}
+
+        if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
+        {
+            if(!debugging("collision_off"))
+            {
+                for (i = 0; i < dim; ++i)
+                    newst->x_old[i] = Coords(oldp)[i];
+            }
+            
+            double omega_dt,crds_com[MAXD];
+            omega_dt = angular_velo(oldhs)*dt;
+
+            for (i = 0; i < dim; ++i)
+    	    {
+                vel[i] = center_of_mass_velo(oldhs)[i];
+                crds_com[i] = Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])
+				*0.5 - rotation_center(oldhs)[i];
+	    }
+            if (dim == 2)
+            {
+		vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
+			angular_velo(oldhs)*crds_com[0]*sin(omega_dt);
+		vel[1] +=  angular_velo(oldhs)*crds_com[0]*cos(omega_dt) -
+			angular_velo(oldhs)*crds_com[1]*sin(omega_dt);
+                for (i = 0; i < dim; ++i)
+                {
+                    Coords(newp)[i] = Coords(oldp)[i] + dt*(vel[i] + 
+					oldst->vel[i])*0.5;
+                    newst->vel[i] = vel[i];
+                    FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
+						Coords(newp),front);
+                }
+	    }
+	    else if (dim == 3)
+	    {
+		vel[0] += -p_angular_velo(oldhs)[2] * crds_com[1]
+                          +p_angular_velo(oldhs)[1] * crds_com[2];
+                vel[1] +=  p_angular_velo(oldhs)[2] * crds_com[0]
+                          -p_angular_velo(oldhs)[0] * crds_com[2];
+                vel[2] += -p_angular_velo(oldhs)[1] * crds_com[0]
+                          +p_angular_velo(oldhs)[0] * crds_com[1];
+		// propagate by euler parameters
+		if (motion_type(oldhs) == ROTATION ||
+		    motion_type(oldhs) == PRESET_ROTATION)
+		{
+                    double A[3][3],AI[3][3];
+                    double ep[4];
+                    int j,k;
+                    double initial[MAXD];
+                    for (i = 0; i< 4; i++)
+                        ep[i] = old_euler_params(oldhs)[i];
+                    AI[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
+                               - ep[2]*ep[2] - ep[3]*ep[3];
+                    AI[0][1] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
+                    AI[0][2] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
+                    AI[1][0] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
+                    AI[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
+                               + ep[2]*ep[2] - ep[3]*ep[3];
+                    AI[1][2] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
+                    AI[2][0] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
+                    AI[2][1] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
+                    AI[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
+                               - ep[2]*ep[2] + ep[3]*ep[3];
+                    for (j = 0; j < 3; j++)
+                    {
+                        initial[j] = 0.0;
+                        for (k = 0; k < 3; k++)
+                            initial[j] += AI[j][k]*crds_com[k];
+                    }
+                    for (i = 0; i< 4; i++)
+                        ep[i] = euler_params(oldhs)[i];
+                    A[0][0] =   ep[0]*ep[0] + ep[1]*ep[1]
+                              - ep[2]*ep[2] - ep[3]*ep[3];
+                    A[0][1] = 2.0 * (ep[1]*ep[2] - ep[0]*ep[3]);
+                    A[0][2] = 2.0 * (ep[1]*ep[3] + ep[0]*ep[2]);
+                    A[1][0] = 2.0 * (ep[1]*ep[2] + ep[0]*ep[3]);
+                    A[1][1] =   ep[0]*ep[0] - ep[1]*ep[1]
+                              + ep[2]*ep[2] - ep[3]*ep[3];
+                    A[1][2] = 2.0 * (ep[2]*ep[3] - ep[0]*ep[1]);
+                    A[2][0] = 2.0 * (ep[1]*ep[3] - ep[0]*ep[2]);
+                    A[2][1] = 2.0 * (ep[2]*ep[3] + ep[0]*ep[1]);
+                    A[2][2] =   ep[0]*ep[0] - ep[1]*ep[1]
+                              - ep[2]*ep[2] + ep[3]*ep[3];
+                    for (j = 0; j < 3; j++)
+                    {
+                        Coords(newp)[j] = rotation_center(oldhs)[j];
+                        for (k = 0; k < 3; k++)
+                            Coords(newp)[j] += A[j][k]*initial[k];
+                    }
+		}
+		else
+		    for (i = 0; i < dim; ++i)
+                        Coords(newp)[i] = Coords(oldp)[i] + 
+					dt*(vel[i] + oldst->vel[i])*0.5;
+		for (i = 0; i < dim; ++i)
+                {
+                    newst->vel[i] = vel[i];
+                    FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
+                                        Coords(newp),front);
+		}
+	    }
+        }
+        else
+        {
+            fourth_order_point_propagate(front,NULL,oldp,newp,oldhse,
+                                    oldhs,dt,vel);
+        }
+	
+        for (i = 0; i < dim; ++i) newst->vel[i] = vel[i];
+	
+        if(!debugging("collision_off"))
+        {
+            /* copy newst to the other STATE; used in collision solver */
+            if (gas_comp(negative_component(oldhs)))
+                std::copy(newst, newst+1, (STATE*)right_state(newp));
+            else if (gas_comp(positive_component(oldhs)))
+                std::copy(newst, newst+1, (STATE*)left_state(newp));
+        }
+        return;
+}       /* end end rgbody_point_propagate_in_vacuum */
 
 static void set_state_max_speed(
 	Front *front,
@@ -1213,58 +1283,7 @@ extern double linear_flux(
 	    return a*(um - ul);
 	else
 	    return a*(ur - um);
-}	/* end net_uwind_flux */
-/*
-extern void readFrontStates(
-	Front		*front,
-	char		*restart_name)
-{
-	FILE 		*infile;
-	EQN_PARAMS 	*eqn_params = (EQN_PARAMS*)front->extra1;
-	INTERFACE 	*intfc = front->interf;
-        STATE 		*sl,*sr;
-        POINT 		*p;
-        HYPER_SURF 	*hs;
-        HYPER_SURF_ELEMENT *hse;
-	STATE 		*lstate,*rstate;
-	char 		fname[100];
-	int 		i,dim = front->rect_grid->dim;
-	int		comp;
-	EOS_PARAMS	*eos = eqn_params->eos;
-
-	sprintf(fname,"%s-gas",restart_name);
-	infile = fopen(fname,"r");
-	
-	// Initialize states at the interface
-        next_output_line_containing_string(infile,"Interface gas states:");
-        next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-        {
-            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-	    lstate = (STATE*)sl;	rstate = (STATE*)sr;
-            fscanf(infile,"%lf %lf",&lstate->dens,&rstate->dens);
-            fscanf(infile,"%lf %lf",&lstate->engy,&rstate->engy);
-	    for (i = 0; i < dim; ++i)
-            	fscanf(infile,"%lf %lf",&lstate->momn[i],&rstate->momn[i]);
-	    
-	    comp = negative_component(hs);
-	    lstate->eos = &eos[comp];
-	    lstate->dim = dim;
-	    if(gas_comp(comp))
-	    	lstate->pres = EosPressure(lstate);
-		
-	    comp = positive_component(hs);
-
-	    rstate->eos = &eos[comp];
-	    rstate->dim = dim;
-	    if(gas_comp(comp))
-	    	rstate->pres = EosPressure(rstate);
-	    lstate->dim = rstate->dim = dim;
-        }
-	FT_MakeGridIntfc(front);
-	fclose(infile);
-}
-*/
+}	/* end linear_flux */
 
 extern void reflectVectorThroughPlane(
 	double *vec,
@@ -1333,77 +1352,9 @@ extern void findGhostState(
 	ghost_st->engy = EosEnergy(ghost_st);
 }	/* end findGhostState */
 
-static void promptForDirichletBdryState(
-	FILE *infile,
-	Front *front,
-	HYPER_SURF **hs,
-	int nhs,
-	int i_hs)
-{
-	static STATE *state;
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-	char s[100];
-	COMPONENT comp;
-	int i,k,dim = front->rect_grid->dim;
-	POINTER func_params;
-
-	FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
-	state->dim = dim;
-
-	CursorAfterString(infile,"Enter type of Dirichlet boundary:");
-	fscanf(infile,"%s",s);
-	(void) printf("%s\n",s);
-	switch (s[0])
-	{
-	case 'c':			// Constant state
-	case 'C':
-	    comp = gas_comp(positive_component(hs[0])) ? 
-				positive_component(hs[0]) :
-				negative_component(hs[0]);
-	    state->eos = &(eqn_params->eos[comp]);
-	    CursorAfterString(infile,"Enter velocity:");
-	    for (k = 0; k < dim; ++k)
-	    {
-		fscanf(infile,"%lf",&state->vel[k]);
-		(void) printf("%f ",state->vel[k]);
-	    }
-	    (void) printf("\n");
-	    CursorAfterString(infile,"Enter pressure:");
-	    fscanf(infile,"%lf",&state->pres);
-	    (void) printf("%f\n",state->pres);
-	    CursorAfterString(infile,"Enter density:");
-	    fscanf(infile,"%lf",&state->dens);
-	    (void) printf("%f\n",state->dens);
-	    for (k = 0; k < dim; ++k)
-                       state->momn[k] = state->dens*state->vel[k];
-	    state->engy = EosEnergy(state);
-	    FT_InsertDirichletBoundary(front,NULL,NULL,NULL,
-			(POINTER)state,hs[0],i_hs);
-	    for (i = 1; i < nhs; ++i)
-		bstate_index(hs[i]) = bstate_index(hs[0]);
-	    break;
-	case 'f':			// Flow through state
-	case 'F':
-	    FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
-			"cF_flowThroughBoundaryState",NULL,NULL,hs[0],i_hs);
-	    for (i = 1; i < nhs; ++i)
-		bstate_index(hs[i]) = bstate_index(hs[0]);
-	    break;
-	case 'v':			// Flow through state
-	case 'V':
-	    get_variable_bdry_params(dim,infile,&func_params);
-	    FT_InsertDirichletBoundary(front,cF_variableBoundaryState,
-			"cF_variableBoundaryState",func_params,NULL,hs[0],i_hs);
-	    for (i = 1; i < nhs; ++i)
-		bstate_index(hs[i]) = bstate_index(hs[0]);
-	    break;
-	}
-} 	/* end  promptForDirichletBdryState */
-
 /* 	Function computes velocity of center of mass and
  *  	angular velocity of a regid body, must be a closed curve. 
 */
-
 extern	void cfluid_compute_force_and_torque(
 	Front *fr,
 	HYPER_SURF *hs,
@@ -1417,15 +1368,6 @@ extern	void cfluid_compute_force_and_torque(
         clean_up(EXIT_FAILURE);
     }
     return cfluid_compute_force_and_torque3d(fr,hs,dt,force,torque);
-    /*
-	switch (fr->rect_grid->dim)
-	{
-	case 2:
-	    return cfluid_compute_force_and_torque2d(fr,hs,dt,force,torque);
-	case 3:
-	    return cfluid_compute_force_and_torque3d(fr,hs,dt,force,torque);
-	}
-    */
 }	/* end cfluid_compute_force_and_torque */
 
 static	void cfluid_compute_force_and_torque2d(
