@@ -1274,6 +1274,7 @@ LOCAL 	int	propagate_node_points(
 	    node_status = (*front->node_propagate)(front,wave,oldn,newn,
 						   &rp,dt,dt_frac,
 						   flag,NULL);
+        //TODO: add a case for setting step_status = MODIFY_TIME_STEP
 	    switch(node_status)	
 	    {
 	    case GOOD_NODE:
@@ -1371,7 +1372,7 @@ LOCAL void propagate_surface_points(
 	    {
 		double *h = front->rect_grid->h;
 		double dist = distance_between_positions(Coords(oldp),
-					Coords(newp),3)/h[0];
+					Coords(newp),3)/h[0];//TODO: Should prob use hmin or hmax
 		if (front->max_scaled_prop_dist < dist)
 		    front->max_scaled_prop_dist = dist;
 	    }
@@ -1432,6 +1433,8 @@ LOCAL int struct_advance_front3d(
 	init_intfc_curvature3d(front, front->interf);
 	set_propagation_limits(front,*newfront);
 
+    //TODO: check for return status and use early return if
+    //      necessary; time step modification for example. 
 	if (front->_point_propagate != NULL)
 	    propagate_surface_points(front,*newfront,wave,dt,V);
 	if (front->curve_propagate != NULL)
@@ -1454,7 +1457,14 @@ LOCAL int struct_advance_front3d(
 	    stop_clock("scatter_front");
 	    status = GOOD_STEP;
 	}
+
 	init_intfc_curvature3d(*newfront,(*newfront)->interf);
+
+    //NOTE: This is where interior_advance_front() was called
+    //      before it was decoupled from struct_advance_front3d().
+
+    //TODO: Figure out how to modify the time step for interior
+    //      propagation when called outside this function
 
 	return return_advance_front(front,newfront,status,fname);
 }	/* end struct_advance_front3d */
@@ -1462,10 +1472,38 @@ LOCAL int struct_advance_front3d(
 EXPORT void interior_advance_front(
         Front *front)
 {
-	start_clock("interior_propagate");
+	//static const char *fname = "interior_advance_front";
+	
+    start_clock("interior_propagate");
 	(*front->interior_propagate)(front,front->dt);
-	init_intfc_curvature3d(front,front->interf);
+    //TODO: What happened to the call to scatter_front() that 
+    //      was present before removal from struct_advance_front3d()?
+    //      -- is being called by:
+    //         new_fourth_order_elastic_set_propagate3d_parallel_1()
+    
+        /*
+        start_clock("scatter_front");
+        if (!scatter_front(*newfront))
+        {
+            stop_clock("scatter_front");
+                (void) printf("ERROR in interior_advance_front(): "
+                              "scatter_front() failed\n");
+            stop_clock("scatter_front");
+            clean_up(ERROR);
+        }
+        else
+        {
+            stop_clock("scatter_front");
+            status = GOOD_STEP;
+        }
+        */
+
+    init_intfc_curvature3d(front,front->interf);
 	stop_clock("interior_propagate");
+
+    //TODO: Allow return of error code like struct_advance_front3d().
+            //return return_advance_front(front,newfront,status,fname);
+
 }       /* end interior_advance_front3d */
 
 LOCAL int simple_advance_front3d(

@@ -49,20 +49,18 @@ EXPORT	void FT_Propagate(
 {
 	double dt_frac;
 	Front *newfront;
-	double *xtest;
 
 	if (debugging("trace"))
 	{
 	    (void) printf("Entering FT_Propagate()\n");
 	}
-
 	if (front->grid_intfc == NULL)
 	{
 	    if (TwoStepIntfc(front) == YES)
-        {
-            if (front->old_grid_intfc != NULL)
-                FT_FreeOldGridIntfc(front);
-        }
+            {
+                if (front->old_grid_intfc != NULL)
+                    FT_FreeOldGridIntfc(front);
+            }
 	    FT_MakeGridIntfc(front);
 	}
 
@@ -77,7 +75,7 @@ EXPORT	void FT_Propagate(
 	    {
             if (front->old_grid_intfc != NULL)
                 FT_FreeOldGridIntfc(front);
-            
+		
             front->old_grid_intfc = front->grid_intfc;
 	    	FT_MakeGridIntfc(front);
 	    }
@@ -87,13 +85,11 @@ EXPORT	void FT_Propagate(
 	    	FT_MakeGridIntfc(front);
 	    }
 	}
-
 	if (front->comp_grid_intfc != NULL)
 	{
 	    FT_FreeCompGridIntfc(front);
 	    FT_MakeCompGridIntfc(front);
 	}
-
 	if (debugging("trace"))
 	    (void) printf("Leaving FT_Propagate()\n");
 }	/* end FT_Propagate */
@@ -101,15 +97,16 @@ EXPORT	void FT_Propagate(
 EXPORT	void FT_InteriorPropagate(
 	Front *front)
 {
-        if (front->interior_propagate != NULL)
+    if (front->interior_propagate != NULL)
+    {
+        interior_advance_front(front);
+
+        if (front->grid_intfc != NULL)
         {
-            interior_advance_front(front);
-	    if (front->grid_intfc != NULL)
-            {
-	    	FT_FreeGridIntfc(front);
-	    	FT_MakeGridIntfc(front);
-            }
+            FT_FreeGridIntfc(front);
+            FT_MakeGridIntfc(front);
         }
+    }
 }	/* end FT_InteriorPropagate */
 
 EXPORT	void FrontSwapAndFree(
@@ -133,6 +130,8 @@ EXPORT	int FrontAdvance(
 	front->dt_frac = dt_frac;
 	*front->max_scaled_propagation = 0.0;
         
+    //For 2D: advance_front2d()
+    //For 3D: advance_front3d_tracking_control()
     status = advance_front(front->dt,dt_frac,front,newfront,wave);
 
     count = 0;
@@ -144,9 +143,6 @@ EXPORT	int FrontAdvance(
             front->dt = (*dt_frac)*start_dt;
     start_dt = front->dt;
     *front->max_scaled_propagation = 0.0;
-    /* For 2D: advance_front2d()
-       For 3D: advance_front3d_tracking_control()
-    */
         status = advance_front(front->dt,dt_frac,front,newfront,wave);
         count++;
         if (count > 15) 
@@ -544,6 +540,7 @@ EXPORT	void	FT_Init(
 EXPORT	void FT_Draw(
 	Front *front)
 {
+    if (!front) return;
 	char *out_name = OutName(front);
 	
     if (debugging("trace"))
@@ -559,6 +556,7 @@ EXPORT	void FT_Draw(
 EXPORT	void FT_Save(
 	Front *front)
 {
+    if (!front) return;
 	char *out_name = OutName(front);
         if (debugging("trace"))
             (void) printf("Entering FT_Save()\n");
@@ -577,15 +575,12 @@ EXPORT	void FT_MakeGridIntfc(
 	Front *front)
 {
 	Table *T;
-    COMPONENT *comps;
-
-    if (Tracking_algorithm(front) == SIMPLE_TRACKING) return;
-
-	if (debugging("grid_line_comp"))
-    {
-        init_grid_debug(front);
-    }
-
+        COMPONENT *comps;
+	if (Tracking_algorithm(front) == SIMPLE_TRACKING) return;
+	
+    if (debugging("grid_line_comp"))
+	    init_grid_debug(front);
+	
     communicate_default_comp(front);
 	front->grid_intfc = make_grid_intfc(front->interf,EXPANDED_DUAL_GRID,NULL);
 	
@@ -985,11 +980,13 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    scalar(&blk_cell,sizeof(INTRP_CELL));
 	    uni_array(&blk_cell->var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
 	    uni_array(&blk_cell->dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+	    uni_array(&blk_cell->coeffs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
 	    bi_array(&blk_cell->coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
 	    bi_array(&blk_cell->icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
 	    bi_array(&blk_cell->p_lin,MAXD+1,MAXD,sizeof(double));
-	    bi_array(&blk_cell->ip_lin,MAXD+1,MAXD,sizeof(int));
+        bi_array(&blk_cell->icoords_lin,MAXD+1,MAXD,sizeof(double));
 	    uni_array(&blk_cell->var_lin,MAXD+1,sizeof(double));
+
 	    lin_cell_tol = 1.0;
 	    for (i = 0; i < dim; ++i)
 	    	lin_cell_tol *= 0.00001*gr->h[i];
@@ -1014,8 +1011,9 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    	return NO;
 	    }
 	}
-	collect_cell_ptst(blk_cell,icoords,coords,comp,front,grid_array,
-				get_state);
+	
+    collect_cell_ptst(blk_cell,icoords,coords,comp,front,grid_array,get_state);
+
 	if (blk_cell->is_bilinear)
 	{
 	    if (debugging("the_pt"))
@@ -1049,6 +1047,82 @@ EXPORT	boolean FT_IntrpStateVarAtCoords(
 	    return YES;
 	}
 }	/* end FT_IntrpStateVarAtCoords */
+
+EXPORT boolean FT_IntrpStateVarAtCoordsWithIntrpCoefs(
+	Front *front,
+    INTRP_CELL* blk_cell,
+	COMPONENT comp,
+	double *coords,
+	double *grid_array,
+	double (*get_state)(Locstate),
+	double *ans,
+	double *default_ans)
+{
+	int icoords[MAXD];
+	INTERFACE *grid_intfc = front->grid_intfc;
+    RECT_GRID *gr = &topological_grid(grid_intfc);
+	int i,dim = gr->dim;
+	extrapolation_permitted = front->extrapolation_permitted;
+
+    lin_cell_tol = 1.0;
+    for (i = 0; i < dim; ++i)
+        lin_cell_tol *= 0.00001*gr->h[i];
+	
+    if (!rect_in_which(coords,icoords,gr))
+	{
+	    if (debugging("the_pt"))
+		printf("rect_in_which() failed\n");
+	    if (default_ans != NULL)
+	    {
+	    	if (debugging("the_pt"))
+		    printf("Using default interpolate\n");
+	    	*ans = *default_ans;
+            return YES;
+	    }
+	    else
+	    {
+	    	if (debugging("the_pt"))
+		    printf("return NO\n");
+	    	*ans = 0.0;
+            return NO;
+	    }
+	}
+	
+    collect_cell_ptst(blk_cell,icoords,coords,comp,front,grid_array,get_state);
+
+	if (blk_cell->is_bilinear)
+	{
+	    if (debugging("the_pt"))
+		printf("Bilinear cell interpolate\n");
+	    *ans = FrontBilinIntrp(coords,blk_cell,NO);
+	    return YES;
+	}
+	else if (build_linear_element(blk_cell,coords))
+	{
+	    if (debugging("the_pt"))
+		printf("Linear cell interpolate\n");
+	    *ans = FrontLinIntrp(coords,blk_cell,NO);
+        return YES;
+	}
+	else if (default_ans != NULL)
+	{
+	    if (debugging("the_pt"))
+		printf("Using default interpolate\n");
+	    *ans = *default_ans;
+        return YES;
+	}
+	else
+	{
+	    static Locstate state;
+	    if (debugging("the_pt"))
+		printf("Using nearest_intfc_state()\n");
+	    if (state == NULL)
+		scalar(&state,front->sizest);
+	    nearest_intfc_state(coords,comp,front->grid_intfc,state,NULL,NULL);
+	    *ans = get_state(state);
+        return YES;
+	}
+}	/* end FT_IntrpStateVarAtCoordsWithIntrpCoefs */
 
 EXPORT	boolean FT_CompGridIntrpStateVarAtCoords(
 	Front *front,
@@ -1235,63 +1309,78 @@ LOCAL boolean build_linear_element(
 	INTRP_CELL *blk_cell,
 	double *coords)
 {
+    int nv = blk_cell->nv;
 	int dim = blk_cell->dim;
 	double **ps = blk_cell->coords;
+	double **i_ps = blk_cell->icoords;
 	double *vars = blk_cell->var;
 	double **p = blk_cell->p_lin;
+	double **i_p = blk_cell->icoords_lin;
 	double *var = blk_cell->var_lin;
-	int **ip = blk_cell->ip_lin;
-	int i,j,k,l,nv = blk_cell->nv;
 	double dist[MAX_NUM_VERTEX_IN_CELL];
 	double dp[MAX_NUM_VERTEX_IN_CELL][MAXD];
+	int i,j,k,l;
 
 	for (i = 0; i < nv; i++)
 	{
 	    dist[i] = 0.0;
 	    for (j = 0; j < dim; ++j)
 	    {
-	   	dist[i] += sqr(coords[j] - ps[i][j]);
-	   	dp[i][j] = fabs(coords[j] - ps[i][j]);
+            dist[i] += sqr(coords[j] - ps[i][j]);
+            dp[i][j] = fabs(coords[j] - ps[i][j]);
 	    }
 	}
+
 	for (i = 0; i < nv; ++i)
 	{
 	    for (j = i+1; j < nv; ++j)
 	    {
-		/*if (dist[i] > dist[j])*/
-		if (new_vtx_is_closer(dist[i],dist[j],dp[i],dp[j],dim))
-		{
-		    double tmp;
-		    tmp = dist[j];
-		    dist[j] = dist[i];
-		    dist[i] = tmp;
-		    tmp = vars[j];
-		    vars[j] = vars[i];
-		    vars[i] = tmp;
-		    for (k = 0; k < dim; ++k)
-		    {
-		    	tmp = ps[j][k];
-		    	ps[j][k] = ps[i][k];
-		    	ps[i][k] = tmp;
-		    }
-		}
+            /*if (dist[i] > dist[j])*/
+            if (new_vtx_is_closer(dist[i],dist[j],dp[i],dp[j],dim))
+            {
+                double tmp;
+                tmp = dist[j];
+                dist[j] = dist[i];
+                dist[i] = tmp;
+                tmp = vars[j];
+                vars[j] = vars[i];
+                vars[i] = tmp;
+                for (k = 0; k < dim; ++k)
+                {
+                    tmp = ps[j][k];
+                    ps[j][k] = ps[i][k];
+                    ps[i][k] = tmp;
+
+                    tmp = i_ps[j][k];
+                    i_ps[j][k] = i_ps[i][k];
+                    i_ps[i][k] = tmp;
+                }
+            }
 	    }
 	}
+
+    
+    blk_cell->is_linear = NO;
+
 	switch(dim)
 	{
 	case 1:
 	    for (i = 0; i < nv; i++)
 	    {
 	    	p[0] = blk_cell->coords[i];
-	    	ip[0] = blk_cell->icoords[i];
+            i_p[0] = blk_cell->icoords[i];
 	    	var[0] =  blk_cell->var[i];
 	    	for (j = i+1; j < nv; j++)
 		    {
 	    	    p[1] = blk_cell->coords[j];
-	    	    ip[1] = blk_cell->icoords[j];
+                i_p[1] = blk_cell->icoords[j];
 	    	    var[1] = blk_cell->var[j];
 		        if (test_point_in_seg(coords,p) == YES)
+                {
+                    blk_cell->nv_lin = 2;
+                    blk_cell->is_linear = YES;
                     return FUNCTION_SUCCEEDED;
+                }
 		    }
 	    }
 	    break;
@@ -1299,31 +1388,38 @@ LOCAL boolean build_linear_element(
 	    for (i = 0; i < nv; i++)
 	    {
 	    	p[0] = blk_cell->coords[i];
-	    	ip[0] = blk_cell->icoords[i];
+            i_p[0] = blk_cell->icoords[i];
 	    	var[0] =  blk_cell->var[i];
 	    	for (j = i+1; j < nv; j++)
             {
                 p[1] = blk_cell->coords[j];
-                ip[1] = blk_cell->icoords[j];
+                i_p[1] = blk_cell->icoords[j];
                 var[1] = blk_cell->var[j];
                 for (k = j+1; k < nv; k++)
                 {
                     p[2] = blk_cell->coords[k];
-                    ip[2] = blk_cell->icoords[k];
+                    i_p[2] = blk_cell->icoords[k];
                     var[2] = blk_cell->var[k];
                     if (test_point_in_tri(coords,p) == YES)
+                    {
+                        blk_cell->nv_lin = 3;
+                        blk_cell->is_linear = YES;
                         return FUNCTION_SUCCEEDED;
+                    }
                 }
             }
 	    }
-	    if (extrapolation_permitted == YES)
+	    
+        if (extrapolation_permitted == YES)
 	    {
 	    	for (i = 0; i < 3; i++)
 		    {
 	    	    p[i] = blk_cell->coords[i];
-	    	    ip[i] = blk_cell->icoords[i];
+                i_p[i] = blk_cell->icoords[i];
 	    	    var[i] =  blk_cell->var[i];
 		    }
+            blk_cell->nv_lin = 3;
+            blk_cell->is_linear = YES;
 	    	return FUNCTION_SUCCEEDED;
 	    }
 	    break;
@@ -1331,41 +1427,47 @@ LOCAL boolean build_linear_element(
 	    for (i = 0; i < nv; i++)
 	    {
 	    	p[0] = blk_cell->coords[i];
-	    	ip[0] = blk_cell->icoords[i];
+            i_p[0] = blk_cell->icoords[i];
 	    	var[0] = blk_cell->var[i];
 	    	for (j = i+1; j < nv; j++)
             {
                 p[1] = blk_cell->coords[j];
-                ip[1] = blk_cell->icoords[j];
+                i_p[1] = blk_cell->icoords[j];
                 var[1] = blk_cell->var[j];
                 for (k = j+1; k < nv; k++)
                 {
                     p[2] = blk_cell->coords[k];
-                    ip[2] = blk_cell->icoords[k];
+                    i_p[2] = blk_cell->icoords[k];
                     var[2] = blk_cell->var[k];
                     for (l = k+1; l < nv; l++)
                     {
                         p[3] = blk_cell->coords[l];
-                        ip[3] = blk_cell->icoords[l];
+                        i_p[3] = blk_cell->icoords[l];
                         var[3] = blk_cell->var[l];
                         if (test_point_in_tetra(coords,p) == YES)
                         {
+                            blk_cell->nv_lin = 4;
+                            blk_cell->is_linear = YES;
                             return FUNCTION_SUCCEEDED;
                         }
                     }
                 }
             }
 	    }
+        
         /*
         //TODO: Is this acceptable? Why only used in 2d currently?
+        //          -- CURRENTLY TESTING 
 	    if (extrapolation_permitted == YES)
 	    {
 	    	for (i = 0; i < 4; i++)
 		    {
 	    	    p[i] = blk_cell->coords[i];
-	    	    ip[i] = blk_cell->icoords[i];
+                i_p[i] = blk_cell->icoords[i];
 	    	    var[i] =  blk_cell->var[i];
 		    }
+            blk_cell->nv_lin = 4;
+            blk_cell->is_linear = YES;
 	    	return FUNCTION_SUCCEEDED;
 	    }
         */
@@ -1393,7 +1495,7 @@ LOCAL void collect_cell_ptst(
 	COMPONENT cell_comp1d[2];
 	COMPONENT cell_comp2d[2][2];
 	COMPONENT cell_comp3d[2][2][2];
-	int i,j,k,index,nv,nc;
+	int i,j,k,index;
 	CRXING *crx,*crxs[MAX_NUM_CRX];
 	GRID_DIRECTION dir;
 	int ic[MAXD];
@@ -1402,8 +1504,13 @@ LOCAL void collect_cell_ptst(
 	double crx_coords[MAXD];
 	
 	blk_cell->is_bilinear = YES;
+    blk_cell->nv = 0;
+	blk_cell->is_linear = NO;
+    blk_cell->nv_lin = 0;
 	blk_cell->dim = dim;
-	nv = 0;
+
+	int nv = 0;
+
 	switch (dim)
 	{
 	case 1:
@@ -1416,10 +1523,9 @@ LOCAL void collect_cell_ptst(
 	    	{
 	    	    blk_cell->icoords[nv][0] = ic[0];
 	    	    blk_cell->coords[nv][0] = L[0] + ic[0]*h[0];
-		    blk_cell->var[nv] = grid_array[index];
-		    blk_cell->dist[nv] = distance_between_positions(coords,
-				blk_cell->coords[nv],dim);
-		    nv++;
+                blk_cell->var[nv] = grid_array[index];
+                blk_cell->dist[nv] = distance_between_positions(coords,blk_cell->coords[nv],dim);
+		        nv++;
 	    	}
 	    	else
 	    	    blk_cell->is_bilinear = NO;
@@ -1439,10 +1545,9 @@ LOCAL void collect_cell_ptst(
 	    	    blk_cell->icoords[nv][1] = ic[1];
 	    	    blk_cell->coords[nv][0] = L[0] + ic[0]*h[0];
 	    	    blk_cell->coords[nv][1] = L[1] + ic[1]*h[1];
-		    blk_cell->var[nv] = grid_array[index];
-		    blk_cell->dist[nv] = distance_between_positions(coords,
-				blk_cell->coords[nv],dim);
-		    nv++;
+                blk_cell->var[nv] = grid_array[index];
+                blk_cell->dist[nv] = distance_between_positions(coords,blk_cell->coords[nv],dim);
+		        nv++;
 	    	}
 	    	else
 	    	    blk_cell->is_bilinear = NO;
@@ -1466,45 +1571,47 @@ LOCAL void collect_cell_ptst(
 	    	    blk_cell->coords[nv][0] = L[0] + ic[0]*h[0];
 	    	    blk_cell->coords[nv][1] = L[1] + ic[1]*h[1];
 	    	    blk_cell->coords[nv][2] = L[2] + ic[2]*h[2];
-		    blk_cell->var[nv] = grid_array[index];
-		    blk_cell->dist[nv] = distance_between_positions(coords,
-				blk_cell->coords[nv],dim);
-		    nv++;
+                blk_cell->var[nv] = grid_array[index];
+                blk_cell->dist[nv] = distance_between_positions(coords,blk_cell->coords[nv],dim);
+		        nv++;
 	    	}
 	    	else
 	    	    blk_cell->is_bilinear = NO;
 	    }
 	    break;
 	}
-	if (blk_cell->is_bilinear == YES) 
+	
+    if (blk_cell->is_bilinear == YES) 
 	{
 	    blk_cell->nv = nv;
 	    return;
 	}
-	switch (dim)
+
+
+	//not bilinear
+    switch (dim)
 	{
 	case 1:
 	    for (i = 0; i < 2; ++i)
 	    {
 	    	ic[0] = icoords[0] + i;
 	    	if (cell_comp1d[i] == comp)
-		{
-	    	    if (cell_comp1d[(i+1)%2] != comp)
 		    {
-		    	dir = (i < (i+1)%2) ? EAST : WEST;
-			fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,
-				dir,comp,get_state,&state_at_crx,crx_coords);
-		    	if (fr_crx_grid_seg)
-		    	{
-		    	    blk_cell->var[nv] = state_at_crx;
-		    	    blk_cell->icoords[nv][0] = -1;
-		    	    blk_cell->coords[nv][0] = crx_coords[0];
-		    	    blk_cell->dist[nv] = distance_between_positions(
-					coords,blk_cell->coords[nv],dim);
-		    	    nv++;
-		    	}
+	    	    if (cell_comp1d[(i+1)%2] != comp)
+                {
+                    dir = (i < (i+1)%2) ? EAST : WEST;
+                    fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,dir,
+                            comp,get_state,&state_at_crx,crx_coords);
+                    if (fr_crx_grid_seg)
+                    {
+                        blk_cell->var[nv] = state_at_crx;
+                        blk_cell->icoords[nv][0] = -1;//indicates interface crossing
+                        blk_cell->coords[nv][0] = crx_coords[0];
+                        blk_cell->dist[nv] = distance_between_positions(coords,blk_cell->coords[nv],dim);
+                        nv++;
+                    }
+                }
 		    }
-		}
 	    }
 	    break;
 	case 2:
@@ -1517,49 +1624,45 @@ LOCAL void collect_cell_ptst(
 	    	{
 	    	    if (cell_comp2d[(i+1)%2][j] != comp)
 	    	    {
-		    	dir = (i < (i+1)%2) ? EAST : WEST;
-			fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,
-				dir,comp,get_state,&state_at_crx,crx_coords);
-		    	if (fr_crx_grid_seg)
-		    	{
-		    	    blk_cell->var[nv] = state_at_crx;
-		    	    blk_cell->icoords[nv][0] = -1;
-		    	    blk_cell->icoords[nv][1] = -1;
-		    	    blk_cell->coords[nv][0] = crx_coords[0];
-		    	    blk_cell->coords[nv][1] = crx_coords[1];
-		    	    blk_cell->dist[nv] = distance_between_positions(
-					coords,blk_cell->coords[nv],dim);
-		    	    if (debugging("the_pt"))
-		    	    {
-				printf("intfc: var[%d] = %f  d[%d] = %f\n",
-					nv,blk_cell->var[nv],nv,
-					blk_cell->dist[nv]);
-		    	    }
-		    	    nv++;
-		    	}
+                    dir = (i < (i+1)%2) ? EAST : WEST;
+                    fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,dir,
+                            comp,get_state,&state_at_crx,crx_coords);
+                    if (fr_crx_grid_seg)
+                    {
+                        blk_cell->var[nv] = state_at_crx;
+                        blk_cell->icoords[nv][0] = -1;//indicates interface crossing
+                        blk_cell->icoords[nv][1] = -1;//indicates interface crossing
+                        blk_cell->coords[nv][0] = crx_coords[0];
+                        blk_cell->coords[nv][1] = crx_coords[1];
+                        blk_cell->dist[nv] = distance_between_positions(coords,blk_cell->coords[nv],dim);
+                        if (debugging("the_pt"))
+                        {
+                            printf("intfc: var[%d] = %f  d[%d] = %f\n",
+                                    nv,blk_cell->var[nv],nv, blk_cell->dist[nv]);
+                        }
+                        nv++;
+                    }
 	    	    }
 	    	    if (cell_comp2d[i][(j+1)%2] != comp)
 	    	    {
-		    	dir = (j < (j+1)%2) ? NORTH : SOUTH;
-			fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,
-				dir,comp,get_state,&state_at_crx,crx_coords);
-		    	if (fr_crx_grid_seg)
-		    	{
-		    	    blk_cell->var[nv] = state_at_crx;
-		    	    blk_cell->icoords[nv][0] = -1;
-		    	    blk_cell->icoords[nv][1] = -1;
-		    	    blk_cell->coords[nv][0] = crx_coords[0];
-		    	    blk_cell->coords[nv][1] = crx_coords[1];
-		    	    blk_cell->dist[nv] = distance_between_positions(
-					coords,blk_cell->coords[nv],dim);
-		    	    if (debugging("the_pt"))
-		    	    {
-				printf("intfc: var[%d] = %f  d[%d] = %f\n",
-					nv,blk_cell->var[nv],nv,
-					blk_cell->dist[nv]);
-		    	    }
-		    	    nv++;
-		    	}
+                    dir = (j < (j+1)%2) ? NORTH : SOUTH;
+                    fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,dir,
+                            comp,get_state,&state_at_crx,crx_coords);
+                    if (fr_crx_grid_seg)
+                    {
+                        blk_cell->var[nv] = state_at_crx;
+                        blk_cell->icoords[nv][0] = -1;//indicates interface crossing
+                        blk_cell->icoords[nv][1] = -1;//indicates interface crossing
+                        blk_cell->coords[nv][0] = crx_coords[0];
+                        blk_cell->coords[nv][1] = crx_coords[1];
+                        blk_cell->dist[nv] = distance_between_positions(coords,blk_cell->coords[nv],dim);
+                        if (debugging("the_pt"))
+                        {
+                            printf("intfc: var[%d] = %f  d[%d] = %f\n",
+                                    nv,blk_cell->var[nv],nv, blk_cell->dist[nv]);
+                        }
+                        nv++;
+                    }
 	    	    }
 	    	}
 	    }
@@ -1576,65 +1679,63 @@ LOCAL void collect_cell_ptst(
 	    	{
 	    	    if (cell_comp3d[(i+1)%2][j][k] != comp)
 	    	    {
-		    	dir = (i < (i+1)%2) ? EAST : WEST;
-			fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,
-				dir,comp,get_state,&state_at_crx,crx_coords);
-		    	if (fr_crx_grid_seg)
-		    	{
-		    	    blk_cell->var[nv] = state_at_crx;
-		    	    blk_cell->icoords[nv][0] = -1;
-		    	    blk_cell->icoords[nv][1] = -1;
-		    	    blk_cell->icoords[nv][2] = -1;
-		    	    blk_cell->coords[nv][0] = crx_coords[0];
-		    	    blk_cell->coords[nv][1] = crx_coords[1];
-		    	    blk_cell->coords[nv][2] = crx_coords[2];
-		    	    blk_cell->dist[nv] = distance_between_positions(
-					coords,blk_cell->coords[nv],dim);
-		    	    nv++;
-		    	}
+                    dir = (i < (i+1)%2) ? EAST : WEST;
+                    fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,dir,comp,
+                            get_state,&state_at_crx,crx_coords);
+                    if (fr_crx_grid_seg)
+                    {
+                        blk_cell->var[nv] = state_at_crx;
+                        blk_cell->icoords[nv][0] = -1;//indicates interface crossing
+                        blk_cell->icoords[nv][1] = -1;//indicates interface crossing
+                        blk_cell->icoords[nv][2] = -1;
+                        blk_cell->coords[nv][0] = crx_coords[0];
+                        blk_cell->coords[nv][1] = crx_coords[1];
+                        blk_cell->coords[nv][2] = crx_coords[2];
+                        blk_cell->dist[nv] = distance_between_positions(coords,blk_cell->coords[nv],dim);
+                        nv++;
+                    }
 	    	    }
 	    	    if (cell_comp3d[i][(j+1)%2][k] != comp)
 	    	    {
-		    	dir = (j < (j+1)%2) ? NORTH : SOUTH;
-			fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,
-				dir,comp,get_state,&state_at_crx,crx_coords);
-		    	if (fr_crx_grid_seg)
-		    	{
-		    	    blk_cell->var[nv] = state_at_crx;
-		    	    blk_cell->icoords[nv][0] = -1;
-		    	    blk_cell->icoords[nv][1] = -1;
-		    	    blk_cell->icoords[nv][2] = -1;
-		    	    blk_cell->coords[nv][0] = crx_coords[0];
-		    	    blk_cell->coords[nv][1] = crx_coords[1];
-		    	    blk_cell->coords[nv][2] = crx_coords[2];
-		    	    blk_cell->dist[nv] = distance_between_positions(
-					coords,blk_cell->coords[nv],dim);
-		    	    nv++;
-		    	}
+                    dir = (j < (j+1)%2) ? NORTH : SOUTH;
+                    fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,dir,comp,
+                            get_state,&state_at_crx,crx_coords);
+                    if (fr_crx_grid_seg)
+                    {
+                        blk_cell->var[nv] = state_at_crx;
+                        blk_cell->icoords[nv][0] = -1;//indicates interface crossing
+                        blk_cell->icoords[nv][1] = -1;//indicates interface crossing
+                        blk_cell->icoords[nv][2] = -1;//indicates interface crossing
+                        blk_cell->coords[nv][0] = crx_coords[0];
+                        blk_cell->coords[nv][1] = crx_coords[1];
+                        blk_cell->coords[nv][2] = crx_coords[2];
+                        blk_cell->dist[nv] = distance_between_positions(coords,blk_cell->coords[nv],dim);
+                        nv++;
+                    }
 	    	    }
 	    	    if (cell_comp3d[i][j][(k+1)%2] != comp)
 	    	    {
-		    	dir = (k < (k+1)%2) ? UPPER : LOWER;
-			fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,
-				dir,comp,get_state,&state_at_crx,crx_coords);
-		    	if (fr_crx_grid_seg)
-		    	{
-		    	    blk_cell->var[nv] = state_at_crx;
-		    	    blk_cell->icoords[nv][0] = -1;
-		    	    blk_cell->icoords[nv][1] = -1;
-		    	    blk_cell->icoords[nv][2] = -1;
-		    	    blk_cell->coords[nv][0] = crx_coords[0];
-		    	    blk_cell->coords[nv][1] = crx_coords[1];
-		    	    blk_cell->coords[nv][2] = crx_coords[2];
-		    	    blk_cell->dist[nv] = distance_between_positions(
-					coords,blk_cell->coords[nv],dim);
-		    	    nv++;
-		    	}
+                    dir = (k < (k+1)%2) ? UPPER : LOWER;
+                    fr_crx_grid_seg = FT_StateVarAtGridCrossing(front,ic,dir,
+                            comp,get_state,&state_at_crx,crx_coords);
+                    if (fr_crx_grid_seg)
+                    {
+                        blk_cell->var[nv] = state_at_crx;
+                        blk_cell->icoords[nv][0] = -1;//indicates interface crossing
+                        blk_cell->icoords[nv][1] = -1;//indicates interface crossing
+                        blk_cell->icoords[nv][2] = -1;//indicates interface crossing
+                        blk_cell->coords[nv][0] = crx_coords[0];
+                        blk_cell->coords[nv][1] = crx_coords[1];
+                        blk_cell->coords[nv][2] = crx_coords[2];
+                        blk_cell->dist[nv] = distance_between_positions(coords,blk_cell->coords[nv],dim);
+                        nv++;
+                    }
 	    	    }
 	    	}
 	    }
 	    break;
 	}
+
 	blk_cell->nv = nv;
 	sort_blk_cell(blk_cell);
 }	/* end collect_cell_ptst */
@@ -1756,90 +1857,114 @@ EXPORT	double FrontLinIntrp(
 	double f[MAXD+1];
 
 	switch (dim)
-	{
-	case 1:
-	{
-	    double den = fabs(p[0][0] - p[1][0]);
-	    f[0] = fabs(crds[0] - p[1][0])/den;
-	    f[1] = fabs(crds[0] - p[0][0])/den;
-	    if (f[0] < 0.0)
-	    {
-	    	f[0] = 0.0;	f[1] = 1.0;
-	    }
-	    else if (f[0] > 1.0)
-	    {
-	    	f[0] = 1.0;	f[1] = 0.0;
-	    }
-	    ans = f[0]*var[0] + f[1]*var[1];
-	}
-	break;
-	case 2:
-	{
-	    double x0, y0, x1, y1, x2, y2;
-	    double xx, yy;
-	    double den;
+    {
+        case 1:
+        {
+            double den = fabs(p[0][0] - p[1][0]);
+            f[0] = fabs(crds[0] - p[1][0])/den;
+            f[1] = fabs(crds[0] - p[0][0])/den;
+            if (f[0] < 0.0)
+            {
+                f[0] = 0.0;	f[1] = 1.0;
+            }
+            else if (f[0] > 1.0)
+            {
+                f[0] = 1.0;	f[1] = 0.0;
+            }
+            
+            blk_cell->coeffs[0] = f[0];
+            blk_cell->coeffs[1] = f[1];
 
-	    x0 = p[0][0];    y0 = p[0][1];
-	    x1 = p[1][0] - x0;    y1 = p[1][1] - y0;
-	    x2 = p[2][0] - x0;    y2 = p[2][1] - y0;
-	    xx = crds[0] - x0;        yy = crds[1] - y0;
-	    den = x1*y2 - y1*x2;
-	    f[1] = (xx*y2 - yy*x2) / den;
-	    f[2] = (x1*yy - y1*xx) / den;
-	    f[0] = 1.0 - f[1] - f[2];
-	    if (!extrapolation_permitted)
-	    {
-	    	f[0] = max(0.0,f[0]);	f[0] = min(1.0,f[0]);
-	    	f[1] = max(0.0,f[1]);	f[1] = min(1.0,f[1]);
-	    	f[2] = max(0.0,f[2]);	f[2] = min(1.0,f[2]);
-	    }
-	    ans = f[0]*var[0] + f[1]*var[1] + f[2]*var[2];
-	    if (debugging("the_pt"))
-	    {
-		printf("p[0] = %f %f\n",p[0][0],p[0][1]);
-		printf("p[1] = %f %f\n",p[1][0],p[1][1]);
-		printf("p[2] = %f %f\n",p[2][0],p[2][1]);
-		printf("f   = %f %f %f\n",f[0],f[1],f[2]);
-		printf("var = %f %f %f\n",var[0],var[1],var[2]);
-	    }
-	}
-	break;
-	case 3:
-	{
-	    double v10, v11, v12;
-	    double v20, v21, v22;
-	    double v30, v31, v32;
-	    double q0, q1, q2;
-	    double *p0, *p1, *p2, *p3;
-	    double den;
+            ans = f[0]*var[0] + f[1]*var[1];
+        }
+        break;
+        case 2:
+        {
+            double x0, y0, x1, y1, x2, y2;
+            double xx, yy;
+            double den;
 
-	    p0 = p[0];    p2 = p[2];
-	    p1 = p[1];    p3 = p[3];
-	    q0 = crds[0] - p0[0]; q1 = crds[1] - p0[1]; q2 = crds[2] - p0[2];
-	    v10 = p1[0] - p0[0]; v11 = p1[1] - p0[1]; v12 = p1[2] - p0[2];
-	    v20 = p2[0] - p0[0]; v21 = p2[1] - p0[1]; v22 = p2[2] - p0[2];
-	    v30 = p3[0] - p0[0]; v31 = p3[1] - p0[1]; v32 = p3[2] - p0[2];
-	    den = QDet3d(v1,v2,v3);
-	    if (fabs(den) < MACH_EPS)
-	    {
-	        f[0] = 0.0;
-	        f[1] = 0.0;
-	        f[2] = 0.0;
-	        f[3] = 1.0;
-	    }
+            x0 = p[0][0];    y0 = p[0][1];
+            x1 = p[1][0] - x0;    y1 = p[1][1] - y0;
+            x2 = p[2][0] - x0;    y2 = p[2][1] - y0;
+            xx = crds[0] - x0;        yy = crds[1] - y0;
+            
+            den = x1*y2 - y1*x2;
+            
+            f[1] = (xx*y2 - yy*x2) / den;
+            f[2] = (x1*yy - y1*xx) / den;
+            f[0] = 1.0 - f[1] - f[2];
+            
+            if (!extrapolation_permitted)
+            {
+                f[0] = max(0.0,f[0]);	f[0] = min(1.0,f[0]);
+                f[1] = max(0.0,f[1]);	f[1] = min(1.0,f[1]);
+                f[2] = max(0.0,f[2]);	f[2] = min(1.0,f[2]);
+            }
+            
+            blk_cell->coeffs[0] = f[0];
+            blk_cell->coeffs[1] = f[1];
+            blk_cell->coeffs[2] = f[2];
 
-	    f[1] = QDet3d(q,v2,v3)/den;
-	    f[2] = QDet3d(v1,q,v3)/den;
-	    f[3] = QDet3d(v1,v2,q)/den;
-	    f[0] = 1.0 - f[1] - f[2] - f[3];
-	    f[0] = max(0.0,f[0]);	f[0] = min(1.0,f[0]);
-	    f[1] = max(0.0,f[1]);	f[1] = min(1.0,f[1]);
-	    f[2] = max(0.0,f[2]);	f[2] = min(1.0,f[2]);
-	    f[3] = max(0.0,f[3]);	f[3] = min(1.0,f[3]);
-	    ans = f[0]*var[0] + f[1]*var[1] + f[2]*var[2] + f[3]*var[3];
-	}
-	}
-	return ans;
+            ans = f[0]*var[0] + f[1]*var[1] + f[2]*var[2];
+
+            if (debugging("the_pt"))
+            {
+                printf("p[0] = %f %f\n",p[0][0],p[0][1]);
+                printf("p[1] = %f %f\n",p[1][0],p[1][1]);
+                printf("p[2] = %f %f\n",p[2][0],p[2][1]);
+                printf("f   = %f %f %f\n",f[0],f[1],f[2]);
+                printf("var = %f %f %f\n",var[0],var[1],var[2]);
+            }
+        }
+        break;
+        case 3:
+        {
+            double v10, v11, v12;
+            double v20, v21, v22;
+            double v30, v31, v32;
+            double q0, q1, q2;
+            double *p0, *p1, *p2, *p3;
+            double den;
+
+            p0 = p[0];    p2 = p[2];
+            p1 = p[1];    p3 = p[3];
+            q0 = crds[0] - p0[0]; q1 = crds[1] - p0[1]; q2 = crds[2] - p0[2];
+            v10 = p1[0] - p0[0]; v11 = p1[1] - p0[1]; v12 = p1[2] - p0[2];
+            v20 = p2[0] - p0[0]; v21 = p2[1] - p0[1]; v22 = p2[2] - p0[2];
+            v30 = p3[0] - p0[0]; v31 = p3[1] - p0[1]; v32 = p3[2] - p0[2];
+
+            den = QDet3d(v1,v2,v3);
+            
+            if (fabs(den) < MACH_EPS)
+            {
+                f[0] = 0.0;
+                f[1] = 0.0;
+                f[2] = 0.0;
+                f[3] = 1.0;
+            }
+
+            f[1] = QDet3d(q,v2,v3)/den;
+            f[2] = QDet3d(v1,q,v3)/den;
+            f[3] = QDet3d(v1,v2,q)/den;
+            f[0] = 1.0 - f[1] - f[2] - f[3];
+
+            f[0] = max(0.0,f[0]);	f[0] = min(1.0,f[0]);
+            f[1] = max(0.0,f[1]);	f[1] = min(1.0,f[1]);
+            f[2] = max(0.0,f[2]);	f[2] = min(1.0,f[2]);
+            f[3] = max(0.0,f[3]);	f[3] = min(1.0,f[3]);
+            
+            blk_cell->coeffs[0] = f[0];
+            blk_cell->coeffs[1] = f[1];
+            blk_cell->coeffs[2] = f[2];
+            blk_cell->coeffs[3] = f[3];
+
+            ans = f[0]*var[0] + f[1]*var[1] + f[2]*var[2] + f[3]*var[3];
+        }
+        break;
+    }
+	
+    return ans;
 }	/* end FrontLinIntrp */
 
 EXPORT  double FrontBilinIntrp(
@@ -1858,47 +1983,57 @@ EXPORT  double FrontBilinIntrp(
 	    il = 0;
 	    switch (dim)
 	    {
-	    case 1:
-		iu = 1;
-		break;
-	    case 2:
-		iu = 3;
-		break;
-	    case 3:
-		iu = 7;
+            case 1:
+                iu = 1;
+                break;
+            case 2:
+                iu = 3;
+                break;
+            case 3:
+                iu = 7;
+                break;
 	    }
 	    for (i = 0; i < dim; ++i)
 	    {
 	    	l[i] = blk_cell->coords[il][i];
-		u[i] = blk_cell->coords[iu][i];
+		    u[i] = blk_cell->coords[iu][i];
 	    	f[i][0] = (u[i] - crds[i])/(u[i] - l[i]);
-		f[i][0] = min(f[i][0],1.0);
-		f[i][0] = max(f[i][0],0.0);
+		    f[i][0] = min(f[i][0],1.0);
+		    f[i][0] = max(f[i][0],0.0);
 	    	f[i][1] = 1.0 - f[i][0];
 	    }
 	}
-	index = 0;
+
+	
+    index = 0;
 	ans = 0.0;
-	switch (dim)
+	
+    switch (dim)
 	{
-	case 1:
-	    for (i = 0; i < 2; ++i)
-	    	ans += blk_cell->var[index++]*f[0][i];
-	    break;
-	case 2:
-	    for (i = 0; i < 2; ++i)
-	    for (j = 0; j < 2; ++j)
-	    {
-	    	ans += blk_cell->var[index++]*f[0][i]*f[1][j];
-	    }
-	    break;
-	case 3:
-	    for (i = 0; i < 2; ++i)
-	    for (j = 0; j < 2; ++j)
-	    for (k = 0; k < 2; ++k)
-	    {
-	    	ans += blk_cell->var[index++]*f[0][i]*f[1][j]*f[2][k];
-	    }
+        case 1:
+            for (i = 0; i < 2; ++i)
+            {
+                blk_cell->coeffs[index] = f[0][i];
+                ans += blk_cell->var[index++]*f[0][i];
+            }
+            break;
+        case 2:
+            for (i = 0; i < 2; ++i)
+            for (j = 0; j < 2; ++j)
+            {
+                blk_cell->coeffs[index] = f[0][i]*f[1][j];
+                ans += blk_cell->var[index++]*f[0][i]*f[1][j];
+            }
+            break;
+        case 3:
+            for (i = 0; i < 2; ++i)
+            for (j = 0; j < 2; ++j)
+            for (k = 0; k < 2; ++k)
+            {
+                blk_cell->coeffs[index] = f[0][i]*f[1][j]*f[2][k];
+                ans += blk_cell->var[index++]*f[0][i]*f[1][j]*f[2][k];
+            }
+            break;
 	}
 	return ans;
 
@@ -2245,32 +2380,37 @@ EXPORT  void FT_InsertDirichletBoundary(
         Front *front,
         void (*state_func)(double*,HYPER_SURF*,Front*,POINTER,POINTER),
         const char *state_func_name,
-	POINTER state_func_params,
+    	POINTER state_func_params,
         Locstate state,
         HYPER_SURF *hs,
-	int istate)
+	    int istate)
 {
-        BOUNDARY_STATE  Bstate;
+    BOUNDARY_STATE  Bstate;
 	int index;
-        INTERFACE *intfc = front->interf;
-	/* int istate = 2*dir + nb; */
+    INTERFACE *intfc = front->interf;
 
 	zero_scalar(&Bstate,sizeof(BOUNDARY_STATE));
-	if (state_func != NULL)
+	
+    if (state_func != NULL)
 	{
             Bstate._boundary_state_function = state_func;
             Bstate._boundary_state_function_name = strdup(state_func_name);
             Bstate._boundary_state_function_params = state_func_params;
 	}
-	if (state != NULL)
+	
+    if (state != NULL)
 	{
             Bstate._boundary_state = state;
 	}
-	Bstate._fprint_boundary_state_data = f_fprint_boundary_state_data;
+	
+    Bstate._fprint_boundary_state_data = f_fprint_boundary_state_data;
 	index = add_bstate_to_list(&Bstate,intfc,istate);
-	if (hs)
-            bstate_index(hs) = index;
-}       /* end FT_SetDirichletBoundary */
+	
+    if (hs)
+    {
+        bstate_index(hs) = index;
+    }
+}       /* end FT_InsertDirichletBoundary */
 
 
 EXPORT int FT_RectBoundaryType(
@@ -2456,21 +2596,21 @@ LOCAL	Tan_stencil **FrontGetTanStencils3d(
 	static  Tparams tp[2];
 
 	if (nrad > current_nrad)
-        {
+    {
 	    if (sten == NULL)
-		uni_array(&sten,dim-1,sizeof(Tan_stencil*));
+            uni_array(&sten,dim-1,sizeof(Tan_stencil*));
 	    for (i = 0; i < dim-1; ++i)
 	    {
 	    	if (sten[i] != NULL) free_these(1,sten[i]);
             	sten[i] = alloc_tan_stencil(fr,nrad);
 	    }
 	    current_nrad = nrad;
-        }
-	set_tol_for_tri_sect(1.0e-6*min3(h[0], h[1], h[2]));
-	if (Boundary_point(p))
-	    return NULL;
-	if (!set_up_tangent_params(fr,p,p->hse,p->hs,tp))
-            return NULL;
+    }
+	
+    set_tol_for_tri_sect(1.0e-6*min3(h[0], h[1], h[2]));
+
+	if (Boundary_point(p)) return NULL;
+	if (!set_up_tangent_params(fr,p,p->hse,p->hs,tp)) return NULL;
 
 	FT_CurvatureAtPoint(p,fr,&kappa);
 	for (i = 0; i < dim-1; ++i)
@@ -2643,7 +2783,7 @@ EXPORT	Nor_stencil *FT_CreateNormalStencil(
 	{
 	    for (j = 0; j < dim; ++j)
 	    {
-		sten->pts[i][j] = Coords(p)[j] + i*dn*sten->nor[j];	
+		    sten->pts[i][j] = Coords(p)[j] + i*dn*sten->nor[j];	
 	    }
 	}
 	return sten;
@@ -2728,7 +2868,7 @@ LOCAL void FrontPreAdvance2d(
 	double old_vel[2];
 
 	if (debugging("rigid_body"))
-	    (void) printf("Entering FrontPreAdvance()\n");
+	    (void) printf("Entering FrontPreAdvance2d()\n");
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    if (wave_type(*c) == MOVABLE_BODY_BOUNDARY ||
@@ -2780,105 +2920,109 @@ LOCAL void FrontPreAdvance2d(
 	    pp_global_sum(force[i],dim);
 	    pp_global_sum(&torque[i],1);
 	}
+
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
-	    {
-		index = body_index(*c);
-		for (i = 0; i < dim; ++i)
-		    old_vel[i] = center_of_mass_velo(*c)[j];
-		if (motion_type(*c) == PRESET_MOTION ||
-		    motion_type(*c) == PRESET_COM_MOTION ||
-		    motion_type(*c) == PRESET_TRANSLATION ||
-		    motion_type(*c) == PRESET_ROTATION) 
-		{
-		    if (vparams(*c) != NULL)
-		    	vel_func(*c)(front,vparams(*c),NULL,
-				center_of_mass_velo(*c));
-		    if (debugging("rigid_body"))
-		    {
-		    	printf("Body index: %d\n",index);
-		    	printf("Preset motion\n");
-		    	printf("angular_velo = %f\n",angular_velo(*c));
-		    	printf("center_of_mass_velo = %f  %f\n",
-					center_of_mass_velo(*c)[0],
-					center_of_mass_velo(*c)[1]);
-		    }
-		}
-		else if (motion_type(*c) == TRANSLATION)
-		{
-		    for (i = 0; i < dim; ++i)
-		    	center_of_mass_velo(*c)[i] +=
-                        	dt*translation_dir(*c)[i]*force[index][i]/
-				total_mass(*c);
-		    angular_velo(*c) = 0.0;
-		}
-		else if (motion_type(*c) == ROTATION) 
-		{
-		    for (i = 0; i < dim; ++i)
-		    	center_of_mass_velo(*c)[i] = 0.0;
-		    angular_velo(*c) += dt*torque[index]/mom_inertial(*c);
-		}
-		else if (motion_type(*c) == COM_MOTION)
-		{
-		    for (i = 0; i < dim; ++i)
-		    	center_of_mass_velo(*c)[i] +=
-                        	dt*force[index][i]/total_mass(*c);
-		    angular_velo(*c) = 0.0;
-		}
-		else
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	center_of_mass_velo(*c)[i] +=
-                        	dt*force[index][i]/total_mass(*c);
-                    }
-                    angular_velo(*c) += dt*torque[index]/mom_inertial(*c);
-                }
-                for (i = 0; i < dim; ++i)
-                    center_of_mass(*c)[i] += dt*(center_of_mass_velo(*c)[i] + 
-							old_vel[i])*0.5;
+        {
+            index = body_index(*c);
+            for (i = 0; i < dim; ++i)
+                old_vel[i] = center_of_mass_velo(*c)[j];
+            
+            if (motion_type(*c) == PRESET_MOTION ||
+                motion_type(*c) == PRESET_COM_MOTION ||
+                motion_type(*c) == PRESET_TRANSLATION ||
+                motion_type(*c) == PRESET_ROTATION) 
+            {
+                if (vparams(*c) != NULL)
+                    vel_func(*c)(front,vparams(*c),NULL,center_of_mass_velo(*c));
+
                 if (debugging("rigid_body"))
                 {
                     printf("Body index: %d\n",index);
-                    printf("total mass = %16.15f\n",total_mass(*c));
-                    printf("moment of inertial = %f\n",mom_inertial(*c));
-                    printf("torque = %f\n",torque[index]);
-                    printf("force = %f %f\n",force[index][0],force[index][1]);
+                    printf("Preset motion\n");
                     printf("angular_velo = %f\n",angular_velo(*c));
-                    printf("center_of_mass = %f  %f\n",
-                        center_of_mass(*c)[0],center_of_mass(*c)[1]);
                     printf("center_of_mass_velo = %f  %f\n",
-                        center_of_mass_velo(*c)[0],center_of_mass_velo(*c)[1]);
+                        center_of_mass_velo(*c)[0],
+                        center_of_mass_velo(*c)[1]);
                 }
             }
-            else if(wave_type(*c) == ICE_PARTICLE_BOUNDARY)
+            else if (motion_type(*c) == TRANSLATION)
+            {
+                for (i = 0; i < dim; ++i)
+                    center_of_mass_velo(*c)[i] +=
+                                dt*translation_dir(*c)[i]*force[index][i]/
+                    total_mass(*c);
+                angular_velo(*c) = 0.0;
+            }
+            else if (motion_type(*c) == ROTATION) 
+            {
+                for (i = 0; i < dim; ++i)
+                    center_of_mass_velo(*c)[i] = 0.0;
+                angular_velo(*c) += dt*torque[index]/mom_inertial(*c);
+            }
+            else if (motion_type(*c) == COM_MOTION)
+            {
+                for (i = 0; i < dim; ++i)
+                    center_of_mass_velo(*c)[i] += dt*force[index][i]/total_mass(*c);
+                angular_velo(*c) = 0.0;
+            }
+            else
             {
                 for (i = 0; i < dim; ++i)
                 {
-                        center_of_mass_velo(*c)[i] +=
+                    center_of_mass_velo(*c)[i] +=
                                 dt*force[index][i]/total_mass(*c);
-                        center_of_mass(*c)[i] += dt*center_of_mass_velo(*c)[i];
-                        center_of_mass(*c)[i] -= 
-				0.5*(force[index][i]/total_mass(*c)*sqr(dt)) ;
                 }
-                if (debugging("rigid_body"))
-                {
-                    printf("Body index: %d\n",index);
-                    printf("force = %20.19f %20.19f\n",force[index][0],
-			force[index][1]);
-                    printf("center_of_mass = %20.19f  %20.19f\n",
-                        center_of_mass(*c)[0],center_of_mass(*c)[1]);
-                    printf("center_of_mass_velo = %20.19f  %20.19f\n",
-                        center_of_mass_velo(*c)[0],center_of_mass_velo(*c)[1]);
-                }
-
+                angular_velo(*c) += dt*torque[index]/mom_inertial(*c);
             }
-        }
-        free_these(2,force,torque);
-        if (debugging("rigid_body"))
-            (void) printf("Leaving FrontPreAdvance()\n");
 
+            for (i = 0; i < dim; ++i)
+            {
+                center_of_mass(*c)[i] += dt*(center_of_mass_velo(*c)[i] + old_vel[i])*0.5;
+            }
+
+                    if (debugging("rigid_body"))
+                    {
+                        printf("Body index: %d\n",index);
+                        printf("total mass = %16.15f\n",total_mass(*c));
+                        printf("moment of inertial = %f\n",mom_inertial(*c));
+                        printf("torque = %f\n",torque[index]);
+                        printf("force = %f %f\n",force[index][0],force[index][1]);
+                        printf("angular_velo = %f\n",angular_velo(*c));
+                        printf("center_of_mass = %f  %f\n",
+                            center_of_mass(*c)[0],center_of_mass(*c)[1]);
+                        printf("center_of_mass_velo = %f  %f\n",
+                            center_of_mass_velo(*c)[0],center_of_mass_velo(*c)[1]);
+                    }
+                
+        }
+        else if(wave_type(*c) == ICE_PARTICLE_BOUNDARY)
+        {
+            for (i = 0; i < dim; ++i)
+            {
+                center_of_mass_velo(*c)[i] +=
+                        dt*force[index][i]/total_mass(*c);
+                center_of_mass(*c)[i] += dt*center_of_mass_velo(*c)[i];
+                center_of_mass(*c)[i] -= 0.5*(force[index][i]/total_mass(*c)*sqr(dt)) ;
+            }
+
+            if (debugging("rigid_body"))
+            {
+                printf("Body index: %d\n",index);
+                printf("force = %20.19f %20.19f\n",force[index][0],force[index][1]);
+                printf("center_of_mass = %20.19f  %20.19f\n",
+                    center_of_mass(*c)[0],center_of_mass(*c)[1]);
+                printf("center_of_mass_velo = %20.19f  %20.19f\n",
+                    center_of_mass_velo(*c)[0],center_of_mass_velo(*c)[1]);
+            }
+
+        }
+    }
+    
+    free_these(2,force,torque);
+    if (debugging("rigid_body"))
+        (void) printf("Leaving FrontPreAdvance2d()\n");
 }	/* end FrontPreAdvance2d */
 
 LOCAL void FrontPreAdvance3d(
@@ -2901,13 +3045,22 @@ LOCAL void FrontPreAdvance3d(
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
-		wave_type(*s) == ICE_PARTICLE_BOUNDARY)
-		if (body_index(*s) > max_body_index)
-		    max_body_index = body_index(*s);
+            wave_type(*s) == ICE_PARTICLE_BOUNDARY)
+        {
+            if (body_index(*s) > max_body_index)
+                max_body_index = body_index(*s);
+        }
 	}
-	max_body_index++;
+	
+    max_body_index++;
 	pp_global_imax(&max_body_index,1);
-	if (max_body_index == 0) return;
+
+	if (max_body_index == 0)
+    {
+        if (debugging("rigid_body"))
+            (void) printf("Leaving FrontPreAdvance3d()\n");
+        return;
+    }
 
 	bi_array(&torque,max_body_index,MAXD,FLOAT);
 	bi_array(&force,max_body_index,MAXD,FLOAT);
@@ -2922,18 +3075,19 @@ LOCAL void FrontPreAdvance3d(
 	}
 
 	/* count the number of clips for each rigid body */
-	for (i = 0; i < max_body_index; ++i)
-		flags[i] = 0;
-	for (s = intfc->surfaces; s && *s; ++s)
+	for (i = 0; i < max_body_index; ++i) flags[i] = 0;
+	
+    for (s = intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-		flags[body_index(*s)] = 1;
+            flags[body_index(*s)] = 1;
 	}
 	pp_global_isum(flags, max_body_index);
-	for (s = intfc->surfaces; s && *s; ++s)
+	
+    for (s = intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-		num_clips(*s) = flags[body_index(*s)];
+            num_clips(*s) = flags[body_index(*s)];
 	}
 	/* end of counting the number of clips */
 
@@ -2941,318 +3095,303 @@ LOCAL void FrontPreAdvance3d(
 	{
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
 	    {
-		index = body_index(*s);
-		FrontForceAndTorqueOnHs(front,Hyper_surf(*s),dt,f,t);
+    		index = body_index(*s);
+	    	FrontForceAndTorqueOnHs(front,Hyper_surf(*s),dt,f,t);
 	    	for (j = 0; j < dim; ++j)
-		{
-	    	    force[index][j] += f[j];
-		    torque[index][j] += t[j];
-		}
+            {
+                force[index][j] += f[j];
+                torque[index][j] += t[j];
+            }
 	    }
 	    else if (wave_type(*s) == ICE_PARTICLE_BOUNDARY)
 	    {
-		index = body_index(*s);
-		FrontForceAndTorqueOnHs(front,Hyper_surf(*s),dt,f,t);
+		    index = body_index(*s);
+		    FrontForceAndTorqueOnHs(front,Hyper_surf(*s),dt,f,t);
 	    	for (j = 0; j < dim; ++j)
-		{
+		    {
 	    	    force[index][j] = f[j];
-		}
+		    }
 	    }
 	}
+
 	for (i = 0; i < max_body_index; ++i)
 	{
 	    pp_global_sum(force[i],dim);
 	    pp_global_sum(torque[i],dim);
 	}
 	
+    //TODO: write function to print MOTION_TYPE as string
+    
     intfc_surface_loop(intfc,s)
 	{
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-	    {
-		index = body_index(*s);
-		for (i = 0; i < dim; ++i)
-		    old_vel[i] = center_of_mass_velo(*s)[i];
-		if (motion_type(*s) == PRESET_MOTION ||
-		    motion_type(*s) == PRESET_COM_MOTION ||
-                    motion_type(*s) == PRESET_TRANSLATION)
-		{
-		    if (debugging("rigid_body"))
-		    {
-		    	printf("Body index: %d\n",index);
-		    	printf("Preset motion\n");
-		    	printf("angular_velo = %f\n",angular_velo(*s));
-		    	printf("center_of_mass_velo = %f  %f  %f\n",
-					center_of_mass_velo(*s)[0],
-					center_of_mass_velo(*s)[1],
-					center_of_mass_velo(*s)[2]);
-		    }
-		}
-		else if (motion_type(*s) == TRANSLATION)
         {
+            index = body_index(*s);
             for (i = 0; i < dim; ++i)
+                old_vel[i] = center_of_mass_velo(*s)[i];
+            
+            if (motion_type(*s) == PRESET_MOTION ||
+                motion_type(*s) == PRESET_COM_MOTION ||
+                motion_type(*s) == PRESET_TRANSLATION)
             {
-                center_of_mass_velo(*s)[i] +=
-                    dt*translation_dir(*s)[i]*force[index][i]/total_mass(*s);
+                double coords[3];
+                for (i = 0; i < dim; ++i)
+                {
+                    coords[i] = center_of_mass(*s)[i];
+                }
+                
+                double vel[3];
+                vel_func(*s)(front,vparams(*s),coords,vel);
+                    //vel_func(*s)(front,vparams(*s),center_of_mass(*s),center_of_mass_velo(*s));
+                
+                for (i = 0; i < dim; ++i)
+                {
+                    center_of_mass_velo(*s)[i] = vel[i];
+                }
+                
+                /*
+                if (debugging("rigid_body"))
+                {
+                    printf("Body index: %d\n",index);
+                    printf("Preset motion\n");
+                    printf("angular_velo = %f\n",angular_velo(*s));
+                    printf("center_of_mass_velo = %f  %f  %f\n",
+                        center_of_mass_velo(*s)[0],
+                        center_of_mass_velo(*s)[1],
+                        center_of_mass_velo(*s)[2]);
+                }
+                */
             }
-        
-            if (debugging("rigid_body"))
+            else if (motion_type(*s) == TRANSLATION)
             {
-		    	printf("Body index: %d\n",index);
-		    	printf("Traslation\n");
-		    	printf("angular_velo = %f\n",angular_velo(*s));
-		    	printf("center_of_mass_velo = %f  %f  %f\n",
-					center_of_mass_velo(*s)[0],
-					center_of_mass_velo(*s)[1],
-					center_of_mass_velo(*s)[2]);
-		    }
-        }
-		else if (motion_type(*s) == COM_MOTION)
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	center_of_mass_velo(*s)[i] +=
-                        	dt*force[index][i]/total_mass(*s);
-		    }
-		}
-		else if (motion_type(*s) == PRESET_ROTATION)
-		{
-		    /* rotate about a fixed axis */
-		    /* use the relationship between the euler parameters and
-		       the rotation direction */
-		    /* the angular velocity is a constant in this case */
-		    for (i = 0; i < dim; ++i)
-                            center_of_mass_velo(*s)[i] = 0.0;
-                    for (i = 0; i < 4; i++)
-                        old_euler_params(*s)[i] = euler_params(*s)[i];
-		    euler_params(*s)[0] = cos(0.5*angular_velo(*s)
-						*(front->time+dt));
-		    for (i = 1; i < 4; ++i)
-			euler_params(*s)[i] = rotation_direction(*s)[i-1] * 
-				sin(0.5*angular_velo(*s)*(front->time+dt));
-		    if (debugging("rigid_body"))
-		    {
-		    	printf("Body index: %d\n",index);
-		    	printf("Preset rotation\n");
-		    	printf("angular_velo = %f\n",angular_velo(*s));
-		    	printf("center_of_mass_velo = %f  %f  %f\n",
-					center_of_mass_velo(*s)[0],
-					center_of_mass_velo(*s)[1],
-					center_of_mass_velo(*s)[2]);
-		    }
-		}
-		else /* Free Motion, Rotation Motion*/ 
-		{
-		    /* update the center of mass velocity */
-		    if (motion_type(*s) == FREE_MOTION)
-		    {
                 for (i = 0; i < dim; ++i)
                 {
                     center_of_mass_velo(*s)[i] +=
-                            dt*force[index][i]/total_mass(*s);
+                        dt*translation_dir(*s)[i]*force[index][i]/total_mass(*s);
                 }
-		    }
-		    else
-		    {
-		    	for (i = 0; i < dim; ++i)
-		    	    center_of_mass_velo(*s)[i] = 0.0;
-		    }
-		    /* update the principle angular velocity by solving
-		       euler's equation with 4th order RK method */
-		    /* torque has been added in the equations */
-                    coef[0] = (p_mom_inertial(*s)[2]-p_mom_inertial(*s)[1]) /
-                                        p_mom_inertial(*s)[0];
-                    coef[1] = (p_mom_inertial(*s)[0]-p_mom_inertial(*s)[2]) /
-                                        p_mom_inertial(*s)[1];
-                    coef[2] = (p_mom_inertial(*s)[1]-p_mom_inertial(*s)[0]) /
-                                        p_mom_inertial(*s)[2];
-                    temp[0][0] = - coef[0] * p_angular_velo(*s)[1]
-                                * p_angular_velo(*s)[2]
-				+ torque[index][0] / p_mom_inertial(*s)[0];
-                    temp[0][1] = - coef[1] * p_angular_velo(*s)[2]
-                                * p_angular_velo(*s)[0]
-				+ torque[index][1] / p_mom_inertial(*s)[1];
-                    temp[0][2] = - coef[2] * p_angular_velo(*s)[0]
-                                * p_angular_velo(*s)[1]
-				+ torque[index][2] / p_mom_inertial(*s)[2];
-                    temp[1][0] = - coef[0]
-                         * (p_angular_velo(*s)[1] + 0.5 * temp[0][1] * dt)
-                         * (p_angular_velo(*s)[2] + 0.5 * temp[0][2] * dt)
-			 + torque[index][0] / p_mom_inertial(*s)[0];
-                    temp[1][1] = - coef[1]
-                         * (p_angular_velo(*s)[2] + 0.5 * temp[0][2] * dt)
-                         * (p_angular_velo(*s)[0] + 0.5 * temp[0][0] * dt)
-			 + torque[index][1] / p_mom_inertial(*s)[1];
-                    temp[1][2] = - coef[2]
-                         * (p_angular_velo(*s)[0] + 0.5 * temp[0][0] * dt)
-                         * (p_angular_velo(*s)[1] + 0.5 * temp[0][1] * dt)
-			 + torque[index][2] / p_mom_inertial(*s)[2];
-                    temp[2][0] = - coef[0]
-                         * (p_angular_velo(*s)[1] + 0.5 * temp[1][1] * dt)
-                         * (p_angular_velo(*s)[2] + 0.5 * temp[1][2] * dt)
-			 + torque[index][0] / p_mom_inertial(*s)[0];
-                    temp[2][1] = - coef[1]
-                         * (p_angular_velo(*s)[2] + 0.5 * temp[1][2] * dt)
-                         * (p_angular_velo(*s)[0] + 0.5 * temp[1][0] * dt)
-			 + torque[index][1] / p_mom_inertial(*s)[1];
-                    temp[2][2] = - coef[2]
-                         * (p_angular_velo(*s)[0] + 0.5 * temp[1][0] * dt)
-                         * (p_angular_velo(*s)[1] + 0.5 * temp[1][1] * dt)
-			 + torque[index][2] / p_mom_inertial(*s)[2];
-                    temp[3][0] = - coef[0]
-                         * (p_angular_velo(*s)[1] +  temp[2][1] * dt)
-                         * (p_angular_velo(*s)[2] +  temp[2][2] * dt)
-			 + torque[index][0] / p_mom_inertial(*s)[0];
-                    temp[3][1] = - coef[1]
-                         * (p_angular_velo(*s)[2] +  temp[2][2] * dt)
-                         * (p_angular_velo(*s)[0] +  temp[2][0] * dt)
-			 + torque[index][1] / p_mom_inertial(*s)[1];
-                    temp[3][2] = - coef[2]
-                         * (p_angular_velo(*s)[0] +  temp[2][0] * dt)
-                         * (p_angular_velo(*s)[1] +  temp[2][1] * dt)
-			 + torque[index][2] / p_mom_inertial(*s)[2];
-                    for (i = 0; i < dim; ++i)
-                        p_angular_velo(*s)[i] += dt/6.0 * (temp[0][i] +
-                                2*temp[1][i] + 2*temp[2][i] + temp[3][i]);
-                    /* derive the updated euler parameters */
-                    for (i = 0; i < 4; i++)
-                        old_euler_params(*s)[i] = euler_params(*s)[i];
-                    temp[0][0] = - euler_params(*s)[1]*p_angular_velo(*s)[0]
-                                 - euler_params(*s)[2]*p_angular_velo(*s)[1]
-                                 - euler_params(*s)[3]*p_angular_velo(*s)[2];
-                    temp[0][1] =   euler_params(*s)[0]*p_angular_velo(*s)[0]
-                                 + euler_params(*s)[3]*p_angular_velo(*s)[1]
-                                 - euler_params(*s)[2]*p_angular_velo(*s)[2];
-                    temp[0][2] = - euler_params(*s)[3]*p_angular_velo(*s)[0]
-                                 + euler_params(*s)[0]*p_angular_velo(*s)[1]
-                                 + euler_params(*s)[1]*p_angular_velo(*s)[2];
-                    temp[0][3] =   euler_params(*s)[2]*p_angular_velo(*s)[0]
-                                 - euler_params(*s)[1]*p_angular_velo(*s)[1]
-                                 + euler_params(*s)[0]*p_angular_velo(*s)[2];
-                    for (i = 0; i < 4; i++)
-                        temp[0][i] *= 0.5;
-                    temp[1][0] = - (euler_params(*s)[1] + 0.5*temp[0][1]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 - (euler_params(*s)[2] + 0.5*temp[0][2]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 - (euler_params(*s)[3] + 0.5*temp[0][3]*dt)
-                                   * p_angular_velo(*s)[2];
-                    temp[1][1] =   (euler_params(*s)[0] + 0.5*temp[0][0]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 + (euler_params(*s)[3] + 0.5*temp[0][3]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 - (euler_params(*s)[2] + 0.5*temp[0][2]*dt)
-                                   * p_angular_velo(*s)[2];
-                    temp[1][2] = - (euler_params(*s)[3] + 0.5*temp[0][3]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 + (euler_params(*s)[0] + 0.5*temp[0][0]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 + (euler_params(*s)[1] + 0.5*temp[0][1]*dt)
-                                   * p_angular_velo(*s)[2];
-                    temp[1][3] =   (euler_params(*s)[2] + 0.5*temp[0][2]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 - (euler_params(*s)[1] + 0.5*temp[0][1]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 + (euler_params(*s)[0] + 0.5*temp[0][0]*dt)
-                                   * p_angular_velo(*s)[2];
-                    for (i = 0; i < 4; i++)
-                        temp[1][i] *= 0.5;
-                    temp[2][0] = - (euler_params(*s)[1] + 0.5*temp[1][1]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 - (euler_params(*s)[2] + 0.5*temp[1][2]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 - (euler_params(*s)[3] + 0.5*temp[1][3]*dt)
-                                   * p_angular_velo(*s)[2];
-                    temp[2][1] =   (euler_params(*s)[0] + 0.5*temp[1][0]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 + (euler_params(*s)[3] + 0.5*temp[1][3]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 - (euler_params(*s)[2] + 0.5*temp[1][2]*dt)
-                                   * p_angular_velo(*s)[2];
-                    temp[2][2] = - (euler_params(*s)[3] + 0.5*temp[1][3]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 + (euler_params(*s)[0] + 0.5*temp[1][0]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 + (euler_params(*s)[1] + 0.5*temp[1][1]*dt)
-                                   * p_angular_velo(*s)[2];
-                    temp[2][3] =   (euler_params(*s)[2] + 0.5*temp[1][2]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 - (euler_params(*s)[1] + 0.5*temp[1][1]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 + (euler_params(*s)[0] + 0.5*temp[1][0]*dt)
-                                   * p_angular_velo(*s)[2];
-                    for (i = 0; i < 4; i++)
-                        temp[2][i] *= 0.5;
-                    temp[3][0] = - (euler_params(*s)[1] + temp[2][1]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 - (euler_params(*s)[2] + temp[2][2]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 - (euler_params(*s)[3] + temp[2][3]*dt)
-                                   * p_angular_velo(*s)[2];
-                    temp[3][1] =   (euler_params(*s)[0] + temp[2][0]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 + (euler_params(*s)[3] + temp[2][3]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 - (euler_params(*s)[2] + temp[2][2]*dt)
-                                   * p_angular_velo(*s)[2];
-                    temp[3][2] = - (euler_params(*s)[3] + temp[2][3]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 + (euler_params(*s)[0] + temp[2][0]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 + (euler_params(*s)[1] + temp[2][1]*dt)
-                                   * p_angular_velo(*s)[2];
-                    temp[3][3] =   (euler_params(*s)[2] + temp[2][2]*dt)
-                                   * p_angular_velo(*s)[0]
-                                 - (euler_params(*s)[1] + temp[2][1]*dt)
-                                   * p_angular_velo(*s)[1]
-                                 + (euler_params(*s)[0] + temp[2][0]*dt)
-                                   * p_angular_velo(*s)[2];
-                    for (i = 0; i < 4; i++)
-                        temp[3][i] *= 0.5;
-		    for (i = 0; i < 4; ++i)
-                        euler_params(*s)[i] += dt/6.0 * (temp[0][i] +
-                                2*temp[1][i] + 2*temp[2][i] + temp[3][i]);
+            
+                /*
+                if (debugging("rigid_body"))
+                {
+                    printf("Body index: %d\n",index);
+                    printf("Traslation\n");
+                    printf("angular_velo = %f\n",angular_velo(*s));
+                    printf("center_of_mass_velo = %f  %f  %f\n",
+                        center_of_mass_velo(*s)[0],
+                        center_of_mass_velo(*s)[1],
+                        center_of_mass_velo(*s)[2]);
+                }
+                */
+            }
+            else if (motion_type(*s) == COM_MOTION)
+            {
+                for (i = 0; i < dim; ++i)
+                {
+                    center_of_mass_velo(*s)[i] += dt*force[index][i]/total_mass(*s);
+                }
+            }
+            else if (motion_type(*s) == PRESET_ROTATION)
+            {
+                /* rotate about a fixed axis */
+                /* use the relationship between the euler parameters and
+                   the rotation direction */
+                /* the angular velocity is a constant in this case */
+                for (i = 0; i < dim; ++i)
+                    center_of_mass_velo(*s)[i] = 0.0;
 
-		}
-		for (i = 0; i < dim; ++i)
-                    center_of_mass(*s)[i] += dt*(center_of_mass_velo(*s)[i] + 
-							old_vel[i])*0.5;
-		
-        if (debugging("rigid_body"))
-		{
-		    printf("Body index: %d\n",index);
-		    printf("torque = %f %f %f\n",torque[index][0],
-					torque[index][1],torque[index][2]);
-		    printf("force = %f %f %f\n",force[index][0],
-					force[index][1],force[index][2]);
-		    printf("angular_velo = %f\n",angular_velo(*s));
-		    printf("p_angular_velo = %f %f %f\n",p_angular_velo(*s)[0],
-                                p_angular_velo(*s)[1],p_angular_velo(*s)[2]);
-                    printf("euler_params = %f %f %f %f\n",euler_params(*s)[0],
-                                euler_params(*s)[1],euler_params(*s)[2],
-                                euler_params(*s)[3]);
-		    printf("center_of_mass = %f  %f  %f\n",
-					center_of_mass(*s)[0],
-					center_of_mass(*s)[1],
-					center_of_mass(*s)[2]);
-		    printf("center_of_mass_velo = %f  %f  %f\n",
-					center_of_mass_velo(*s)[0],
-					center_of_mass_velo(*s)[1],
-					center_of_mass_velo(*s)[2]);
-		}
-	    
+                for (i = 0; i < 4; i++)
+                    old_euler_params(*s)[i] = euler_params(*s)[i];
+
+                euler_params(*s)[0] = cos(0.5*angular_velo(*s)*(front->time + dt));
+
+                for (i = 1; i < 4; ++i)
+                {
+                    euler_params(*s)[i] =
+                        rotation_direction(*s)[i-1]*sin(0.5*angular_velo(*s)*(front->time + dt));
+                }
+                
+                /*
+                if (debugging("rigid_body"))
+                {
+                    printf("Body index: %d\n",index);
+                    printf("Preset rotation\n");
+                    printf("angular_velo = %f\n",angular_velo(*s));
+                    printf("center_of_mass_velo = %f  %f  %f\n",
+                        center_of_mass_velo(*s)[0],
+                        center_of_mass_velo(*s)[1],
+                        center_of_mass_velo(*s)[2]);
+                }
+                */
+            }
+            else /* Free Motion, Rotation Motion*/ 
+            {
+                /* update the center of mass velocity */
+                if (motion_type(*s) == FREE_MOTION)
+                {
+                    for (i = 0; i < dim; ++i)
+                    {
+                        center_of_mass_velo(*s)[i] += dt*force[index][i]/total_mass(*s);
+                    }
+                }
+                else
+                {
+                    for (i = 0; i < dim; ++i)
+                        center_of_mass_velo(*s)[i] = 0.0;
+                }
+                
+                /* update the principle angular velocity by solving
+                   euler's equation with 4th order RK method */
+                /* torque has been added in the equations */
+                coef[0] = (p_mom_inertial(*s)[2]-p_mom_inertial(*s)[1]) /
+                                    p_mom_inertial(*s)[0];
+                coef[1] = (p_mom_inertial(*s)[0]-p_mom_inertial(*s)[2]) /
+                                    p_mom_inertial(*s)[1];
+                coef[2] = (p_mom_inertial(*s)[1]-p_mom_inertial(*s)[0]) /
+                                    p_mom_inertial(*s)[2];
+                    
+                temp[0][0] = - coef[0] * p_angular_velo(*s)[1] * p_angular_velo(*s)[2] 
+                        + torque[index][0] / p_mom_inertial(*s)[0];
+                temp[0][1] = - coef[1] * p_angular_velo(*s)[2] * p_angular_velo(*s)[0]
+                        + torque[index][1] / p_mom_inertial(*s)[1];
+                temp[0][2] = - coef[2] * p_angular_velo(*s)[0] * p_angular_velo(*s)[1]
+                        + torque[index][2] / p_mom_inertial(*s)[2];
+                temp[1][0] = - coef[0] * (p_angular_velo(*s)[1] + 0.5 * temp[0][1] * dt) 
+                    * (p_angular_velo(*s)[2] + 0.5 * temp[0][2] * dt) + torque[index][0] / p_mom_inertial(*s)[0];
+                temp[1][1] = - coef[1] * (p_angular_velo(*s)[2] + 0.5 * temp[0][2] * dt)
+                    * (p_angular_velo(*s)[0] + 0.5 * temp[0][0] * dt) + torque[index][1] / p_mom_inertial(*s)[1];
+                temp[1][2] = - coef[2] * (p_angular_velo(*s)[0] + 0.5 * temp[0][0] * dt)
+                    * (p_angular_velo(*s)[1] + 0.5 * temp[0][1] * dt) + torque[index][2] / p_mom_inertial(*s)[2];
+                temp[2][0] = - coef[0] * (p_angular_velo(*s)[1] + 0.5 * temp[1][1] * dt)
+                    * (p_angular_velo(*s)[2] + 0.5 * temp[1][2] * dt) + torque[index][0] / p_mom_inertial(*s)[0];
+                temp[2][1] = - coef[1] * (p_angular_velo(*s)[2] + 0.5 * temp[1][2] * dt) 
+                    * (p_angular_velo(*s)[0] + 0.5 * temp[1][0] * dt) + torque[index][1] / p_mom_inertial(*s)[1];
+                temp[2][2] = - coef[2] * (p_angular_velo(*s)[0] + 0.5 * temp[1][0] * dt)
+                    * (p_angular_velo(*s)[1] + 0.5 * temp[1][1] * dt) + torque[index][2] / p_mom_inertial(*s)[2];
+                temp[3][0] = - coef[0] * (p_angular_velo(*s)[1] +  temp[2][1] * dt)
+                    * (p_angular_velo(*s)[2] +  temp[2][2] * dt) + torque[index][0] / p_mom_inertial(*s)[0];
+                temp[3][1] = - coef[1] * (p_angular_velo(*s)[2] +  temp[2][2] * dt)
+                    * (p_angular_velo(*s)[0] +  temp[2][0] * dt) + torque[index][1] / p_mom_inertial(*s)[1];
+                temp[3][2] = - coef[2] * (p_angular_velo(*s)[0] +  temp[2][0] * dt)
+                    * (p_angular_velo(*s)[1] +  temp[2][1] * dt) + torque[index][2] / p_mom_inertial(*s)[2];
+                    
+                for (i = 0; i < dim; ++i)
+                {
+                    p_angular_velo(*s)[i] += dt/6.0 * (temp[0][i] +
+                            2*temp[1][i] + 2*temp[2][i] + temp[3][i]);
+                }
+
+                /* derive the updated euler parameters */
+                for (i = 0; i < 4; i++)
+                    old_euler_params(*s)[i] = euler_params(*s)[i];
+                
+                temp[0][0] = - euler_params(*s)[1]*p_angular_velo(*s)[0]
+                             - euler_params(*s)[2]*p_angular_velo(*s)[1]
+                             - euler_params(*s)[3]*p_angular_velo(*s)[2];
+                temp[0][1] =   euler_params(*s)[0]*p_angular_velo(*s)[0]
+                             + euler_params(*s)[3]*p_angular_velo(*s)[1]
+                             - euler_params(*s)[2]*p_angular_velo(*s)[2];
+                temp[0][2] = - euler_params(*s)[3]*p_angular_velo(*s)[0]
+                             + euler_params(*s)[0]*p_angular_velo(*s)[1]
+                             + euler_params(*s)[1]*p_angular_velo(*s)[2];
+                temp[0][3] =   euler_params(*s)[2]*p_angular_velo(*s)[0]
+                             - euler_params(*s)[1]*p_angular_velo(*s)[1]
+                             + euler_params(*s)[0]*p_angular_velo(*s)[2];
+
+                for (i = 0; i < 4; i++)
+                    temp[0][i] *= 0.5;
+                
+                temp[1][0] = - (euler_params(*s)[1] + 0.5*temp[0][1]*dt) * p_angular_velo(*s)[0]
+                             - (euler_params(*s)[2] + 0.5*temp[0][2]*dt) * p_angular_velo(*s)[1]
+                             - (euler_params(*s)[3] + 0.5*temp[0][3]*dt) * p_angular_velo(*s)[2];
+                temp[1][1] =   (euler_params(*s)[0] + 0.5*temp[0][0]*dt) * p_angular_velo(*s)[0]
+                             + (euler_params(*s)[3] + 0.5*temp[0][3]*dt) * p_angular_velo(*s)[1]
+                             - (euler_params(*s)[2] + 0.5*temp[0][2]*dt) * p_angular_velo(*s)[2];
+                temp[1][2] = - (euler_params(*s)[3] + 0.5*temp[0][3]*dt) * p_angular_velo(*s)[0]
+                             + (euler_params(*s)[0] + 0.5*temp[0][0]*dt) * p_angular_velo(*s)[1]
+                             + (euler_params(*s)[1] + 0.5*temp[0][1]*dt) * p_angular_velo(*s)[2];
+                temp[1][3] =   (euler_params(*s)[2] + 0.5*temp[0][2]*dt) * p_angular_velo(*s)[0]
+                             - (euler_params(*s)[1] + 0.5*temp[0][1]*dt) * p_angular_velo(*s)[1]
+                             + (euler_params(*s)[0] + 0.5*temp[0][0]*dt) * p_angular_velo(*s)[2];
+                    
+                for (i = 0; i < 4; i++)
+                    temp[1][i] *= 0.5;
+
+                temp[2][0] = - (euler_params(*s)[1] + 0.5*temp[1][1]*dt) * p_angular_velo(*s)[0]
+                             - (euler_params(*s)[2] + 0.5*temp[1][2]*dt) * p_angular_velo(*s)[1]
+                             - (euler_params(*s)[3] + 0.5*temp[1][3]*dt) * p_angular_velo(*s)[2];
+                temp[2][1] =   (euler_params(*s)[0] + 0.5*temp[1][0]*dt) * p_angular_velo(*s)[0]
+                             + (euler_params(*s)[3] + 0.5*temp[1][3]*dt) * p_angular_velo(*s)[1]
+                             - (euler_params(*s)[2] + 0.5*temp[1][2]*dt) * p_angular_velo(*s)[2];
+                temp[2][2] = - (euler_params(*s)[3] + 0.5*temp[1][3]*dt) * p_angular_velo(*s)[0]
+                             + (euler_params(*s)[0] + 0.5*temp[1][0]*dt) * p_angular_velo(*s)[1]
+                             + (euler_params(*s)[1] + 0.5*temp[1][1]*dt) * p_angular_velo(*s)[2];
+                temp[2][3] =   (euler_params(*s)[2] + 0.5*temp[1][2]*dt) * p_angular_velo(*s)[0]
+                             - (euler_params(*s)[1] + 0.5*temp[1][1]*dt) * p_angular_velo(*s)[1]
+                             + (euler_params(*s)[0] + 0.5*temp[1][0]*dt) * p_angular_velo(*s)[2];
+                
+                for (i = 0; i < 4; i++)
+                    temp[2][i] *= 0.5;
+
+                temp[3][0] = - (euler_params(*s)[1] + temp[2][1]*dt) * p_angular_velo(*s)[0]
+                             - (euler_params(*s)[2] + temp[2][2]*dt) * p_angular_velo(*s)[1]
+                             - (euler_params(*s)[3] + temp[2][3]*dt) * p_angular_velo(*s)[2];
+                temp[3][1] =   (euler_params(*s)[0] + temp[2][0]*dt) * p_angular_velo(*s)[0]
+                             + (euler_params(*s)[3] + temp[2][3]*dt) * p_angular_velo(*s)[1]
+                             - (euler_params(*s)[2] + temp[2][2]*dt) * p_angular_velo(*s)[2];
+                temp[3][2] = - (euler_params(*s)[3] + temp[2][3]*dt) * p_angular_velo(*s)[0]
+                             + (euler_params(*s)[0] + temp[2][0]*dt) * p_angular_velo(*s)[1]
+                             + (euler_params(*s)[1] + temp[2][1]*dt) * p_angular_velo(*s)[2];
+                temp[3][3] =   (euler_params(*s)[2] + temp[2][2]*dt) * p_angular_velo(*s)[0]
+                             - (euler_params(*s)[1] + temp[2][1]*dt) * p_angular_velo(*s)[1]
+                             + (euler_params(*s)[0] + temp[2][0]*dt) * p_angular_velo(*s)[2];
+
+                for (i = 0; i < 4; i++)
+                    temp[3][i] *= 0.5;
+        
+                for (i = 0; i < 4; ++i)
+                {
+                    euler_params(*s)[i] += 
+                        dt/6.0*(temp[0][i] + 2.0*temp[1][i] + 2.0*temp[2][i] + temp[3][i]);
+                }
+            }
+
+            for (i = 0; i < dim; ++i)
+            {
+                center_of_mass(*s)[i] += dt*(center_of_mass_velo(*s)[i] + old_vel[i])*0.5;
+            }
+            
+            if (debugging("rigid_body_preadvance"))
+            {
+                printf("Body index: %d\n",index);
+                printf("torque = %f %f %f\n",torque[index][0],
+                        torque[index][1],torque[index][2]);
+                printf("force = %f %f %f\n",force[index][0],
+                        force[index][1],force[index][2]);
+                printf("angular_velo = %f\n",angular_velo(*s));
+                printf("p_angular_velo = %f %f %f\n",p_angular_velo(*s)[0],
+                            p_angular_velo(*s)[1],p_angular_velo(*s)[2]);
+                printf("euler_params = %f %f %f %f\n",euler_params(*s)[0],
+                            euler_params(*s)[1],euler_params(*s)[2],euler_params(*s)[3]);
+                printf("center_of_mass = %f  %f  %f\n",
+                        center_of_mass(*s)[0],
+                        center_of_mass(*s)[1],
+                        center_of_mass(*s)[2]);
+                printf("center_of_mass_velo = %f  %f  %f\n",
+                        center_of_mass_velo(*s)[0],
+                        center_of_mass_velo(*s)[1],
+                        center_of_mass_velo(*s)[2]);
+            }
         }
 	    else if (wave_type(*s) == ICE_PARTICLE_BOUNDARY)
 	    {
             for (i = 0; i < dim; ++i)
             {
-                center_of_mass_velo(*s)[i] +=
-                                dt*force[index][i]/total_mass(*s);
-                        center_of_mass(*s)[i] += dt*center_of_mass_velo(*s)[i];
-                center_of_mass(*s)[i] -= 
-                    0.5*(force[index][i]/total_mass(*s)*dt*dt) ;
+                center_of_mass_velo(*s)[i] += dt*force[index][i]/total_mass(*s);
+                center_of_mass(*s)[i] += dt*center_of_mass_velo(*s)[i];
+                center_of_mass(*s)[i] -= 0.5*(force[index][i]/total_mass(*s)*dt*dt);
             }
             
-            if (debugging("rigid_body"))
+            if (debugging("rigid_body_preadvance"))
             {
                 printf("Body index: %d\n",index);
                 printf("force = %f %f %f\n",force[index][0],
@@ -3267,11 +3406,11 @@ LOCAL void FrontPreAdvance3d(
                         center_of_mass_velo(*s)[2]);
             }
 	    }
-	}
+    }//end intfc_surface_loop(intfc,s)
 
 	free_these(2,force,torque);
 	if (debugging("rigid_body"))
-	    (void) printf("Leaving FrontPreAdvance()\n");
+	    (void) printf("Leaving FrontPreAdvance3d()\n");
 }	/* end FrontPreAdvance3d */
 
 EXPORT	boolean FrontReflectPointViaNeumannBdry(
@@ -3355,16 +3494,19 @@ EXPORT	boolean FT_FindNearestIntfcPointInRange(
 	int range)
 {
     //TODO: Is this a problem? Several functions pass INCLUDE_BOUNDARIES
-	/*return nearest_interface_point_within_range(coords,comp,front->interf,
-            bdry,NULL,p,t,phse,phs,range);*/
 	return nearest_interface_point_within_range(coords,comp,front->interf,
+            bdry,NULL,p,t,phse,phs,range);
+	/*
+    return nearest_interface_point_within_range(coords,comp,front->interf,
             NO_BOUNDARIES,NULL,p,t,phse,phs,range);
+    */
 }	/* FrontGetNearestPoint */
 
 EXPORT void FT_ResetTime(Front *front)
 {
 	front->time = 0.0;
     front->dt = 0.0;
+    front->old_dt = 0.0;
     front->step = 0;
 	front->im = front->ip = 0;
     front->is_print_time = NO;
@@ -3418,32 +3560,37 @@ EXPORT	void FT_TimeControlFilter(Front *front)
 	new_dt = min3(dt1,dt2,dt3);
 
 	if (front->step+1 >= front->max_step)
-            front->time_limit_reached = YES;
+    {
+        front->time_limit_reached = YES;
+    }
 
-	if (new_dt > dt) 
-	    return;
+	if (new_dt > dt) return;
 
 	if (fabs(dt1 - new_dt) < 1e-15)
 	{
 	    front->is_movie_time = YES;
 	    (front->im)++;
 	}
-        if (fabs(dt2 - new_dt) < 1e-15)
-        {
-            front->is_print_time = YES;
-	    (front->ip)++;
-        }
-        if (fabs(dt3 - new_dt) < 1e-15)
-        {
-            front->time_limit_reached = YES;
-        }
-	front->dt = new_dt;
+    
+    if (fabs(dt2 - new_dt) < 1e-15)
+    {
+        front->is_print_time = YES;
+        (front->ip)++;
+    }
+    
+    if (fabs(dt3 - new_dt) < 1e-15)
+    {
+        front->time_limit_reached = YES;
+    }
+	
+    front->dt = new_dt;
 }	/* end FT_TimeControlFilter */
 
 EXPORT void FT_AddTimeStepToCounter(Front *front)
 {
 	++(front->step);
 	front->time += front->dt;
+    front->old_dt = front->dt;
 	front->dt = 0.0;
 }	/* end FT_AddTimeStepToCounter */
 
@@ -3696,47 +3843,53 @@ EXPORT void FT_PromptSetMixedTypeBoundary2d(
 	char *in_name,
         Front *front)
 {
-	FILE *infile;
 	INTERFACE *intfc = front->interf;
-	RECT_GRID *rgr = front->rect_grid;
+    RECT_GRID *rgr = front->rect_grid;
 	NODE **n,*nodes[21],*ntmp;
 	CURVE **c,*curves[20];
 	int n_nodes,n_curves;
-	int i,j,dim,idir,nb;
+	int i,j,idir,nb;
 	char input_string[100],s[100];
 	int status;
 
-	dim = intfc->dim;
-	if (dim != 2) return;	/* 3D not implemented */
-	infile = fopen(in_name,"r");
+	int dim = intfc->dim;
+    if (dim != 2) return;	/* 3D not implemented */
+	
+	FILE* infile = fopen(in_name,"r");
 
 	for (idir = 0; idir < dim; ++idir)
 	for (nb = 0; nb < 2; ++nb)
 	{
 	    n_nodes = n_curves = 0;
-	    if (rect_boundary_type(intfc,idir,nb) != MIXED_TYPE_BOUNDARY)
-	    	continue;
-	    for (n = intfc->nodes; n && *n; ++n)
+	    if (rect_boundary_type(intfc,idir,nb) != MIXED_TYPE_BOUNDARY) continue;
+	    
+        for (n = intfc->nodes; n && *n; ++n)
 	    {
 	    	if (is_rect_side_node(rgr,*n,idir,nb))
-		   nodes[n_nodes++] = *n; 
+                nodes[n_nodes++] = *n; 
 	    }
 	    for (c = intfc->curves; c && *c; ++c)
 	    {
 	    	if (is_rect_side_curve(rgr,*c,idir,nb))
-		   curves[n_curves++] = *c; 
+                curves[n_curves++] = *c; 
 	    }
+
+        //sort the array of boundary nodes along the boundary
+        // e.g.  at the idir = 0 boundary  (x = L[0], y) sort the nodes
+        //       in increasing order with respect to the y coords.
 	    for (i = 0; i < n_nodes-1; ++i)
 	    for (j = i+1; j < n_nodes; ++j)
+        {
 	    	if (Coords(nodes[i]->posn)[(idir+1)%dim] > 
-		    Coords(nodes[j]->posn)[(idir+1)%dim])
-		{
-		    ntmp = nodes[i];
-		    nodes[i] = nodes[j];
-		    nodes[j] = ntmp;
-		}
-	    (void) printf("Direction %d side %d is MIXED_TYPE_BOUNDARY\n",
-	    			idir,nb);
+                    Coords(nodes[j]->posn)[(idir+1)%dim])
+            {
+                ntmp = nodes[i];
+                nodes[i] = nodes[j];
+                nodes[j] = ntmp;
+            }
+        }
+
+	    (void) printf("Direction %d side %d is MIXED_TYPE_BOUNDARY\n",idir,nb);
 	    (void) printf("Total number of nodes %d\n",n_nodes);
 	    (void) printf("Nodes coordinates are:\n");
 	    for (i = 0; i < n_nodes; ++i)
@@ -3773,20 +3926,17 @@ EXPORT void FT_PromptSetMixedTypeBoundary2d(
 	    for (i = 0; i < n_nodes-1; ++i)
 	    {
 		CURVE *curve = NULL;
-	    	for (j = 0; j < n_curves; ++j)
+        for (j = 0; j < n_curves; ++j)
 		{
-		    if ((curves[j]->start == nodes[i] && 
-		         curves[j]->end == nodes[i+1]) ||
-		    	(curves[j]->start == nodes[i+1] && 
-		         curves[j]->end == nodes[i])) 
+		    if ((curves[j]->start == nodes[i] && curves[j]->end == nodes[i+1]) ||
+		    	(curves[j]->start == nodes[i+1] && curves[j]->end == nodes[i])) 
 		    {
-			 curve = curves[j];
-			 break;
+                curve = curves[j];
+                break;
 		    }
 		}
 		sprintf(input_string,
-		    	"Enter wave type of the curve between nodes %d%d:",
-		    	i+1,i+2);
+		    	"Enter wave type of the curve between nodes %d%d:",i+1,i+2);
 		if (curve == NULL)
 		{
 		    printf("curve not found!\n");
@@ -3816,6 +3966,8 @@ EXPORT void FT_PromptSetMixedTypeBoundary2d(
 		}
 	    }
 	}
+
+    fclose(infile);
 }	/* end FT_PromptSetMixedTypeBoundary2d */
 
 static boolean is_rect_side_node(
@@ -4014,6 +4166,7 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	    if (!hs || !hs->interface)
             return NO;
 
+        //TODO: do we want INCLUDE_BOUNDARIES ???
         if (!nearest_interface_point(coords,comp,hs->interface,
                     INCLUDE_BOUNDARIES,hs,coordsbdry,t,&hsebdry,&hsbdry))
         {

@@ -93,6 +93,7 @@ EXPORT	int	return_advance_front(
 	    print_Front_structure(front);
 	    print_Front_structure(*newfront);
 	}
+
 	if (status != GOOD_STEP)
 	{
 	    free_front(*newfront);
@@ -102,18 +103,22 @@ EXPORT	int	return_advance_front(
 	{
 	    (*front->_EnforceFlowSpecifedStates)(*newfront);
 	}
-	if (debugging("trace"))
-        {
-            int dim = front->rect_grid->dim;
-            (void) printf("Maximum propagated scaled distance = %f\n",
-                        *(front->max_scaled_propagation));
-            print_general_vector("Max propagated point: ",
-                        front->max_prop_point,dim,"\n");
-        }
-	debug_front("final_front","after EnforceFlowSpecifedStates():",
+	
+    if (debugging("trace"))
+    {
+        int dim = front->rect_grid->dim;
+        (void) printf("Maximum propagated scaled distance = %f\n",
+                    *(front->max_scaled_propagation));
+        print_general_vector("Max propagated point: ",
+                    front->max_prop_point,dim,"\n");
+    }
+	
+    debug_front("final_front","after EnforceFlowSpecifedStates():",
 	           *newfront);
-	debug_print("front","Left %s\n",fname);
-	return status;
+	
+    debug_print("front","Left %s\n",fname);
+	
+    return status;
 }		/*end return_advance_front*/
 
 LOCAL	void	EnforceFlowSpecifedStates1d(

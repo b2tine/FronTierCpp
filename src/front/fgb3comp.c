@@ -2496,10 +2496,10 @@ LOCAL  void fill_comp_from_prev_for_wall(
 /*
  * 4 cases
  *       wall surf      physical surf    edge_flag | fluid comp  outwall comp
- *          NO              NO          IN/OUTSIDE     prev	   prev    OK
- *          NO		    YES          INSIDE        prev         ---    OK
- *          YES		    NO		IN/OUT/ON        fill from alg.
- *          YES		    YES		IN/OUT/ON	 fill from alg.
+ *          NO              NO          IN/OUTSIDE     prev	       prev    OK
+ *          NO		        YES          INSIDE        prev         ---    OK
+ *          YES		        NO		    IN/OUT/ON    fill from alg.
+ *          YES		        YES		    IN/OUT/ON	 fill from alg.
  */
 
 

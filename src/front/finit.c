@@ -1873,39 +1873,40 @@ LOCAL   void FT_InitIntfc2d(
 
 	(void) set_boundary(intfc,&topological_grid(intfc),
 			    intfc->default_comp,eps);
-	for (c = intfc->curves; c && *c; ++c)
+	
+    for (c = intfc->curves; c && *c; ++c)
 	{
-	    if (wave_type(*c) != UNKNOWN_WAVE_TYPE) 
-		continue;	/* Already assigned */
-	    if (negative_component(*c) == left_c &&
-		positive_component(*c) == right_c)
-	    {
-		if (level_func_pack == NULL) 
-	    	    wave_type(*c) = FIRST_PHYSICS_WAVE_TYPE;
-		else if (level_func_pack->wave_type != UNKNOWN_WAVE_TYPE)
-		{
-		    wave_type(*c) = level_func_pack->wave_type;
-		}
-		else
-	    	    wave_type(*c) = FIRST_PHYSICS_WAVE_TYPE;
+	    if (wave_type(*c) != UNKNOWN_WAVE_TYPE) continue;	/* Already assigned */
+	    
+        if (negative_component(*c) == left_c && positive_component(*c) == right_c)
+        {
+            if (level_func_pack == NULL) 
+                    wave_type(*c) = FIRST_PHYSICS_WAVE_TYPE;
+            else if (level_func_pack->wave_type != UNKNOWN_WAVE_TYPE)
+            {
+                wave_type(*c) = level_func_pack->wave_type;
+            }
+            else
+                wave_type(*c) = FIRST_PHYSICS_WAVE_TYPE;
 
-		if ((*c)->start == (*c)->end)
-		    node_type((*c)->start) = CLOSED_NODE;
-		else if (negative_component(*c) == positive_component(*c))
-		{
-		    node_type((*c)->start) = MONO_COMP_NODE;
-                    node_type((*c)->end) = MONO_COMP_NODE;
-		}
-	    	else
-		{
-		    set_boundary_node_type((*c)->start,intfc);
-		    set_boundary_node_type((*c)->end,intfc);
-		}
-		if (!is_bdry(*c))
-		    start_status(*c) = end_status(*c) = INCIDENT;
-		else
-		    start_status(*c) = end_status(*c) = FIXED;
-	    }
+            if ((*c)->start == (*c)->end)
+                node_type((*c)->start) = CLOSED_NODE;
+            else if (negative_component(*c) == positive_component(*c))
+            {
+                node_type((*c)->start) = MONO_COMP_NODE;
+                node_type((*c)->end) = MONO_COMP_NODE;
+            }
+            else
+            {
+                set_boundary_node_type((*c)->start,intfc);
+                set_boundary_node_type((*c)->end,intfc);
+            }
+            
+            if (!is_bdry(*c))
+                start_status(*c) = end_status(*c) = INCIDENT;
+            else
+                start_status(*c) = end_status(*c) = FIXED;
+        }
 	}
 
 	rect_bdry_redist2d(intfc,computational_grid(intfc),0);
@@ -1993,7 +1994,7 @@ LOCAL   void FT_InitIntfc3d(
 	    if (!read_vtk_surface(intfc,neg_comp,pos_comp,
 	    		level_func_pack->vtk_name,&surf))
 	    {
-		screen("read_sdl_surface() failed!\n");
+		screen("read_vtk_surface() failed!\n");
 		clean_up(ERROR);
 	    }
 	}

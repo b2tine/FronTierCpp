@@ -117,8 +117,6 @@ EXPORT	void	f_principal_tangent(
 	    vdir[i] /= len;
 }		/*end f_principal_tangent*/
 
-
-
 /*
 *			f_copy_front():
 *
@@ -465,7 +463,9 @@ EXPORT	double	f_max_front_time_step(
 	    break;
 	case 3:
 	    dim_fac = 0.259; 	/* sqrt(0.45^2/3) */
+        break;
 	}
+
 	for (i = 0; i < dim; ++i)
 	{
 	    if (hmin > h[i]) hmin = h[i];
@@ -672,7 +672,9 @@ EXPORT	void	f_set_max_front_speed(
 	    }
 	    Spfr(fr)[i] = fabs(spd);
 	    if (state != NULL)
-	    	ft_assign(MaxFrontSpeedState(fr)[i],state,fr->sizest);
+        {
+            ft_assign(MaxFrontSpeedState(fr)[i],state,fr->sizest);
+        }
 	}
 }		/*end f_set_max_front_speed*/
 

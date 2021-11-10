@@ -55,15 +55,20 @@ LOCAL	void find_bdry_curves_at_node(
 	CURVE		**bc2,
 	ORIENTATION	*bc2_orient)
 {
-	CURVE		**c;
-
 	debug_print("2drp","Entered find_bdry_curves_at_node()\n");
-	*bc1 = *bc2 = NULL;
+	
+    *bc1 = NULL;
+    *bc2 = NULL;
+	
+    CURVE** c;
+
 	for (c = node->in_curves; c && *c; c++) 
 	{
-		if (wave_type(*c) >= FIRST_PHYSICS_WAVE_TYPE
-		 || wave_type(*c) == PASSIVE_BOUNDARY)
+		if (wave_type(*c) >= FIRST_PHYSICS_WAVE_TYPE ||
+            wave_type(*c) == PASSIVE_BOUNDARY)
+        {
 			continue;
+        }
 		else if (!*bc1) 
 		{
 			*bc1 = *c;
@@ -75,11 +80,14 @@ LOCAL	void find_bdry_curves_at_node(
 			*bc2_orient = NEGATIVE_ORIENTATION;
 		}
 	}
+
 	for (c = node->out_curves; c && *c; c++) 
 	{
-		if (wave_type(*c) >= FIRST_PHYSICS_WAVE_TYPE
-		 || wave_type(*c) == PASSIVE_BOUNDARY)
+		if (wave_type(*c) >= FIRST_PHYSICS_WAVE_TYPE ||
+            wave_type(*c) == PASSIVE_BOUNDARY)
+        {
 			continue;
+        }
 		else if (!*bc1) 
 		{
 			*bc1 = *c;
@@ -101,10 +109,10 @@ LOCAL	void find_bdry_curves_at_node(
 *	may become "inverted through the boundary".
 *
 *	     -------->---------
-*	    /		       \
-*	---*--------------------*---   ->  ---*----------------------*---  
-*					       \                    /
-*					        ---------->---------
+*	    /		           \
+*	---*--------------------*---   ->           ---*----------------------*---  
+*					         \                    /
+*					          ---------->---------
 *
 *	This function assumes that fr->interf is untangled.
 */
@@ -137,7 +145,7 @@ EXPORT	boolean correct_for_exterior_curves(
 
 
 	extcomp = exterior_component(intfc);
-	if( debugging("c_ext") )
+	if (debugging("c_ext"))
 	{
 	    (void) printf("correct_for_exterior_curves(): extcomp %d\n",
 	    	      extcomp);
@@ -147,7 +155,7 @@ EXPORT	boolean correct_for_exterior_curves(
 	    print_interface(intfc);
 	}
 
-	for( cc = intfc->curves;  cc && *cc;  cc++ )
+	for (cc = intfc->curves;  cc && *cc;  cc++)
 	{
 	    c = *cc;
 
@@ -161,21 +169,22 @@ EXPORT	boolean correct_for_exterior_curves(
 
 	    exterior_points = NO;
 	    interior_points = NO;
-	    if( c->first == c->last )
+	    if (c->first == c->last)
 	    {
-		double coords_mid[MAXD];
-		for (i = 0; i < dim; ++i)
-		{
-		    if (Coords(c->start->posn)[i] == Coords(c->end->posn)[i])
-		    {
-		    	exterior_points = YES;
-			break;
-		    }
-		    coords_mid[i] = 0.5*(Coords(c->start->posn)[i] +
-		    		Coords(c->end->posn)[i]);
-		}
-		if (outside_point(coords_mid,lo,hi,dim))
-	    	    exterior_points = YES;
+            double coords_mid[MAXD];
+            for (i = 0; i < dim; ++i)
+            {
+                if (Coords(c->start->posn)[i] == Coords(c->end->posn)[i])
+                {
+                    exterior_points = YES;
+                    break;
+                }
+                coords_mid[i] = 0.5*(Coords(c->start->posn)[i] +
+                        Coords(c->end->posn)[i]);
+            }
+
+            if (outside_point(coords_mid,lo,hi,dim))
+                    exterior_points = YES;
 	    }
 	    else
 	    {
@@ -184,8 +193,8 @@ EXPORT	boolean correct_for_exterior_curves(
 	            p1 = b->end;
 	            if (outside_point(Coords(p1),lo,hi,dim))
 	                exterior_points = YES;
-		    else
-			interior_points = YES;
+                else
+                    interior_points = YES;
 	        }
 	    }
 
@@ -194,20 +203,20 @@ EXPORT	boolean correct_for_exterior_curves(
 
 	    /* Curve is exterior */
 
-	    if( debugging("c_ext") )
+	    if (debugging("c_ext"))
 	    {
 	    	(void) printf("Nodes of exterior curve\n");
 
 	    	(void) printf("ns -\n");	print_node(ns);
 	    	(void) printf("ne -\n");	print_node(ne);
-		print_curve(c);
+		    print_curve(c);
 	    }
 
 	    if (!correct_exterior_curve(c,fr))
 		return NO;
 
 	}
-	if( debugging("c_ext") )
+	if (debugging("c_ext"))
 	{
 	    (void) printf("after correct_for_exterior_curves(), "
 	                  "input interface -\n");

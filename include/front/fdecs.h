@@ -561,7 +561,7 @@ struct _Front {
 	TSTEP_CONTROL	Tstep;
 
 		/* Real and mesh times for front->interf */
-	double dt, *dt_frac, time, max_time;
+	double dt, old_dt, *dt_frac, time, max_time;
 	double print_time_interval, movie_frame_interval;
 	boolean is_print_time,is_movie_time,time_limit_reached;
 	boolean two_step_interface;
@@ -1408,15 +1408,18 @@ enum {
 
 struct _INTRP_CELL {
     int dim;
+    boolean is_linear;
     boolean is_bilinear;
     double **coords;
     double *var;
     int nv;
+    int nv_lin;
     double **p_lin;
     double *var_lin;
 	double *dist;
-    int **icoords;
-    int **ip_lin;
+    int **icoords; //For using intrp coefs in matrix 
+    int **icoords_lin; //For using intrp coefs in matrix 
+    double *coeffs; //For using intrp coefs in matrix 
 };
 typedef struct _INTRP_CELL INTRP_CELL;
 

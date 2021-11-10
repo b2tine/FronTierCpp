@@ -1794,43 +1794,6 @@ EXPORT	void remove_unphysical_crxings(
 	    (void) printf("Leaving remove_unphysical_crxings()\n");
 }	/* end remove_unphysical_crxings */
 
-EXPORT double next_index_in_dir(
-        const int* icoords,
-        GRID_DIRECTION dir, 
-        const int* top_gmax, 
-        int dim)
-{
-    int icrds[MAXD];
-    for (int i = 0; i < dim; ++i)
-    {
-        icrds[i] = icoords[i];
-    }
-
-    switch (dir)
-    {
-        case WEST:
-            icrds[0] -= 1;
-            break;
-        case EAST:
-            icrds[0] += 1;
-            break;
-        case SOUTH:
-            icrds[1] -= 1;
-            break;
-        case NORTH:
-            icrds[1] += 1;
-            break;
-        case LOWER:
-            icrds[2] -= 1;
-            break;
-        case UPPER:
-            icrds[2] += 1;
-    }
-
-    int index = d_index(icrds,top_gmax,dim);
-    return index;
-}
-
 EXPORT	boolean next_ip_in_dir(
 	const int *ip,
 	GRID_DIRECTION dir,

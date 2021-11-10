@@ -39,14 +39,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
     printf("Checkpoint(%s) at line %d in file \"%s\"\n", \
             #ID,__LINE__,__FILE__)
 
-#define LOC() printf("Location: at %s:%d/%s()!\n", __FILE__, __LINE__, __func__)
+#define LOC() printf("\nLocation: at %s:%d/%s()!\n", __FILE__, __LINE__, __func__)
 
 
 #if defined(USE_OVERTURE) 
 #else 
 #if defined(linux)
-    #if !defined(_GNU_SOURCE)
-    #define _GNU_SOURCE
+#if !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
 #endif /*!defined(_GNU_SOURCE)*/
 #endif /* defined(linux) */
 #endif /* if defined(USE_OVERTURE) */  
@@ -58,9 +58,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <unistd.h>
 #include <ctype.h>
 #include <math.h>
+
+//#include <sys/types.h>
+
 #if defined(__INTEL_COMPILER) || defined(__bg__)
 #include <stdint.h>
 #endif /* defined(__INTEL_COMPILER) || defined(__bg__)*/
+
 #include <limits.h>
 #include <float.h>
 #include <errno.h>
@@ -79,18 +83,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #define ptr2ull(p) u_ptr2ull((void*)(p))
 
 #if defined(mips) || defined(__GNUC__) || defined(linux) || __SUNPRO_CC>=0x500 || __SUNPRO_C>=0x500
-
 #define HasGen 1
-
 #else /* #define HasGen defined(mips) || defined(__GNUC__) || defined(linux) || __SUNPRO_CC>=0x500 || __SUNPRO_C>=0x500 */
-
 #define HasGen 0
-
 #endif /* #define HasGen defined(mips) || defined(__GNUC__) || defined(linux) || __SUNPRO_CC>=0x500 || __SUNPRO_C>=0x500 */
 
 #if HasGen
-#   include <libgen.h>
+#include <libgen.h>
 #endif /* HasGen */
+
 #include <limits.h>
 
 #if defined(USE_OVERTURE)
@@ -104,19 +105,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 		/* Machine Dependent Quantities: */
 
 #if defined(cray)
-#   define isnan(x)     (NO)
-#   define isnanf(x)    (NO)
-#   define isnand(x)    (NO)
+#define isnan(x)     (NO)
+#define isnanf(x)    (NO)
+#define isnand(x)    (NO)
 #elif defined(sun) && !(defined(__SUNPRO_C) || defined(__SUNPRO_CC))
-#   define isnanf(x)    isnan(x)
-#   define isnand(x)    isnan(x)
+#define isnanf(x)    isnan(x)
+#define isnand(x)    isnan(x)
 #elif defined(__GNUC__) || defined(__PGI__) || defined(__INTEL_COMPILER) || defined(__bg__)
-//#   if !defined(isnan)
-//#       define isnan(x) isnand(x)
-//#   endif /*!defined(isnan)*/
+//#if !defined(isnan)
+//#define isnan(x) isnand(x)
+//#endif /*!defined(isnan)*/
 #elif !defined(__alpha) && !defined(__hpux) && !defined(linux) && !defined(_AIX)
-#   include <ieeefp.h>
-#   define isnan(x)    isnand(x)
+#include <ieeefp.h>
+#define isnan(x)    isnand(x)
 #endif /* defined(cray) */
 
 #define MACH_EPS DBL_EPSILON
@@ -127,14 +128,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #endif /* defined(isfinite) */
 #endif /* defined(__hpux) */
 
-typedef float   TRUEfloat;
+typedef float TRUEfloat;
 #define REAL double
 
-#   define SFMT "22s"
-#   define FFMT "24.18g"
+#define SFMT "22s"
+#define FFMT "24.18g"
 
 typedef	double 	ALIGN;	/* Strictest alignment type of all data types */
 #define	num_aligns(size)	(((size) + sizeof(ALIGN)-1)/sizeof(ALIGN))
+
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
@@ -151,50 +153,53 @@ enum {
 	Gets_BUF_SIZE = 513
 };
 
-		/* Macros for REAL variables and Vectors: */
+		
+/* Macros for REAL variables and Vectors: */
 
 typedef unsigned char byte;	/* Generic object of size 1, sizeof(byte) = 1 */
+
 /*
 #if defined(__cplusplus)
 #define NO                 FALSE
 #define FUNCTION_FAILED    FALSE
-#define YES		   TRUE
+#define YES        TRUE
 #define FUNCTION_SUCCEEDED TRUE
 #else  defined(__cplusplus) */
-enum _boolean { FALSE              = 0,
-		NO                 = FALSE,
-		FUNCTION_FAILED    = FALSE,
-		TRUE               = 1,
-		YES                = TRUE,
-		FUNCTION_SUCCEEDED = TRUE};
+enum _boolean {
+    FALSE              = 0,
+    NO                 = FALSE,
+    FUNCTION_FAILED    = FALSE,
+    TRUE               = 1,
+    YES                = TRUE,
+    FUNCTION_SUCCEEDED = TRUE};
 typedef enum _boolean boolean;
 /* #endif  defined(__cplusplus) */
 
 #if defined(ERROR)
-#  undef ERROR
+#undef ERROR
 #endif /* defined(ERROR) */
-enum {ERROR=-1};
+enum {ERROR = -1};
 
 typedef  void	    *POINTER;	/* Pointer to Unknown Data Types. */
 typedef  const void *CPOINTER;	/* Constant Pointer to Unknown Data Types. */
 
-#define  ERROR_FLOAT  -HUGE_VAL	/* Returned by Float Functions on Errors */
+#define ERROR_FLOAT -HUGE_VAL	/* Returned by Float Functions on Errors */
 
 #if defined(ODD)
-#  undef ODD
+#undef ODD
 #endif /* defined(ODD) */
 #if defined(EVEN)
-#  undef EVEN
+#undef EVEN
 #endif /* defined(EVEN) */
-#define		ODD	1
-#define		EVEN	0
+#define	ODD	1
+#define	EVEN	0
 
 
-		/* stuff for parallel computers */
+    /* stuff for parallel computers */
 
 enum {
 	IO_NODE_ID = 0,    /* processor node used as IO node*/
-		/* identifier tags for timed global op  */
+    /* identifier tags for timed global op  */
 	ALL_GATHER_TAG,
 	GLOBAL_IOR_TAG,
 	GLOBAL_ISUM_TAG,
@@ -247,12 +252,11 @@ typedef struct {
 	u_pp_bcast(root,buf,len,__FILE__,__LINE__)
 
 	/* Enclosed Code Compiled iff Nonzero */
-#define  DONT_COMPILE  0
+#define DONT_COMPILE  0
 
-		/*  Inline Functions - Be Careful: */
+    /*  Inline Functions - Be Careful: */
 
 #if defined(__cplusplus) && !defined(__hpux)
-
 #else /* defined(__cplusplus) && !defined(__hpux) */
 
 #if !defined(max)
@@ -281,7 +285,7 @@ typedef struct {
 #define zero_scalar(s,num)	(void) memset((POINTER)(s),0,num)
 
 enum {
-	READ	  = 0,
+	READ = 0,
 	WRITE,
 	READ_WRITE
 };
@@ -339,54 +343,61 @@ function by separating the static declaration from the access restriction.
 
 
 #if defined(cray)
-#   include <fortran.h>
-#   if defined(__cplusplus)
-#       define FORTRAN IMPORT "C"
-#   else /* defined(__cplusplus) */
-#       define	FORTRAN	fortran
-#   endif /* defined(__cplusplus) */
+
+#include <fortran.h>
+#if defined(__cplusplus)
+#define FORTRAN IMPORT "C"
+#else /* defined(__cplusplus) */
+#define	FORTRAN	fortran
+#endif /* defined(__cplusplus) */
+
 #else /* defined(cray) */
-#   if defined(__cplusplus)
-#       if defined(FORTRAN)
-#           undef FORTRAN
-#       endif /* defined(FORTRAN) */
-#       define FORTRAN IMPORT "C"
-#   else /* defined(__cplusplus) */
-#       define	FORTRAN	IMPORT
-#   endif /* defined(__cplusplus) */
+
+#if defined(__cplusplus)
+#if defined(FORTRAN)
+#undef FORTRAN
+#endif /* defined(FORTRAN) */
+#define FORTRAN IMPORT "C"
+#else /* defined(__cplusplus) */
+#define	FORTRAN	IMPORT
+#endif /* defined(__cplusplus) */
+
 #endif /* defined(cray) */
 
+
 #if defined(cray) || defined(_AIX) || defined(__bg__)
-#   define   FORTRAN_NAME(a)    a
-#else /* defined(cray) || defined(_AIX) */
-#   define   FORTRAN_NAME(a)    a ## _
-#endif /* defined(cray) || defined(_AIX) */
+#define FORTRAN_NAME(a) a
+#else /* defined(cray) || defined(_AIX) || defined(__bg__) */
+#define FORTRAN_NAME(a) a ## _
+#endif /* defined(cray) || defined(_AIX) || defined(__bg__) */
+
 #if defined(__GNUC__) && !defined(LAHEY_FORTRAN)
-#   define   SFORTRAN_NAME(a)   a ## _  /* GCC has a different naming */
-					 /* * convention for FORTRAN routines */
-					 /* * with character strings as */
-					 /* * arguments. */
+#define SFORTRAN_NAME(a) a ## _  /* GCC has a different naming */
+					             /* convention for FORTRAN routines */
+					             /* with character strings as arguments. */
 					  
 #else /* defined(__GNUC__) */
-#   define   SFORTRAN_NAME(a)   FORTRAN_NAME(a)
+#define SFORTRAN_NAME(a) FORTRAN_NAME(a)
 #endif /* defined(__GNUC__) */
 
 #if defined(LAHEY_FORTRAN)
-#   define C_MAIN_PROGRAM MAIN__
+#define C_MAIN_PROGRAM MAIN__
 int MAIN__(int,char**);
 #else /* defined(LAHEY_FORTRAN) */
-#   define C_MAIN_PROGRAM main
+#define C_MAIN_PROGRAM main
 #endif /* defined(LAHEY_FORTRAN) */
 
 typedef void (LSODE_FUNC)(int*,double*,double*,double*);
 typedef void (LSODE_JAC)(int*,double*,double*,int*,int*,double*,int*);
 
-#define	Null(x)		(!(x))
+#define	Null(x)	(!(x))
+
 #if !defined(PI)
-#   define	PI		3.14159265358979
+#define	PI 3.14159265358979
 #endif /* !defined(PI) */
-#define	degrees(ang)	((ang)*180.0/PI)
-#define radians(ang)    ((ang)*PI/180.0)
+
+#define	degrees(ang) ((ang)*180.0/PI)
+#define radians(ang) ((ang)*PI/180.0)
 
 struct _Error {
 	const char *filename;
@@ -396,14 +407,14 @@ struct _Error {
 	struct _Error *next;
 };
 
-#define Error(__num,__mess)  log_error(__FILE__,__LINE__,__num,__mess)
+#define Error(__num,__mess) log_error(__FILE__,__LINE__,__num,__mess)
 
 
 /* Opaque holder for storing location in file for output */
 
 typedef void OUTPUT;
 
-#define	fclose(file)	Fclose(file)
+#define	fclose(file) Fclose(file)
 
 	/* Simpleio Macros */
 
@@ -454,11 +465,16 @@ typedef void OUTPUT;
 #define  Between(x,y,z)   ( ((x)-(y)) * ((z)-(x)) >= 0. )
 #endif /* DONT_COMPILE */
 
-struct _Prompt_type {
+struct _Prompt_type
+{
 	const char *prompt;	/* Full prompt name */
 	const char *select;  	/* Abbreviated name for input */
-	int	   ncmp;	/* # of chars to uniquely identify select */
-	union {int itype; const char *ctype;} type;
+	int ncmp;	/* # of chars to uniquely identify select */
+	
+    union {
+        int itype;
+        const char *ctype;
+    } type;
 };
 typedef struct _Prompt_type Prompt_type;
 
@@ -466,11 +482,11 @@ typedef struct _Prompt_type Prompt_type;
 	/* Possible values of variable  debug_mode: */
 
 enum _DEBUG_MODE {
-	PROMPT_FOR_DEBUG=-1,	/*Initiate debug prompting*/
-	NONE=             0,	/* Indicates no debugging requested */
-	SOME=             1,	/* Indicates debugging requested not with all */
-	ALL=              2,	/* Indicates all was the first request */
-	TRACE_ONLY=	  3	/* Trace debug calls but don't print messages*/
+	PROMPT_FOR_DEBUG = -1,	/*Initiate debug prompting*/
+	NONE =              0,	/* Indicates no debugging requested */
+	SOME =              1,	/* Indicates debugging requested not with all */
+	ALL =               2,	/* Indicates all was the first request */
+	TRACE_ONLY =	    3	/* Trace debug calls but don't print messages*/
 };
 typedef enum _DEBUG_MODE DEBUG_MODE;
 
@@ -485,11 +501,24 @@ typedef struct _DEBUG_PARAMS DEBUG_PARAMS;
 * Basic initialization structure.
 */
 
+struct _INIT_DATA {
+	const char   *_title;
+	boolean	     _interactive_prompting;
+	DEBUG_PARAMS *_dbparams;	/*PROMPTED*/
+};
+typedef struct _INIT_DATA INIT_DATA;
+
+#define init_data(init) ((INIT_DATA *)(init))
+#define	interactive_prompting(init) init_data(init)->_interactive_prompting
+#define	dbparams(init) init_data(init)->_dbparams
+#define title(init) init_data(init)->_title
+
 /*
 * Machine Endian type
 */
 
-enum _FT_ENDIAN {
+enum _FT_ENDIAN
+{
 	FT_LITTLE_ENDIAN  = -1, /* Little endian byte ordering */
 	FT_UNKNOWN_ENDIAN =  0, /* Undetermined byte ordering */
 	FT_BIG_ENDIAN     =  1 /* Big endian byte ordering */
@@ -500,15 +529,16 @@ typedef enum _FT_ENDIAN FT_ENDIAN;
 * Return status from quadrature programs
 */
 
-enum _QUADRATURE_STATUS {
-        ACCURATE_INTEGRAL    = 0,
-	INACCURATE_INTEGRAL  = 1,
-	INVALID_EPSILON      = 6
+enum _QUADRATURE_STATUS
+{
+    ACCURATE_INTEGRAL = 0,
+	INACCURATE_INTEGRAL = 1,
+	INVALID_EPSILON = 6
 };
 typedef enum _QUADRATURE_STATUS QUADRATURE_STATUS;
 
 /* Reverse bytes of argument to convert endian sex */
-#define byte_reverse(_x_)	reverse_string((char*)&_x_,sizeof(_x_))
+#define byte_reverse(_x_) reverse_string((char*)&_x_,sizeof(_x_))
 
 /*
 * IO conversion specifications
@@ -524,21 +554,12 @@ struct _IO_TYPE {
 };
 typedef struct _IO_TYPE IO_TYPE;
 
-struct _INIT_DATA {
-	const char   *_title;
-	boolean	     _interactive_prompting;
-	DEBUG_PARAMS *_dbparams;	/*PROMPTED*/
-};
-typedef struct _INIT_DATA INIT_DATA;
-#define init_data(init) ((INIT_DATA *)(init))
-#define	interactive_prompting(init) init_data(init)->_interactive_prompting
-#define	dbparams(init) init_data(init)->_dbparams
-#define title(init) init_data(init)->_title
+	
+/* Random variable function parameters */
 
-	/* Random variable function parameters */
 struct _GAUSS_PARAMS {
 	double sigma;           /* Deviation */
-        double mu;              /* Expectation */
+    double mu;              /* Expectation */
 };
 typedef struct _GAUSS_PARAMS GAUSS_PARAMS;
 
@@ -567,18 +588,18 @@ struct _STABLE_PARAMS {
 typedef struct _STABLE_PARAMS STABLE_PARAMS;
 
 struct _GIG_PARAMS {
-        double lambda;
-        double psi;
-        double chi;
+    double lambda;
+    double psi;
+    double chi;
 };
 typedef struct _GIG_PARAMS GIG_PARAMS;
 
 struct _GH_PARAMS {
-        double lambda;
-        double alpha;
-        double beta;
-        double mu;
-        double delta;
+    double lambda;
+    double alpha;
+    double beta;
+    double mu;
+    double delta;
 };
 typedef struct _GH_PARAMS GH_PARAMS;
 
