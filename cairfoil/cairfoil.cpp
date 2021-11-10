@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 static void airfoil_driver(Front*,CFABRIC_CARTESIAN*);
 static void zero_state(COMPONENT,double*,FIELD*,int,int,EQN_PARAMS*);
 static void xgraph_front(Front*,char*);
-static void initFabricModule(Front* front);
+//static void initFabricModule(Front* front);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
@@ -46,7 +46,6 @@ int main(int argc, char **argv)
 	static LEVEL_FUNC_PACK level_func_pack;
 	static EQN_PARAMS eqn_params;
 	static AF_PARAMS af_params;
-	static RG_PARAMS rgb_params;
 
 	FT_Init(argc,argv,&f_basic);
 	f_basic.size_of_intfc_state = sizeof(STATE);
@@ -96,7 +95,6 @@ int main(int argc, char **argv)
     eqn_params.dim = f_basic.dim;
     front.extra1 = (POINTER)&eqn_params;
     front.extra2 = (POINTER)&af_params;
-        //front.extra3 = (POINTER)&rgb_params;
     
     read_cFluid_params(in_name,&eqn_params);
     
@@ -108,9 +106,7 @@ int main(int argc, char **argv)
 	{
 	    FT_InitIntfc(&front,&level_func_pack);
         
-        initRigidBody(&front);
-	    setRigidBodyMotionParams(&front,&rgb_params);
-        initFabricModule(&front);
+        initFabricModules(&front);
 	    
         if (f_basic.dim == 3)
             initIsolated3dCurves(&front);
@@ -118,10 +114,10 @@ int main(int argc, char **argv)
         if (consistent_interface(front.interf) == NO)
         {
             printf("consistent_interface(front.interf) == NO\n");
-            clean_up(ERROR);
+            LOC(); clean_up(ERROR);
         }
 	    
-        if (f_basic.dim == 3 && debugging("trace"))
+        if (f_basic.dim == 3 && debugging("init_intfc"))
 	    {
             char gvdir[100];
             sprintf(gvdir,"%s/gv-init",out_name);
@@ -209,7 +205,6 @@ int main(int argc, char **argv)
 	clean_up(0);
 }
 
-//void airfoil_driver(Front *front, G_CARTESIAN* g_cartesian)
 void airfoil_driver(Front *front,
         CFABRIC_CARTESIAN* g_cartesian)
 {
@@ -403,6 +398,7 @@ void xgraph_front(Front *front,	char *outname)
 	xgraph_2d_intfc(fname,front->interf);
 }
 
+/*
 void initFabricModule(Front* front)
 {
     FILE *infile = fopen(InName(front),"r");
@@ -430,4 +426,4 @@ void initFabricModule(Front* front)
     
     fclose(infile);
 }
-
+*/
