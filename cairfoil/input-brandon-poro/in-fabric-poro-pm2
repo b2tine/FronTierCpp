@@ -1,0 +1,137 @@
+Domain limit in 0-th dimension: 0 1
+Domain limit in 1-th dimension: 0 1
+Domain limit in 2-th dimension: 0 3
+
+Computational grid: 30 30 90
+
+Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
+Upper boundary in 1-th dimension: PERIODIC_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHELT_BOUNDARY
+
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 5
+Enter pressure: 0
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+Max time: 2.0
+Max step: 10000
+Print interval: 0.05
+Movie frame interval: 0.0025
+CFL factor: 0.5
+Redistribution interval: 100000
+Type yes to turn off auto-redistribution: y
+
+Entering yes to turn off fluid solver: no
+Enter velocity functionX: zero
+Enter interior propagator: p
+Enter interior sub step number: 1
+
+Enter yes to use porosity: yes
+Enter viscous parameter: 13.5984
+Enter inertial parameter: 101.404
+
+***********************************************
+Enter density and viscosity of the fluid: 1.0 0.001
+Enter gravity: 0.0 0.0 0.0
+
+Enter surface tension: 0.0
+Enter factor of smoothing radius: 1
+
+Projection type can be
+        PMI     (1)
+        PMII    (2)
+        PMIII   (3)
+        SIMPLE  (S)
+Enter projection type: 2
+
+Available elliptic methods are:
+        Simple elliptic (S)
+        Dual elliptic (DU)
+Enter elliptic method: Simple
+
+Enter upper bound for fluid speed: 250.0
+**************************************************
+
+Enter yes for parachute system: no
+Enter the number of fabric optimization rounds: 0
+Enter number of canopy surfaces: 1
+
+Available canopy surface types are:
+        FLAT (F)
+        PARABOLIC (P)
+Enter canopy surface type: F
+
+Available types of canopy boundaries are:
+        Circular (C)
+        Rectangular (R)
+        Elliptic (E)
+        Cross (X)
+        Circular with belt (S)
+
+Enter type of canopy boundary: R
+Enter the height of the plane: 0.72
+Enter lower bounds of the rectangle: 0.19 0.19
+Enter upper bounds of the rectangle: 0.81 0.81
+Enter yes for fixed boundary: yes
+Enter yes to install boundary on each side: no
+
+
+Enter yes to attach strings to canopy: n
+
+Enter payload: 0.0
+Enter area density of canopy: 0.5
+
+Enter yes to use total mass: yes
+Enter fabric total mass: 0.1922
+Enter string total mass: 0.0
+
+Enter fabric spring constant: 1000
+Enter fabric damping constant: 0.01
+Enter fabric friction constant: 0.15
+    XXXEnter fabric point massXXX: 0.001
+Enter fabric thickness: 0.001
+Enter fabric rounding tolerance: 0.000001
+
+Enter string spring constant: 1
+Enter string damping constant: 0.01
+Enter string friction constant: 0.15
+    XXXEnter string point massXXX: 0.0015
+Enter string thickness: 0.004
+Enter string rounding tolerance: 0.000004
+
+
+Enter yes to add rigid body: n
+Enter the number of rigid bodies: 0
+
+****************Movie options*****************
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+Type y to make xy cross section movie: n
+
+Type y to make viscosity field movie: y
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: n
+Type y to make scalar pressure field movie: y
+
+************Debugging options*****************
+
+Enter yes for debugging: yes
+Enter the debugging string: proximity
+Enter the debugging string: collision
+Enter the debugging string: max_speed
+Enter the debugging string: PETSc
+
+Enter the debugging stringX: trace
+Enter the debugging stringX: CLOCK
+Enter the debugging stringX: collision
+Enter the debugging stringX: rigid_body
+Enter the debugging stringX: isect3d
+Enter the debugging stringX: step_size
+Enter the debugging stringX: tri_cluster
+Enter the debugging stringX: CollisionImpulse
+Enter the debugging stringX: no_optimize
