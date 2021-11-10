@@ -373,7 +373,7 @@ void Folder3d::doFolding(
     
     if (!debugging("collision_off"))
     {
-        cd_solver->resolveCollision();
+        cd_solver->resolveCollisionSubstep();
     }
 
 	

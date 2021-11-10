@@ -3964,7 +3964,7 @@ LOCAL void vtk_plot_vector_field(
 	fname = get_vtk_file_name(fname,dname,vname,&fname_len);
 	if (create_directory(dname,YES) == FUNCTION_FAILED)
     {
-        (void) printf("WARNING in vtk_interface_plot(), directory "
+        (void) printf("WARNING in vtk_plot_vector_field(), directory "
                       "%s doesn't exist and can't be created\n",dname);
         return;
     }
@@ -4654,7 +4654,6 @@ LOCAL void vtk_plot_intfc_color(
 	TRI *tri;
 	POINT *p;
 	static char *fname = NULL;
-	int i,j;
 	int N;
 	double *color;
 	FILE *vfile;
@@ -4670,7 +4669,7 @@ LOCAL void vtk_plot_intfc_color(
 	sprintf(fname,"%s/%s.vtk",dirname,vname);
 	
     vfile = fopen(fname,"w");
-	fprintf(vfile,"# vtk DataFile Version 3.0\n");
+	fprintf(vfile,"# vtk DataFile Version 2.0\n");
     fprintf(vfile,"%s\n",vname);
     fprintf(vfile,"ASCII\n");
     fprintf(vfile,"DATASET UNSTRUCTURED_GRID\n");
@@ -4681,19 +4680,19 @@ LOCAL void vtk_plot_intfc_color(
 	intfc_surface_loop(intfc,s)
 	{
 	    if (Boundary(*s)) continue;
-            //num_tri += (*s)->num_tri;
         unsort_surf_point(*s);
 	    surf_tri_loop(*s,tri)
 	    {
-		    for (i = 0; i < 3; ++i)
+		    for (int i = 0; i < 3; ++i)
             {
                 p = Point_of_tri(tri)[i];
                 if (sorted(p)) continue;
                 sorted(p) = YES;
                 num_pts++;
             }
-            num_tri++;
+            //num_tri++;
         }
+        num_tri += (*s)->num_tri;
 	}
 
     //NOTE: sorted(p) and Index_of_point(p) refer to variables
@@ -4706,10 +4705,9 @@ LOCAL void vtk_plot_intfc_color(
     intfc_surface_loop(intfc,s)
 	{
 	    if (Boundary(*s)) continue;
-	    
         surf_tri_loop(*s,tri)
 	    {
-		    for (i = 0; i < 3; ++i)
+		    for (int i = 0; i < 3; ++i)
             {
                 Index_of_point(Point_of_tri(tri)[i]) = -1;
             }
@@ -4717,7 +4715,7 @@ LOCAL void vtk_plot_intfc_color(
 	    
         surf_tri_loop(*s,tri)
 	    {
-		    for (i = 0; i < 3; ++i)
+		    for (int i = 0; i < 3; ++i)
             {
                 p = Point_of_tri(tri)[i];
                 if (Index_of_point(p) == -1)
@@ -4729,8 +4727,6 @@ LOCAL void vtk_plot_intfc_color(
 	    }
 	}
 
-    //TODO: check if (n == num_pts)
-	
     fprintf(vfile,"CELLS %d %d\n",num_tri,4*num_tri);
 
 	intfc_surface_loop(intfc,s)

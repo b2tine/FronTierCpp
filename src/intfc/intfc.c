@@ -392,9 +392,7 @@ LOCAL INTERFACE *cur_intfc = NULL;	/* The current interface */
 /*
 *				set_current_interface():
 *
-*	Sets the current interface to a particular previously created
-*	interface.   Returns 1 if successful or 0 on error - if the
-*	interface does not exist.
+*	Sets the current interface to a particular previously created interface.
 */
 
 EXPORT void set_current_interface(

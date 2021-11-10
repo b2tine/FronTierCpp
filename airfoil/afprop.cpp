@@ -68,6 +68,7 @@ extern void elastic_point_propagate(
     }
 }
 
+//TODO: I think we can do this with EnforceFlowSpecifiedStates ?
 static void elastic_point_propagate_const_dP(
         Front *front,
         POINTER wave,
@@ -101,7 +102,6 @@ static void elastic_point_propagate_const_dP(
 	    
         newsr->vel[i] = newsl->vel[i] = sl->vel[i];
         newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-            //newsr->impulse[i] = newsl->impulse[i] = 0.0;
 	}
 }
 
@@ -130,10 +130,11 @@ static void elastic_point_propagate_fsi(
     int* top_gmax = top_grid->gmax;
     double* top_h = top_grid->h;
 
-	double *vort = field->vort;
-	double **vel = field->vel;
-	double *pres = field->pres;
 	double *mu = field->mu;
+	double **vel = field->vel;
+	double *vort = field->vort;
+	double *pres = field->pres;
+
 	double pp[MAXD],pm[MAXD],nor[MAXD];
 	double left_nor_speed,right_nor_speed;
 	double dv[MAXD];
@@ -188,6 +189,7 @@ static void elastic_point_propagate_fsi(
                 getStatePres,&newsl->pres,&sl->pres);
         FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
                 getStatePres,&newsr->pres,&sr->pres);
+
         /*
         //Tangential stress (shear stress)
 	    for (int l = 0; l < dim; ++l)
@@ -233,13 +235,21 @@ static void elastic_point_propagate_fsi(
     }
     */
 
+
 	/* Impulse is incremented by the fluid pressure force */
-	for (int i = 0; i < dim; ++i)
+    
+    //TODO: Should we be using dP = sl->movie_pres - sr->movie_pres ???
+    //      The idea being that we are using the pressure p^{n} (movie_pres)
+    //      instead of the halfstep pressure p^{n-1/2} (pres).
+    
+    double dP = sl->pres - sr->pres;
+    for (int i = 0; i < dim; ++i)
 	{
 	    dv[i] = 0.0;
 	    if (front->step > af_params->fsi_startstep)
         {
-            dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
+            dv[i] = dP*nor[i]/area_dens; //dv has units of acceleration
+            //dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
         }
         else if (debugging("rigid_canopy"))
         {
@@ -251,7 +261,6 @@ static void elastic_point_propagate_fsi(
 	    
         newsr->vel[i] = newsl->vel[i] = sl->vel[i];
         newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-            //newsr->impulse[i] = newsl->impulse[i] = 0.0;
 	}
 
 	/* Interpolating vorticity for the hyper surface point */
@@ -266,7 +275,6 @@ static void elastic_point_propagate_fsi(
 	        for (int i = 0; i < dim; ++i)
 	        {
 	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-	                //newsr->impulse[i] = newsl->impulse[i] = 0.0;
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
                 vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
                 FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
@@ -366,7 +374,7 @@ extern void airfoil_curve_propagate(
 		case PASSIVE_HSBDRY:
 		    return passive_curve_propagation(front,wave,oldc,newc,dt);
 		default:
-	    	    return;
+            return;
 	    }
 	}
 	else if (dim == 2)
@@ -386,7 +394,9 @@ static void string_curve_propagation(
     BOND *oldb,*newb;
     POINT *oldp,*newp;
 
-    if (!is_load_node(oldc->start) && !is_rg_string_node(oldc->start))
+    //TODO: Should check for is_rg_string_node() be omitted??? see xlchen code
+        //if (!is_load_node(oldc->start) && !is_rg_string_node(oldc->start))
+    if (!is_load_node(oldc->start))
     {
         oldp = oldc->start->posn;
         newp = newc->start->posn;
@@ -394,7 +404,8 @@ static void string_curve_propagation(
         ft_assign(right_state(newp),right_state(oldp),front->sizest);
     }
 
-    if (!is_load_node(oldc->end) && !is_rg_string_node(oldc->end))
+        //if (!is_load_node(oldc->end) && !is_rg_string_node(oldc->end))
+    if (!is_load_node(oldc->end))
     {
         oldp = oldc->end->posn;
         newp = newc->end->posn;
@@ -519,8 +530,8 @@ static void string_curve_propagation(
                 newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce[i]/massCyl;
                 newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	            newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
-	            newsr->impulse[i] = newsl->impulse[i] = 0.0;
-	            //newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
+	            newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
+	                //newsr->impulse[i] = newsl->impulse[i] = 0.0;
             }
 
             /*
@@ -676,15 +687,14 @@ static void gore_point_propagate(
 	    dv = 0.0;
 
 	    if (front->step > af_params->fsi_startstep)
-		    dv = (sl->pres - sr->pres)*nor[i]/area_dens;
+		    dv = (sl->pres - sr->pres)*nor[i]/area_dens; //dv has units of acceleration
 	    
         if (debugging("rigid_canopy"))
 	    	dv = 0.0;
 
 	    newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv;
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-	    newsr->impulse[i] = newsl->impulse[i] = 0.0;
-	    //newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
+        newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
 	}
 }	/* end gore_point_propagate */
 
@@ -1055,19 +1065,20 @@ static void coating_mono_hyper_surf3d(
 
 	if (debugging("trace"))
 	    (void) printf("Entering coating_mono_hyper_surf3d()\n");
-	immersed_surf = NULL;
+	
+    immersed_surf = NULL;
 	for (s = grid_intfc->surfaces; s && *s; ++s)
 	{
 	    if (wave_type(*s) == ELASTIC_BOUNDARY)
 	    {
-		immersed_surf = *s;
-		comp = base_comp = negative_component(*s);
-		break;
+            immersed_surf = *s;
+            base_comp = negative_component(*s);
+            comp = negative_component(*s);
+            break;
 	    }
 	}
 
-	if (immersed_surf == NULL)
-	    return;
+	if (immersed_surf == NULL) return;
 
 	for (icoords[0] = 1; icoords[0] < top_gmax[0]; ++icoords[0])
 	for (icoords[1] = 1; icoords[1] < top_gmax[1]; ++icoords[1])
@@ -1098,28 +1109,30 @@ static void coating_mono_hyper_surf3d(
 	{
 	    if (wave_type(*s) == ELASTIC_BOUNDARY)
 	    {
-		if (base_comp == negative_component(*s))
-		{
-		    negative_component(*s) = base_comp - 1;
-		    positive_component(*s) = base_comp + 1;
-		}
+            if (base_comp == negative_component(*s))
+            {
+                negative_component(*s) = base_comp - 1;
+                positive_component(*s) = base_comp + 1;
+            }
 	    }
 	}
 	
     if (debugging("coat_comp"))
 	{
+        //prints comps along centerline of grid
 	    icoords[0] = top_gmax[0]/2;
 	    for (icoords[2] = 0; icoords[2] <= top_gmax[2]; ++icoords[2])
 	    {
 	    	for (icoords[1] = 0; icoords[1] <= top_gmax[1]; ++icoords[1])
 	    	{
-		    index = d_index(icoords,top_gmax,dim);
-		    printf("%d",top_comp[index]);
+                index = d_index(icoords,top_gmax,dim);
+                printf("%d",top_comp[index]);
 	    	}
 	    	printf("\n");
 	    }
 	}
 
+    //TODO: Extract this into function and put in afdata.cpp
 	if (debugging("immersed_surf") && front->step%1 == 0)
 	{
 	    int icrd_nb[MAXD],index_nb,n;
@@ -1137,50 +1150,53 @@ static void coating_mono_hyper_surf3d(
 	    	FT_VectorMemoryAlloc((POINTER*)&vz,top_gmax[1],sizeof(double));
 	    	FT_VectorMemoryAlloc((POINTER*)&x,top_gmax[1],sizeof(double));
 	    }
-	    icrd_nb[0] = icoords[0] = top_gmax[0]/2;
+	    
+        icrd_nb[0] = icoords[0] = top_gmax[0]/2;
 	    for (icoords[1] = 0; icoords[1] <= top_gmax[1]; ++icoords[1])
 	    {
 	    	icrd_nb[1] = icoords[1];
 	        for (icoords[2] = 2; icoords[2] < top_gmax[2]-1; ++icoords[2])
-		{
-		    index = d_index(icoords,top_gmax,dim);
-	    	    icrd_nb[2] = icoords[2] + 1;
-		    index_nb = d_index(icrd_nb,top_gmax,dim);
-		    if (top_comp[index] != top_comp[index_nb] &&
-			FT_StateStructAtGridCrossing(front,grid_intfc,icoords,
-                                UPPER,top_comp[index],&l_state,&hs,crx_coords)
-                        &&
-                        FT_StateStructAtGridCrossing(front,grid_intfc,icrd_nb,
-                                LOWER,top_comp[index_nb],&u_state,&hs,
-                                crx_coords))
-		    {
-			pl[n] = getStatePres(l_state);
-			pu[n] = getStatePres(u_state);
-			vz[n] = getStateZvel(l_state);
-			x[n] = crx_coords[1];
-			n++;
-		    }
-		}
+            {
+                index = d_index(icoords,top_gmax,dim);
+                icrd_nb[2] = icoords[2] + 1;
+                index_nb = d_index(icrd_nb,top_gmax,dim);
+                if (top_comp[index] != top_comp[index_nb] 
+                    && FT_StateStructAtGridCrossing(front,grid_intfc,icoords,
+                        UPPER,top_comp[index],&l_state,&hs,crx_coords)
+                    && FT_StateStructAtGridCrossing(front,grid_intfc,icrd_nb,
+                        LOWER,top_comp[index_nb],&u_state,&hs,crx_coords)
+                    )
+                {
+                    pl[n] = getStatePres(l_state);
+                    pu[n] = getStatePres(u_state);
+                    vz[n] = getStateZvel(l_state);
+                    x[n] = crx_coords[1];
+                    n++;
+                }
+            }
 	    }
+
 	    sprintf(pname,"cpres-%d.xg",front->step);
 	    pfile = fopen(pname,"w");
 	    fprintf(pfile,"\"Lower pressure\"\n");
 	    for (i = 0; i < n; ++i)
-		fprintf(pfile,"%f %f\n",x[i],pl[i]);
+            fprintf(pfile,"%f %f\n",x[i],pl[i]);
 	    fprintf(pfile,"\n\n\"Upper pressure\"\n");
 	    for (i = 0; i < n; ++i)
-		fprintf(pfile,"%f %f\n",x[i],pu[i]);
+            fprintf(pfile,"%f %f\n",x[i],pu[i]);
 	    fprintf(pfile,"\n\n\"Pressure difference\"\n");
 	    for (i = 0; i < n; ++i)
-		fprintf(pfile,"%f %f\n",x[i],pl[i]-pu[i]);
+            fprintf(pfile,"%f %f\n",x[i],pl[i]-pu[i]);
 	    fclose(pfile);
-	    sprintf(pname,"cvelz-%d.xg",front->step);
-	    pfile = fopen(pname,"w");
+	    
+        sprintf(pname,"cvelz-%d.xg",front->step);
+        pfile = fopen(pname,"w");
 	    fprintf(pfile,"\"Z-velocity\"\n");
 	    for (i = 0; i < n; ++i)
-		fprintf(pfile,"%f %f\n",x[i],vz[i]);
+            fprintf(pfile,"%f %f\n",x[i],vz[i]);
 	    fclose(pfile);
 	}
+
 	if (debugging("trace"))
 	    (void) printf("Leaving coating_mono_hyper_surf3d()\n");
 }	/* end coating_mono_hyper_surf3d */
@@ -1197,7 +1213,6 @@ static void load_node_propagate(
 	double *g = af_params->gravity;
 	double f[MAXD],accel[MAXD];
 	double kl = af_params->kl;
-	double mass = af_params->payload;
 	CURVE **c;
 	STATE *sl,*sr,*newsl,*newsr;
 	double vec[MAXD],vec_mag;
@@ -1205,6 +1220,7 @@ static void load_node_propagate(
 	int i,dim = FT_Dimension();
 
 	if (!is_load_node(oldn)) return;
+
 	oldp = oldn->posn;
 	newp = newn->posn;
 	sl = (STATE*)left_state(oldp);
@@ -1216,45 +1232,52 @@ static void load_node_propagate(
 	{
 	    (void)printf("\nEntering load_node_propagate()\n");
 	}
-	for (i = 0; i < dim; ++i)
-	    f[i] = 0.0;
+	
+    for (i = 0; i < dim; ++i) f[i] = 0.0;
+
 	node_out_curve_loop(oldn,c)
 	{
 	    b = (*c)->first;
+        double dL = bond_length(b) - bond_length0(b);
+
 	    for (i = 0; i < dim; ++i)
 	    {
-		vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
-		vec[i] /= bond_length(b);
-		f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
+            vec[i] /= bond_length(b);
+            f[i] += kl*dL*vec[i];
 	    }
 	}
 	node_in_curve_loop(oldn,c)
 	{
 	    b = (*c)->last;
+        double dL = bond_length(b) - bond_length0(b);
+
 	    for (i = 0; i < dim; ++i)
 	    {
-		vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
-		vec[i] /= bond_length(b);
-		f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
+            vec[i] /= bond_length(b);
+            f[i] += kl*dL*vec[i];
 	    }
 	}
 
+	double mass = af_params->payload;
 	for (i = 0; i < dim; ++i)
 	{
 	    accel[i] = f[i]/mass;
 	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = 0.0;
 	    newsr->other_accel[i] = newsl->other_accel[i] = accel[i];
 	    newsl->vel[i] = newsr->vel[i] = sl->vel[i] + (accel[i] + g[i])*dt;
-	    newsl->impulse[i] = newsr->impulse[i] = 0.0;
-	    //newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
+	    newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
 	}
 
+    //set new bond lengths
 	node_out_curve_loop(newn,c)
 	{
 	    b = (*c)->first;
 	    set_bond_length(b,dim);
 	}
-	node_in_curve_loop(newn,c)
+	
+    node_in_curve_loop(newn,c)
 	{
 	    b = (*c)->last;
 	    set_bond_length(b,dim);
@@ -1291,14 +1314,11 @@ static void rg_string_node_propagate(
 	double V[MAXD];
 
     if (!is_rg_string_node(oldn)) return;
-        
-    double mass = af_params->payload;
-	
+    
     for (i = 0; i < dim; ++i)
 	{
 	    if (Coords(oldn->posn)[i] <= gr->L[i] || 
-		Coords(oldn->posn)[i] > gr->U[i])
-		break;
+		    Coords(oldn->posn)[i] > gr->U[i]) break;
 	}
 	
     if (i != dim || oldn->extra == NULL) return;
@@ -1317,28 +1337,38 @@ static void rg_string_node_propagate(
 
     for (i = 0; i < dim; ++i) f[i] = 0.0;
 	
+    //TODO: Why do we have to compute the force, f, here and in setSpecialNodeForce()
+
     /* calculate the force from the string chords */
 	node_out_curve_loop(oldn,c)
     {
         if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+        
         b = (*c)->first;
+        double dL = bond_length(b) - bond_length0(b);
+
         for (i = 0; i < dim; ++i)
         {
             vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
             vec[i] /= bond_length(b);
-            f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            f[i] += kl*dL*vec[i];
+                //f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
         }
     }
         
     node_in_curve_loop(oldn,c)
     {
         if (hsbdry_type(*c) == PASSIVE_HSBDRY) continue;
+        
         b = (*c)->last;
+        double dL = bond_length(b) - bond_length0(b);
+
         for (i = 0; i < dim; ++i)
         {
             vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
             vec[i] /= bond_length(b);
-            f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
+            f[i] += kl*dL*vec[i];
+                //f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
         }
     }
 
@@ -1369,10 +1399,20 @@ static void rg_string_node_propagate(
 	{
 	    printf("ERROR in rg_string_node_propagate \n");
 	    printf("No related hs or hse found");
-	    clean_up(ERROR);
+	    LOC(); clean_up(ERROR);
 	}
 	
-    //TODO: hs should have wave_type == MOVABLE_BODY_BOUNDARY?
+    int num_rg_string_nodes = num_string_nodes(hs);
+    double mass = af_params->payload/num_rg_string_nodes;
+        //double mass = total_mass(hs)/num_rg_string_nodes;
+
+    if (debugging("rg_string_node"))
+    {
+        printf("\naf_params->payload = %g   num_rg_string_nodes = %d\n",
+                af_params->payload,num_rg_string_nodes);
+        printf("mass on rg_string_node = %g\n\n",mass);
+    }
+	
     ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
 	
     if (dt > 0.0)
@@ -1396,7 +1436,9 @@ static void rg_string_node_propagate(
 	}
 
     for (i = 0; i < dim; ++i)
+    {
         accel[i] -= g[i];
+    }
 
     if (debugging("rigid_body"))
     {
@@ -1420,16 +1462,31 @@ static void rg_string_node_propagate(
 	{
 	    Coords(newp)[i] = Coords(oldp)[i];
 	    newp->force[i] = f[i];
-	    newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
-	    newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
-	    newsl->impulse[i] = newsr->impulse[i] = 0.0;
-	    //newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
+	    
+        newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
+        newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
+        newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
+
+        /*
+        //TODO: Is below correct, or do we always divide the spring force by the mass???
+        //
+        if (Mag3d(af_params->gravity) > MACH_EPS)
+        {
+	        newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
+	        newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
+        }
+        else
+        {
+	        newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i];
+	        newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+        }
+        */
 	}
 
-        if (debugging("trace"))
-        {
-            (void)printf("Leaving rg_string_node_propagate()\n\n");
-        }
+    if (debugging("trace"))
+    {
+        (void)printf("Leaving rg_string_node_propagate()\n\n");
+    }
 }	/* end rg_string_node_propagate */
 
 extern int airfoil_node_propagate(
@@ -1438,20 +1495,20 @@ extern int airfoil_node_propagate(
 	NODE *oldn,
 	NODE *newn,
 	RPROBLEM        **rp,
-        double          dt,
-        double          *dt_frac,
-        NODE_FLAG       flag,
-        POINTER         user)
+    double          dt,
+    double          *dt_frac,
+    NODE_FLAG       flag,
+    POINTER         user)
 {
 	if (is_load_node(oldn))
-	    load_node_propagate(front,oldn,newn,dt);
-	else if (is_rg_string_node(oldn))
-	    rg_string_node_propagate(front,oldn,newn,dt);
-	else
-	    return GOOD_NODE;
+    {
+        load_node_propagate(front,oldn,newn,dt);
+    }
+    else if (is_rg_string_node(oldn))
+    {
+        rg_string_node_propagate(front,oldn,newn,dt);
+    }
 
-    //TODO: return a meaningful exit status for
-    //      time step modification in propagate_node_points()
 	return GOOD_NODE;
 }	/* end airfoil_node_propagate */
 
@@ -1499,6 +1556,8 @@ static void passive_curve_propagation(
 		for (i = 0; i < dim; ++i)
 		    btrist->vel[i] = oldst->vel[i];
 	    }
+
+        //NOTE: Appears to call iFluid contact_point_propagate()
             ifluid_point_propagate(front,wave,oldp,newp,
                         Hyper_surf_element(oldb->_btris[0]->tri),
                         Hyper_surf(oldb->_btris[0]->surface),dt,V);

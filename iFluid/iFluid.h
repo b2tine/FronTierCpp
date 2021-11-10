@@ -23,29 +23,29 @@
 
 enum IF_PROB_TYPE
 {
-        ERROR_TYPE = -1,
+    ERROR_TYPE = -1,
 	BEE_3D = 1,
-        BUBBLE_SURFACE,
+    BUBBLE_SURFACE,
 	CHANNEL_FLOW,
-        FLUID_CRYSTAL,
-        FLUID_RIGID_BODY,
-        FLUID_SOLID_CIRCLE,
+    FLUID_CRYSTAL,
+    FLUID_RIGID_BODY,
+    FLUID_SOLID_CIRCLE,
 	FLUID_SOLID_CONE,
-        FLUID_SOLID_CYLINDER,
-        FLUID_SOLID_RECT,
-        FLUID_SOLID_TRIANGLE,
+    FLUID_SOLID_CYLINDER,
+    FLUID_SOLID_RECT,
+    FLUID_SOLID_TRIANGLE,
 	HELICOPTER_3D,
 	OPEN_ROTOR,
 	PRESSURE_PUMP,
 	RANDOM_FLOW,
-        ROTOR_ONE_FLUID,
-        ROTOR_TWO_FLUID,
+    ROTOR_ONE_FLUID,
+    ROTOR_TWO_FLUID,
 	TAYLOR_GREEN_VORTEX,
-        TWO_FLUID_BUBBLE,
-        TWO_FLUID_KH,
-        TWO_FLUID_RT,
+    TWO_FLUID_BUBBLE,
+    TWO_FLUID_KH,
+    TWO_FLUID_RT,
 	WINDMILL_2D,
-        WINDMILL_3D,
+    WINDMILL_3D,
 	HUMAN_BODY_3D,
     BACKWARD_FACING_STEP,
     BUMP,
@@ -70,20 +70,22 @@ enum DOMAIN_STATUS
     SOLVED
 };
 
-struct IF_FIELD {
+struct IF_FIELD 
+{
 	double **vel;			/* Velocities */
     double **vel_star;      /* Intermediate Velocities */
 	double **prev_vel;      /* Previous Step Velocities */
 	double **vorticity;		/* 3d Vorticity vector */
-	double *temperature;            /* Temperature */
-	double *phi;
+	double *temperature;    /* Temperature */
+	double *phi;            /* projection method numerical pressure term */
 	double **grad_phi;
-	double *q;
-	double *pres;			/* Pressure */
+	double *q;              /* lagged pressure term */
+	double **grad_q;
+	double *pres;			/* Pressure at n+1/2 */
+	double *movie_pres;		/* extrapolated Pressure at n+1 */
 	double *vort;			/* Magnitude of Vorticity in 2D */
 	double *mu;
 	double *rho;
-	double **grad_q;
 	double **f_surf;		// Surface force (such as tension)
 	double **old_var;		// For debugging purpose
 
@@ -96,55 +98,51 @@ struct IF_FIELD {
 	double **ext_accel;		/*external forcing from other field*/
 };
 
-enum _PROJC_METHOD {
+enum PROJC_METHOD 
+{
 	ERROR_PROJC_SCHEME		= -1,
-        SIMPLE			=  1,
-        BELL_COLELLA,
-        KIM_MOIN,
-        PEROT_BOTELLA,
-        PMI,
-        PMII,
-        PMIII
+    SIMPLE			=  1,
+    BELL_COLELLA,
+    KIM_MOIN,
+    PEROT_BOTELLA,
+    PMI,
+    PMII,
+    PMIII
 };
-typedef enum _PROJC_METHOD PROJC_METHOD;
 
-enum _ADVEC_METHOD {
+enum ADVEC_METHOD 
+{
 	ERROR_ADVEC_SCHEME		= -1,
-        UPWIND			=  1,
-        WENO
+    UPWIND			=  1,
+    WENO
 };
-typedef enum _ADVEC_METHOD ADVEC_METHOD;
 
-enum _ELLIP_METHOD {
+enum ELLIP_METHOD 
+{
 	ERROR_ELLIP_SCHEME		= -1,
 	SIMPLE_ELLIP		= 1,
 	DOUBLE_ELLIP,
     DUAL_ELLIP
 };
 
-typedef enum _ELLIP_METHOD ELLIP_METHOD;
-
-enum _DOMAIN_METHOD {
+enum DOMAIN_METHOD {
 	BY_COMPONENT		= 1,
 	BY_CROSSING,
 	BY_WALL
 };
-typedef enum _DOMAIN_METHOD DOMAIN_METHOD;
 
-enum _EDDY_VISC {
+enum EDDY_VISC {
 	BALDWIN_LOMAX		= 1,
 	VREMAN,
 	SMAGORINSKY,
     KEPSILON
 };
-typedef enum _EDDY_VISC EDDY_VISC;
 
-struct _NS_SCHEME {
+struct NS_SCHEME {
 	PROJC_METHOD projc_method;
 	ADVEC_METHOD advec_method;
 	ELLIP_METHOD ellip_method;
 };
-typedef struct _NS_SCHEME NS_SCHEME;
 
 struct FINITE_STRING {         // For fluid drag on string chord
     double radius;
@@ -225,14 +223,15 @@ struct FLOW_THROUGH_PARAMS
     COMPONENT comp;
 };
 
-enum _TIME_FUNC_TYPE {
+enum TIME_FUNC_TYPE 
+{
 	CONSTANT		=  1,
 	PULSE_FUNC,
 	SINE_FUNC	
 };
-typedef enum _TIME_FUNC_TYPE TIME_FUNC_TYPE;
 
-struct _TIME_DEPENDENT_PARAMS {
+struct TIME_DEPENDENT_PARAMS 
+{
 	TIME_FUNC_TYPE td_type;
 	double v_base[MAXD], p_base;
 	double v_peak[MAXD], p_peak;
@@ -241,27 +240,26 @@ struct _TIME_DEPENDENT_PARAMS {
 	double omega,phase;
 	double T[10];
 };
-typedef struct _TIME_DEPENDENT_PARAMS TIME_DEPENDENT_PARAMS;
 
 struct TRANSLATION_PARAMS
 {
     double vel[3];
 };
 
-struct _SPLIT_STATE_PARAMS {
+struct SPLIT_STATE_PARAMS 
+{
 	int dir;
 	double split_coord;
 	STATE left_state;
 	STATE right_state;
 };
-typedef struct _SPLIT_STATE_PARAMS SPLIT_STATE_PARAMS;
 
-struct _PARABOLIC_STATE_PARAMS {
+struct PARABOLIC_STATE_PARAMS 
+{
 	int dir;
 	double v_peak[MAXD];
 	STATE state;
 };
-typedef struct _PARABOLIC_STATE_PARAMS PARABOLIC_STATE_PARAMS;
 
 struct CUBIC_STATE_PARAMS {
     STATE state;
@@ -270,19 +268,18 @@ struct CUBIC_STATE_PARAMS {
     FLOW_TYPE flow_type;
 };
 
-struct _OPEN_PIPE_PARAMS
+struct OPEN_PIPE_PARAMS
 {
-        int dir;
-        int side;
-        double center[MAXD];
-        double radius;
-        int in_pipe_bdry;
-        int out_pipe_bdry;
-        boolean in_flow_through;
-        boolean out_flow_through;
-        STATE state[2];
+    int dir;
+    int side;
+    double center[MAXD];
+    double radius;
+    int in_pipe_bdry;
+    int out_pipe_bdry;
+    boolean in_flow_through;
+    boolean out_flow_through;
+    STATE state[2];
 };
-typedef struct _OPEN_PIPE_PARAMS OPEN_PIPE_PARAMS;
 
 
 struct GHOST_COMPUTATION
@@ -328,11 +325,16 @@ public:
 	Incompress_Solver_Smooth_Basis(Front &front);
 	virtual ~Incompress_Solver_Smooth_Basis() {};
 
+	int dim;
+
 	double m_dt;
 	double old_dt;
 	double accum_dt {0.0};
 	
     double max_speed;
+    int icrds_max[MAXD];
+        //double coords_max_speed[MAXD];
+
 	double min_pressure;
     double max_pressure;
     double mu_max {0.0};
@@ -342,13 +344,15 @@ public:
     double min_value; //for debugging
 	double max_value; //for debugging
 	
+	double min_dt;
     double max_dt;
     double visc_max_dt;
-	double min_dt;
-	double *top_h;
-	double vmin[MAXD],vmax[MAXD];
-	int dim;
-	int icrds_max[MAXD];
+	
+    double *top_h;
+	
+	double vmin[MAXD];
+    double vmax[MAXD];
+    double abs_vmax[MAXD];
 
 	void initMesh(void);
     void readFrontInteriorStates(char *state_name);
@@ -418,12 +422,16 @@ public:
 	virtual void setParallelVelocity(void) = 0;
 	virtual void solve(double dt) = 0; // main step function
         virtual void vtk_plot_scalar(char*, const char*) = 0;
-    virtual void writeMeshFileVTK();
+    
+    void writeMeshFileVTK();
+    void writeCompGridMeshFileVTK();
+        //virtual void vtkPlotSurfacePressure();
 
     //std::priority_queue<IF_Injection*> InjectionEvents;
     //void scheduleInjectionEvent(IF_Injection*);
     //void consumeInjectionEvent(IF_Injection*);
 
+    void debug_print_grids();
 
 protected:
 	Front *front;
@@ -722,6 +730,7 @@ extern double getStateMu(POINTER);
 extern double getStateDens(POINTER);
 extern double getStateTemp(POINTER);
 
+extern double getStateMoviePres(POINTER);
 extern double getStatePres(POINTER);
 extern double getStatePhi(POINTER);
 extern double getStateQ(POINTER);
@@ -789,4 +798,5 @@ extern void read_open_end_bdry_data(char*,Front*);
 extern void setContactNodeType(Front*);
 extern int contact_node_propagate(Front*,POINTER,NODE*,NODE*,RPROBLEM**,
                                double,double*,NODE_FLAG);
+
 #endif

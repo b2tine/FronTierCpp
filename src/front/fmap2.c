@@ -1781,7 +1781,7 @@ EXPORT CURVE *FT_MakeParametricCurve(
 
 EXPORT void FT_PrintTimeStamp(Front *front)
 {
-	(void) printf("\ntime = %20.14f   step = %5d   next dt = %20.14f\n",
+	(void) printf("\ntime = %20.14f   step = %5d   next dt = %20.14f\n\n",
                         front->time,front->step,front->dt);
 	fflush(stdout);
 }	/* end FT_PrintTimeStamp */

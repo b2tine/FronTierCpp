@@ -1,8 +1,9 @@
 Domain limit in 0-th dimension: 0 2.694
-Domain limit in 1-th dimension: 0 0.984
+Domain limit in 1-th dimension: 0 1.384
+    XXXDomain limit in 1-th dimensionXXX: 0 0.984
 
-Computational grid: 250 120
-Computational gridXXX: 109 45
+Computational grid: 250 168
+    XXXComputational gridXXX: 250 120
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -22,8 +23,9 @@ Problem type can be
 	FLUID_SOLID_CIRCLE
 Enter problem type: FLUID_SOLID_CIRCLE
 
-Enter the center of the circleXXX: 0.775 0.492 
-Enter the center of the circle: 0.375 0.492 
+Enter the center of the circle: 0.375 0.692 
+    XXXEnter the center of the circleXXX: 0.375 0.492 
+    XXXEnter the center of the circleXXX: 0.775 0.492 
 Enter radius of the circle: 0.075
 
 Enter yes if the object is fixed: yes
@@ -82,6 +84,8 @@ Type y to make vector vorticity field movie: n
 ************Debugging options*****************
 Enter yes for debugging: yes
 Enter the debugging string: PETSc
+Enter the debugging string: ifluid_dt
+
 Enter the debugging stringX: slip_boundary
 
 Enter the debugging stringX: trace

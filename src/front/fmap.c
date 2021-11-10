@@ -99,10 +99,6 @@ EXPORT	void FT_InteriorPropagate(
 {
     if (front->interior_propagate != NULL)
     {
-        //TODO: rewrite to allow return of error code
-        //      for time step modification like FT_Propagate()
-        //      -- do inside interior_propagate() function
-        //         instead of here
         interior_advance_front(front);
 
         if (front->grid_intfc != NULL)
@@ -580,17 +576,18 @@ EXPORT	void FT_MakeGridIntfc(
 {
 	Table *T;
         COMPONENT *comps;
-	if (Tracking_algorithm(front) == SIMPLE_TRACKING)
-	    return;
-	if (debugging("grid_line_comp"))
+	if (Tracking_algorithm(front) == SIMPLE_TRACKING) return;
+	
+    if (debugging("grid_line_comp"))
 	    init_grid_debug(front);
-	communicate_default_comp(front);
-	front->grid_intfc = make_grid_intfc(front->interf,
-			EXPANDED_DUAL_GRID,NULL);
-	/* communicate the components */
-        T = table_of_interface(front->grid_intfc);
-        comps = T->components;
-        FT_ParallelExchGridIntArrayBuffer(comps,front);
+	
+    communicate_default_comp(front);
+	front->grid_intfc = make_grid_intfc(front->interf,EXPANDED_DUAL_GRID,NULL);
+	
+    /* communicate the components */
+    T = table_of_interface(front->grid_intfc);
+    comps = T->components;
+    FT_ParallelExchGridIntArrayBuffer(comps,front);
 }	/* end FT_MakeGridIntfc */
 
 EXPORT	void FT_MakeCompGridIntfc(
@@ -1412,7 +1409,8 @@ LOCAL boolean build_linear_element(
                 }
             }
 	    }
-	    if (extrapolation_permitted == YES)
+	    
+        if (extrapolation_permitted == YES)
 	    {
 	    	for (i = 0; i < 3; i++)
 		    {
@@ -1456,8 +1454,10 @@ LOCAL boolean build_linear_element(
                 }
             }
 	    }
+        
         /*
         //TODO: Is this acceptable? Why only used in 2d currently?
+        //          -- CURRENTLY TESTING 
 	    if (extrapolation_permitted == YES)
 	    {
 	    	for (i = 0; i < 4; i++)
@@ -2920,104 +2920,109 @@ LOCAL void FrontPreAdvance2d(
 	    pp_global_sum(force[i],dim);
 	    pp_global_sum(&torque[i],1);
 	}
+
 	for (c = intfc->curves; c && *c; ++c)
 	{
 	    if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
-	    {
-		index = body_index(*c);
-		for (i = 0; i < dim; ++i)
-		    old_vel[i] = center_of_mass_velo(*c)[j];
-		if (motion_type(*c) == PRESET_MOTION ||
-		    motion_type(*c) == PRESET_COM_MOTION ||
-		    motion_type(*c) == PRESET_TRANSLATION ||
-		    motion_type(*c) == PRESET_ROTATION) 
-		{
-		    if (vparams(*c) != NULL)
-		    	vel_func(*c)(front,vparams(*c),NULL,
-				center_of_mass_velo(*c));
-		    if (debugging("rigid_body"))
-		    {
-		    	printf("Body index: %d\n",index);
-		    	printf("Preset motion\n");
-		    	printf("angular_velo = %f\n",angular_velo(*c));
-		    	printf("center_of_mass_velo = %f  %f\n",
-					center_of_mass_velo(*c)[0],
-					center_of_mass_velo(*c)[1]);
-		    }
-		}
-		else if (motion_type(*c) == TRANSLATION)
-		{
-		    for (i = 0; i < dim; ++i)
-		    	center_of_mass_velo(*c)[i] +=
-                        	dt*translation_dir(*c)[i]*force[index][i]/
-				total_mass(*c);
-		    angular_velo(*c) = 0.0;
-		}
-		else if (motion_type(*c) == ROTATION) 
-		{
-		    for (i = 0; i < dim; ++i)
-		    	center_of_mass_velo(*c)[i] = 0.0;
-		    angular_velo(*c) += dt*torque[index]/mom_inertial(*c);
-		}
-		else if (motion_type(*c) == COM_MOTION)
-		{
-		    for (i = 0; i < dim; ++i)
-		    	center_of_mass_velo(*c)[i] +=
-                        	dt*force[index][i]/total_mass(*c);
-		    angular_velo(*c) = 0.0;
-		}
-		else
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	center_of_mass_velo(*c)[i] +=
-                        	dt*force[index][i]/total_mass(*c);
-                    }
-                    angular_velo(*c) += dt*torque[index]/mom_inertial(*c);
-                }
-                for (i = 0; i < dim; ++i)
-                    center_of_mass(*c)[i] += dt*(center_of_mass_velo(*c)[i] + 
-							old_vel[i])*0.5;
+        {
+            index = body_index(*c);
+            for (i = 0; i < dim; ++i)
+                old_vel[i] = center_of_mass_velo(*c)[j];
+            
+            if (motion_type(*c) == PRESET_MOTION ||
+                motion_type(*c) == PRESET_COM_MOTION ||
+                motion_type(*c) == PRESET_TRANSLATION ||
+                motion_type(*c) == PRESET_ROTATION) 
+            {
+                if (vparams(*c) != NULL)
+                    vel_func(*c)(front,vparams(*c),NULL,center_of_mass_velo(*c));
+
                 if (debugging("rigid_body"))
                 {
                     printf("Body index: %d\n",index);
-                    printf("total mass = %16.15f\n",total_mass(*c));
-                    printf("moment of inertial = %f\n",mom_inertial(*c));
-                    printf("torque = %f\n",torque[index]);
-                    printf("force = %f %f\n",force[index][0],force[index][1]);
+                    printf("Preset motion\n");
                     printf("angular_velo = %f\n",angular_velo(*c));
-                    printf("center_of_mass = %f  %f\n",
-                        center_of_mass(*c)[0],center_of_mass(*c)[1]);
                     printf("center_of_mass_velo = %f  %f\n",
-                        center_of_mass_velo(*c)[0],center_of_mass_velo(*c)[1]);
+                        center_of_mass_velo(*c)[0],
+                        center_of_mass_velo(*c)[1]);
                 }
             }
-            else if(wave_type(*c) == ICE_PARTICLE_BOUNDARY)
+            else if (motion_type(*c) == TRANSLATION)
+            {
+                for (i = 0; i < dim; ++i)
+                    center_of_mass_velo(*c)[i] +=
+                                dt*translation_dir(*c)[i]*force[index][i]/
+                    total_mass(*c);
+                angular_velo(*c) = 0.0;
+            }
+            else if (motion_type(*c) == ROTATION) 
+            {
+                for (i = 0; i < dim; ++i)
+                    center_of_mass_velo(*c)[i] = 0.0;
+                angular_velo(*c) += dt*torque[index]/mom_inertial(*c);
+            }
+            else if (motion_type(*c) == COM_MOTION)
+            {
+                for (i = 0; i < dim; ++i)
+                    center_of_mass_velo(*c)[i] += dt*force[index][i]/total_mass(*c);
+                angular_velo(*c) = 0.0;
+            }
+            else
             {
                 for (i = 0; i < dim; ++i)
                 {
-                        center_of_mass_velo(*c)[i] +=
+                    center_of_mass_velo(*c)[i] +=
                                 dt*force[index][i]/total_mass(*c);
-                        center_of_mass(*c)[i] += dt*center_of_mass_velo(*c)[i];
-                        center_of_mass(*c)[i] -= 
-				0.5*(force[index][i]/total_mass(*c)*sqr(dt)) ;
                 }
-                if (debugging("rigid_body"))
-                {
-                    printf("Body index: %d\n",index);
-                    printf("force = %20.19f %20.19f\n",force[index][0],
-			force[index][1]);
-                    printf("center_of_mass = %20.19f  %20.19f\n",
-                        center_of_mass(*c)[0],center_of_mass(*c)[1]);
-                    printf("center_of_mass_velo = %20.19f  %20.19f\n",
-                        center_of_mass_velo(*c)[0],center_of_mass_velo(*c)[1]);
-                }
-
+                angular_velo(*c) += dt*torque[index]/mom_inertial(*c);
             }
+
+            for (i = 0; i < dim; ++i)
+            {
+                center_of_mass(*c)[i] += dt*(center_of_mass_velo(*c)[i] + old_vel[i])*0.5;
+            }
+
+                    if (debugging("rigid_body"))
+                    {
+                        printf("Body index: %d\n",index);
+                        printf("total mass = %16.15f\n",total_mass(*c));
+                        printf("moment of inertial = %f\n",mom_inertial(*c));
+                        printf("torque = %f\n",torque[index]);
+                        printf("force = %f %f\n",force[index][0],force[index][1]);
+                        printf("angular_velo = %f\n",angular_velo(*c));
+                        printf("center_of_mass = %f  %f\n",
+                            center_of_mass(*c)[0],center_of_mass(*c)[1]);
+                        printf("center_of_mass_velo = %f  %f\n",
+                            center_of_mass_velo(*c)[0],center_of_mass_velo(*c)[1]);
+                    }
+                
         }
-        free_these(2,force,torque);
-        if (debugging("rigid_body"))
-            (void) printf("Leaving FrontPreAdvance2d()\n");
+        else if(wave_type(*c) == ICE_PARTICLE_BOUNDARY)
+        {
+            for (i = 0; i < dim; ++i)
+            {
+                center_of_mass_velo(*c)[i] +=
+                        dt*force[index][i]/total_mass(*c);
+                center_of_mass(*c)[i] += dt*center_of_mass_velo(*c)[i];
+                center_of_mass(*c)[i] -= 0.5*(force[index][i]/total_mass(*c)*sqr(dt)) ;
+            }
+
+            if (debugging("rigid_body"))
+            {
+                printf("Body index: %d\n",index);
+                printf("force = %20.19f %20.19f\n",force[index][0],force[index][1]);
+                printf("center_of_mass = %20.19f  %20.19f\n",
+                    center_of_mass(*c)[0],center_of_mass(*c)[1]);
+                printf("center_of_mass_velo = %20.19f  %20.19f\n",
+                    center_of_mass_velo(*c)[0],center_of_mass_velo(*c)[1]);
+            }
+
+        }
+    }
+    
+    free_these(2,force,torque);
+    if (debugging("rigid_body"))
+        (void) printf("Leaving FrontPreAdvance2d()\n");
 }	/* end FrontPreAdvance2d */
 
 LOCAL void FrontPreAdvance3d(
@@ -3355,7 +3360,7 @@ LOCAL void FrontPreAdvance3d(
                 center_of_mass(*s)[i] += dt*(center_of_mass_velo(*s)[i] + old_vel[i])*0.5;
             }
             
-            if (debugging("rigid_body"))
+            if (debugging("rigid_body_preadvance"))
             {
                 printf("Body index: %d\n",index);
                 printf("torque = %f %f %f\n",torque[index][0],
@@ -3386,7 +3391,7 @@ LOCAL void FrontPreAdvance3d(
                 center_of_mass(*s)[i] -= 0.5*(force[index][i]/total_mass(*s)*dt*dt);
             }
             
-            if (debugging("rigid_body"))
+            if (debugging("rigid_body_preadvance"))
             {
                 printf("Body index: %d\n",index);
                 printf("force = %f %f %f\n",force[index][0],
@@ -3501,6 +3506,7 @@ EXPORT void FT_ResetTime(Front *front)
 {
 	front->time = 0.0;
     front->dt = 0.0;
+    front->old_dt = 0.0;
     front->step = 0;
 	front->im = front->ip = 0;
     front->is_print_time = NO;
@@ -3554,32 +3560,37 @@ EXPORT	void FT_TimeControlFilter(Front *front)
 	new_dt = min3(dt1,dt2,dt3);
 
 	if (front->step+1 >= front->max_step)
-            front->time_limit_reached = YES;
+    {
+        front->time_limit_reached = YES;
+    }
 
-	if (new_dt > dt) 
-	    return;
+	if (new_dt > dt) return;
 
 	if (fabs(dt1 - new_dt) < 1e-15)
 	{
 	    front->is_movie_time = YES;
 	    (front->im)++;
 	}
-        if (fabs(dt2 - new_dt) < 1e-15)
-        {
-            front->is_print_time = YES;
-	    (front->ip)++;
-        }
-        if (fabs(dt3 - new_dt) < 1e-15)
-        {
-            front->time_limit_reached = YES;
-        }
-	front->dt = new_dt;
+    
+    if (fabs(dt2 - new_dt) < 1e-15)
+    {
+        front->is_print_time = YES;
+        (front->ip)++;
+    }
+    
+    if (fabs(dt3 - new_dt) < 1e-15)
+    {
+        front->time_limit_reached = YES;
+    }
+	
+    front->dt = new_dt;
 }	/* end FT_TimeControlFilter */
 
 EXPORT void FT_AddTimeStepToCounter(Front *front)
 {
 	++(front->step);
 	front->time += front->dt;
+    front->old_dt = front->dt;
 	front->dt = 0.0;
 }	/* end FT_AddTimeStepToCounter */
 

@@ -112,6 +112,12 @@ extern int next_index_in_dir(
 	return index;
 }
 
+extern double getStateMoviePres(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->movie_pres;
+}	/* end getStatePres */
+
 extern double getStatePres(POINTER state)
 {
 	STATE *fstate = (STATE*)state;
@@ -487,8 +493,11 @@ static void iF_flowThroughBoundaryState2d(
 	double f_vort;		// vort flux
 	double f_pres;		// pressure flux
 	double f_phi;		// phi flux
-	double dn,dt = front->dt;
+	double dn;
 	int i,j,dim = front->rect_grid->dim;
+
+    double dt = front->dt;
+    double old_dt = front->old_dt;
 
 	STATE* oldst;
     STATE* newst = (STATE*)state;
@@ -687,7 +696,15 @@ static void iF_flowThroughBoundaryState2d(
         newst->pres -= dt/dn*f_pres;
         newst->phi -= dt/dn*f_phi;
     }
-    
+
+    //extrapolate for p^{n+1}
+    if (dt + old_dt != 0.0)
+    {
+        double W0 = -1.0*dt/(dt + old_dt);
+        double W1 = 1.0 + dt/(dt + old_dt);
+        newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    }
+
     //Since pressure is usually updated as
     //      
     //      p^{n+1/2} = q + phi^{n+1} - 0.5*mu*(Div_U);
@@ -745,6 +762,7 @@ static void iF_flowThroughBoundaryState3d(
     
     int dim = front->rect_grid->dim;
     double dt = front->dt;
+    double old_dt = front->old_dt;
 	
     STATE *oldst, *newst = (STATE*)state;
     STATE  **sts;
@@ -908,6 +926,14 @@ static void iF_flowThroughBoundaryState3d(
         }
     }
 
+    //extrapolate for p^{n+1}
+    if (dt + old_dt != 0.0)
+    {
+        double W0 = -1.0*dt/(dt + old_dt);
+        double W1 = 1.0 + dt/(dt + old_dt);
+        newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    }
+    
     newst->q = oldst->pres;
         //newst->q = 0.0;
      
@@ -1268,20 +1294,20 @@ extern void ifluid_point_propagate(
 	{
         case SUBDOMAIN_BOUNDARY:
             return;
-	case MOVABLE_BODY_BOUNDARY:
-	case ICE_PARTICLE_BOUNDARY:
-	    return rgbody_point_propagate(front,wave,oldp,newp,oldhse,
-					oldhs,dt,V);
-	case NEUMANN_BOUNDARY:
-	case GROWING_BODY_BOUNDARY:
-	    return neumann_point_propagate(front,wave,oldp,newp,oldhse,
-					oldhs,dt,V);
-	case DIRICHLET_BOUNDARY:
-	    return dirichlet_point_propagate(front,wave,oldp,newp,oldhse,
-					oldhs,dt,V);
-	default:
-	    return contact_point_propagate(front,wave,oldp,newp,oldhse,
-					oldhs,dt,V);
+        case MOVABLE_BODY_BOUNDARY:
+        case ICE_PARTICLE_BOUNDARY:
+            return rgbody_point_propagate(front,wave,oldp,newp,oldhse,
+                        oldhs,dt,V);
+        case NEUMANN_BOUNDARY:
+        case GROWING_BODY_BOUNDARY:
+            return neumann_point_propagate(front,wave,oldp,newp,oldhse,
+                        oldhs,dt,V);
+        case DIRICHLET_BOUNDARY:
+            return dirichlet_point_propagate(front,wave,oldp,newp,oldhse,
+                        oldhs,dt,V);
+        default:
+            return contact_point_propagate(front,wave,oldp,newp,oldhse,
+                        oldhs,dt,V);
 	}
 }       /* ifluid_point_propagate */
 
@@ -1300,6 +1326,7 @@ static  void neumann_point_propagate(
         int i, dim = front->rect_grid->dim;
 	double *m_pre = field->pres;
 	double *m_phi = field->phi;
+    double *m_mu = field->mu;
 	double *m_vor = field->vort;
 	STATE *oldst,*newst;
 	POINTER sl,sr;
@@ -1324,7 +1351,7 @@ static  void neumann_point_propagate(
 
     //TODO: Interpolate viscosity from nearby like it is
     //      done for the pressure (below).
-	setStateViscosity(iFparams,newst,comp);
+	    //setStateViscosity(iFparams,newst,comp);
 	
     FT_NormalAtPoint(oldp,front,nor,comp);
 
@@ -1342,6 +1369,15 @@ static  void neumann_point_propagate(
     FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
     
+    //extrapolate for p^{n+1}
+    double old_dt = front->old_dt;
+    if (dt + old_dt != 0.0)
+    {
+        double W0 = -1.0*dt/(dt + old_dt);
+        double W1 = 1.0 + dt/(dt + old_dt);
+        newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    }
+    
     FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
             getStatePhi,&newst->phi,&oldst->phi);
 
@@ -1349,13 +1385,15 @@ static  void neumann_point_propagate(
     newst->q = oldst->pres;
     //newst->q = 0.0;
 	
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,&oldst->mu);
+
     if (dim == 2)
     {
 	    FT_IntrpStateVarAtCoords(front,comp,p1,m_vor,
 			getStateVort,&newst->vort,&oldst->vort);
 	}
 	FT_RecordMaxFrontSpeed(dim,0.0,NULL,Coords(newp),front);
-        return;
 }	/* end neumann_point_propagate */
 
 static  void dirichlet_point_propagate(
@@ -1412,6 +1450,7 @@ static  void dirichlet_point_propagate(
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
         newst->vort = 0.0;
 
+        //TODO: set boundary pressure to non-zero val?
         newst->pres = 0.0;
         newst->phi = 0.0;
 	    newst->q = 0.0;
@@ -1456,10 +1495,12 @@ static  void dirichlet_point_propagate(
 	    	(*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
                     (POINTER)sparams,(POINTER)newst);	
 	    }
-            for (i = 0; i < dim; ++i)
-		FT_RecordMaxFrontSpeed(i,fabs(newst->vel[i]),NULL,Coords(newp),
-					front);
-	    speed = mag_vector(newst->vel,dim);
+            
+        for (i = 0; i < dim; ++i)
+        {
+            FT_RecordMaxFrontSpeed(i,fabs(newst->vel[i]),NULL,Coords(newp),front);
+        }
+        speed = mag_vector(newst->vel,dim);
 	    FT_RecordMaxFrontSpeed(dim,speed,NULL,Coords(newp),front);
 	}
 	if (debugging("dirichlet_bdry"))
@@ -1499,8 +1540,8 @@ static  void contact_point_propagate(
 	FT_GetStatesAtPoint(oldp,oldhse,oldhs,&sl,&sr);
 	oldst = (STATE*)sl;
 	p0 = Coords(newp);
-	FT_IntrpStateVarAtCoords(front,-1,p0,m_pre,getStatePres,&pres,
-				&oldst->pres);
+	FT_IntrpStateVarAtCoords(front,-1,p0,m_pre,getStatePres,&pres,&oldst->pres);
+    
 	if (dim == 2)
 	{
 	    FT_IntrpStateVarAtCoords(front,-1,p0,m_vor,getStateVort,&vort,
@@ -1509,16 +1550,36 @@ static  void contact_point_propagate(
 
 	newst = (STATE*)left_state(newp);
 	newst->vort = vort;
-	newst->pres = pres;
-	setStateViscosity(iFparams,newst,negative_component(oldhs));
+	
+    newst->pres = pres;
+    
+    //extrapolate for p^{n+1}
+    double W0 = 0.0;
+    double W1 = 0.0;
+
+    double old_dt = front->old_dt;
+    if (dt + old_dt != 0.0)
+    {
+        W0 = -1.0*dt/(dt + old_dt);
+        W1 = 1.0 + dt/(dt + old_dt);
+        newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    }
+	
+    setStateViscosity(iFparams,newst,negative_component(oldhs));
 	for (i = 0; i < dim; ++i)
 	{
 	    newst->vel[i] = vel[i];
 	}
+
 	newst = (STATE*)right_state(newp);
 	newst->vort = vort;
-	newst->pres = pres;
-	setStateViscosity(iFparams,newst,positive_component(oldhs));
+	
+    newst->pres = pres;
+	
+    //extrapolate for p^{n+1}
+    newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    
+    setStateViscosity(iFparams,newst,positive_component(oldhs));
 	for (i = 0; i < dim; ++i)
 	{
 	    newst->vel[i] = vel[i];
@@ -1570,7 +1631,8 @@ static void rgbody_point_propagate(
 
     //TODO: Interpolate viscosity from nearby like it is
     //      done for the pressure (below)?
-	setStateViscosity(iFparams,newst,comp);
+    //
+        //setStateViscosity(iFparams,newst,comp);
 	
     FT_NormalAtPoint(oldp,front,nor,comp);
 	dn = grid_size_in_direction(nor,h,dim);
@@ -1580,11 +1642,13 @@ static void rgbody_point_propagate(
 
     if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
     {
+        //TODO: Any harm in doing this even when collision turned off?
         if(!debugging("collision_off"))
         {
             for (i = 0; i < dim; ++i)
             {
                 newst->x_old[i] = Coords(oldp)[i];
+                newst->x_prevstep[i] = Coords(oldp)[i];
             }
         }
         
@@ -1607,11 +1671,9 @@ static void rgbody_point_propagate(
             
             for (i = 0; i < dim; ++i)
             {
-                Coords(newp)[i] =
-                    Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])*0.5;
-                newst->vel[i] = vel[i];
-                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),
-                        NULL,Coords(newp),front);
+                Coords(newp)[i] = Coords(oldp)[i] + dt*(vel[i] + oldst->vel[i])*0.5;
+                    //newst->vel[i] = vel[i];
+                    //FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
             }
         }
 	    else if (dim == 3)
@@ -1682,38 +1744,55 @@ static void rgbody_point_propagate(
             {
                 for (i = 0; i < dim; ++i)
                 {
-                    Coords(newp)[i] = Coords(oldp)[i]
-                        + 0.5*(vel[i] + oldst->vel[i])*dt;
+                    Coords(newp)[i] = Coords(oldp)[i] + 0.5*(vel[i] + oldst->vel[i])*dt;
                 }
             }
     
+            /*
             for (i = 0; i < dim; ++i)
             {
                 newst->vel[i] = vel[i];
-                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,
-                        Coords(newp),front);
+                FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
             }
+            */
 	    
         }
         
     }
     else
     {
-        fourth_order_point_propagate(front,NULL,oldp,newp,
-                oldhse,oldhs,dt,vel);
+        fourth_order_point_propagate(front,NULL,oldp,newp,oldhse,oldhs,dt,vel);
     }
     
     for (i = 0; i < dim; ++i)
     {
         newst->vel[i] = vel[i];
+        FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
     }
 
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pre,
 			getStatePres,&newst->pres,&oldst->pres);
 	
+    //extrapolate for p^{n+1}
+    double old_dt = front->old_dt;
+    if (dt + old_dt != 0.0)
+    {
+        double W0 = -1.0*dt/(dt + old_dt);
+        double W1 = 1.0 + dt/(dt + old_dt);
+        newst->movie_pres = W0*oldst->pres + W1*newst->pres;
+    }
+    
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_phi,
 			getStatePhi,&newst->phi,&oldst->phi);
 	
+    //TODO: Is this correct, or only use setStateViscosity() above???
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,&oldst->mu);
+    /*
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,nullptr);
+    */
+
     if (m_temp != NULL)
     {
         FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,getStateTemp,
@@ -1726,6 +1805,7 @@ static void rgbody_point_propagate(
 			getStateVort,&newst->vort,&oldst->vort);
 	}
     
+    //TODO: Any harm in doing this even when collision turned off?
     if(!debugging("collision_off"))
     {
         /* copy newst to the other STATE; used in collision solver */
@@ -1752,10 +1832,9 @@ extern void fluid_print_front_states(
         while (next_point(intfc,&p,&hse,&hs))
         {
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            fprintf(outfile,"%24.18g %24.18g\n",getStatePres(sl),
-                                getStatePres(sr));
-            fprintf(outfile,"%24.18g %24.18g\n",getStatePhi(sl),
-                                getStatePhi(sr));
+            fprintf(outfile,"%24.18g %24.18g\n",getStatePres(sl), getStatePres(sr));
+            fprintf(outfile,"%24.18g %24.18g\n",getStateMoviePres(sl), getStateMoviePres(sr));
+            fprintf(outfile,"%24.18g %24.18g\n",getStatePhi(sl), getStatePhi(sr));
             if (dim == 2)
             {
                 fprintf(outfile,"%24.18g %24.18g\n",getStateXvel(sl),
@@ -1806,6 +1885,7 @@ extern void fluid_read_front_states(
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
             lstate = (STATE*)sl;        rstate = (STATE*)sr;
             fscanf(infile,"%lf %lf",&lstate->pres,&rstate->pres);
+            fscanf(infile,"%lf %lf",&lstate->movie_pres,&rstate->movie_pres);
             fscanf(infile,"%lf %lf",&lstate->phi,&rstate->phi);
             fscanf(infile,"%lf %lf",&lstate->vel[0],&rstate->vel[0]);
             fscanf(infile,"%lf %lf",&lstate->vel[1],&rstate->vel[1]);
@@ -1929,25 +2009,28 @@ extern void read_iFparams(
     }
 	
     iFparams->ub_speed = HUGE;
-    if (CursorAfterStringOpt(infile,"Enter upper bound for speed:"))
+    if (CursorAfterStringOpt(infile,"Enter upper bound for fluid speed:"))
 	{
             fscanf(infile,"%lf ",&iFparams->ub_speed);
             (void) printf("%f\n",iFparams->ub_speed);
 	}
-	iFparams->total_div_cancellation = NO;
-        if (CursorAfterStringOpt(infile,	
-		"Enter yes to use total divergence cancellation:"))
+	
+    iFparams->total_div_cancellation = NO;
+    if (CursorAfterStringOpt(infile,	
+        "Enter yes to use total divergence cancellation:"))
 	{
 	    fscanf(infile,"%s",string);
 	    (void) printf("%s\n",string);
 	    if (string[0] == 'y' || string[0] == 'Y')
 	    	iFparams->total_div_cancellation = YES;
 	}
-        if (CursorAfterStringOpt(infile,
-		"Enter density and viscosity of the fluid:"))
-        {
-            fscanf(infile,"%lf %lf",&iFparams->rho2,&iFparams->mu2);
-            (void) printf("%f %f\n",iFparams->rho2,iFparams->mu2);
+    
+    //TODO: Is this a problem??
+    if (CursorAfterStringOpt(infile,
+        "Enter density and viscosity of the fluid:"))
+    {
+        fscanf(infile,"%lf %lf",&iFparams->rho2,&iFparams->mu2);
+        (void) printf("%f %f\n",iFparams->rho2,iFparams->mu2);
 	}
 
 	iFparams->use_eddy_visc = NO;
@@ -2680,9 +2763,8 @@ static  void ifluid_compute_force_and_torque2d(
         }
         *torque = 0.0;
 
-	//if (front->step > 5)
-	if (front->step > iFparams->fsi_startstep)
-	{
+	//if (front->step > iFparams->fsi_startstep)
+	//{
             for (b = curve->first; b != NULL; b = b->next)
             {
                 if (force_on_hse(Hyper_surf_element(b),Hyper_surf(curve),gr,
@@ -2702,7 +2784,7 @@ static  void ifluid_compute_force_and_torque2d(
                     *torque += t;
                 }
             }
-	}
+	//}
 
     //TODO: Need to add rotational motion
          
@@ -2790,6 +2872,7 @@ static  void ifluid_compute_force_and_torque3d(
 	    b = (*c)->first;
 	    if (wave_type(b->_btris[0]->surface) == MOVABLE_BODY_BOUNDARY)
         {
+            //TODO: check is_rg_string_node
             rg_string_nodes[num++] = *n;
         }
 	}
@@ -2801,7 +2884,7 @@ static  void ifluid_compute_force_and_torque3d(
 
         for (i = 0; i < dim; ++i)
         {
-            force[i] += p->force[i];//Computed from setSpecialNodeForce()
+            force[i] += p->force[i];//Computed by setSpecialNodeForce()
             rr[i] = Coords(p)[i] - rotation_center(surface)[i];
         }
 
@@ -2809,19 +2892,18 @@ static  void ifluid_compute_force_and_torque3d(
         for (i = 0; i < dim; ++i)
             torque[i] += t[i];
     
-        if (debugging("rigid_body"))
+        if (debugging("rigid_body_force"))
         {
-            printf("rg_string_nodes coords = %f %f %f\n", 
+            printf("\nrg_string_nodes coords = %f %f %f\n", 
                 Coords(p)[0], Coords(p)[1], Coords(p)[2]);
-            printf("rg_string_nodes force = %f %f %f\n", 
+            printf("rg_string_nodes force = %f %f %f\n\n", 
                 p->force[0], p->force[1], p->force[2]);
         }
     }
 	/* end of counting the force on RG_STRING_NODE */
 
-	//if (front->step > 5)
-	if (front->step > iFparams->fsi_startstep)
-	{
+	//if (front->step > iFparams->fsi_startstep)
+	//{
         for (tri = first_tri(surface); !at_end_of_tri_list(tri,surface); tri = tri->next)
         {
             for (i = 0; i < dim; ++i)
@@ -2855,12 +2937,9 @@ static  void ifluid_compute_force_and_torque3d(
                 }
             }
         }
-	}
+	//}
 
 
-        //TODO: force computation should include effects of shear stress from
-        //      turbulence model + wall functions (see to computeDiffusionCN() todos).
-        
     
         /* Add gravity to the total force */
         if (motion_type(surface) != ROTATION &&
@@ -3136,7 +3215,7 @@ static void promptForDirichletBdryState(
 	case 'P':
 	    get_parabolic_state_params(front,infile,&func_params);
 	    FT_InsertDirichletBoundary(front,iF_parabolicBoundaryState,
-			"iF_splitBoundaryState",func_params,NULL,*hs,i_hs);
+			"iF_parabolicBoundaryState",func_params,NULL,*hs,i_hs);
 	    break;
 	default:
 	    (void) printf("Unknown Dirichlet boundary!\n");

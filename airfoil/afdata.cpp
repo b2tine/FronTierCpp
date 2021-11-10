@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "bending.h"
 
 static void naturalStressOfTri(TRI*,double);
+static void qqshi_naturalStressOfTri(TRI*,double);
+
 static void singleCanopyModification(Front*);
 static void bifurcateCanopyModification(Front*);
 static void copyParachuteSet(ELASTIC_SET,ELASTIC_SET*);
@@ -1603,12 +1605,7 @@ void initMovieStress(
         if (string[0] == 'y' || string[0] == 'Y')
         {
             front->print_gview_color = YES;
-            //TODO: This never gets an array to plot,
-            //      should have a third argument like
-            //      FT_AddVtkScalarMovieVariable() and
-            //      FT_AddVtkVectorMovieVariable() do.
             FT_AddVtkIntfcMovieVariable(front,"VMSTRESS");
-            return;
         }
     }
     fclose(infile);
@@ -1630,7 +1627,7 @@ void setStressColor(
 	int n,N;
 	double *color;
 	
-    //TODO: Need to check if ELASTIC_BOUNDARY
+    //TODO: Need to check if ELASTIC_BOUNDARY?
 	n = 0;
 	intfc_surface_loop(intfc,s)
 	{
@@ -1638,14 +1635,18 @@ void setStressColor(
 	    surf_tri_loop(*s,tri)
 	    {
             n++;
-            naturalStressOfTri(tri,ks);
+            qqshi_naturalStressOfTri(tri,ks);
+                //naturalStressOfTri(tri,ks);
+
             if (max_color < tri->color)
                 max_color = tri->color;
             if (min_color > tri->color)
                 min_color = tri->color;
 	    }
 	}
-	FT_VectorMemoryAlloc((POINTER*)&color,n,sizeof(double));
+	
+    //NOT USED
+        //FT_VectorMemoryAlloc((POINTER*)&color,n,sizeof(double));
 	
     n = 0;
 	intfc_surface_loop(intfc,s)
@@ -1675,12 +1676,11 @@ static void naturalStressOfTri(
 	double vec[3];
 	double s[3],c[3];
 	double b1,b2,arg,sigma1,sigma2;
-	int i,j;
 
-	for (i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
 	    len0 = tri->side_length0[i];
-	    for (j = 0; j < 3; ++j)
+	    for (int j = 0; j < 3; ++j)
 	    {
             vec[j] = Coords(Point_of_tri(tri)[(i+1)%3])[j]
                       - Coords(Point_of_tri(tri)[i])[j];
@@ -1691,14 +1691,17 @@ static void naturalStressOfTri(
 	    s[i] = vec[1]/len;
 	}
 
+    /*
+    //TODO: Is this needed?
 	if (Mag3d(tau) < 1.0e-8) // tolerance
 	{
 	    tri->color = 0.0;
 	    return;
 	}
+    */
 	
     // Convert to Cartesian tensor
-	for (i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
         //TODO: According to our 2015 paper in the Journal of Fluids and Structures
         //      We should be multiplying the vector of natural stresses by the inverse
@@ -1707,6 +1710,8 @@ static void naturalStressOfTri(
 	    sigma[i] = sqr(c[i])*tau[0] + sqr(s[i])*tau[1] + s[i]*c[i]*tau[2];
 	}
 	
+    //TODO: compare below with qqshi SpringYMPR code
+    //
     // Diagonalize the stress tensor for principal directions
 	b1 = -(sigma[0] + sigma[1]);
 	b2 = sigma[0]*sigma[1] - 0.25*sqr(sigma[2]);
@@ -1718,97 +1723,86 @@ static void naturalStressOfTri(
 	tri->color = sqrt(sqr(sigma1) + sqr(sigma2) - sigma1*sigma2);
 }	/* end naturalStressOfTri */
 
-extern void vtkPlotSurfaceStress(
-    Front *front)
+
+//NEW -- qqshi SpringYMPR code
+static void qqshi_naturalStressOfTri(
+    TRI *tri,
+    double ks)
 {
-    char *outname = OutName(front);
-    INTERFACE *intfc = front->interf;
-    SURFACE **s;
-    TRI *tri;
-    POINT *p;
-    char dirname[200],fname[200];
-    int i,j;
-    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-    int n,N;
-    double *color;
-    FILE *vfile;
-    int num_tri;
+    double tau[3];
+    double sigma[3];
+    double len0;
+    double vec[3];
+    double s[3],c[3];
+    double b1,b2,arg,sigma1,sigma2;
+    double tcoords[3][MAXD];
+    double len[3];
+    double mapcof[3][3];
+    double A;
 
-    n = 0;
-    sprintf(dirname,"%s/%s%s",outname,"vtk.ts",
-            right_flush(front->step,7));
-    if (!create_directory(dirname,NO))
+    for (int i = 0; i < 3; ++i)
     {
-        printf("Cannot create directory %s\n",dirname);
-        clean_up(ERROR);
-    }
-    sprintf(fname,"%s/%s",dirname,"stress.vtk");
-
-    vfile = fopen(fname,"w");
-    fprintf(vfile,"# vtk DataFile Version 3.0\n");
-    fprintf(vfile,"Surface stress\n");
-    fprintf(vfile,"ASCII\n");
-    fprintf(vfile,"DATASET UNSTRUCTURED_GRID\n");
-
-    num_tri = 0;
-
-    intfc_surface_loop(intfc,s)
-    {
-        if (Boundary(*s)) continue;
-        num_tri += (*s)->num_tri;
+        for (int j = 0; j < MAXD; ++j)
+        {
+            vec[j] = Coords(Point_of_tri(tri)[(i+1)%3])[j] -
+                    Coords(Point_of_tri(tri)[i])[j];
+            tcoords[i][j] = 0;
+        }
+        len[i] = Mag3d(vec);
     }
     
-    //TODO: 3*num_tri includes duplicate points,
-    //      should it be the actual number of points instead?
-    fprintf(vfile,"POINTS %d double\n", 3*num_tri);
-    
-    intfc_surface_loop(intfc,s)
+    /*transform coordinates to triangle plane with point[0] as origin*/
+    tcoords[1][0] = len[0];
+    tcoords[2][0] = (sqr(len[2])+sqr(len[0])-sqr(len[1]))/(2*len[0]);
+    tcoords[2][1] = sqrt(sqr(len[2]) - sqr(tcoords[2][0]));
+
+    for (int i = 0; i < 3; ++i)
     {
-        if (Boundary(*s)) continue;
-        surf_tri_loop(*s,tri)
+        len0 = tri->side_length0[i];
+        for (int j = 0; j < 3; ++j)
         {
-            for (i = 0; i < 3; ++i)
-            {
-                p = Point_of_tri(tri)[i];
-                fprintf(vfile,"%f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
-            }
+            vec[j] = tcoords[(i+1)%3][j] -
+                    tcoords[i][j];
         }
+        tau[i] = ks*(len[i] - len0);
+        c[i] = vec[0]/len[i];
+        s[i] = vec[1]/len[i];
     }
 
-    fprintf(vfile,"CELLS %i %i\n",num_tri,4*num_tri);
-    n = 0;
+    /* Convert to Cartesian tensor */
+    A = tri_area(tri);
     
-    intfc_surface_loop(intfc,s)
-    {
-        if (Boundary(*s)) continue;
-        surf_tri_loop(*s,tri)
-        {
-        fprintf(vfile,"3 %i %i %i\n",3*n,3*n+1,3*n+2);
-        n++;
-        }
-    }
-    fprintf(vfile, "CELL_TYPES %i\n",num_tri);
-        intfc_surface_loop(intfc,s)
-    {
-            if (Boundary(*s)) continue;
-            surf_tri_loop(*s,tri)
-            {
-                fprintf(vfile,"5\n");
-            }
-        }
+    mapcof[0][0] = (tcoords[2][1]-tcoords[0][1])*(tcoords[1][1]-tcoords[0][1])*len[1]*len[1];
+    mapcof[0][1] = (tcoords[0][1]-tcoords[1][1])*(tcoords[2][1]-tcoords[1][1])*len[2]*len[2];
+    mapcof[0][2] = (tcoords[1][1]-tcoords[2][1])*(tcoords[0][1]-tcoords[2][1])*len[0]*len[0];
 
-    fprintf(vfile, "CELL_DATA %i\n", num_tri);
-        fprintf(vfile, "SCALARS von_Mises_stress double\n");
-        fprintf(vfile, "LOOKUP_TABLE default\n");
-    intfc_surface_loop(intfc,s)
+    mapcof[1][0] = (tcoords[2][0]-tcoords[0][0])*(tcoords[1][0]-tcoords[0][0])*len[1]*len[1];
+    mapcof[1][1] = (tcoords[0][0]-tcoords[1][0])*(tcoords[2][0]-tcoords[1][0])*len[2]*len[2];
+    mapcof[1][2] = (tcoords[1][0]-tcoords[2][0])*(tcoords[0][0]-tcoords[2][0])*len[0]*len[0];
+
+    mapcof[2][0] = ((tcoords[2][1]-tcoords[0][1])*(tcoords[0][0]-tcoords[1][0])
+                  + (tcoords[0][0]-tcoords[2][0])*(tcoords[1][1]-tcoords[0][1]))*len[1]*len[1];
+    mapcof[2][1] = ((tcoords[0][1]-tcoords[1][1])*(tcoords[1][0]-tcoords[2][0])
+                  + (tcoords[1][0]-tcoords[0][0])*(tcoords[2][1]-tcoords[1][1]))*len[2]*len[2];
+    mapcof[2][2] = ((tcoords[1][1]-tcoords[2][1])*(tcoords[2][0]-tcoords[0][0])
+                  + (tcoords[2][0]-tcoords[1][0])*(tcoords[0][1]-tcoords[2][1]))*len[0]*len[0];
+
+    for (int i = 0; i < 3; ++i)
     {
-        if (Boundary(*s)) continue;
-        surf_tri_loop(*s,tri)
-        {
-        fprintf(vfile,"%f\n",tri->color);
-        }
+        sigma[i] = mapcof[i][0]*tau[0] + mapcof[i][1]*tau[1] + mapcof[i][2]*tau[2];
+        sigma[i] /= 4.0*A*A;
     }
-}   /* end vtkPlotSurfaceStress */
+    sigma[2] *= 0.5;
+
+    /* Diagonalize the stress tensor for principal directions*/
+    b1 = 0.5 * (sigma[0] + sigma[1]);
+    b2 = sqrt(sqr(0.5*(sigma[0] - sigma[1]))+sqr(sigma[2]));
+    sigma1 = b1 + b2;
+    sigma2 = b1 - b2;
+
+    /* Use von Mises stress as a measure*/
+    tri->color = sqrt(sqr(sigma1) + sqr(sigma2) - sigma1*sigma2);
+}   /* end naturalStressOfTri */
 
 extern void gviewSurfaceStress(
     Front *front)
@@ -1860,6 +1854,195 @@ extern void gviewSurfaceStress(
             right_flush(front->step,7));
     gview_plot_color_scaled_interface(dirname,intfc);
 }   /* end gviewSurfaceStress */
+
+extern void vtkPlotSurfaceStress(
+    Front *front)
+{
+    char *outname = OutName(front);
+    INTERFACE *intfc = front->interf;
+    SURFACE **s;
+    TRI *tri;
+    POINT *p;
+    char dirname[200],fname[200];
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+    double *color;
+    FILE *vfile;
+
+    sprintf(dirname,"%s/%s%s",outname,"vtk.ts",right_flush(front->step,7));
+    if (!create_directory(dirname,NO))
+    {
+        printf("Cannot create directory %s\n",dirname);
+        clean_up(ERROR);
+    }
+    sprintf(fname,"%s/%s",dirname,"surf_stress.vtk");
+
+    vfile = fopen(fname,"w");
+    fprintf(vfile,"# vtk DataFile Version 2.0\n");
+    fprintf(vfile,"Surface stress\n");
+    fprintf(vfile,"ASCII\n");
+    fprintf(vfile,"DATASET UNSTRUCTURED_GRID\n");
+
+    int num_tri = 0;
+    int num_pts = 0;
+
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        unsort_surf_point(*s);
+        surf_tri_loop(*s,tri)
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                p = Point_of_tri(tri)[i];
+                if (sorted(p)) continue;
+                sorted(p) = YES;
+                num_pts++;
+            }
+            //num_tri++;
+        }
+        num_tri += (*s)->num_tri;
+    }
+    
+    //NOTE: sorted(p) and Index_of_point(p) refer to variables
+    //      belonging to the same union data structure.
+    //      Therefore setting one overwrites the other.
+
+    fprintf(vfile,"POINTS %d float\n", num_pts);
+
+    int n = 0;
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                Index_of_point(Point_of_tri(tri)[i]) = -1;
+            }
+        }
+
+        surf_tri_loop(*s,tri)
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                p = Point_of_tri(tri)[i];
+                if (Index_of_point(p) == -1)
+                {
+                    fprintf(vfile,"%f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+                    Index_of_point(p) = n++;
+                }
+            }
+        }
+    }
+
+    fprintf(vfile,"CELLS %d %d\n",num_tri,4*num_tri);
+    
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        {
+            fprintf(vfile,"3 %d %d %d\n",
+                    Index_of_point(Point_of_tri(tri)[0]),
+                    Index_of_point(Point_of_tri(tri)[1]),
+                    Index_of_point(Point_of_tri(tri)[2]));
+        }
+    }
+
+    fprintf(vfile, "CELL_TYPES %i\n",num_tri);
+    
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        {
+            fprintf(vfile,"5\n");
+        }
+    }
+
+    fprintf(vfile, "CELL_DATA %i\n", num_tri);
+    fprintf(vfile, "SCALARS von_Mises_stress float 1\n");
+    fprintf(vfile, "LOOKUP_TABLE default\n");
+
+    intfc_surface_loop(intfc,s)
+    {
+        if (Boundary(*s)) continue;
+        surf_tri_loop(*s,tri)
+        {
+            fprintf(vfile,"%f\n",tri->color);
+        }
+    }
+}   /* end vtkPlotSurfaceStress */
+
+
+/*
+//TODO: Turn this debugging block from coating_mono_hyper_surf3d()
+//      into a stand alone function.
+void write_centerline_velocity_and_pressure_differential_on_canopy(Front* front)
+{
+	    int icrd_nb[MAXD],index_nb,n;
+	    POINTER l_state,u_state;
+	    double crx_coords[MAXD],crx_nb[MAXD];
+	    static double *pl,*pu,*vz,*x;
+	    FILE *pfile;
+	    char pname[200];
+
+	    n = 0;
+	    if (pu == NULL)
+	    {
+	    	FT_VectorMemoryAlloc((POINTER*)&pu,top_gmax[1],sizeof(double));
+	    	FT_VectorMemoryAlloc((POINTER*)&pl,top_gmax[1],sizeof(double));
+	    	FT_VectorMemoryAlloc((POINTER*)&vz,top_gmax[1],sizeof(double));
+	    	FT_VectorMemoryAlloc((POINTER*)&x,top_gmax[1],sizeof(double));
+	    }
+	    
+        icrd_nb[0] = icoords[0] = top_gmax[0]/2;
+	    for (icoords[1] = 0; icoords[1] <= top_gmax[1]; ++icoords[1])
+	    {
+	    	icrd_nb[1] = icoords[1];
+	        for (icoords[2] = 2; icoords[2] < top_gmax[2]-1; ++icoords[2])
+            {
+                index = d_index(icoords,top_gmax,dim);
+                icrd_nb[2] = icoords[2] + 1;
+                index_nb = d_index(icrd_nb,top_gmax,dim);
+                if (top_comp[index] != top_comp[index_nb] 
+                    && FT_StateStructAtGridCrossing(front,grid_intfc,icoords,
+                        UPPER,top_comp[index],&l_state,&hs,crx_coords)
+                    && FT_StateStructAtGridCrossing(front,grid_intfc,icrd_nb,
+                        LOWER,top_comp[index_nb],&u_state,&hs,crx_coords)
+                    )
+                {
+                    pl[n] = getStatePres(l_state);
+                    pu[n] = getStatePres(u_state);
+                    vz[n] = getStateZvel(l_state);
+                    x[n] = crx_coords[1];
+                    n++;
+                }
+            }
+	    }
+
+	    sprintf(pname,"cpres-%d.xg",front->step);
+	    pfile = fopen(pname,"w");
+	    fprintf(pfile,"\"Lower pressure\"\n");
+	    for (i = 0; i < n; ++i)
+            fprintf(pfile,"%f %f\n",x[i],pl[i]);
+	    fprintf(pfile,"\n\n\"Upper pressure\"\n");
+	    for (i = 0; i < n; ++i)
+            fprintf(pfile,"%f %f\n",x[i],pu[i]);
+	    fprintf(pfile,"\n\n\"Pressure difference\"\n");
+	    for (i = 0; i < n; ++i)
+            fprintf(pfile,"%f %f\n",x[i],pl[i]-pu[i]);
+	    fclose(pfile);
+	    
+        sprintf(pname,"cvelz-%d.xg",front->step);
+        pfile = fopen(pname,"w");
+	    fprintf(pfile,"\"Z-velocity\"\n");
+	    for (i = 0; i < n; ++i)
+            fprintf(pfile,"%f %f\n",x[i],vz[i]);
+	    fclose(pfile);
+}
+
+*/
 
 //TODO: This clearly does not compute the poisson_ratio -- it doesn't do anything.
 //      Also should be moved to another file if implemented.

@@ -21,24 +21,39 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ****************************************************************/
 
-#include <airfoil.h>
+#include "airfoil.h"
 
-typedef struct {
+struct VERTICAL_PARAMS
+{
 	double cen[MAXD];
 	double v0;
 	double stop_time;
-} VERTICAL_PARAMS;
+};
 
-typedef struct {
+struct RANDOMV_PARAMS
+{
 	double v0[MAXD];
 	double stop_time;
-} RANDOMV_PARAMS;
+};
 
-typedef struct {
+struct FIXAREA_PARAMS
+{
 	int num_pts;
 	int *global_ids;
 	double vel[MAXD];
-} FIXAREA_PARAMS;
+    double stop_time;
+};
+
+struct SHAPE_PARAMS 
+{
+	int shape_id;
+	double L[2];
+	double U[2];
+	double cen[2];
+	double R[2];
+};
+
+static boolean within_shape(SHAPE_PARAMS,double*);
 
 static void initVelocityFunc(FILE*,Front*);
 static int zero_velo(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,HYPER_SURF*,double*);
@@ -54,41 +69,11 @@ static void restart_fixarea_params(Front*,FILE*,FIXAREA_PARAMS*);
 static void init_fixpoint_params(Front*,FILE*,FIXAREA_PARAMS*);
 
 static void convert_to_point_mass(Front*, AF_PARAMS*);
+static int countSurfPoints(INTERFACE* intfc);
+static int countStringPoints(INTERFACE* intfc, boolean is_parachute_system);
+
 static void checkSetGoreNodes(INTERFACE*);
 static void set_gore_node(NODE*);
-
-
-int countSurfPoints(INTERFACE* intfc) {
-	int num_fabric_pts  = 0;
-	int surf_count = 0;
-	for (SURFACE** s = intfc->surfaces; s && *s; ++s)
-        {
-            if (wave_type(*s) == ELASTIC_BOUNDARY)
-	    {
-                num_fabric_pts += I_NumOfSurfPoints(*s);
-		surf_count++;
-	    }
-        }
-	return num_fabric_pts;
-}
-
-int countStringPoints(INTERFACE* intfc, boolean is_parachute_system) {
-	int num_str_pts = 0;
-        for (CURVE** c = intfc->curves; c && *c; ++c)
-        {
-            if (FT_Dimension() == 3 && hsbdry_type(*c) == STRING_HSBDRY)
-		num_str_pts += I_NumOfCurvePoints(*c);
-	    else if (FT_Dimension() == 2 && wave_type(*c) == ELASTIC_STRING)
-		num_str_pts += I_NumOfCurvePoints(*c);
-	    else
-		continue;
-	    if (is_parachute_system == YES)
-		num_str_pts -= 2; //exclude curve boundaries
-        }
-	if (is_parachute_system == YES)
-	    num_str_pts += 1; //load node
-	return num_str_pts;
-}
 
 void setMotionParams(Front* front)
 {
@@ -211,6 +196,19 @@ void setFabricPropagators(Front* front)
 	    	case 'p':
 	    	case 'P':
 	    	    front->interior_propagate = fourth_order_elastic_set_propagate;
+                if (CursorAfterStringOpt(infile,"Enter yes for collision substepping:"))
+                {
+                    fscanf(infile,"%s",string);
+                    (void) printf("%s\n",string);
+                    if (string[0] == 'y' || string[0] == 'Y')
+                    {
+                        front->interior_propagate = elastic_set_propagate;
+                        
+                        CursorAfterString(infile,"Enter nsub per collision step:");
+                        fscanf(infile,"%d",&af_params->collsn_step_max_nsub);
+                        (void) printf("%d\n",af_params->collsn_step_max_nsub);
+                    }
+                }
 	    	    break;
 	    	default:
 		    (void) printf("Unknown interior propagator!\n");
@@ -221,6 +219,19 @@ void setFabricPropagators(Front* front)
 	else
     {
         front->interior_propagate = fourth_order_elastic_set_propagate;
+        if (CursorAfterStringOpt(infile,"Enter yes for collision substepping:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+                front->interior_propagate = elastic_set_propagate;
+
+                CursorAfterString(infile,"Enter nsub per collision step:");
+                fscanf(infile,"%d",&af_params->collsn_step_max_nsub);
+                (void) printf("%d\n",af_params->collsn_step_max_nsub);
+            }
+        }
     }
 
 	af_params->n_sub = 1;
@@ -230,6 +241,13 @@ void setFabricPropagators(Front* front)
         (void) printf("%d\n",af_params->n_sub);
     }
 
+	af_params->ss_dt_relax = 1.0;
+	if (CursorAfterStringOpt(infile,"Enter spring solver time step relaxation parameter:"))
+    {
+        fscanf(infile,"%lf",&af_params->ss_dt_relax);
+        (void) printf("%f\n",af_params->ss_dt_relax);
+    }
+    
     fclose(infile);
 }
 
@@ -317,6 +335,7 @@ void setFabricParams(Front* front)
         if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
         {
             fscanf(infile,"%d",&af_params->fsi_startstep);
+            printf("%d\n",af_params->fsi_startstep);
         }
         iFparams->fsi_startstep = af_params->fsi_startstep;
 
@@ -357,6 +376,15 @@ void setFabricParams(Front* front)
 
         //TODO: Need criteria to end inflation assist and switch
         //      back to normal fluid structure interaction routine.
+    }
+
+    af_params->use_total_mass = NO;
+    if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            af_params->use_total_mass = YES;
     }
 
 	if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
@@ -400,13 +428,14 @@ void setFabricParams(Front* front)
                 (void) printf("%f\n",af_params->total_canopy_mass);
             }
             else
-	    {
-	        CursorAfterString(infile,"Enter fabric point mass:");
+            {
+                CursorAfterString(infile,"Enter fabric point mass:");
                 fscanf(infile,"%lf",&af_params->m_s);
                 (void) printf("%f\n",af_params->m_s);
-	    }
+            }
 	}
 
+    af_params->m_l = 0.0;
 	if ( (dim == 2 && FT_FrontContainWaveType(front,ELASTIC_STRING)) || 
 	     (dim == 3 && FT_FrontContainHsbdryType(front,STRING_HSBDRY)) )
 	{
@@ -449,18 +478,47 @@ void setFabricParams(Front* front)
                 (void) printf("%f\n",af_params->m_l);
             }
 	}
-	    
-    CursorAfterStringOpt(infile,"Enter strain limit:");
-    fscanf(infile,"%lf",&af_params->strain_limit);
-    (void) printf("%f\n",af_params->strain_limit);
-            
-    CursorAfterStringOpt(infile,"Enter compressive strain limit:");
-    fscanf(infile,"%lf",&af_params->compressive_strain_limit);
-    (void) printf("%f\n",af_params->compressive_strain_limit);
 
-    CursorAfterStringOpt(infile,"Enter strain rate limit:");
-    fscanf(infile,"%lf",&af_params->strainrate_limit);
-    (void) printf("%f\n",af_params->strainrate_limit);
+
+    //For collision solver inelastic impulse control
+    if (CursorAfterStringOpt(infile,"Enter collision inelastic impulse relaxation parameter:"))
+    {
+        fscanf(infile,"%lf",&af_params->inelastic_impulse_coeff);
+        (void) printf("%f\n",af_params->inelastic_impulse_coeff);
+    }
+
+    //For collision solver elastic impulse control
+    if (CursorAfterStringOpt(infile,"Enter overlap coefficient:"))
+    {
+        fscanf(infile,"%lf",&af_params->overlap_coefficient);
+        (void) printf("%f\n",af_params->overlap_coefficient);
+    }
+    
+    //strain limiting parameters
+    if (CursorAfterStringOpt(infile,"Enter strain limit:"))
+    {
+        fscanf(infile,"%lf",&af_params->strain_limit);
+        (void) printf("%f\n",af_params->strain_limit);
+    }
+
+    if (CursorAfterStringOpt(infile,"Enter compressive strain limit:"))
+    {
+        fscanf(infile,"%lf",&af_params->compressive_strain_limit);
+        (void) printf("%f\n",af_params->compressive_strain_limit);
+    }
+
+    if (CursorAfterStringOpt(infile,"Enter strain rate limit:"))
+    {
+        fscanf(infile,"%lf",&af_params->strainrate_limit);
+        (void) printf("%f\n",af_params->strainrate_limit);
+    }
+
+    if (CursorAfterStringOpt(infile,"Enter strain velocity constraint tolerance:"))
+    {
+        fscanf(infile,"%lf",&af_params->strain_vel_tol);
+        (void) printf("%f\n",af_params->strain_vel_tol);
+    }
+
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
@@ -475,6 +533,7 @@ void setFabricParams(Front* front)
         	CursorAfterString(infile,"Enter gore friction constant:");
         	fscanf(infile,"%lf",&af_params->lambda_g);
         	(void) printf("%f\n",af_params->lambda_g);
+            
             if (af_params->use_total_mass)
             {
                 CursorAfterString(infile,"Enter gore total mass:");
@@ -563,7 +622,7 @@ void setFabricParams(Front* front)
                     bs_gindex[i] = i;
             }
 	    }
-	}
+    }
 
     af_params->num_smooth_layers = 1;
 	if (CursorAfterStringOpt(infile,"Enter number of smooth layers:"))
@@ -580,15 +639,6 @@ void setFabricParams(Front* front)
         (void) printf("%f\n",af_params->payload);
     }
 	
-    af_params->use_total_mass = NO;
-    if (CursorAfterStringOpt(infile,"Enter yes to use total mass:"))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            af_params->use_total_mass = YES;
-    }
-
     if (af_params->use_total_mass)
         convert_to_point_mass(front,af_params);
 	
@@ -609,6 +659,50 @@ void setFabricParams(Front* front)
 
 	fclose(infile);
 }	/* end setFabricParams */
+
+
+static int countSurfPoints(INTERFACE* intfc)
+{
+	int surf_count = 0;
+	int num_fabric_pts = 0;
+	
+    for (SURFACE** s = intfc->surfaces; s && *s; ++s)
+    {
+        if (wave_type(*s) == ELASTIC_BOUNDARY)
+        {
+            num_fabric_pts += I_NumOfSurfPoints(*s);
+            surf_count++;
+        }
+    }
+	
+    return num_fabric_pts;
+}
+
+//TODO: Need to adapt for general case -- not just for pointmass
+//      and single attachement point on forebody for all strings
+static int countStringPoints(INTERFACE* intfc, boolean is_parachute_system)
+{
+	int num_str_pts = 0;
+    for (CURVE** c = intfc->curves; c && *c; ++c)
+    {
+        if (FT_Dimension() == 3 && hsbdry_type(*c) == STRING_HSBDRY)
+            num_str_pts += I_NumOfCurvePoints(*c);
+        else if (FT_Dimension() == 2 && wave_type(*c) == ELASTIC_STRING)
+            num_str_pts += I_NumOfCurvePoints(*c);
+        else
+            continue;
+    
+        if (is_parachute_system == YES)
+            num_str_pts -= 2; //exclude curve boundaries
+    }
+	
+
+    //TODO: account for non point load runs -- add number of rg_string_nodes instead
+    if (is_parachute_system == YES)
+	    num_str_pts += 1; //load node
+	
+    return num_str_pts;
+}
 
 static void initVelocityFunc(
 	FILE *infile,
@@ -961,7 +1055,6 @@ static int toroidal_velo(
 	return YES;
 }       /* end toroidal_velo */
 
-
 static int parabolic_velo(
         POINTER params,
         Front *front,
@@ -1014,17 +1107,6 @@ static int singular_velo(
 	    vel[dim-1] = 0.0;
 	return YES;
 }	/* end sigular_velo */
-
-struct _SHAPE_PARAMS {
-	int shape_id;
-	double L[2];
-	double U[2];
-	double cen[2];
-	double R[2];
-};
-typedef struct _SHAPE_PARAMS SHAPE_PARAMS;
-
-static boolean within_shape(SHAPE_PARAMS,double*);
 
 static void init_fixarea_params(
 	Front *front,
@@ -1361,7 +1443,7 @@ static void init_fixpoint_params(
 	    	surf->extra = (POINTER)registered_pts;
 	    }
         }
-}	/* end init_fixarea_params */
+}	/* end init_fixpoint_params */
 
 static int marker_velo(
         POINTER params,
@@ -1406,8 +1488,6 @@ extern void resetFrontVelocity(Front *front)
         
     if (string[0] == 'y' || string[0] == 'Y')
         zeroFrontVelocity(front);
-    
-    return;
 }
 
 extern void zeroFrontVelocity(Front *front)
@@ -1490,6 +1570,95 @@ extern void zeroFrontVelocity(Front *front)
 	}
 }	/* end resetFrontVelocity */
 
+//TODO: check if general enough for our purposes or is just a hardcoded special case...
+static void convert_to_point_mass(
+        Front *front,
+        AF_PARAMS *af_params)
+{
+        INTERFACE *intfc;
+        int num_str_pts, num_fabric_pts, num_gore_pts;
+        SURFACE **s;
+        CURVE **c;
+        intfc = front->interf;
+        int dim = Dimension(intfc);
+
+        switch (dim)
+        {
+        case 2:
+            num_str_pts = num_fabric_pts = 0;
+            for (c = intfc->curves; c && *c; ++c)
+            {
+                if (wave_type(*c) == ELASTIC_BOUNDARY)
+                    num_fabric_pts +=  I_NumOfCurvePoints(*c);
+                else if (wave_type(*c) == ELASTIC_STRING)
+                {
+                    num_str_pts += I_NumOfCurvePoints(*c);
+                    if (af_params->is_parachute_system == YES)
+                        num_str_pts -= 2; //exclude curve boundary
+                }
+            }
+    
+            if (af_params->is_parachute_system == YES)
+		        num_str_pts += 1; //load node
+	    
+            if (num_fabric_pts != 0)
+                af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
+            else
+                af_params->m_s = 0.001;
+            
+            if (num_str_pts != 0)
+                af_params->m_l = af_params->total_string_mass/num_str_pts;
+            else
+                af_params->m_l = 0.002;
+
+            break;
+        
+        case 3:
+            num_str_pts = num_fabric_pts = num_gore_pts = 0;
+            for (s = intfc->surfaces; s && *s; ++s)
+            {
+                if (wave_type(*s) == ELASTIC_BOUNDARY)
+                    num_fabric_pts += I_NumOfSurfPoints(*s);
+            }
+            
+            for (c = intfc->curves; c && *c; ++c)
+            {
+                if (hsbdry_type(*c) == STRING_HSBDRY)
+                {
+                    num_str_pts += I_NumOfCurvePoints(*c); 
+                    if (af_params->is_parachute_system == YES)
+                        num_str_pts -= 2; //exclude curve boundary
+                }
+                else if (hsbdry_type(*c) == GORE_HSBDRY)
+                {
+                    num_gore_pts += I_NumOfCurvePoints(*c);
+                }
+            }
+    
+            if (af_params->is_parachute_system == YES)
+	        	num_str_pts += 1; //load node
+	    
+            num_fabric_pts -= num_gore_pts;
+	        if (num_fabric_pts != 0)
+		        af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
+            else
+		        af_params->m_s = 0.001;
+            
+            if (num_str_pts != 0)
+                af_params->m_l = af_params->total_string_mass/num_str_pts;
+            else
+                af_params->m_l = 0.002;
+	    
+            if (num_gore_pts != 0)
+		        af_params->m_g = af_params->total_gore_mass/num_gore_pts;
+	        else
+		        af_params->m_g = 0.001;
+	    
+            break;
+        }
+}       /* end convert_to_point_mass */
+
+//TODO: Should move to afsetd.cpp
 static void checkSetGoreNodes(
 	INTERFACE *intfc)
 {
@@ -1505,6 +1674,7 @@ static void checkSetGoreNodes(
 }	/* end checkSetGoreNodes */
 
 
+//TODO: Should move to afsetd.cpp
 static void set_gore_node(
 	NODE *n)
 {
@@ -1534,78 +1704,4 @@ static void set_gore_node(
 	    n->size_of_extra = sizeof(AF_NODE_EXTRA);
 	}
 }	/* end set_gore_node */
-
-static void convert_to_point_mass(
-        Front *front,
-        AF_PARAMS *af_params)
-{
-        INTERFACE *intfc;
-        int num_str_pts, num_fabric_pts, num_gore_pts;
-        SURFACE **s;
-        CURVE **c;
-        intfc = front->interf;
-        int dim = Dimension(intfc);
-
-        switch (dim)
-        {
-        case 2:
-            num_str_pts = num_fabric_pts = 0;
-            for (c = intfc->curves; c && *c; ++c)
-            {
-                if (wave_type(*c) == ELASTIC_BOUNDARY)
-                    num_fabric_pts +=  I_NumOfCurvePoints(*c);
-		else if (wave_type(*c) == ELASTIC_STRING)
-		{
-		    num_str_pts += I_NumOfCurvePoints(*c);
-		    if (af_params->is_parachute_system == YES)
-			num_str_pts -= 2; //exclude curve boundary
-		}
-            }
-	    if (af_params->is_parachute_system == YES)
-		num_str_pts += 1; //load node
-	    if (num_fabric_pts != 0)
-		af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
-	    else
-		af_params->m_s = 0.001;
-	    if (num_str_pts != 0)
-		af_params->m_l = af_params->total_string_mass/num_str_pts;
-	    else
-		af_params->m_l = 0.002;
-            break;
-        case 3:
-            num_str_pts = num_fabric_pts = num_gore_pts = 0;
-            for (s = intfc->surfaces; s && *s; ++s)
-            {
-                if (wave_type(*s) == ELASTIC_BOUNDARY)
-                    num_fabric_pts += I_NumOfSurfPoints(*s);
-            }
-            for (c = intfc->curves; c && *c; ++c)
-            {
-                if (hsbdry_type(*c) == STRING_HSBDRY)
-		{
-		    num_str_pts += I_NumOfCurvePoints(*c); 
-		    if (af_params->is_parachute_system == YES)
-			num_str_pts -= 2; //exclude curve boundary
-		}
-		else if (hsbdry_type(*c) == GORE_HSBDRY)
-		    num_gore_pts += I_NumOfCurvePoints(*c);
-            }
-	    if (af_params->is_parachute_system == YES)
-		num_str_pts += 1; //load node
-	    num_fabric_pts -= num_gore_pts;
-	    if (num_fabric_pts != 0)
-		af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
-	    else
-		af_params->m_s = 0.001;
-            if (num_str_pts != 0)
-                af_params->m_l = af_params->total_string_mass/num_str_pts;
-            else
-                af_params->m_l = 0.002;
-	    if (num_gore_pts != 0)
-		af_params->m_g = af_params->total_gore_mass/num_gore_pts;
-	    else
-		af_params->m_g = 0.001;
-	    break;
-        }
-}       /* end convert_to_point_mass */
 

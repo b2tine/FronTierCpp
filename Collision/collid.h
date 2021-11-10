@@ -9,15 +9,18 @@
 
 #define DEBUGGING false
 
-//TODO: Consistent use of ROUND_EPS AND MACH_EPS.
-//      Currently they are equal, and we can change all to MACH_EPS. 
-const double ROUND_EPS = DBL_EPSILON;
+//MACH_EPS is essentially used to prevent division by zero.
+//ROUND_EPS is intended for more general use such as detecting colinearity
+const double ROUND_EPS = 1.0e-10;
 
 
 struct StrainStats
 {
     int n_edges;
+    int n_edges_tensile;
+    int n_edges_compress;
     double total_edge_length;
+    double total_vel_violation;
 };
 
 
@@ -28,8 +31,42 @@ struct CollisionTimeStats
     double max_dt;
 };
 
+struct FABRIC_COLLISION_PARAMS
+{
+    double fabric_eps {1.0e-05};
+    double fabric_thickness {0.001};
+    double mu_s;
+    double k_s;
+    double m_s;
 
-class CollisionSolver3d {
+    double string_eps {4.0e-05};
+    double string_thickness {0.004};
+    double mu_l;
+    double k_l;
+    double m_l;
+
+    double inelastic_impulse_coeff {1.0};
+    double overlap_coefficient {0.5};
+
+    double strain_limit {0.01};
+    double compressive_strain_limit {0.0};
+    double strainrate_limit {0.05};
+    double strain_vel_tol {0.15};
+
+    double coefRestitution {1.0};
+
+    bool collision_off {false};
+};
+
+
+class CollisionSolver3d 
+{
+private:
+
+    static Front* front; //static so we can call FT_Save() and FT_Draw() for debugging 
+    
+    static bool collision_off;
+
 public:
 	
     int m_dim {3};
@@ -46,6 +83,7 @@ public:
     int build_count_col = 1;
 
 	CollisionSolver3d() = default;
+        //CollisionSolver3d(Front* fr); //Won't work right now since we need front to be static
     virtual ~CollisionSolver3d();
 
     CollisionSolver3d(const CollisionSolver3d&) = delete;
@@ -53,11 +91,12 @@ public:
     CollisionSolver3d(CollisionSolver3d&&) = delete;
     CollisionSolver3d& operator=(CollisionSolver3d&&) = delete;
 
+    static void turnCollision_ON();
+    static void turnCollision_OFF();
+    static bool collisionEnabled();
+
 	static void setTimeStepSize(double);
 	static double getTimeStepSize();
-	static void setRestitutionCoef(double);
-	static double getRestitutionCoef();
-	static bool getImpZoneStatus();	
 	
     static void setFabricThickness(double);
 	static double getFabricThickness();
@@ -80,8 +119,12 @@ public:
 	static double getStringPointMass();
 	static void setStringRoundingTolerance(double);
 	static double getStringRoundingTolerance();
-	
-    double setVolumeDiff(double);
+
+    static void setInelasticImpulseCoefficient(double);
+    static double getInelasticImpulseCoefficient();
+
+    static void setOverlapCoefficient(double);
+    static double getOverlapCoefficient();
     
     void setStrainLimit(double);
 	double getStrainLimit();
@@ -89,12 +132,23 @@ public:
 	double getCompressiveStrainLimit();
 	void setStrainRateLimit(double);
 	double getStrainRateLimit();
-	static bool getGsUpdateStatus();	
+    void setStrainVelocityTol(double);
+	double getStrainVeloctiyTol();
+	
+    static void setRestitutionCoef(double);
+	static double getRestitutionCoef();
+	
+    static bool getImpZoneStatus();	
+    static bool getGsUpdateStatus();	
+
 
 	void clearHseList();
     const std::vector<CD_HSE*>& getHseList() const;
 
-    void initializeSystem(Front* front);
+    void initFront(Front*fr);
+    void initializeSystem(std::vector<CD_HSE*>& list);
+
+    void initializeSystem(Front* fr);
 	void assembleFromInterface(INTERFACE*);
     void assembleFromSurf(SURFACE* surf); //TODO: Need this for parallel runs?
     void assembleFromCurve(CURVE* curve); //TODO: Need this for parallel runs?
@@ -103,11 +157,13 @@ public:
     void initializeImpactZones();
 	void initRigidBodyImpactZones();
 	
-    void resolveCollision();
+    void resolveCollisionSubstep();
 
 	void setDomainBoundary(double* L,double *U);
 	double getDomainBoundary(int dir,int side) {return Boundary[dir][side];}
 	
+    double setVolumeDiff(double);
+    
     POINT **gpoints;
     TRI **gtris;
 
@@ -133,16 +189,16 @@ public:
     static int tstep;
     static int getStep() {return tstep;}
     static void setStep(int step) {tstep = step;}
+	static void setFrameTimeStepSize(double);
+	static double getFrameTimeStepSize();
 
     static std::string outdir;
     static std::string getOutputDirectory() {return outdir;}
     static void setOutputDirectory(std::string dir) {outdir = dir;}
-    static void saveFront() {FT_Save(ft);}
-    static void drawFront() {FT_Draw(ft);}
+    static void saveFront() {FT_Save(front);}
+    static void drawFront() {FT_Draw(front);}
 
 private:
-
-    static Front* ft; //static so we can call FT_Save() and FT_Draw() for debugging 
     
     double max_fabric_speed {0.0};
     double prev_max_fabric_speed {0.0};
@@ -158,7 +214,9 @@ private:
     static std::vector<double> CollisionTimes;
 
 	static double s_dt;
-	static double s_cr;
+	static double frame_dt;
+	
+    static double s_cr;
 
 	static double s_thickness; //fabric thickness
 	static double s_eps;
@@ -172,13 +230,17 @@ private:
 	static double l_k;
 	static double l_mu;
 
+    static double inelastic_impulse_coeff;
+    static double overlap_coefficient;
+
     static bool gs_update;
 	static void turnOnGsUpdate();
     static void turnOffGsUpdate();
 
     double strain_limit {0.1};
-    double compressive_strain_limit {0.1};
-    double strainrate_limit {0.1};
+    double compressive_strain_limit {0.01};
+    double strainrate_limit {0.05};
+    double strain_vel_tol {0.15};
 
     static bool s_detImpZone;
 	static void turnOnImpZone();
@@ -200,19 +262,20 @@ private:
 
     void limitStrainVelJAC();
     void limitStrainVelGS();
-    int computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
+    StrainStats computeStrainImpulsesVel(std::vector<CD_HSE*>& list);
     
-    void applyStrainImpulses(MotionState mstate);
+    void applyStrainImpulses(std::vector<CD_HSE*>& list, MotionState mstate);
 
 	void computeMaxSpeed();
 	void computeAverageVelocity();
     void resetPositionCoordinates();
-	void updateFinalPosition();
-	void updateFinalVelocity();
-    void updateFinalStates();
 	void updateAverageVelocity(MotionState mstate);
 	void saveAverageVelocity();
 	void revertAverageVelocity();
+	
+    void updateFinalStates();
+    void updateFinalPosition();
+	void updateFinalVelocity();
 
 	void computeImpactZoneGS(std::vector<CD_HSE*>& list);
 	void computeImpactZoneJac(std::vector<CD_HSE*>& list);
@@ -276,6 +339,8 @@ bool isRigidBody(const STATE*);
 bool isRigidBody(const CD_HSE*);
 bool isRegisteredPoint(const POINT*);
 bool isRegisteredPoint(const STATE*);
+bool isLoadNode(const POINT*);
+bool isLoadNode(const STATE*);
 bool isConstrainedPoint(const POINT*);
 bool isConstrainedPoint(const STATE*);
 bool isImpactZonePoint(POINT*);

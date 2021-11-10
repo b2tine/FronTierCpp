@@ -259,7 +259,9 @@ double Incompress_Solver_Smooth_Basis::computeMuOfVremanModel(
 	{
 	    beta[i][j] = 0.0;
 	    for (int k = 0; k < dim; ++k)
+        {
             beta[i][j] += top_h[k]*top_h[k]*alpha[k][i]*alpha[k][j];
+        }
 	}
 
     double B_beta = beta[0][0]*beta[1][1] - beta[0][1]*beta[0][1]
@@ -346,6 +348,7 @@ Incompress_Solver_Smooth_Basis::computeVelocityGradient(
                 else
                 {
                     double v_slip[MAXD] = {0.0};
+                    //TODO: Need to set slip boundary in isolation (precompute) at beginning of time step.
                     setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,field->vel,v_slip);
                     vel_nb[nb] = v_slip[l];
                 }

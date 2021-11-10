@@ -27,30 +27,27 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "airfoil_gpu.cuh"
 #endif
 
-#define		MAX_SURF_CURVES		10
-#define		MAX_SURF_NODES		20
+#define	MAX_SURF_CURVES	10
+#define	MAX_SURF_NODES 20
+#define MAX_NUM_RING1 30
 
-static void set_equilibrium_mesh2d(Front*);
-static void set_equilibrium_mesh3d(Front*);
+
+static boolean curve_in_pointer_list(CURVE*,CURVE**);
+static void spring_force_at_point1(double*,POINT*,TRI*,SURFACE*,double);
+static void spring_force_at_point2(double*,POINT*,TRI*,SURFACE*,double);
+
 static void adjust_for_node_type(NODE*,int,STRING_NODE_TYPE,double**,double**,
 				double,double,double*);
 static void adjust_for_curve_type(CURVE*,int,double**,double**,double,double*);
 static void adjust_for_cnode_type(NODE*,int,double**,double**,double,double*);
-static void propagate_curve(ELASTIC_SET*,CURVE*,double**);
-static void print_airfoil_stat2d(Front*,char*);
-static void print_airfoil_stat2d_1(Front*,char*);
-static void print_airfoil_stat2d_2(Front*,char*);
-static void print_airfoil_stat3d(Front*,char*);
-static void print_airfoil_stat3d_1(Front*,char*);
-static void print_airfoil_stat3d_2(Front*,char*);
-static void record_stretching_length(SURFACE*,char*,double);
+
+static void propagate_curve_basic(ELASTIC_SET*,CURVE*,double**);
+
 static void set_special_node_type(NODE*,int,STRING_NODE_TYPE,SPRING_VERTEX*,
 				double,double,double*);
+
 static boolean find_crx_between_box_line(double*,double*,double*,double*,double,int,double*);
 
-static void print_rgb3d(Front *,char *);
-static void print_drag3d(Front *,char *);
-static void print_strings(Front *,char *);
 
 extern void second_order_elastic_curve_propagate(
 	Front           *fr,
@@ -168,7 +165,7 @@ extern void second_order_elastic_curve_propagate(
 	    	v_new[i][j] = v_old[i][j] + 0.5*dt*(f_old[i][j] + f_new[i][j]);
 	    }
 	    count = 0;
-	    propagate_curve(&geom_set,newc,x_new);
+	    propagate_curve_basic(&geom_set,newc,x_new);
 	    assign_node_field(ns,x_new,v_new,&count);
 	    assign_curve_field(newc,x_new,v_new,&count);
 	    assign_node_field(ne,x_new,v_new,&count);
@@ -416,1111 +413,1135 @@ extern void second_order_elastic_surf_propagate(
 			"second_order_elastic_surf_propagate()\n");
 }	/* end second_order_elastic_surf_propagate */
 
-extern void set_equilibrium_mesh(
-	Front *front)
+extern void assign_node_field(
+	NODE *node,
+	double **x,
+	double **v,
+	int *n)
 {
-	switch (front->rect_grid->dim)
-	{
-	case 2:
-	    set_equilibrium_mesh2d(front);
-	    return;
-	case 3:
-	    set_equilibrium_mesh3d(front);
-	    return;
-	}
-}	/* end set_equilibrium_mesh */
-
-static void set_equilibrium_mesh2d(
-	Front *front)
-{
-	CURVE **c,*curve;
-	BOND *b;
-	short unsigned int seed[3] = {2,72,7172};
-	double len0,total_length = 0.0;
-	int i,n = 0;
-	INTERFACE *intfc = front->interf;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	int dim = front->rect_grid->dim;
-
-	for (c = intfc->curves; c && *c; ++c)
-	{
-	    if (wave_type(*c) != ELASTIC_BOUNDARY &&
-		wave_type(*c) != ELASTIC_STRING) 
-		continue;
-	    curve = *c;
-	    for (b = curve->first; b != NULL; b = b->next)
-	    {
-		total_length +=  bond_length(b);
-		n++;
-	    }
-	    len0 = total_length/(double)n;
-	    for (b = curve->first; b != NULL; b = b->next)
-	    {
-		b->length0 = len0;
-		for (i = 0; i < dim; ++i)
-		    b->dir0[i] = (Coords(b->end)[i] - Coords(b->start)[i])
-				/b->length0;	
-	    }
-	    for (b = curve->first; b != curve->last; b = b->next)
-	    {
-		if (af_params->pert_params.pert_type == PARALLEL_RAND_PERT) 
-		{
-		    double dx_rand;
-		    double tan[MAXD];
-		    tangent(b->end,b,curve,tan,front); 
-		    dx_rand = (erand48(seed) - 0.5)*len0;
-		    for (i = 0; i < dim; ++i)
-		    	Coords(b->end)[i] += 0.2*dx_rand*tan[i];
-		}
-		else if (af_params->pert_params.pert_type == 
-				ORTHOGONAL_RAND_PERT)
-		{
-		    double dx_rand;
-		    double nor[MAXD];
-		    double amp = af_params->pert_params.pert_amp;
-		    FT_NormalAtPoint(b->end,front,nor,NO_COMP); 
-		    if (amp > 1.0) amp = 1.0;
-		    dx_rand = (erand48(seed) - 0.5)*amp*len0;
-		    for (i = 0; i < dim; ++i)
-		    	Coords(b->end)[i] += dx_rand*nor[i];
-		}
-		else if (af_params->pert_params.pert_type == SINE_PERT)
-		{
-		    /* This assumes the curve is horizontal */
-		    double amp = af_params->pert_params.pert_amp;
-		    double L = Coords(curve->start->posn)[0]; 
-		    double U = Coords(curve->end->posn)[0];
-		    double x = Coords(b->end)[0];
-		    for (i = 1; i < dim; ++i)
-		    	Coords(b->end)[i] += amp*sin(PI*(x-L)/(U-L));
-		}
-	    }
-	    for (b = curve->first; b != NULL; b = b->next)
-		set_bond_length(b,2);
-	    never_redistribute(Hyper_surf(curve)) = YES;
-	}
-}	/* end set_equilibrium_mesh2d */
-
-//TODO: Compare to set{Curve,Surf}ZeroMesh() functions in cgal.cpp
-//      Consolidate functionality if possible.
-static void set_equilibrium_mesh3d(
-	Front *front)
-{
-	SURFACE **s,*surf;
+	int i,dim = Dimension(node->interface);
 	CURVE **c;
-	TRI *t;
-	int i,j,dir;
-	short unsigned int seed[3] = {2,72,7172};
-	double max_len,min_len,ave_len,len;
-	double vec[3],*cen,radius,amp;
-	double x0,xl,xu;
-	double dx_rand;
-	double count;
-	INTERFACE *intfc = front->interf;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	BOND *b;
-	double gore_len_fac = af_params->gore_len_fac;
 
-	for (c = intfc->curves; c && *c; ++c)
+	for (i = 0; i < dim; ++i)
 	{
-        if (hsbdry_type(*c) != STRING_HSBDRY ||
-            hsbdry_type(*c) != GORE_HSBDRY) continue;
-
-	    for (b = (*c)->first; b != NULL; b = b->next)
-	    {
-            set_bond_length(b,3);
-            b->length0 = bond_length(b);
-            
-            if (hsbdry_type(*c) == GORE_HSBDRY)
-                b->length0 *= gore_len_fac;
-            
-            for (i = 0; i < 3; ++i)
-            {
-                b->dir0[i] =
-                    (Coords(b->end)[i] - Coords(b->start)[i])/b->length0;	
-            }
-	    }
-    
-        never_redistribute(Hyper_surf(*c)) = YES;
+	    Coords(node->posn)[i] = x[*n][i];
+	    node->posn->vel[i] = v[*n][i];
 	}
-
-	for (s = intfc->surfaces; s && *s; ++s)
-	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
-	    surf = *s;
-	    ave_len = 0.0;
-	    max_len = 0.0;
-	    min_len = HUGE;
-	    count = 0.0;
-	    for (t = first_tri(surf); !at_end_of_tri_list(t,surf); t = t->next)
-	    {
-		for (i = 0; i < 3; ++i)
-		{
-		    t->side_length0[i] = separation(Point_of_tri(t)[i],
-			Point_of_tri(t)[(i+1)%3],3);
-		    for (j = 0; j < 3; ++j)
-		    {
-		    	t->side_dir0[i][j] = 
-				(Coords(Point_of_tri(t)[(i+1)%3])[j] -
-				 Coords(Point_of_tri(t)[i])[j])/
-				 t->side_length0[i];
-		    }
-		    if (max_len < t->side_length0[i]) 
-			max_len = t->side_length0[i];
-		    if (min_len > t->side_length0[i])
-			min_len = t->side_length0[i];
-		    ave_len += t->side_length0[i];
-		    count += 1.0;
-		}
-	    }
-	    never_redistribute(Hyper_surf(surf)) = YES;
-	}
-	printf("Original length:\n");
-	printf("min_len = %16.12f\n",min_len);
-	printf("max_len = %16.12f\n",max_len);
-	printf("ave_len = %16.12f\n",ave_len/count);
-
-	for (s = intfc->surfaces; s && *s; ++s)
-	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
-	    surf = *s;
-	    switch (af_params->pert_params.pert_type)
-	    {
-	    case ORTHOGONAL_RAND_PERT:
-	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
-				t = t->next)
-		for (i = 0; i < 3; ++i)
-		{
-		    for (j = 0; j < 3; ++j)
-		    {
-			vec[j] = Coords(Point_of_tri(t)[i])[j] -
-				 Coords(Point_of_tri(t)[(i+1)%3])[j];
-		    }
-		    for (j = 0; j < 3; ++j)
-		    {
-		    	dx_rand = (2.0 + erand48(seed))/3.0;
-			vec[j] *= dx_rand;
-			Coords(Point_of_tri(t)[j])[2] += vec[j]; 
-		    }
-		}
-		break;
-	    case PARALLEL_RAND_PERT:
-	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
-				t = t->next)
-		for (i = 0; i < 3; ++i)
-		{
-		    for (j = 0; j < 3; ++j)
-		    {
-			vec[j] = Coords(Point_of_tri(t)[i])[j] -
-				 Coords(Point_of_tri(t)[(i+1)%3])[j];
-		    }
-		    dx_rand = (2.0 + erand48(seed))/3.0;
-		    for (j = 0; j < 3; ++j)
-		    {
-			vec[j] *= dx_rand;
-			Coords(Point_of_tri(t)[i])[j] = vec[j] +
-				Coords(Point_of_tri(t)[(i+1)%3])[j];
-		    }
-		}
-		break;
-	    case RADIAL_PERT:
-		cen = af_params->pert_params.cen;
-		radius = af_params->pert_params.pert_radius;
-		amp = af_params->pert_params.pert_amp;
-	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
-				t = t->next)
-		for (i = 0; i < 3; ++i)
-		    sorted(Point_of_tri(t)[i]) = NO;
-	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
-				t = t->next)
-		for (i = 0; i < 3; ++i)
-		{
-		    POINT *p = Point_of_tri(t)[i];
-		    double r;
-		    if (Boundary_point(p)) continue;
-		    if (sorted(p)) continue;
-		    r = sqr(Coords(p)[0] - cen[0]) + 
-			sqr(Coords(p)[1] - cen[1]);
-		    r = sqrt(r);
-		    if (r < radius)
-		    	Coords(p)[2] += amp*(1.0 - r/radius);
-		    sorted(p) = YES;
-		}
-		break;
-	    case LINEAR_PERT:
-		x0 = af_params->pert_params.x0;
-		xl = af_params->pert_params.xl;
-		xu = af_params->pert_params.xu;
-		amp = af_params->pert_params.pert_amp;
-		dir = af_params->pert_params.dir;
-	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
-				t = t->next)
-		for (i = 0; i < 3; ++i)
-		    sorted(Point_of_tri(t)[i]) = NO;
-	        for (t = first_tri(surf); !at_end_of_tri_list(t,surf); 
-				t = t->next)
-		for (i = 0; i < 3; ++i)
-		{
-		    POINT *p = Point_of_tri(t)[i];
-		    if (sorted(p)) continue;
-		    if (Coords(p)[dir] < x0)
-			Coords(p)[2] += amp*(Coords(p)[dir] - xl)/(x0 - xl);
-		    else
-			Coords(p)[2] += amp*(xu - Coords(p)[dir])/(xu - x0);
-		    sorted(p) = YES;
-		}
-		break;
-	    case NO_PERT:
-	    default:
-		break;
-	    }
-	}
-	for (s = intfc->surfaces; s && *s; ++s)
-	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
-	    surf = *s;
-	    ave_len = 0.0;
-	    max_len = 0.0;
-	    min_len = HUGE;
-	    count = 0.0;
-	    for (t = first_tri(surf); !at_end_of_tri_list(t,surf); t = t->next)
-	    {
-		for (i = 0; i < 3; ++i)
-		{
-		    len = separation(Point_of_tri(t)[i],
-			Point_of_tri(t)[(i+1)%3],3);
-		    if (max_len < len) 
-			max_len = len;
-		    if (min_len > len)
-			min_len = len;
-		    ave_len += len;
-		    count += 1.0;
-		}
-	    }
-	}
-	printf("Perturbed length:\n");
-	printf("min_len = %16.12f\n",min_len);
-	printf("max_len = %16.12f\n",max_len);
-	printf("ave_len = %16.12f\n",ave_len/count);
-}	/* end set_equilibrium_mesh3d */
-
-#define 	MAX_NUM_RING1		30
-
-extern void print_airfoil_stat(
-	Front *front,
-	char *out_name)
-{
-    int dim = FT_Dimension();
-    if (dim == 2 && pp_numnodes() > 1) return;
-    if (!FT_FrontContainWaveType(front,ELASTIC_BOUNDARY) &&
-        !FT_FrontContainHsbdryType(front,STRING_HSBDRY)) return;
-
-	start_clock("print_airfoil_stat");
-
-	INTERFACE* elas_intfc = NULL;
-	INTERFACE* save_intfc = front->interf; 
-	if (pp_numnodes() > 1)
-	{
-	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	    int owner[MAXD] = {0};
-	    int owner_id = af_params->node_id[0];
-	    elas_intfc = FT_CollectHypersurfFromSubdomains(front, 
-					owner, ELASTIC_BOUNDARY);
-	    collectNodeExtra(front,elas_intfc,owner_id);
-	    front->interf = elas_intfc;
-	}	
+	for (c = node->out_curves; c && *c; ++c)
+	    set_bond_length((*c)->first,dim);
+	for (c = node->in_curves; c && *c; ++c)
+	    set_bond_length((*c)->last,dim);
+	(*n)++;
+}	/* end assign_node_field */
 	
-	if (pp_mynode() == 0)
-	{	
-	    switch (dim)
+extern void assign_curve_field(
+	CURVE *curve,
+	double **x,
+	double **v,
+	int *n)
+{
+	int i,j,dim = Dimension(curve->interface);
+	BOND *b;
+
+	i = *n;
+	for (b = curve->first; b != curve->last; b = b->next)
+	{
+	    for (j = 0; j < dim; ++j)
 	    {
-	        case 2:
-	            print_airfoil_stat2d(front,out_name);
-                break;
-	    	case 3:
-	            print_airfoil_stat3d(front,out_name);
-	    	    break;
-            default:
-                printf("print_airfoil_stat() ERROR: invalid dimension! "
-                        "dim must be equal to 2 or 3\n");
-                LOC(); clean_up(EXIT_FAILURE);
-        }
+	    	Coords(b->end)[j] = x[i][j];
+	    	b->end->vel[j] = v[i][j];
+	    }
+	    set_bond_length(b,dim);
+	    i++;
 	}
-
-	front->interf = save_intfc;
-	if (elas_intfc)
-        delete_interface(elas_intfc);
-	stop_clock("print_airfoil_stat");
-}	/* end print_airfoil_stat */
-
-
-static void print_airfoil_stat2d(
-	Front *front,
-	char *out_name)
+	set_bond_length(curve->first,dim);
+	set_bond_length(curve->last,dim);
+	*n = i;
+}	/* end assign_curve_field */
+	
+extern void assign_surf_field(
+	SURFACE *surf,
+	double **x,
+	double **v,
+	int *n)
 {
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	switch (af_params->spring_model)
-	{
-	case MODEL1:
-	    print_airfoil_stat2d_1(front,out_name);
-	    break;
-	case MODEL2:
-	    print_airfoil_stat2d_2(front,out_name);
-	    break;
-	case MODEL3:
-	default:
-	    (void) printf("print_airfoil_stat2d_12() not implemented!\n");
-	}
-}	/* end print_airfoil_stat2d */
-
-static void print_airfoil_stat2d_1(
-	Front *front,
-	char *out_name)
-{
-	INTERFACE *intfc = front->interf;
-	CURVE **c,*curve;
-	BOND *b;
-	POINT *p;
-	static FILE *ekfile,*epfile,*exfile,*efile,*sfile;
-	char fname[256];
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double ek,ep,enp;
-	double kl,m_l,x_diff;
-	int i,dim = intfc->dim;
-	double str_length;
-	STRING_NODE_TYPE start_type = af_params->start_type;
-        STRING_NODE_TYPE end_type = af_params->end_type;
-	double *g,payload;
-
-	if (ekfile == NULL && pp_mynode() == 0)
-        {
-	    sprintf(fname,"%s/ek.xg",out_name);
-            ekfile = fopen(fname,"w");
-	    sprintf(fname,"%s/ep.xg",out_name);
-            epfile = fopen(fname,"w");
-	    sprintf(fname,"%s/ex.xg",out_name);
-            exfile = fopen(fname,"w");
-	    sprintf(fname,"%s/en.xg",out_name);
-            efile = fopen(fname,"w");
-	    sprintf(fname,"%s/str_length.xg",out_name);
-            sfile = fopen(fname,"w");
-            fprintf(ekfile,"\"Kinetic enegy vs. time\"\n");
-            fprintf(epfile,"\"Potential enegy vs. time\"\n");
-            fprintf(exfile,"\"External enegy vs. time\"\n");
-            fprintf(efile,"\"Total enegy vs. time\"\n");
-            fprintf(sfile,"\"String length vs. time\"\n");
-        }
-
-	kl = af_params->kl;
-        m_l = af_params->m_l;
-	payload = af_params->payload;
-	g = af_params->gravity;
-	ek = ep = enp = str_length = 0.0;
-	for (c = intfc->curves; c && *c; ++c)
-	{
-		if (wave_type(*c) != ELASTIC_BOUNDARY &&
-		    wave_type(*c) != ELASTIC_STRING)
-		    continue;
-
-		curve = *c;
-		p = curve->first->start;
-		if (start_type == FREE_END)
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	ek += 0.5*m_l*sqr(p->vel[i]);
-		    }
-		}
-		else if(start_type == LOADED_END)
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	ek += 0.5*payload*sqr(p->vel[i]);
-			enp -= payload*g[i]*Coords(p)[i];
-		    }
-		}
-		p = curve->last->end;
-		if (end_type == FREE_END)
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	ek += 0.5*m_l*sqr(p->vel[i]);
-		    }
-		}
-		else if(end_type == LOADED_END)
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	ek += 0.5*payload*sqr(p->vel[i]);
-			enp -= payload*g[i]*Coords(p)[i];
-		    }
-		}
-
-		for (b = curve->first; b != NULL; b = b->next)
-		{
-		    p = b->end;
-		    x_diff = bond_length(b) - bond_length0(b);
-		    if (b != curve->last)
-		    {
-		    	for (i = 0; i < dim; ++i)
-			{
-		    	    ek += 0.5*m_l*sqr(p->vel[i]);
-			}
-		    }
-		    ep += 0.5*kl*sqr(x_diff);
-		    str_length += bond_length(b);
-		}
-	}
-	if (pp_mynode() == 0)
-	{
-	    fprintf(ekfile,"%16.12f  %16.12f\n",front->time,ek);
-            fprintf(epfile,"%16.12f  %16.12f\n",front->time,ep);
-            fprintf(exfile,"%16.12f  %16.12f\n",front->time,enp);
-            fprintf(efile,"%16.12f  %16.12f\n",front->time,ek+ep+enp);
-            fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
-	    fflush(ekfile);
-	    fflush(epfile);
-	    fflush(exfile);
-	    fflush(efile);
-	    fflush(sfile);
-	}
-}	/* end print_airfoil_stat2d_1 */
-
-static void print_airfoil_stat3d(
-	Front *front,
-	char *out_name)
-{
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-
-    //TODO: are these even applicable to current parachute code????
-	switch (af_params->spring_model)
-	{
-	case MODEL1:
-	    print_airfoil_stat3d_1(front,out_name);
-	    break;
-	case MODEL2:
-	    print_airfoil_stat3d_2(front,out_name);//default
-	    break;
-	case MODEL3:
-	    printf("print_airfoil_stat3d_12() not implemented!\n");
-        break;
-	default:
-        break;
-	}
-
-	print_strings(front,out_name);
-	if (pp_numnodes() == 1)
-	    print_rgb3d(front,out_name);
-    
-    if (af_params->no_fluid == YES) return;
-	print_drag3d(front,out_name);
-}	/* end print_airfoil_stat3d */
-
-static void print_airfoil_stat3d_1(
-	Front *front,
-	char *out_name)
-{
-	INTERFACE *intfc = front->interf;
-	NODE **n,*node;
-	CURVE **c,*curve;
-	SURFACE **s,*surf;
-	BOND *b;
+	int i,j,k;
 	TRI *tri;
 	POINT *p;
-	static FILE *eskfile,*espfile,*egpfile,*efile,*exkfile,*enkfile;
-	static FILE *vmaxfile;
-	static FILE *afile,*sfile,*pfile,*vfile;
-	static FILE *xcom_file,*vcom_file;
-	static FILE *samplex,*sampley,*samplez;
-	static boolean first = YES;
-	char fname[256];
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double esk,esp,epi,epb,egp,exk,enk;
-	double ks,m_s,kl,m_l,x_diff,side_length;
-	int j,k,nc,dim = intfc->dim;
-	double cnp_area,str_length,pz,pv;
-	double zcom,vcom;
-	double payload = af_params->payload;
-	double *g = af_params->gravity;
-	STATE *st;
-	static int np,ip;
-	static POINT **pts;
-	POINT *psample;
-	static double p0[MAXD];
-	double vmax = -HUGE;
-	int Gmax,Posn_max;
-	static FILE *gfile;
-	POINTER obj_max;
+	STATE *sl,*sr;
 
-	if (eskfile == NULL)
-        {
-	    sprintf(fname,"%s/max_index.dat",out_name);
-            gfile = fopen(fname,"w");
-	    sprintf(fname,"%s/esk.xg",out_name);
-            eskfile = fopen(fname,"w");
-	    sprintf(fname,"%s/esp.xg",out_name);
-            espfile = fopen(fname,"w");
-	    sprintf(fname,"%s/egp.xg",out_name);
-            egpfile = fopen(fname,"w");
-	    sprintf(fname,"%s/exk.xg",out_name);
-            exkfile = fopen(fname,"w");
-	    sprintf(fname,"%s/enk.xg",out_name);
-            enkfile = fopen(fname,"w");
-	    sprintf(fname,"%s/eng.xg",out_name);
-            efile = fopen(fname,"w");
-	    sprintf(fname,"%s/area.xg",out_name);
-            afile = fopen(fname,"w");
-	    sprintf(fname,"%s/str_length.xg",out_name);
-            sfile = fopen(fname,"w");
-	    sprintf(fname,"%s/payload.xg",out_name);
-            pfile = fopen(fname,"w");
-	    sprintf(fname,"%s/loadvel.xg",out_name);
-            vfile = fopen(fname,"w");
-	    sprintf(fname,"%s/xcom.xg",out_name);
-            xcom_file = fopen(fname,"w");
-	    sprintf(fname,"%s/vcom.xg",out_name);
-            vcom_file = fopen(fname,"w");
-	    sprintf(fname,"%s/samplex.xg",out_name);
-            samplex = fopen(fname,"w");
-	    sprintf(fname,"%s/sampley.xg",out_name);
-            sampley = fopen(fname,"w");
-	    sprintf(fname,"%s/samplez.xg",out_name);
-            samplez = fopen(fname,"w");
-	    sprintf(fname,"%s/vmax.xg",out_name);
-            vmaxfile = fopen(fname,"w");
-            fprintf(eskfile,"Next\n""!Spr-kinetic energy vs. time\n"
-			    "color=blue\n");
-            fprintf(espfile,"Next\n""!Spr-potentl energy vs. time\n"
-			    "color=red\n""thickness=1.5\n");
-            fprintf(exkfile,"Next\n""!Ext-kinetic energy vs. time\n"
-			    "color=green\n""thickness=1.5\n");
-            fprintf(egpfile,"Next\n""!Ext-potential energy vs. time\n"
-			    "color=orange\n""thickness=1.5\n");
-            fprintf(enkfile,"Next\n""!Kinetic energy vs. time\n"
-			    "color=yellow\n""thickness=1.5\n");
-            fprintf(efile,"Next\n""!Total energy vs. time\n"
-			    "color=navy\n""thickness=1.5\n");
-
-            fprintf(afile,"!Canopy area vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(sfile,"!String length vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(pfile,"!Payload hight vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(vfile,"!Payload velo vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(xcom_file,"!COM vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(vcom_file,"!V-COM vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(samplex,"!x-coords vs. time\n""color=blue\n"
-			    "thickness=1.5\n");
-            fprintf(sampley,"!y-coords vs. time\n""color=red\n"
-			    "thickness=1.5\n");
-            fprintf(samplez,"!z-coords vs. time\n""color=yellow\n"
-			    "thickness=1.5\n");
-        }
-	ks = af_params->ks;
-        m_s = af_params->m_s;
-
-	esk = esp = epi = epb = egp = exk = enk = 0.0;
-	cnp_area = 0.0;
-	surf = NULL;
-	psample = NULL;
-	for (s = intfc->surfaces; s && *s; ++s)
+	unsort_surf_point(surf);
+	i = *n;
+	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
+			tri = tri->next)
 	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
-	    surf = *s;
-	    zcom = center_of_mass(Hyper_surf(surf))[2];
-	    vcom = center_of_mass_velo(Hyper_surf(surf))[2];
-	    if (first)
+	    for (j = 0; j < 3; ++j)
 	    {
-		np = I_NumOfSurfPoints(surf);
-		ip = np/2;
-		FT_VectorMemoryAlloc((POINTER*)&pts,np,sizeof(POINT*));
-	    }
-	    else if (I_NumOfSurfPoints(surf) > np) 
-	    {
-            np = I_NumOfSurfPoints(surf);
-            FT_FreeThese(1, pts);
-            FT_VectorMemoryAlloc((POINTER*)&pts,np,sizeof(POINT*));
-        }
-	    I_ArrayOfSurfPoints(surf,pts);
-	    psample = pts[ip];
-	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
-                        tri = tri->next)
-	    {
-		cnp_area += tri_area(tri);
-		for (j = 0; j < 3; ++j)
-            	{
-		    side_length = separation(Point_of_tri(tri)[j],
-                                Point_of_tri(tri)[(j+1)%3],3);
-		    x_diff = side_length - tri->side_length0[j];
-		    if (!is_side_bdry(tri,j))
-                epi += 0.5*ks*sqr(x_diff);
-		}
-	    }
-	    unsort_surf_point(surf);
-	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
-                        tri = tri->next)
-	    {
-		for (j = 0; j < 3; ++j)
-		{
-                    p = Point_of_tri(tri)[j];
-		    if (sorted(p) || Boundary_point(p)) continue;
-		    for (k = 0; k < dim; ++k)
-		    {
-                if (fabs(p->vel[k]) > vmax)
-                {
-                    vmax = fabs(p->vel[k]);
-                    Gmax = Gindex(p);
-                    Posn_max = 0;
-                    obj_max = (POINTER)surf;
-                }
-                esk += 0.5*m_s*sqr(p->vel[k]);
-                egp += -g[k]*m_s*Coords(p)[k];
-                st = (STATE*)left_state(p);
-                exk += 0.5*m_s*sqr(st->impulse[k]);
-                enk += 0.5*m_s*sqr(p->vel[k] + st->impulse[k]);
-		    }
-		    sorted(p) = YES;
-		}
-	    }
-	}
-
-	if (surf != NULL)
-	    record_stretching_length(surf,out_name,front->time);
-
-	epi *= 0.5;	//Each side is counted twice
-	for (c = intfc->curves; c && *c; ++c)
-	{
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
-	    {
-		kl = af_params->kl;
-        	m_l = af_params->m_l;
-	    }
-	    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-	    {
-		kl = af_params->ks;
-        	m_l = af_params->m_s;
-	    }
-	    else if (hsbdry_type(*c) == GORE_HSBDRY)
-            {
-                kl = af_params->kg;
-                m_l = af_params->m_g;
-            }
-	    else
-		continue;
-	    curve = *c;
-	    for (b = curve->first; b != NULL; b = b->next)
-	    {
-		x_diff = bond_length(b) - bond_length0(b);
-		epb += 0.5*kl*sqr(x_diff);
-		if (b != curve->last)
-		    for (k = 0; k < dim; ++k)
-		    {
-			if (fabs(b->end->vel[k]) > vmax)
-			{
-			    vmax = fabs(b->end->vel[k]);
-			    Gmax = Gindex(b->end);
-			    Posn_max = 1;
-			    obj_max = (POINTER)curve;
-			}
-		    	esk += 0.5*m_l*sqr(b->end->vel[k]);
-			egp += -g[k]*m_l*Coords(b->end)[k];
-			st = (STATE*)left_state(b->end);
-			exk += 0.5*m_l*sqr(st->impulse[k]);
-			enk += 0.5*m_l*sqr(b->end->vel[k] + st->impulse[k]);
-		    }
-	    }
-	}
-	esp = epi + epb;
-
-	for (n = intfc->nodes; n && *n; ++n)
-	{
-	    node = *n;
-	    if (is_bdry_node(node)) continue;
-	    if (is_load_node(node)) 
-	    {
-	    	STATE *sl;
-	    	pz = Coords(node->posn)[2];
-	    	sl = (STATE*)left_state(node->posn);
-	    	pv = sl->vel[2];
-	    	for (k = 0; k < dim; ++k)
-	    	{
-		    egp += -g[k]*payload*Coords(node->posn)[k];
-		    st = (STATE*)left_state(node->posn);
-		    exk += 0.5*payload*sqr(st->impulse[k]);
-		    enk += 0.5*payload*sqr(node->posn->vel[k] + st->impulse[k]);
-	    	}
-	    }
-	    else
-	    {
-            if (is_gore_node(node))
-            {
-                m_l = af_params->m_g;
-            }
-            else
-            {
-                m_l = af_params->m_s;
-            }
-
-            for (k = 0; k < dim; ++k)
-            {
-                if (fabs(node->posn->vel[k]) > vmax)
-                {
-                    vmax = fabs(node->posn->vel[k]);
-                    Gmax = Gindex(node->posn);
-                    Posn_max = 2;
-                    obj_max = (POINTER)node;
-                }
-                
-                esk += 0.5*m_l*sqr(node->posn->vel[k]);
-                egp += -g[k]*m_l*Coords(node->posn)[k];
-                st = (STATE*)left_state(node->posn);
-                exk += 0.5*m_l*sqr(st->impulse[k]);
-                enk += 0.5*m_l*sqr(node->posn->vel[k] + st->impulse[k]);
-            }
-        }
-	}
-
-    //TODO: Monitor enk (total kinetic energy) to detect
-    //      unphysical configurations of the fabric interface.
-    //      Failure of the fabric solver is nearly always
-    //      preceded by a spike in the spring system kinetic
-    //      energy and a rapid increase in the max speed of
-    //      the canopy points
-
-	nc = 0;
-    str_length = 0.0;
-	for (c = intfc->curves; c && *c; ++c)
-	{
-	    if (hsbdry_type(*c) != STRING_HSBDRY) continue;
-	    str_length += curve_length(*c);
-	    nc++;
-	}
-	if (nc != 0) str_length /= (double)nc;
-	
-    if (first)
-	{
-	    if (psample != NULL)
-        {
-	    	for (k = 0; k < dim; ++k)
-                p0[k] = Coords(psample)[k];
-        }
-	    first = NO;
-	}
-
-	fprintf(eskfile,"%16.12f  %16.12f\n",front->time,esk);
-    fprintf(espfile,"%16.12f  %16.12f\n",front->time,esp);
-    fprintf(egpfile,"%16.12f  %16.12f\n",front->time,egp);
-    fprintf(exkfile,"%16.12f  %16.12f\n",front->time,exk);
-    fprintf(enkfile,"%16.12f  %16.12f\n",front->time,enk);
-    fprintf(efile,"%16.12f  %16.12f\n",front->time,esp+egp+enk);
-	fflush(eskfile);
-	fflush(espfile);
-	fflush(egpfile);
-	fflush(exkfile);
-	fflush(enkfile);
-	fflush(efile);
-
-        fprintf(afile,"%16.12f  %16.12f\n",front->time,cnp_area);
-        fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
-        fprintf(pfile,"%16.12f  %16.12f\n",front->time,pz);
-        fprintf(vfile,"%16.12f  %16.12f\n",front->time,pv);
-        fprintf(vmaxfile,"%16.12f  %16.12f\n",front->time,vmax);
-	fflush(afile);
-	fflush(sfile);
-	fflush(pfile);
-	fflush(vfile);
-	fflush(vmaxfile);
-        fprintf(gfile,"Max Gindex %d",Gmax);
-	if (Posn_max == 0) 
-	{
-	    surf = (SURFACE*)obj_max;
-	    fprintf(gfile," on surface type:");
-	    fprintf(gfile," %s\n",f_wave_type_as_string(wave_type(surf)));
-	}
-	else if (Posn_max == 1) 
-	{
-	    curve = (CURVE*)obj_max;
-	    fprintf(gfile," on curve type:");
-	    fprintf(gfile," %s\n",f_hsbdry_type_as_string(hsbdry_type(curve)));
-	}
-	else if (Posn_max == 2) 
-	{
-	    node = (NODE*)obj_max;
-	    fprintf(gfile," on node type:\n");
-	    if (is_gore_node(node))
-		fprintf(gfile," GORE_NODE\n");
-	    else if (is_load_node(node))
-		fprintf(gfile," LOAD_NODE\n");
-	    else
-		fprintf(gfile," Other NODE\n");
-	}
-	fflush(gfile);
-
-        fprintf(xcom_file,"%16.12f  %16.12f\n",front->time,zcom);
-        fprintf(vcom_file,"%16.12f  %16.12f\n",front->time,vcom);
-	fflush(xcom_file);
-	fflush(vcom_file);
-	if (psample != NULL)
-	{
-        fprintf(samplex,"%16.12f  %16.12f\n",front->time,Coords(psample)[0] - p0[0]);
-        fprintf(sampley,"%16.12f  %16.12f\n",front->time,Coords(psample)[1] - p0[1]);
-        fprintf(samplez,"%16.12f  %16.12f\n",front->time,Coords(psample)[2] - p0[2]);
-	}
-	fflush(samplex);
-	fflush(sampley);
-	fflush(samplez);
-}	/* end print_airfoil_stat3d_1 */
-
-//TODO: copy in version from fabric directory when it is stable
-static void print_airfoil_stat3d_2(
-	Front *front,
-	char *out_name)
-{
-	INTERFACE *intfc = front->interf;
-	NODE **n,*node;
-	CURVE **c,*curve;
-	SURFACE **s,*surf;
-	BOND *b;
-	TRI *tri;
-	POINT *p;
-	static FILE *eskfile,*espfile,*egpfile,*efile,*exkfile,*enkfile;
-	static FILE *afile,*sfile,*pfile,*vfile;
-	static FILE *xcom_file,*vcom_file;
-	static boolean first = YES;
-	char fname[256];
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double esk,esp,epi,epb,egp,exk,enk;
-	double ks,m_s,kl,m_l,kg,m_g,x_sqr,side_length,vect[3];
-	int j,k,nc,dim = intfc->dim;
-	double cnp_area,str_length,pz,pv;
-	double zcom,vcom;
-	double payload = af_params->payload;
-	double *g = af_params->gravity;
-	STATE *st;
-
-	if (eskfile == NULL)
-        {
-	    sprintf(fname,"%s/esk.xg",out_name);
-            eskfile = fopen(fname,"w");
-	    sprintf(fname,"%s/esp.xg",out_name);
-            espfile = fopen(fname,"w");
-	    sprintf(fname,"%s/egp.xg",out_name);
-            egpfile = fopen(fname,"w");
-	    sprintf(fname,"%s/exk.xg",out_name);
-            exkfile = fopen(fname,"w");
-	    sprintf(fname,"%s/enk.xg",out_name);
-            enkfile = fopen(fname,"w");
-	    sprintf(fname,"%s/eng.xg",out_name);
-            efile = fopen(fname,"w");
-	    sprintf(fname,"%s/area.xg",out_name);
-            afile = fopen(fname,"w");
-	    sprintf(fname,"%s/str_length.xg",out_name);
-            sfile = fopen(fname,"w");
-	    sprintf(fname,"%s/payload.xg",out_name);
-            pfile = fopen(fname,"w");
-	    sprintf(fname,"%s/loadvel.xg",out_name);
-            vfile = fopen(fname,"w");
-	    sprintf(fname,"%s/xcom.xg",out_name);
-            xcom_file = fopen(fname,"w");
-	    sprintf(fname,"%s/vcom.xg",out_name);
-            vcom_file = fopen(fname,"w");
-            fprintf(eskfile,"\"Spr-kinetic energy vs. time\"\n");
-            fprintf(espfile,"\"Spr-potentl energy vs. time\"\n");
-            fprintf(exkfile,"\"Ext-kinetic energy vs. time\"\n");
-            fprintf(egpfile,"\"Ext-potentl energy vs. time\"\n");
-            fprintf(enkfile,"\"Kinetic energy vs. time\"\n");
-            fprintf(efile,"\"Total energy vs. time\"\n");
-            fprintf(afile,"\"Canopy area vs. time\"\n");
-            fprintf(sfile,"\"String length vs. time\"\n");
-            fprintf(pfile,"\"Payload hight vs. time\"\n");
-            fprintf(vfile,"\"Payload velo vs. time\"\n");
-            fprintf(xcom_file,"\"COM vs. time\"\n");
-            fprintf(vcom_file,"\"V-COM vs. time\"\n");
-        }
-	ks = af_params->ks;
-        m_s = af_params->m_s;
-
-	esk = esp = epi = epb = egp = exk = enk = 0.0;
-	cnp_area = 0.0;
-	for (s = intfc->surfaces; s && *s; ++s)
-	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY)
-	    	continue;
-	    surf = *s;
-	    zcom = center_of_mass(Hyper_surf(surf))[2];
-	    vcom = center_of_mass_velo(Hyper_surf(surf))[2];
-	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
-                        tri = tri->next)
-	    {
-		cnp_area += tri_area(tri);
-		for (j = 0; j < 3; ++j)
-            	{
-		    side_length = separation(Point_of_tri(tri)[j],
-                                Point_of_tri(tri)[(j+1)%3],3);
-		    x_sqr = 0.0;
-		    for (k = 0; k < 3; ++k)
-		    {
-			vect[k] = Coords(Point_of_tri(tri)[(j+1)%3])[k]
-				- Coords(Point_of_tri(tri)[j])[k] -
-				tri->side_length0[j]*tri->side_dir0[j][k];
-			x_sqr += sqr(vect[k]);
-		    }
-		    if (!is_side_bdry(tri,j))
-                    	epi += 0.5*ks*x_sqr;
-		}
-	    }
-	    unsort_surf_point(surf);
-	    for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf);
-                        tri = tri->next)
-	    {
-		for (j = 0; j < 3; ++j)
-		{
-                    p = Point_of_tri(tri)[j];
-		    if (sorted(p) || Boundary_point(p)) continue;
-		    for (k = 0; k < dim; ++k)
-		    {
-                    	esk += 0.5*m_s*sqr(p->vel[k]);
-			egp += -g[k]*m_s*Coords(p)[k];
-			st = (STATE*)left_state(p);
-			exk += 0.5*m_s*sqr(st->impulse[k]);
-			enk += 0.5*m_s*sqr(p->vel[k] + st->impulse[k]);
-		    }
-		    sorted(p) = YES;
-		}
-	    }
-	}
-	epi *= 0.5;	//Each side is counted twice
-	for (c = intfc->curves; c && *c; ++c)
-	{
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
-	    {
-		kl = af_params->kl;
-        	m_l = af_params->m_l;
-	    }
-	    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-	    {
-		kl = af_params->ks;
-        	m_l = af_params->m_s;
-	    }
-	    else if (hsbdry_type(*c) == GORE_HSBDRY)
-	    {
-		kl = af_params->kg;
-        	m_l = af_params->m_g;
-	    }
-	    else
-		continue;
-	    curve = *c;
-	    for (b = curve->first; b != NULL; b = b->next)
-	    {
-		x_sqr = 0.0;
+		p = Point_of_tri(tri)[j];
+		if (sorted(p) || Boundary_point(p)) continue;
+		sl = (STATE*)left_state(p);
+		sr = (STATE*)right_state(p);
 		for (k = 0; k < 3; ++k)
 		{
-		    vect[k] = Coords(b->end)[k] - Coords(b->start)[k]
-				- bond_length0(b)*b->dir0[k];
-		    x_sqr += sqr(vect[k]);
+		    Coords(p)[k] = x[i][k];
+		    p->vel[k] = v[i][k];
 		}
-		epb += 0.5*kl*x_sqr;
-		if (b != curve->last)
-		    for (k = 0; k < dim; ++k)
-		    {
-		    	esk += 0.5*m_l*sqr(b->end->vel[k]);
-			egp += -g[k]*m_l*Coords(b->end)[k];
-			st = (STATE*)left_state(b->end);
-			exk += 0.5*m_l*sqr(st->impulse[k]);
-			enk += 0.5*m_l*sqr(b->end->vel[k] + st->impulse[k]);
-		    }
+		sorted(p) = YES;
+	    	++i;
 	    }
 	}
-	esp = epi + epb;
+	*n = i;
+}	/* end assign_surf_field */
+	
+extern void compute_surf_accel1(
+	ELASTIC_SET *geom_set,
+	SURFACE *surf,
+	double **f,
+	double **x,
+	double **v,
+	int *n)
+{
+	int j,k;
+	TRI *tri;
+	POINT *p;
+	int dim = 3;
+	double ks = geom_set->ks;
+	double m_s = geom_set->m_s;
+	double lambda_s = geom_set->lambda_s;
 
-	for (n = intfc->nodes; n && *n; ++n)
+	unsort_surf_point(surf);
+	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
+			tri = tri->next)
 	{
-	    node = *n;
-	    if (is_bdry_node(node)) 
+	    for (j = 0; j < 3; ++j)
 	    {
-		continue;
+		p = Point_of_tri(tri)[j];
+		if (sorted(p) || Boundary_point(p)) continue;
+		for (k = 0; k < dim; ++k)
+		{
+		    x[*n][k] = Coords(p)[k];
+		    v[*n][k] = p->vel[k];
+		}
+	    	spring_force_at_point1(f[*n],p,tri,surf,ks);
+		for (k = 0; k < dim; ++k)
+		{
+		    f[*n][k] -= lambda_s*(v[*n][k]);
+		    f[*n][k] /= m_s;
+		}
+		sorted(p) = YES;
+	    	++(*n);
 	    }
-	    if (is_load_node(node))
+	}
+}	/* end compute_surf_accel1 */
+
+static void spring_force_at_point1(
+	double *f,
+	POINT *p,
+	TRI *tri,
+	SURFACE *surf,
+	double ks)
+{
+	TRI *tris[MAX_NUM_RING1];
+	int i,j,k,nt;
+	POINT *p_nb;
+	double length0,length,dir[3];
+	
+	if (is_registered_point(surf,p))
+	{
+	    for (i = 0; i < 3; ++i)
+		f[i] = 0.0;
+	    return;
+	}
+	PointAndFirstRingTris(p,Hyper_surf_element(tri),Hyper_surf(surf),
+				&nt,tris);
+	for (k = 0; k < 3; ++k) f[k] = 0.0;
+	for (i = 0; i < nt; ++i)
+	{
+	    for (j = 0; j < 3; ++j)
 	    {
-	    	STATE *sl;
-	    	pz = Coords(node->posn)[2];
-	    	sl = (STATE*)left_state(node->posn);
-	    	pv = sl->vel[2];
-	    	for (k = 0; k < dim; ++k)
-	    	{
-		    egp += -g[k]*payload*Coords(node->posn)[k];
-		    st = (STATE*)left_state(node->posn);
-		    exk += 0.5*payload*sqr(st->impulse[k]);
-		    enk += 0.5*payload*sqr(node->posn->vel[k] + st->impulse[k]);
-	    	}
+		if (Point_of_tri(tris[i])[j] == p)
+		{
+		    length0 = tris[i]->side_length0[j];
+		    p_nb = Point_of_tri(tris[i])[(j+1)%3];
+		    length = separation(p,p_nb,3);
+	    	    for (k = 0; k < 3; ++k)
+		    {
+			dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/length;
+			f[k] += ks*(length - length0)*dir[k];
+		    }
+		    if (is_side_bdry(tris[i],(j+2)%3))
+		    {
+			(void) printf("Detect boundary "
+				"in spring_force_at_point1()\n");
+			clean_up(ERROR);
+		    }
+		}
+	    }
+	}
+}	/* end spring_force_at_point1 */
+
+extern void compute_curve_accel1(
+	ELASTIC_SET *geom_set,
+	CURVE *curve,
+	double **f,
+	double **x,
+	double **v,
+	int *n)
+{
+	int i,j;
+	double x_diff;
+	BOND *b;
+	double dir[MAXD],len,len0,vect[MAXD];
+	int dim = Dimension(curve->interface);
+	double kl,m_l,lambda_l;
+
+	if (dim == 3)
+	{
+	    if (hsbdry_type(curve) == STRING_HSBDRY)
+	    {
+	    	kl = geom_set->kl;
+	    	m_l = geom_set->m_l;
+	    	lambda_l = geom_set->lambda_l;
+	    }
+	    else if (hsbdry_type(curve) == GORE_HSBDRY)
+	    {
+	    	kl = geom_set->kg;
+	    	m_l = geom_set->m_g;
+	    	lambda_l = geom_set->lambda_g;
 	    }
 	    else
 	    {
-		if (is_gore_node(node))
+	    	kl = geom_set->ks;
+	    	m_l = geom_set->m_s;
+	    	lambda_l = geom_set->lambda_s;
+	    }
+	}
+	else
+	{
+	    kl = geom_set->kl;
+	    m_l = geom_set->m_l;
+	    lambda_l = geom_set->lambda_l;
+	}
+	i = *n;
+	for (b = curve->first; b != curve->last; b = b->next)
+	{
+	    x[i] = Coords(b->end);
+	    v[i] = b->end->vel;
+	    for (j = 0; j < dim; ++j)
+	    {
+		f[i][j] = -lambda_l*v[i][j]/m_l;
+	    }
+	    i++;
+	}
+
+	i = *n;
+	for (b = curve->first; b != NULL; b = b->next)
+	{
+	    len = separation(b->start,b->end,dim);
+	    len0 = bond_length0(b);
+	    x_diff = len - len0; 
+	    for (j = 0; j < dim; ++j)
+	    {
+		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])/len;
+		vect[j] = x_diff*dir[j];
+		if (b != curve->first)
 		{
-        	    m_l = af_params->m_g;
+	    	    f[i-1][j]   += kl*vect[j]/m_l;
+		}
+		if (b != curve->last)
+		{
+	    	    f[i][j] -= kl*vect[j]/m_l;
+		}
+	    }
+	    if (b != curve->last) i++;
+	}
+
+	if (dim == 3)
+	{
+	    POINT *p,*p_nb;
+	    BOND_TRI **btris;
+	    TRI **tris;
+	    int j,k,side,nt;
+	    double length0,length;
+	    double ks = geom_set->ks;
+	    i = *n;
+	    for (b = curve->first; b != curve->last; b = b->next)
+	    {
+		p = b->end;
+		for (btris = Btris(b); btris && *btris; ++btris)
+		{
+		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+		    for (j = 0; j < nt; ++j)
+		    {
+			for (side = 0; side < 3; ++side)
+			{
+			    if (p == Point_of_tri(tris[j])[side])
+			    {
+				if (is_side_bdry(tris[j],side))
+				    continue;
+				p_nb = Point_of_tri(tris[j])[(side+1)%3];
+				length0 = tris[j]->side_length0[side];
+				length = separation(p,p_nb,3);
+				for (k = 0; k < 3; ++k)
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/length;
+                    f[i][k] += ks*(length - length0)*dir[k]/m_l;
+                }
+			    }
+			}
+		    }
+		}
+		i++;
+	    }
+	}
+	*n = i;
+}	/* end compute_curve_accel1 */
+
+extern void compute_node_accel1(
+	ELASTIC_SET *geom_set,
+	NODE *node,
+	double **f,
+	double **x,
+	double **v,
+	int *n)
+{
+	CURVE **c;
+	BOND *b;
+	double x_diff,len0,len,dir[MAXD],vect[MAXD];
+	POINT *p,*p_nb;
+	INTERFACE *intfc = geom_set->front->interf;
+	int i,j,dim = Dimension(intfc);
+	double ks = geom_set->ks;
+	double kl = geom_set->kl;
+	double kg = geom_set->kg;
+	double mass;
+	double lambda_s = geom_set->lambda_s;
+	double lambda_l = geom_set->lambda_l;
+	double lambda_g = geom_set->lambda_g;
+
+	if (dim == 3)
+	{
+	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
+	    if (extra != NULL)
+	    {
+		if (extra->af_node_type == LOAD_NODE)
+		{
+	    	    Front *front = geom_set->front;
+	    	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+		    mass = af_params->payload;
+		}
+		else if (extra->af_node_type == GORE_NODE)
+                    mass = geom_set->m_g;
+		else if (extra->af_node_type == STRING_NODE)
+                    mass = geom_set->m_l;
+	    }
+	    else
+            mass = geom_set->m_s;
+	}
+	else if (dim == 2)
+	{
+	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
+            mass = geom_set->m_l;
+	    if (extra->af_node_type == LOAD_NODE)
+            {
+                Front *front = geom_set->front;
+                AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+                mass = af_params->payload;
+            }
+	}
+
+	x[*n] = Coords(node->posn);
+	v[*n] = node->posn->vel;
+	for (i = 0; i < dim; ++i)
+	{
+	    f[*n][i] = 0.0;
+	}
+	for (c = node->out_curves; c && *c; ++c)
+	{
+	    b = (*c)->first;
+	    len = separation(b->start,b->end,dim);
+	    len0 = bond_length0(b);
+	    x_diff = len - len0; 
+	    for (j = 0; j < dim; ++j)
+	    {
+		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])/len;
+		vect[j] = x_diff*dir[j];
+		if (dim == 3)
+		{
+		    if (is_load_node(node) == YES)
+		    	f[*n][j]   += kl*vect[j]/mass;
+		    else if (hsbdry_type(*c) == STRING_HSBDRY)
+	    	    	f[*n][j]   += kl*vect[j]/mass;
+		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
+	    	    	f[*n][j]   += ks*vect[j]/mass;
+		    else if (hsbdry_type(*c) == GORE_HSBDRY)
+	    	    	f[*n][j]   += kg*vect[j]/mass;
 		}
 		else
+		    f[*n][j]   += kl*vect[j]/mass;
+	    }
+	}
+	for (c = node->in_curves; c && *c; ++c)
+	{
+	    if (curve_in_pointer_list(*c,node->out_curves) && 
+		!is_closed_curve(*c)) 
+		continue;
+	    b = (*c)->last;
+	    len = separation(b->start,b->end,dim);
+	    len0 = bond_length0(b);
+	    x_diff = len - len0; 
+	    for (j = 0; j < dim; ++j)
+	    {
+		dir[j] = (Coords(b->end)[j] - Coords(b->start)[j])
+				/len;
+		vect[j] = x_diff*dir[j];
+		if (dim == 3)
 		{
-        	    m_l = af_params->m_s;
+		    if (is_load_node(node) == YES)
+		    	f[*n][j]   -= kl*vect[j]/mass;
+		    else if (hsbdry_type(*c) == STRING_HSBDRY)
+	    	    	f[*n][j]   -= kl*vect[j]/mass;
+		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
+	    	    	f[*n][j]   -= ks*vect[j]/mass;
+		    else if (hsbdry_type(*c) == GORE_HSBDRY)
+	    	    	f[*n][j]   -= kg*vect[j]/mass;
 		}
+		else
+		    f[*n][j]   -= kl*vect[j]/mass;
+	    }
+	}
+	if (dim == 3)
+	{
+	    BOND_TRI **btris;
+	    TRI **tris,*tri_list[500];
+	    int k,side,nt,num_tris;
+	    TRI *tri;
+
+	    num_tris = 0;
+	    p = node->posn;
+	    for (c = node->out_curves; c && *c; ++c)
+	    {
+		b = (*c)->first;
+		for (btris = Btris(b); btris && *btris; ++btris)
+		{
+		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+		    for (j = 0; j < nt; ++j)
+		    {
+			if (!pointer_in_list((POINTER)tris[j],num_tris,
+					(POINTER*)tri_list))
+			    tri_list[num_tris++] = tris[j];
+		    }
+		}
+	    }
+	    for (c = node->in_curves; c && *c; ++c)
+	    {
+		b = (*c)->last;
+		for (btris = Btris(b); btris && *btris; ++btris)
+		{
+		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+		    for (j = 0; j < nt; ++j)
+		    {
+			if (!pointer_in_list((POINTER)tris[j],num_tris,
+					(POINTER*)tri_list))
+			    tri_list[num_tris++] = tris[j];
+		    }
+		}
+	    }
+	    for (i = 0; i < num_tris; ++i)
+	    {
+		tri = tri_list[i];
+		for (side = 0; side < 3; ++side)
+		{
+		    if (p == Point_of_tri(tri)[side])
+		    {
+			if (is_side_bdry(tri,side))
+			    continue;
+			p_nb = Point_of_tri(tri)[(side+1)%3];
+			len0 = tri->side_length0[side];
+			len = separation(p,p_nb,3);
+    			x_diff = len - len0; 
+			for (k = 0; k < 3; ++k)
+                       	{
+                       	    dir[k] = (Coords(p_nb)[k] - 
+					Coords(p)[k])/len;
+                       	    f[*n][k] += ks*x_diff*dir[k]/mass;
+                       	}
+		    }
+		}
+	    }
+	    if (!is_load_node(node))
+	    {
+	    	for (i = 0; i < 3; ++i)
+	    	    f[*n][i] -= lambda_s*v[*n][i]/mass;
+	    }
+	}
+	else
+	{
+	    for (i = 0; i < 3; ++i)
+	    	f[*n][i] -= lambda_l*v[*n][i]/mass;
+	}
+	(*n)++;
+}	/* end compute_node_accel1 */
+
+extern void compute_node_accel2(
+	ELASTIC_SET *geom_set,
+	NODE *node,
+	double **f,
+	double **x,
+	double **v,
+	int *n)
+{
+	CURVE **c;
+	BOND *b;
+	double x_diff,len0,len,dir[MAXD],vect[MAXD];
+	POINT *p,*p_nb;
+	int i,j,dim = Dimension(node->interface);
+	double ks = geom_set->ks;
+	double kl = geom_set->kl;
+	double kg = geom_set->kg;
+	double mass;
+	double lambda_s = geom_set->lambda_s;
+	double lambda_l = geom_set->lambda_l;
+	double lambda_g = geom_set->lambda_g;
+
+	if (dim == 3)
+	{
+	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
+	    if (extra != NULL)
+	    {
+		if (extra->af_node_type == LOAD_NODE)
+		{
+	    	    Front *front = geom_set->front;
+	    	    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	    	    mass = af_params->payload;
+		}
+		else if (extra->af_node_type == GORE_NODE)
+		    mass = geom_set->m_g;
+		else if (extra->af_node_type == STRING_NODE)
+		    mass = geom_set->m_l;
+	    }
+	    else
+            mass = geom_set->m_s;
+	}
+	else
+	    mass = geom_set->m_l;
+
+	for (i = 0; i < dim; ++i)
+	{
+	    x[*n][i] = Coords(node->posn)[i];
+	    v[*n][i] = node->posn->vel[i];
+	    f[*n][i] = 0.0;
+	}
+	for (c = node->out_curves; c && *c; ++c)
+	{
+	    b = (*c)->first;
+	    len0 = bond_length0(b);
+	    for (j = 0; j < dim; ++j)
+	    {
+		vect[j] = Coords(b->end)[j] - Coords(b->start)[j] - len0*b->dir0[j];
+		if (dim == 3)
+		{
+		    if (is_load_node(node) == YES)
+		    	f[*n][j]   += kl*vect[j]/mass;
+		    else if (hsbdry_type(*c) == STRING_HSBDRY)
+	    	    	f[*n][j]   += kl*vect[j]/mass;
+		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
+	    	    	f[*n][j]   += ks*vect[j]/mass;
+		    else if (hsbdry_type(*c) == GORE_HSBDRY)
+	    	    	f[*n][j]   += kg*vect[j]/mass;
+		}
+		else
+		    f[*n][j]   += kl*vect[j]/mass;
+	    }
+	}
+	for (c = node->in_curves; c && *c; ++c)
+	{
+	    if (curve_in_pointer_list(*c,node->out_curves) && 
+		!is_closed_curve(*c)) 
+		continue;
+	    b = (*c)->last;
+	    len0 = bond_length0(b);
+	    for (j = 0; j < dim; ++j)
+	    {
+		vect[j] = Coords(b->end)[j] - Coords(b->start)[j] -
+				len0*b->dir0[j];
+		if (dim == 3)
+		{
+		    if (is_load_node(node) == YES)
+		    	f[*n][j]   -= kl*vect[j]/mass;
+		    else if (hsbdry_type(*c) == STRING_HSBDRY)
+	    	    	f[*n][j]   -= kl*vect[j]/mass;
+		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
+	    	    	f[*n][j]   -= ks*vect[j]/mass;
+		    else if (hsbdry_type(*c) == GORE_HSBDRY)
+	    	    	f[*n][j]   -= kg*vect[j]/mass;
+		}
+		else
+		    f[*n][j]   -= kl*vect[j]/mass;
+	    }
+	}
+	if (dim == 3)
+	{
+	    BOND_TRI **btris;
+	    TRI **tris,*tri_list[500];
+	    int k,side,nt,num_tris;
+	    TRI *tri;
+
+	    num_tris = 0;
+	    p = node->posn;
+	    for (c = node->out_curves; c && *c; ++c)
+	    {
+		b = (*c)->first;
+		for (btris = Btris(b); btris && *btris; ++btris)
+		{
+		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+		    for (j = 0; j < nt; ++j)
+		    {
+			if (!pointer_in_list((POINTER)tris[j],num_tris,
+					(POINTER*)tri_list))
+			    tri_list[num_tris++] = tris[j];
+		    }
+		}
+	    }
+	    for (c = node->in_curves; c && *c; ++c)
+	    {
+		b = (*c)->last;
+		for (btris = Btris(b); btris && *btris; ++btris)
+		{
+		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+		    for (j = 0; j < nt; ++j)
+		    {
+			if (!pointer_in_list((POINTER)tris[j],num_tris,
+					(POINTER*)tri_list))
+			    tri_list[num_tris++] = tris[j];
+		    }
+		}
+	    }
+	    for (i = 0; i < num_tris; ++i)
+	    {
+		tri = tri_list[i];
+		for (side = 0; side < 3; ++side)
+		{
+		    if (p == Point_of_tri(tri)[side])
+		    {
+			if (is_side_bdry(tri,side))
+			    continue;
+			p_nb = Point_of_tri(tri)[(side+1)%3];
+			len0 = tri->side_length0[side];
+			len = separation(p,p_nb,3);
+			x_diff = len - len0;
+			for (k = 0; k < 3; ++k)
+            {
+                dir[k] = tri->side_dir0[side][k]; 
+                vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - len0*dir[k];
+                f[*n][k] += ks*vect[k]/mass;
+            }
+		    }
+		}
+	    }
+	    if (!is_load_node(node))
+	    {
+	    	for (i = 0; i < 3; ++i)
+	    	    f[*n][i] -= lambda_s*v[*n][i]/mass;
+	    }
+	}
+	else
+	{
+	    for (i = 0; i < 3; ++i)
+	    	f[*n][i] -= lambda_l*v[*n][i]/mass;
+	}
+	(*n)++;
+}	/* end compute_node_accel2 */
+
+extern void compute_curve_accel2(
+	ELASTIC_SET *geom_set,
+	CURVE *curve,
+	double **f,
+	double **x,
+	double **v,
+	int *n)
+{
+	int i,j;
+	double x_diff;
+	BOND *b;
+	double dir[MAXD],len0,vect[MAXD];
+	int dim = Dimension(curve->interface);
+	double kl,m_l,lambda_l,ks,lambda_s;
+
+	if (dim == 3)
+	{
+	    if (hsbdry_type(curve) == STRING_HSBDRY)
+	    {
+	    	kl = geom_set->kl;
+	    	m_l = geom_set->m_l;
+	    	lambda_l = geom_set->lambda_l;
+	    }
+	    else if (hsbdry_type(curve) == GORE_HSBDRY)
+	    {
+	    	kl = geom_set->kg;
+	    	m_l = geom_set->m_g;
+	    	lambda_l = geom_set->lambda_g;
+	    }
+	    else
+	    {
+	    	kl = geom_set->ks;
+	    	m_l = geom_set->m_s;
+	    	lambda_l = geom_set->lambda_s;
+	    }
+	    ks = geom_set->ks;
+	    lambda_s = geom_set->lambda_s;
+	}
+	else
+	{
+	    kl = geom_set->kl;
+	    m_l = geom_set->m_l;
+	    lambda_l = geom_set->lambda_l;
+	}
+	i = *n;
+	for (b = curve->first; b != curve->last; b = b->next)
+	{
+	    for (j = 0; j < dim; ++j)
+	    {
+	    	x[i][j] = Coords(b->end)[j];
+	    	v[i][j] = b->end->vel[j];
+		    f[i][j] = -lambda_l*v[i][j]/m_l;
+	    }
+	    i++;
+	}
+
+	i = *n;
+	for (b = curve->first; b != NULL; b = b->next)
+	{
+	    len0 = bond_length0(b);
+	    for (j = 0; j < dim; ++j)
+	    {
+		vect[j] = Coords(b->end)[j] - Coords(b->start)[j] -
+				len0*b->dir0[j];
+		if (b != curve->first)
+		{
+	    	    f[i-1][j]   += kl*vect[j]/m_l;
+		}
+		if (b != curve->last)
+		{
+	    	    f[i][j] -= kl*vect[j]/m_l;
+		}
+	    }
+	    if (b != curve->last) i++;
+	}
+
+	if (dim == 3)
+	{
+	    POINT *p,*p_nb;
+	    BOND_TRI **btris;
+	    TRI **tris;
+	    int j,k,side,nt;
+	    double length0,length;
+	    i = *n;
+	    for (b = curve->first; b != curve->last; b = b->next)
+	    {
+		p = b->end;
+		for (btris = Btris(b); btris && *btris; ++btris)
+		{
+		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+		    for (j = 0; j < nt; ++j)
+		    {
+			for (side = 0; side < 3; ++side)
+			{
+			    if (p == Point_of_tri(tris[j])[side])
+			    {
+				if (is_side_bdry(tris[j],side))
+				    continue;
+				p_nb = Point_of_tri(tris[j])[(side+1)%3];
+				length0 = tris[j]->side_length0[side];
+				for (k = 0; k < 3; ++k)
+                        	{
+                            	    dir[k] = tris[j]->side_dir0[side][k]; 
+				    vect[k] = Coords(p_nb)[k] - Coords(p)[k]
+					- length0*dir[k];
+                            	    f[i][k] += ks*vect[k]/m_l;
+                        	}
+			    }
+			}
+		    }
+		}
+		i++;
+	    }
+	}
+	*n = i;
+}	/* end compute_curve_accel2 */
+
+extern void compute_surf_accel2(
+	ELASTIC_SET *geom_set,
+	SURFACE *surf,
+	double **f,
+	double **x,
+	double **v,
+	int *n)
+{
+	int j,k;
+	TRI *tri;
+	POINT *p;
+	int dim = 3;
+	double ks = geom_set->ks;
+	double m_s = geom_set->m_s;
+	double lambda_s = geom_set->lambda_s;
+
+	unsort_surf_point(surf);
+	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
+			tri = tri->next)
+	{
+	    for (j = 0; j < 3; ++j)
+	    {
+		p = Point_of_tri(tri)[j];
+		if (sorted(p) || Boundary_point(p)) continue;
 		for (k = 0; k < dim; ++k)
 		{
-		    esk += 0.5*m_l*sqr(node->posn->vel[k]);
-		    egp += -g[k]*m_l*Coords(node->posn)[k];
-		    st = (STATE*)left_state(node->posn);
-		    exk += 0.5*m_l*sqr(st->impulse[k]);
-		    enk += 0.5*m_l*sqr(node->posn->vel[k] + st->impulse[k]);
+		    x[*n][k] = Coords(p)[k];
+		    v[*n][k] = p->vel[k];
+		}
+	    	spring_force_at_point2(f[*n],p,tri,surf,ks);
+		for (k = 0; k < dim; ++k)
+		{
+		    f[*n][k] -= lambda_s*(v[*n][k]);
+		    f[*n][k] /= m_s;
+		}
+		sorted(p) = YES;
+	    	++(*n);
+	    }
+	}
+}	/* end compute_surf_accel2 */
+
+static void spring_force_at_point2(
+	double *f,
+	POINT *p,
+	TRI *tri,
+	SURFACE *surf,
+	double ks)
+{
+	TRI *tris[MAX_NUM_RING1];
+	int i,j,k,nt;
+	POINT *p_nb;
+	double length0,length,dir[3],vect[3];
+	
+	PointAndFirstRingTris(p,Hyper_surf_element(tri),Hyper_surf(surf),
+				&nt,tris);
+	for (k = 0; k < 3; ++k) f[k] = 0.0;
+	for (i = 0; i < nt; ++i)
+	{
+	    for (j = 0; j < 3; ++j)
+	    {
+		if (Point_of_tri(tris[i])[j] == p)
+		{
+		    length0 = tris[i]->side_length0[j];
+		    p_nb = Point_of_tri(tris[i])[(j+1)%3];
+		    length = separation(p,p_nb,3);
+            for (k = 0; k < 3; ++k)
+		    {
+                dir[k] = tris[i]->side_dir0[j][k];
+                vect[k] = (Coords(p_nb)[k] - Coords(p)[k]) - length0*dir[k];
+                f[k] += ks*vect[k];
+		    }
+		    if (is_side_bdry(tris[i],(j+2)%3))
+		    {
+                (void) printf("Detect boundary "
+                    "in spring_force_at_point2()\n");
+                clean_up(ERROR);
+		    }
 		}
 	    }
 	}
+}	/* end spring_force_at_point2 */
 
-	nc = 0;		str_length = 0.0;
-	for (c = intfc->curves; c && *c; ++c)
+extern void compute_node_accel3(
+	ELASTIC_SET *geom_set,
+	NODE *node,
+	double **f,
+	double **x,
+	double **v,
+	int *n)
+{
+	CURVE **c;
+	BOND *b;
+	double x_diff,len0,len,dir[MAXD],vect[MAXD];
+	POINT *p,*p_nb;
+	int i,j,dim = Dimension(node->interface);
+	double ks = geom_set->ks;
+	double kl = geom_set->kl;
+	double m_s = geom_set->m_s;
+	double m_l = geom_set->m_l;
+	double lambda_s = geom_set->lambda_s;
+	double lambda_l = geom_set->lambda_l;
+	double payload;
+
+	if (dim == 3)
 	{
-	    if (hsbdry_type(*c) != STRING_HSBDRY)
-		continue;
-	    str_length += curve_length(*c);
-	    nc++;
+	    if (is_load_node(node))
+	    {
+	    	Front *front = geom_set->front;
+	    	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+
+	    	payload = af_params->payload;
+	    }
 	}
-	if (nc != 0)
-	    str_length /= (double)nc;
-	if (first)
+
+	for (i = 0; i < dim; ++i)
 	{
-	    first = NO;
+	    x[*n][i] = Coords(node->posn)[i];
+	    v[*n][i] = node->posn->vel[i];
+	    f[*n][i] = 0.0;
+	}
+	for (c = node->out_curves; c && *c; ++c)
+	{
+	    b = (*c)->first;
+	    len0 = bond_length0(b);
+	    for (j = 0; j < dim; ++j)
+	    {
+		vect[j] = len0*((Coords(b->end)[j] - Coords(b->start)[j])
+				/bond_length(b) - b->dir0[j]);
+		if (dim == 3)
+		{
+		    if (is_load_node(node) == YES)
+		    	f[*n][j]   += kl*vect[j]/payload;
+		    else if (hsbdry_type(*c) == STRING_HSBDRY)
+	    	    	f[*n][j]   += kl*vect[j]/m_s;
+		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
+	    	    	f[*n][j]   += ks*vect[j]/m_s;
+		}
+		else
+		    f[*n][j]   += kl*vect[j]/m_l;
+	    }
+	}
+	for (c = node->in_curves; c && *c; ++c)
+	{
+	    b = (*c)->last;
+	    len0 = bond_length0(b);
+	    for (j = 0; j < dim; ++j)
+	    {
+		vect[j] = len0*((Coords(b->end)[j] - Coords(b->start)[j])
+				/bond_length(b) - b->dir0[j]);
+		if (dim == 3)
+		{
+		    if (is_load_node(node) == YES)
+		    	f[*n][j]   -= kl*vect[j]/payload;
+		    else if (hsbdry_type(*c) == STRING_HSBDRY)
+	    	    	f[*n][j]   -= kl*vect[j]/m_s;
+		    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
+	    	    	f[*n][j]   -= ks*vect[j]/m_s;
+		}
+		else
+		    f[*n][j]   -= kl*vect[j]/m_l;
+	    }
+	}
+	if (dim == 3)
+	{
+	    BOND_TRI **btris;
+	    TRI **tris;
+	    int k,side,nt,ns;
+	    SURFACE *out_surfs[10];
+
+	    ns = 0;
+	    for (c = node->out_curves; c && *c; ++c)
+	    {
+		b = (*c)->first;
+		p = b->start;
+		for (btris = Btris(b); btris && *btris; ++btris)
+		{
+		    out_surfs[ns++] = (*btris)->surface;
+		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+		    for (j = 0; j < nt; ++j)
+		    {
+			for (side = 0; side < 3; ++side)
+			{
+			    if (p == Point_of_tri(tris[j])[side])
+			    {
+				if (is_side_bdry(tris[j],side))
+				    continue;
+				p_nb = Point_of_tri(tris[j])[(side+1)%3];
+				len0 = tris[j]->side_length0[side];
+				len = separation(p,p_nb,3);
+	    			x_diff = len - len0; 
+				for (k = 0; k < 3; ++k)
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/len;
+                    vect[k] = len0*(dir[k] - tris[j]->side_dir0[side][k]);//bending??
+                    f[*n][k] += ks*vect[k]/m_s;
+                }
+			    }
+			}
+		    }
+		}
+	    }
+	    for (c = node->in_curves; c && *c; ++c)
+	    {
+		if (is_closed_curve(*c)) continue;
+		b = (*c)->last;
+		p = b->end;
+		for (btris = Btris(b); btris && *btris; ++btris)
+		{
+		    boolean duplicate_surf = NO;
+		    for (j = 0; j < ns; ++j)
+			if ((*btris)->surface == out_surfs[j])
+			    duplicate_surf = YES;
+		    if (duplicate_surf == YES) continue;
+		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+		    for (j = 0; j < nt; ++j)
+		    {
+			for (side = 0; side < 3; ++side)
+			{
+			    if (p == Point_of_tri(tris[j])[side])
+			    {
+				if (is_side_bdry(tris[j],side))
+				    continue;
+				p_nb = Point_of_tri(tris[j])[(side+1)%3];
+				len0 = tris[j]->side_length0[side];
+				len = separation(p,p_nb,3);
+				x_diff = len - len0;
+				for (k = 0; k < 3; ++k)
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/len;
+                    vect[k] = len0*(dir[k] - tris[j]->side_dir0[side][k]);//bending??
+                    f[*n][k] += ks*vect[k]/m_s;
+                }
+			    }
+			}
+		    }
+		}
+	    }
+	    if (!is_load_node(node))
+	    {
+	    	for (i = 0; i < 3; ++i)
+	    	    f[*n][i] -= lambda_s*v[*n][i]/m_s;
+	    }
+	}
+	else
+	{
+	    for (i = 0; i < 3; ++i)
+	    	f[*n][i] -= lambda_l*v[*n][i]/m_l;
+	}
+	(*n)++;
+}	/* end compute_node_accel3 */
+
+extern void compute_curve_accel3(
+	ELASTIC_SET *geom_set,
+	CURVE *curve,
+	double **f,
+	double **x,
+	double **v,
+	int *n)
+{
+	int i,j;
+	double x_diff;
+	BOND *b;
+	double dir[MAXD],len0,vect[MAXD];
+	int dim = Dimension(curve->interface);
+	double kl,m_l,lambda_l;
+
+	if (dim == 3)
+	{
+	    if (hsbdry_type(curve) == STRING_HSBDRY)
+	    {
+	    	kl = geom_set->kl;
+	    	m_l = geom_set->m_l;
+	    	lambda_l = geom_set->lambda_l;
+	    }
+	    else
+	    {
+	    	kl = geom_set->ks;
+	    	m_l = geom_set->m_s;
+	    	lambda_l = geom_set->lambda_s;
+	    }
+	}
+	else
+	{
+	    kl = geom_set->kl;
+	    m_l = geom_set->m_l;
+	    lambda_l = geom_set->lambda_l;
+	}
+	i = *n;
+	for (b = curve->first; b != curve->last; b = b->next)
+	{
+	    for (j = 0; j < dim; ++j)
+	    {
+	    	x[i][j] = Coords(b->end)[j];
+	    	v[i][j] = b->end->vel[j];
+            f[i][j] = -lambda_l*v[i][j]/m_l;
+	    }
+	    i++;
 	}
 
-	fprintf(eskfile,"%16.12f  %16.12f\n",front->time,esk);
-        fprintf(espfile,"%16.12f  %16.12f\n",front->time,esp);
-        fprintf(egpfile,"%16.12f  %16.12f\n",front->time,egp);
-        fprintf(exkfile,"%16.12f  %16.12f\n",front->time,exk);
-        fprintf(enkfile,"%16.12f  %16.12f\n",front->time,enk);
-        fprintf(efile,"%16.12f  %16.12f\n",front->time,esp+egp+enk);
-	fflush(eskfile);
-	fflush(espfile);
-	fflush(egpfile);
-	fflush(exkfile);
-	fflush(enkfile);
-	fflush(efile);
+	i = *n;
+	for (b = curve->first; b != NULL; b = b->next)
+	{
+	    len0 = bond_length0(b);
+	    for (j = 0; j < dim; ++j)
+	    {
+		vect[j] = len0*((Coords(b->end)[j] - Coords(b->start)[j])/bond_length(b) - b->dir0[j]);
+		if (b != curve->first)
+		{
+	    	    f[i-1][j]   += kl*vect[j]/m_l;
+		}
+		if (b != curve->last)
+		{
+	    	    f[i][j] -= kl*vect[j]/m_l;
+		}
+	    }
+	    if (b != curve->last) i++;
+	}
+	printf("f[20] = %f %f\n",f[20][0],f[20][1]);
 
-        fprintf(afile,"%16.12f  %16.12f\n",front->time,cnp_area);
-        fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
-        fprintf(pfile,"%16.12f  %16.12f\n",front->time,pz);
-        fprintf(vfile,"%16.12f  %16.12f\n",front->time,pv);
-	fflush(afile);
-	fflush(sfile);
-	fflush(pfile);
-	fflush(vfile);
+	if (dim == 3)
+	{
+	    POINT *p,*p_nb;
+	    BOND_TRI **btris;
+	    TRI **tris;
+	    int j,k,side,nt;
+	    double length0,length;
+	    i = *n;
+	    for (b = curve->first; b != curve->last; b = b->next)
+	    {
+		p = b->end;
+		for (btris = Btris(b); btris && *btris; ++btris)
+		{
+		    nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
+		    for (j = 0; j < nt; ++j)
+		    {
+			for (side = 0; side < 3; ++side)
+			{
+			    if (p == Point_of_tri(tris[j])[side])
+			    {
+				if (is_side_bdry(tris[j],side))
+				    continue;
+				p_nb = Point_of_tri(tris[j])[(side+1)%3];
+				length0 = tris[j]->side_length0[side];
+				length = separation(p,p_nb,3);
+				for (k = 0; k < 3; ++k)
+                {
+                    dir[k] = (Coords(p_nb)[k] - Coords(p)[k])/length;
+                    vect[k] = length0*(dir[k] - tris[j]->side_dir0[side][k]);
+                    f[i][k] += kl*vect[k]/m_l;
+                }
+			    }
+			}
+		    }
+		}
+		i++;
+	    }
+	}
+	*n = i;
+}	/* end compute_curve_accel3 */
 
-        fprintf(xcom_file,"%16.12f  %16.12f\n",front->time,zcom);
-        fprintf(vcom_file,"%16.12f  %16.12f\n",front->time,vcom);
-	fflush(xcom_file);
-	fflush(vcom_file);
-}	/* end print_airfoil_stat3d_2 */
+static boolean curve_in_pointer_list(
+	CURVE *c,
+	CURVE **c_list)
+{
+	CURVE **pc;
+	if (c_list == NULL) return NO;
+	for (pc = c_list; pc && *pc; ++pc)
+	{
+	    if (c == *pc) return YES;
+	}
+	return NO;
+}	/* end curve_in_pointer_list */
 
 extern void fourth_order_elastic_curve_propagate(
 	Front           *fr,
@@ -2066,7 +2087,7 @@ static void adjust_for_node_type(
 	}
 }	/* end adjust_for_node_type */
 
-static void propagate_curve(
+static void propagate_curve_basic(
 	ELASTIC_SET *geom_set,
 	CURVE *curve,
 	double **x)
@@ -2082,7 +2103,7 @@ static void propagate_curve(
 	int n = 1;
 
 	if (debugging("trace"))
-	    (void) printf("Entering propagate_curve()\n");
+	    (void) printf("Entering propagate_curve_basic()\n");
 	hs = Hyper_surf(curve);
 	for (b = curve->first;  b != curve->last; b = b->next)
 	{
@@ -2094,181 +2115,7 @@ static void propagate_curve(
 		x[n][j] += v[j]*dt;
 	    ++n;
 	}
-}	/* end propagate_curve */
-
-static void print_airfoil_stat2d_2(
-	Front *front,
-	char *out_name)
-{
-	INTERFACE *intfc = front->interf;
-	CURVE **c,*curve;
-	BOND *b;
-	POINT *p;
-	static FILE *ekfile,*epfile,*exfile,*efile,*sfile;
-	char fname[256];
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double ek,ep,enp;
-	double kl,m_l,x_diff;
-	int i,dim = intfc->dim;
-	double str_length;
-	STRING_NODE_TYPE start_type = af_params->start_type;
-        STRING_NODE_TYPE end_type = af_params->end_type;
-	double *g,payload;
-	double vect[MAXD],len0;
-
-	if (ekfile == NULL && pp_mynode() == 0)
-        {
-	    sprintf(fname,"%s/ek.xg",out_name);
-            ekfile = fopen(fname,"w");
-	    sprintf(fname,"%s/ep.xg",out_name);
-            epfile = fopen(fname,"w");
-	    sprintf(fname,"%s/ex.xg",out_name);
-            exfile = fopen(fname,"w");
-	    sprintf(fname,"%s/en.xg",out_name);
-            efile = fopen(fname,"w");
-	    sprintf(fname,"%s/str_length.xg",out_name);
-            sfile = fopen(fname,"w");
-            fprintf(ekfile,"\"Kinetic enegy vs. time\"\n");
-            fprintf(epfile,"\"Potential enegy vs. time\"\n");
-            fprintf(exfile,"\"External enegy vs. time\"\n");
-            fprintf(efile,"\"Total enegy vs. time\"\n");
-            fprintf(sfile,"\"String length vs. time\"\n");
-        }
-
-	kl = af_params->kl;
-        m_l = af_params->m_l;
-	payload = af_params->payload;
-	g = af_params->gravity;
-	ek = ep = enp = str_length = 0.0;
-	for (c = intfc->curves; c && *c; ++c)
-	{
-		if (wave_type(*c) != ELASTIC_BOUNDARY &&
-		    wave_type(*c) != ELASTIC_STRING)
-		    continue;
-
-		curve = *c;
-		p = curve->first->start;
-		if (start_type == FREE_END)
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	ek += 0.5*m_l*sqr(p->vel[i]);
-		    }
-		}
-		else if(start_type == LOADED_END)
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	ek += 0.5*payload*sqr(p->vel[i]);
-			enp -= payload*g[i]*Coords(p)[i];
-		    }
-		}
-		p = curve->last->end;
-		if (end_type == FREE_END)
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	ek += 0.5*m_l*sqr(p->vel[i]);
-		    }
-		}
-		else if(end_type == LOADED_END)
-		{
-		    for (i = 0; i < dim; ++i)
-		    {
-		    	ek += 0.5*payload*sqr(p->vel[i]);
-			enp -= payload*g[i]*Coords(p)[i];
-		    }
-		}
-
-		for (b = curve->first; b != NULL; b = b->next)
-		{
-		    p = b->end;
-		    x_diff = bond_length(b) - bond_length0(b);
-		    if (b != curve->last)
-		    {
-		    	for (i = 0; i < dim; ++i)
-			{
-		    	    ek += 0.5*m_l*sqr(p->vel[i]);
-			}
-		    }
-		    len0 = bond_length0(b);
-		    x_diff = 0.0;
-		    for (i = 0; i < dim; ++i)
-		    {
-			vect[i] = Coords(b->end)[i] - Coords(b->start)[i]
-					- len0*b->dir0[i];
-			x_diff += sqr(vect[i]);
-		    }
-		    ep += 0.5*kl*x_diff;
-		    str_length += bond_length(b);
-		}
-	}
-	if (pp_mynode() == 0)
-	{
-	    fprintf(ekfile,"%16.12f  %16.12f\n",front->time,ek);
-            fprintf(epfile,"%16.12f  %16.12f\n",front->time,ep);
-            fprintf(exfile,"%16.12f  %16.12f\n",front->time,enp);
-            fprintf(efile,"%16.12f  %16.12f\n",front->time,ek+ep+enp);
-            fprintf(sfile,"%16.12f  %16.12f\n",front->time,str_length);
-	    fflush(ekfile);
-	    fflush(epfile);
-	    fflush(exfile);
-	    fflush(efile);
-	    fflush(sfile);
-	}
-}	/* end print_airfoil_stat2d_2 */
-
-//TODO: Rewrite similiar to strain limiting functions
-static void record_stretching_length(
-	SURFACE *surf,
-	char *out_name,
-	double time)
-{
-	int dir;
-	CURVE **c,*c1,*c2;
-	static FILE *lfile;
-	char lname[512];
-	C_PARAMS *c_params;
-	POINT *p1,*p2;
-	double length;
-
-	c1 = c2 = NULL;
-	for (c = surf->pos_curves; c && *c; ++c)
-	{
-	    if (hsbdry_type(*c) == MONO_COMP_HSBDRY &&
-		(*c)->extra != NULL)
-	    {
-		c1 = *c;
-		c_params = (C_PARAMS*)c1->extra;
-	    }
-	    else if (hsbdry_type(*c) == FIXED_HSBDRY)
-		c2 = *c;
-	}
-	for (c = surf->neg_curves; c && *c; ++c)
-	{
-	    if (hsbdry_type(*c) == MONO_COMP_HSBDRY &&
-		(*c)->extra != NULL)
-	    {
-		c1 = *c;
-		c_params = (C_PARAMS*)c1->extra;
-	    }
-	    else if (hsbdry_type(*c) == FIXED_HSBDRY)
-		c2 = *c;
-	}
-	if (c1 == NULL || c2 == NULL) return;
-	if (lfile == NULL)
-	{
-	    sprintf(lname,"%s/length.xg",out_name);
-	    lfile = fopen(lname,"w");
-	    fprintf(lfile,"\"Length vs. Time\"\n");
-	}
-	dir = c_params->dir;
-	p1 = c1->first->end;
-	p2 = c2->first->end;
-	length = fabs(Coords(p1)[dir] - Coords(p2)[dir]);
-	fprintf(lfile,"%f  %f\n",time,length);
-	fflush(lfile);
-}	/* end record_stretching_length */
+}	/* end propagate_curve_basic */
 
 static void set_special_node_type(
 	NODE *node,
@@ -2384,323 +2231,3 @@ static boolean find_crx_between_box_line(
         return YES;
 }
 
-static void print_rgb3d(
-        Front *front,
-        char *out_name)
-{
-        INTERFACE *intfc = front->interf;
-        SURFACE **s;
-        FILE *rgxfile, *rgvfile;
-        static boolean first = YES;
-        char fname[200];
-
-        intfc_surface_loop(intfc, s)
-        {
-            if (wave_type(*s) != MOVABLE_BODY_BOUNDARY)
-                continue;
-            sprintf(fname,"%s/rg_com%02d",OutName(front),body_index(*s));
-            if (first)
-                rgxfile = fopen(fname,"w");
-            else
-                rgxfile = fopen(fname,"a");
-            sprintf(fname,"%s/rg_vel%02d",OutName(front),body_index(*s));
-            if (first)
-                rgvfile = fopen(fname,"w");
-            else
-                rgvfile = fopen(fname,"a");
-            first = NO;
-
-            fprintf(rgxfile, "%16.12f  %16.12f \n", front->time,
-                                center_of_mass(*s)[2]);
-            fclose(rgxfile);
-            fprintf(rgvfile, "%16.12f  %16.12f \n", front->time,
-                                center_of_mass_velo(*s)[2]);
-            fclose(rgvfile);
-        }
-}       /* end print_rgb3d */
-
-//TODO: REVIEW FOR ACCURACY -- also need to incoroporate shear stress effects
-static void print_drag3d(
-        Front *front,
-        char *out_name)
-{
-        INTERFACE *intfc = front->interf;
-        SURFACE **s;
-        TRI *tri;
-        POINT *point;
-        Locstate sl, sr;
-        int i,j,count = 0;
-        double pres_drop, area;
-        char fname[200];
-        FILE *dfile, *xlfile, *ylfile;
-        static boolean first = YES;
-        int fcount = 0, dim;
-        double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
-                                        getStateZvel};
-        FILE* pafile;
-	    FILE *xforce, *yforce, *zforce;
-
-        if (FT_Dimension() == 2)
-            return;
-        else
-            dim = FT_Dimension();
-
-        /*find the freestream velocity*/
-        /*freestream is the air far upstream of an aerodynamic body*/
-        double free_vel[MAXD] = {0};
-        double free_vel_dir[MAXD] = {0};
-        double drag[MAXD]={0}, lift[MAXD]={0};
-        double fvel_mag = 0.0;
-
-        //looks for the constant state dirichlet boundary (INLET)
-        for (s = intfc->surfaces; s && *s; ++s)
-        {
-            HYPER_SURF *hs = Hyper_surf(*s);
-            if (wave_type(hs) == DIRICHLET_BOUNDARY &&
-                is_bdry(Surface_of_hs(hs)) && boundary_state(hs))
-            {
-                for (i = 0; i < dim; i++)
-                    free_vel[i] = getStateVel[i](boundary_state(hs));
-                fvel_mag = Mag3d(free_vel);
-                if (fabs(fvel_mag) > MACH_EPS)
-                    break;
-            }
-        }
-
-        //printf("free_vel = %g %g %g\n",free_vel[0],free_vel[1],free_vel[2]);
-
-        /*normalize freestream vel*/
-        if (fabs(fvel_mag) > MACH_EPS)
-        {
-            for (i = 0; i < dim; i++)
-                free_vel_dir[i] = free_vel[i]/fvel_mag;
-        }
-        else
-        {
-            /*default freestream direction is upward*/
-            for (i = 0; i < dim; i++)
-                free_vel_dir[i] = 0.0;
-            free_vel_dir[dim-1] = 1.0;
-        }
-
-        /*compute total force on fabric canopy*/
-        /*for multiparachute problem*/
-        /* one file is generated for each canopy*/
-        for (s = intfc->surfaces; s && *s; ++s)
-        {
-            if (wave_type(*s) != ELASTIC_BOUNDARY || is_bdry(*s))
-                continue;
-
-            /* drag force */
-            sprintf(fname,"%s/drag-%d.xg",OutName(front),fcount);
-            if (first)
-                dfile = fopen(fname,"w");
-            else
-                dfile = fopen(fname,"a");
-            
-            /* lift force */
-            sprintf(fname,"%s/xlift-%d.xg",OutName(front),fcount);
-            if (first)
-                xlfile = fopen(fname,"w");
-            else
-                xlfile = fopen(fname,"a");
-            
-            sprintf(fname,"%s/ylift-%d.xg",OutName(front),fcount);
-            if (first)
-                ylfile = fopen(fname,"w");
-            else
-                ylfile = fopen(fname,"a");
-
-            /* projected area */
-            sprintf(fname,"%s/parea-%d.xg",OutName(front),fcount);
-            if (first)
-                pafile = fopen(fname,"w");
-            else
-                pafile = fopen(fname,"a");
-            /* total force in x direction */
-            sprintf(fname,"%s/force-x-%d.xg",OutName(front),fcount);
-            if (first)
-                xforce = fopen(fname,"w");
-            else
-                xforce = fopen(fname,"a");
-            /* total force in y direction */
-            sprintf(fname,"%s/force-y-%d.xg",OutName(front),fcount);
-            if (first)
-                yforce = fopen(fname,"w");
-            else
-                yforce = fopen(fname,"a");
-            /* total force in z direction */
-            sprintf(fname,"%s/force-z-%d.xg",OutName(front),fcount);
-            if (first)
-                zforce = fopen(fname,"w");
-            else
-                zforce = fopen(fname,"a");
-            
-            fcount++;
-            
-            double parea = 0.0;
-            double force[MAXD] = {0.0};
-            for (tri = first_tri(*s); !at_end_of_tri_list(tri,*s);
-                        tri = tri->next)
-            {
-                pres_drop = 0.0;
-                double pl = 0.0;
-                double pr = 0.0;
-                double vel_tri[MAXD] = {0.0};
-                double centroid[MAXD] = {0.0};
-                for(i = 0; i < 3; i++)
-                {
-                    point = Point_of_tri(tri)[i];
-                    sl = (STATE*)left_state(point);
-                    sr = (STATE*)right_state(point);
-                    pl += getStatePres(sl);
-                    pr += getStatePres(sr);
-                    pres_drop += getStatePres(sl) - getStatePres(sr);
-                    for (int k = 0; k < 3; ++k)
-                    {
-                        centroid[k] += Coords(point)[k];
-                        vel_tri[k] += getStateVel[k](sl);
-                    }
-                }
-
-                pl /= 3.0;
-                pr /= 3.0;
-                pres_drop /= 3.0;
-                for (int k = 0; k < 3; ++k)
-                {
-                    centroid[k] /= 3.0;
-                    vel_tri[k] /= 3.0;
-                }
-                
-                double unit_nor_tri[MAXD];
-                auto nor_tri = Tri_normal(tri);//NOTE: Tri_normal() not unit length
-                double mag_nor = Mag3d(nor_tri);
-                double area_tri = tri_area(tri);
-                
-                double force_tri[MAXD];
-                for (i = 0; i < dim; i++)
-                {
-                    unit_nor_tri[i] = nor_tri[i]/mag_nor;
-                    force_tri[i] = pres_drop*unit_nor_tri[i]*area_tri;
-                    //TODO: tangential force
-                    force[i] += force_tri[i];
-                }
-                parea += Dot3d(unit_nor_tri,free_vel_dir)*area_tri;//projected to xy plane
-
-                //TODO: put inside a if (debugging(...)) block
-                /*
-                printf("pres_drop = %g - %g = %g  |  unit_nor_tri = %g %g %g  |"
-                        "  force_tri = %g %g %g  |  tri_cen %g %g %g\n",
-                        pl,pr,pres_drop,unit_nor_tri[0],unit_nor_tri[1],unit_nor_tri[2],
-                        force_tri[0],force_tri[1],force_tri[2],
-                        centroid[0],centroid[1],centroid[2]);*/
-            }
-            
-            /*compute drag force and lift force*/
-            double mag_drag = Dot3d(force,free_vel_dir);
-            for (i = 0; i < dim; i++)
-            {
-                drag[i] = mag_drag*free_vel_dir[i];
-                lift[i] = force[i] - drag[i];
-            }
-
-            //TODO: put inside a if (debugging(...)) block
-            /*
-            printf("\t force = %g %g %g  |  drag = %g %g %g  |  lift = %g %g %g\n",
-                    force[0],force[1],force[2],
-                    drag[0],drag[1],drag[2],
-                    lift[0],lift[1],lift[2]);*/
-
-                //fprintf(dfile,"%16.12f  %16.12f\n",front->time,Mag3d(drag));
-            fprintf(dfile,"%16.12f  %16.12f\n",front->time,drag[2]);
-            fclose(dfile);
-
-                /*fprintf(lfile,"%16.12f  %16.12f\n",front->time,Mag3d(lift));
-                fclose(lfile);*/
-            fprintf(xlfile,"%16.12f  %16.12f\n",front->time,lift[0]);
-            fclose(xlfile);
-            fprintf(ylfile,"%16.12f  %16.12f\n",front->time,lift[1]);
-            fclose(ylfile);
-
-            fprintf(xforce,"%16.12f  %16.12f\n",front->time,force[0]);
-            fclose(xforce);
-            fprintf(yforce,"%16.12f  %16.12f\n",front->time,force[1]);
-            fclose(yforce);
-            fprintf(zforce,"%16.12f  %16.12f\n",front->time,force[2]);
-            fclose(zforce);
-
-            fprintf(pafile,"%16.12f  %16.12f\n",front->time,parea);
-            fclose(pafile);
-
-        }
-
-        first = NO;
-        return;
-}       /* end print_drag3d */
-
-static void print_strings(
-	Front *front,
-	char *out_name)
-{
-	static int dim = FT_Dimension();
-	if (dim != 3) return;
-    if (!FT_FrontContainHsbdryType(front,STRING_HSBDRY)) return;
-
-	static boolean first = YES;
-	char dirname[512];
-	sprintf(dirname,"%s/string_info", OutName(front));
-	if (first)
-	{
-	    if (!create_directory(dirname, NO))
-	    {
-		screen("Cannot create directory %s\n",dirname);
-		clean_up(ERROR);
-	    }
-	}
-
-	CURVE **curve;
-	INTERFACE *intfc = front->interf;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	static double kl = af_params->kl;
-	char fname[512];
-	FILE *length_file, *tension_file;
-	intfc_curve_loop(intfc, curve)
-	{
-	    if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
-	    /* in the breaking strings case, one curve breaks into two. */
-	    boolean new_curve = NO;
-	    if (af_params->string_hash.count(Gindex(*curve)) == 0)
-	    {
-		int value = af_params->string_hash.size();
-		af_params->string_hash[Gindex(*curve)] = value;
-		new_curve = YES;
-	    }
-	    sprintf(fname,"%s/str_length-%02d.xg",dirname,
-				af_params->string_hash[Gindex(*curve)]);
-	    if (first || new_curve)
-		length_file = fopen(fname, "w");
-	    else
-		length_file = fopen(fname, "a");
-	    sprintf(fname,"%s/str_tension-%02d.xg",dirname,
-				af_params->string_hash[Gindex(*curve)]);
-	    if (first || new_curve)
-		tension_file = fopen(fname, "w");
-	    else
-		tension_file = fopen(fname, "a");
-	    BOND *bond;
-	    double len0 = 0.0, len = 0.0;
-	    curve_bond_loop(*curve, bond)
-	    {
-		len0 += bond->length0;
-		len += distance_between_positions(Coords(bond->start),
-					Coords(bond->end),dim);
-	    }
-	    double ten = (len - len0) * kl / (I_NumOfCurvePoints(*curve)-1);
-	    fprintf(length_file,"%16.12f  %16.12f\n",front->time,len);
-	    fclose(length_file);
-	    fprintf(tension_file,"%16.12f  %16.12f\n",front->time,ten);
-	    fclose(tension_file);
-	}
-
-	first = NO;
-}	/* end print_strings */

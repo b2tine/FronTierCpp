@@ -68,13 +68,16 @@ Enter factor of smoothing radius: 1
 
 Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
+Enter fabric bending stiffness constant: 0.0001
+Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.25
 Enter fabric point mass: 0.001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.000001
 
 Enter string spring constant: 75000
-Enter string damping constant: 0.1
+Enter string damping constant: 0.01
+Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.3
 Enter string point mass: 0.0015
 Enter string thickness: 0.004
@@ -103,6 +106,7 @@ Type y to make vector vorticity field movie: y
 
 ************Debugging options*****************
 Enter yes for debugging: yes
+Enter the debugging string: bendforce_off
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting

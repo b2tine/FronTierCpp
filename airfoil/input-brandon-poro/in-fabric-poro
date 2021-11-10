@@ -1,8 +1,8 @@
-Domain limit in 0-th dimension: 0 1
-Domain limit in 1-th dimension: 0 1
+Domain limit in 0-th dimension: 0 2
+Domain limit in 1-th dimension: 0 2
 Domain limit in 2-th dimension: 0 3
 
-Computational grid: 30 30 90
+Computational grid: 60 60 90
 
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
@@ -28,18 +28,19 @@ Type yes to turn off auto-redistribution: y
 
 Entering yes to turn off fluid solver: no
 Enter interior propagator: p
-Enter interior sub step number: 10
+Enter interior sub step number: 1
 
 Enter yes to use porosity: yes
 Enter porosity: 0.03
 Enter viscous parameter: 13.5984
 Enter inertial parameter: 101.404
 
-Enter density and viscosity of the fluid: 1.0 0.001
-Enter gravity: 0.0 0.0 0.0
-
 Enter surface tension: 0.0
 Enter factor of smoothing radius: 1
+
+**************Fluid parameters***************
+Enter advection order: 4
+Enter yes for advection term extrapolation: yes
 
 Projection type can be
         PMI     (1)
@@ -47,12 +48,12 @@ Projection type can be
         PMIII   (3)
         SIMPLE  (S)
 Enter projection type: 3
-Enter projection typeX: SIMPLE
 
-Available elliptic methods are:
-        Simple elliptic (S)
-        Dual elliptic (DU)
-Enter elliptic method: Simple
+Enter density and viscosity of the fluid: 1.0 0.001
+Enter gravity: 0.0 0.0 0.0
+
+Enter upper bound for fluid speed: 250.0
+******************************************
 
 Enter yes for parachute system: no
 Enter the number of fabric optimization rounds: 0
@@ -72,8 +73,8 @@ Available types of canopy boundaries are:
 
 Enter type of canopy boundary: R
 Enter the height of the plane: 0.72
-Enter lower bounds of the rectangle: 0.19 0.19
-Enter upper bounds of the rectangle: 0.81 0.81
+Enter lower bounds of the rectangle: 0.69 0.69
+Enter upper bounds of the rectangle: 1.31 1.31
 Enter yes for fixed boundary: yes
 Enter yes to install boundary on each side: no
 
@@ -83,28 +84,37 @@ Enter yes to attach strings to canopy: n
 Enter payload: 0.0
 Enter area density of canopy: 0.5
 
-Enter fabric spring constant: 5000
+Enter yes to use total mass: yes
+Enter fabric total mass: 0.1922
+Enter string total mass: 0.0
+
+Enter fabric spring constant: 2500
 Enter fabric damping constant: 0.01
-Enter fabric bending stiffness constant: 0.0
-Enter fabric bending damping constant: 0.0
-Enter fabric friction constant: 0.25
-Enter fabric point mass: 0.001
+Enter fabric bending stiffness constant: 0.0001
+Enter fabric bending damping constant: 0.0000001
+Enter fabric friction constant: 0.15
+    XXXEnter fabric point massXXX: 0.001
 Enter fabric thickness: 0.001
-Enter fabric rounding tolerance: 0.000001
+Enter fabric rounding tolerance: 0.00001
 
-Enter string spring constant: 50000
+Enter string spring constant: 1
 Enter string damping constant: 0.01
-Enter string damping constant: 0.0
-Enter string damping constantXXX: 0.0
-Enter string friction constant: 0.35
-Enter string point mass: 0.0015
+Enter string bending stiffness constant: 0.0001
+Enter string friction constant: 0.15
+    XXXEnter string point massXXX: 0.0015
 Enter string thickness: 0.004
-Enter string rounding tolerance: 0.000004
+Enter string rounding tolerance: 0.00004
 
-Enter strain limit: 0.05
-Enter compressive strain limit: 0.0
-Enter strain rate limit: 0.1
+Enter overlap coefficient: 0.25
 
+Enter strain limit: 0.03
+Enter compressive strain limit: 0.01
+Enter strain rate limit: 0.075
+Enter strain velocity constraint tolerance: 0.25
+
+Enter yes for collision substepping: yes
+Enter nsub per collision step: 30
+    XXXEnter nsub per collision stepXXX: 75
 
 *********************************************
 Enter yes to add rigid body: n
@@ -125,8 +135,12 @@ Type y to make scalar pressure field movie: y
 Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+Enter the debugging string: bendforce_off
 Enter the debugging string: max_speed
 Enter the debugging string: PETSc
+Enter the debugging string: ifluid_dt
+
 Enter the debugging stringX: pressure_drop
 
 Enter the debugging stringX: trace

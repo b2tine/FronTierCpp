@@ -2974,6 +2974,7 @@ LOCAL void blocks_on_tri(
     //TODO: can this be bypassed in some circumstances, e.g fabric surface stretching?
     if (i_diff[0] > 6)
 	{
+        //TODO: skip if tri hyper surface has wave type ELASTIC_BOUNDARY ???
 	    printf("In blocks_on_tri():\n");
 	    print_int_vector("i_diff = ", i_diff, 3, "\n");
 	    print_tri_global_index(t);

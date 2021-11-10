@@ -30,6 +30,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 		((comp) == soln_comp1 || (comp) == soln_comp2)
 
 
+static void Weno5_Get_Flux( double *u, double *v, double *flux, double lambda, int n);
+
+
+
 HYPERB_SOLVER::HYPERB_SOLVER(Front &front)
     : front(&front)
 {}
@@ -39,12 +43,12 @@ void HYPERB_SOLVER::computeAdvectionTerm()
     setSolverDomain();
     
     static boolean first = YES;
-
     if (first)
     {
         first = NO;
-        FT_VectorMemoryAlloc((POINTER*)&b,order,sizeof(double));
         FT_MatrixMemoryAlloc((POINTER*)&a,order,order,sizeof(double));
+        FT_VectorMemoryAlloc((POINTER*)&b,order,sizeof(double));
+            //FT_VectorMemoryAlloc((POINTER*)&c,order,sizeof(double));
 
         FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
         FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
@@ -59,6 +63,7 @@ void HYPERB_SOLVER::computeAdvectionTerm()
             FT_VectorMemoryAlloc((POINTER*)&st_field[i].rho,size,
                             sizeof(double));
         }
+
         /* Set coefficient a, b, c for different order of RK method */
         switch (order)
         {
@@ -72,14 +77,19 @@ void HYPERB_SOLVER::computeAdvectionTerm()
                 nrad = 2;
                 break;
             case 4:
+                //c[0] = 0.5; a[0][0] = 0.5;
+                //c[1] = 0.5; a[1][0] = 0.0;  a[1][1] = 0.5;
+                //c[2] = 1.0; a[2][0] = 0.0;  a[2][1] = 0.0;  a[2][2] = 1.0;
                 a[0][0] = 0.5;
                 a[1][0] = 0.0;  a[1][1] = 0.5;
                 a[2][0] = 0.0;  a[2][1] = 0.0;  a[2][2] = 1.0;
-                b[0] = 1.0/6.0;  b[1] = 1.0/3.0;
-                b[2] = 1.0/3.0;  b[3] = 1.0/6.0;
+
+                b[0] = 1.0/6.0;  b[1] = 1.0/3.0; b[2] = 1.0/3.0;  b[3] = 1.0/6.0;
+
                 nrad = 3;
                 break;
             case 5:
+                //TODO: ???
                 nrad = 3;
                 break;
             default:
@@ -89,44 +99,59 @@ void HYPERB_SOLVER::computeAdvectionTerm()
         }
     }
 
-    /* Compute flux and advance field */
-    copyToMeshVst(&st_field[0]);
-    computeMeshFlux(st_field[0],&st_flux[0]);
-
     for (int k = 0; k < dim; ++k)
-    for (int i = 0; i < size; ++i)
+    for (int l = 0; l < size; ++l)
     {
-        //NOTE: divide by -1.0*dt since the flux is
-        //      weighted by lambda = -dt/top_h[dir]
-        if (dt != 0.0)
-            adv_term[k][i] = -1.0*st_flux[0].vel_flux[k][i]/dt;
-        else
-            adv_term[k][i] = 0.0;
+        adv_term[k][l] = 0.0;
     }
 
-    //TODO: scatter the adv_term array????
+    
+    /* Compute flux */
+
+    copyToMeshVst(&st_field[0]);
+	computeMeshFlux(st_field[0],&st_flux[0]);
+	
+    for (int i = 0; i < order-1; ++i)
+	{
+	    copyMeshVst(st_field[0],&st_field[i+1]);
+	    for (int j = 0; j <= i; ++j)
+	    {
+            if (a[i][j] != 0.0)
+            {
+                addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
+            }
+	    }
+	    computeMeshFlux(st_field[i+1],&st_flux[i+1]);
+	}
+
+	for (int i = 0; i < order; ++i)
+	{
+	    if (b[i] != 0.0)
+	    {
+            addMeshFluxToAdvectionTerm(st_flux[i],b[i]);
+	    }
+	}
 }
 
 void HYPERB_SOLVER::solveRungeKutta()
 {
-	static boolean first = YES;
-	int i,j;
-
 	/* Allocate memory for Runge-Kutta of order */
 	start_clock("solveRungeKutta");
 	setSolverDomain();
 
+	static boolean first = YES;
 	if (first)
 	{
 	    first = NO;
-	    FT_VectorMemoryAlloc((POINTER*)&b,order,sizeof(double));
 	    FT_MatrixMemoryAlloc((POINTER*)&a,order,order,sizeof(double));
+	    FT_VectorMemoryAlloc((POINTER*)&b,order,sizeof(double));
+            //FT_VectorMemoryAlloc((POINTER*)&c,order,sizeof(double));
 
 	    FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
 	    FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
 
 	    FT_MatrixMemoryAlloc((POINTER*)&st_tmp.vel,dim,size,sizeof(double));
-	    for (i = 0; i < order; ++i)
+	    for (int i = 0; i < order; ++i)
 	    {
 	    	FT_MatrixMemoryAlloc((POINTER*)&st_field[i].vel,dim,size,
 				sizeof(double));
@@ -135,6 +160,7 @@ void HYPERB_SOLVER::solveRungeKutta()
 	    	FT_VectorMemoryAlloc((POINTER*)&st_field[i].rho,size,
 				sizeof(double));
 	    }
+
 	    /* Set coefficient a, b, c for different order of RK method */
 	    switch (order)
 	    {
@@ -148,14 +174,19 @@ void HYPERB_SOLVER::solveRungeKutta()
 		    nrad = 2;
 	    	break;
 	    case 4:
-	    	a[0][0] = 0.5;
-	    	a[1][0] = 0.0;  a[1][1] = 0.5;
-	    	a[2][0] = 0.0;  a[2][1] = 0.0;  a[2][2] = 1.0;
-	    	b[0] = 1.0/6.0;  b[1] = 1.0/3.0;
-	    	b[2] = 1.0/3.0;  b[3] = 1.0/6.0;
+	    	//c[0] = 0.5; a[0][0] = 0.5;
+	    	//c[1] = 0.5; a[1][0] = 0.0;  a[1][1] = 0.5;
+	    	//c[2] = 1.0; a[2][0] = 0.0;  a[2][1] = 0.0;  a[2][2] = 1.0;
+            a[0][0] = 0.5;
+            a[1][0] = 0.0;  a[1][1] = 0.5;
+            a[2][0] = 0.0;  a[2][1] = 0.0;  a[2][2] = 1.0;
+
+	    	b[0] = 1.0/6.0;  b[1] = 1.0/3.0; b[2] = 1.0/3.0;  b[3] = 1.0/6.0;
+
             nrad = 3;
 	    	break;
 	    case 5:
+            //TODO: ???
             nrad = 3;
 	    	break;
 	    default:
@@ -165,14 +196,14 @@ void HYPERB_SOLVER::solveRungeKutta()
 	}
 
 	/* Compute flux and advance field */
-
-	copyToMeshVst(&st_field[0]);
+	
+    copyToMeshVst(&st_field[0]);
 	computeMeshFlux(st_field[0],&st_flux[0]);
 	
-	for (i = 0; i < order-1; ++i)
+	for (int i = 0; i < order-1; ++i)
 	{
 	    copyMeshVst(st_field[0],&st_field[i+1]);
-	    for (j = 0; j <= i; ++j)
+	    for (int j = 0; j <= i; ++j)
 	    {
             if (a[i][j] != 0.0)
             {
@@ -181,17 +212,20 @@ void HYPERB_SOLVER::solveRungeKutta()
 	    }
 	    computeMeshFlux(st_field[i+1],&st_flux[i+1]);
 	}
-	for (i = 0; i < order; ++i)
+
+	for (int i = 0; i < order; ++i)
 	{
 	    if (b[i] != 0.0)
 	    {
             addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
 	    }
 	}
+
 	copyFromMeshVst(st_field[0]);
 	stop_clock("solveRungeKutta");
 }	/* end solveRungeKutta */
 
+//TODO: can we pass m_vst by const reference (const SWEEP& m_vst) ???
 void HYPERB_SOLVER::computeMeshFlux(
 	SWEEP m_vst,
 	FSWEEP *m_flux)
@@ -206,11 +240,12 @@ void HYPERB_SOLVER::computeMeshFlux(
 
 void HYPERB_SOLVER::resetFlux(FSWEEP *m_flux)
 {
-	int i,j;
-	for (i = 0; i < size; i++)
+	for (int i = 0; i < size; i++)
 	{
-	    for (j = 0; j < dim; ++j)
-	    	m_flux->vel_flux[j][i] = 0.0;
+	    for (int j = 0; j < dim; ++j)
+        {
+            m_flux->vel_flux[j][i] = 0.0;
+        }
 	}
 }	/* resetFlux */
 
@@ -234,14 +269,18 @@ void HYPERB_SOLVER::allocDirectionalVstFlux(
 	SWEEP *vst,
 	FSWEEP *flux)
 {
-	int i,size;
-	size = 1;
-	for (i = 0; i < dim; ++i)
-            if (size < top_gmax[i]+2*nrad)
-                size = top_gmax[i]+2*nrad;
-	FT_MatrixMemoryAlloc((POINTER*)&vst->vel,dim,size,sizeof(double));
-	FT_MatrixMemoryAlloc((POINTER*)&flux->vel_flux,dim,size,sizeof(double));
-	FT_VectorMemoryAlloc((POINTER*)&vst->rho,size,sizeof(double));
+	int flux_size = 1;
+	for (int i = 0; i < dim; ++i)
+    {
+        if (flux_size < top_gmax[i] + 2*nrad)
+        {
+            flux_size = top_gmax[i] + 2*nrad;
+        }
+    }
+
+	FT_MatrixMemoryAlloc((POINTER*)&vst->vel,dim,flux_size,sizeof(double));
+	FT_MatrixMemoryAlloc((POINTER*)&flux->vel_flux,dim,flux_size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->rho,flux_size,sizeof(double));
 }	/* end allocDirectionalVstFlux */
 
 void HYPERB_SOLVER::addFluxInDirection1d(
@@ -249,6 +288,8 @@ void HYPERB_SOLVER::addFluxInDirection1d(
 	SWEEP *m_vst,
 	FSWEEP *m_flux)
 {
+    printf("\n\nERROR: addFluxInDirection1d() not implemented\n\n");
+    LOC(); clean_up(EXIT_FAILURE);
 }	/* end addFluxInDirection1d */
 
 void HYPERB_SOLVER::addFluxInDirection2d(
@@ -256,9 +297,6 @@ void HYPERB_SOLVER::addFluxInDirection2d(
 	SWEEP *m_vst,
 	FSWEEP *m_flux)
 {
-	static SWEEP vst;
-	static FSWEEP vflux;
-	static boolean first = YES;
 	POINTER intfc_state;
 	double crx_coords[MAXD];
 	HYPER_SURF *hs;
@@ -266,14 +304,18 @@ void HYPERB_SOLVER::addFluxInDirection2d(
 	int icoords[MAXD];
 	int comp;
 
-	double lambda = -dt/top_h[dir];
-
+	static SWEEP vst;
+	static FSWEEP vflux;
+	static boolean first = YES;
 	if (first)
-        {
-            first = NO;
-            allocDirectionalVstFlux(&vst,&vflux);
-        }
-	switch (dir)
+    {
+        first = NO;
+        allocDirectionalVstFlux(&vst,&vflux);
+    }
+	
+    double lambda = -dt/top_h[dir];
+
+    switch (dir)
 	{
 	case 0:
 	    for (j = jmin; j <= jmax; j++)
@@ -408,9 +450,6 @@ void HYPERB_SOLVER::addFluxInDirection3d(
 	SWEEP *m_vst,
 	FSWEEP *m_flux)
 {
-	static SWEEP vst;
-	static FSWEEP vflux;
-	static boolean first = YES;
 	POINTER intfc_state;
 	double crx_coords[MAXD];
 	HYPER_SURF *hs;
@@ -418,13 +457,17 @@ void HYPERB_SOLVER::addFluxInDirection3d(
 	int icoords[MAXD];
 	int comp;
 
-	double lambda = -dt/top_h[dir];
-
+	static SWEEP vst;
+	static FSWEEP vflux;
+	static boolean first = YES;
 	if (first)
-        {
-            first = NO;
-            allocDirectionalVstFlux(&vst,&vflux);
-        }
+    {
+        first = NO;
+        allocDirectionalVstFlux(&vst,&vflux);
+    }
+	
+    double lambda = -dt/top_h[dir];
+
 	switch (dir)
 	{
 	case 0:
@@ -627,12 +670,10 @@ void HYPERB_SOLVER::addFluxInDirection3d(
 
 void HYPERB_SOLVER::setSolverDomain(void)
 {
-	static boolean first = YES;
 	RECT_GRID *rgr = &topological_grid(front->grid_intfc);
-        struct Table *T = table_of_interface(front->grid_intfc);
-        int *lbuf = front->rect_grid->lbuf;
-        int *ubuf = front->rect_grid->ubuf;
-	int i;
+    struct Table *T = table_of_interface(front->grid_intfc);
+    int *lbuf = front->rect_grid->lbuf;
+    int *ubuf = front->rect_grid->ubuf;
 
 	dim = Dimension(front->interf);
     top_comp = T->components;
@@ -640,108 +681,210 @@ void HYPERB_SOLVER::setSolverDomain(void)
 	top_h = rgr->h;
 	top_L = rgr->L;
     
+	static boolean first = YES;
     if (first)
 	{
 	    first = NO;
+
 	    size = 1;
-	    for (i = 0; i < dim; ++i)
+	    for (int i = 0; i < dim; ++i)
+        {
 	    	size *= (top_gmax[i] + 1);
-	    switch(dim)
+        }
+
+        switch(dim)
 	    {
 	    case 1:
-		imin = (lbuf[0] == 0) ? 1 : lbuf[0];
-		imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
-		FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
-		break;
-	    case 2:
-		imin = (lbuf[0] == 0) ? 1 : lbuf[0];
+		    FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
+		    
+            imin = (lbuf[0] == 0) ? 1 : lbuf[0];
+            imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
+		    break;
+	    
+        case 2:
+            FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
+
+		    imin = (lbuf[0] == 0) ? 1 : lbuf[0];
+            imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
+
 	    	jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
-		imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
 	    	jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1];
-		FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
-		break;
+            break;
+
 	    case 3:
-		imin = (lbuf[0] == 0) ? 1 : lbuf[0];
-	    	jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
-		kmin = (lbuf[2] == 0) ? 1 : lbuf[2];
-		imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
+            FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
+
+		    imin = (lbuf[0] == 0) ? 1 : lbuf[0];
+            imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
+	    	
+            jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
 	    	jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1];
-		kmax = (ubuf[2] == 0) ? top_gmax[2] - 1 : top_gmax[2] - ubuf[2];
-		FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
-		break;
+		    
+		    kmin = (lbuf[2] == 0) ? 1 : lbuf[2];
+		    kmax = (ubuf[2] == 0) ? top_gmax[2] - 1 : top_gmax[2] - ubuf[2];
+            break;
 	    }
 	}
 }	/* end setSolverDomain */
 
 void HYPERB_SOLVER::copyToMeshVst(SWEEP *state)
 {
-	int i,j,k,l,index;
-        switch (dim)
-        {
+    switch (dim)
+    {
         case 1:
-            for (i = 0; i <= top_gmax[0]; ++i)
+            for (int i = 0; i <= top_gmax[0]; ++i)
             {
-                index = d_index1d(i,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    state->vel[l][index] = var[l][index];
+                int index = d_index1d(i,top_gmax);
+                for (int l = 0; l < dim; ++l)
+                {
+                    state->vel[l][index] = var[l][index];
+                }
+                state->rho[index] = rho[index];
             }
             break;
-	case 2:
-            for (j = 0; j <= top_gmax[1]; ++j)
-            for (i = 0; i <= top_gmax[0]; ++i)
+
+        case 2:
+            for (int j = 0; j <= top_gmax[1]; ++j)
+            for (int i = 0; i <= top_gmax[0]; ++i)
             {
-                index = d_index2d(i,j,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    state->vel[l][index] = var[l][index];
-		state->rho[index] = rho[index];
+                int index = d_index2d(i,j,top_gmax);
+                for (int l = 0; l < dim; ++l)
+                {
+                    state->vel[l][index] = var[l][index];
+                }
+                state->rho[index] = rho[index];
             }
             break;
-	case 3:
-            for (k = 0; k <= top_gmax[2]; ++k)
-            for (j = 0; j <= top_gmax[1]; ++j)
-            for (i = 0; i <= top_gmax[0]; ++i)
+        
+        case 3:
+            for (int k = 0; k <= top_gmax[2]; ++k)
+            for (int j = 0; j <= top_gmax[1]; ++j)
+            for (int i = 0; i <= top_gmax[0]; ++i)
             {
-                index = d_index3d(i,j,k,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    state->vel[l][index] = var[l][index];
+                int index = d_index3d(i,j,k,top_gmax);
+                for (int l = 0; l < dim; ++l)
+                {
+                    state->vel[l][index] = var[l][index];
+                }
+                state->rho[index] = rho[index];
             }
-        }
+            break;
+    }
 }
 
 void HYPERB_SOLVER::copyMeshVst(
-	SWEEP st1, 
+	const SWEEP& st1, 
 	SWEEP *st2)
 {
-	int i,j,k,l,index;
-        switch (dim)
-        {
+    switch (dim)
+    {
         case 1:
-            for (i = 0; i <= top_gmax[0]; ++i)
+            for (int i = 0; i <= top_gmax[0]; ++i)
             {
-                index = d_index1d(i,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    st2->vel[l][index] = st1.vel[l][index];
+                int index = d_index1d(i,top_gmax);
+                for (int l = 0; l < dim; ++l)
+                {
+                    st2->vel[l][index] = st1.vel[l][index];
+                }
             }
             break;
-	case 2:
-            for (j = 0; j <= top_gmax[1]; ++j)
-            for (i = 0; i <= top_gmax[0]; ++i)
+    
+        case 2:
+            for (int j = 0; j <= top_gmax[1]; ++j)
+            for (int i = 0; i <= top_gmax[0]; ++i)
             {
-                index = d_index2d(i,j,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    st2->vel[l][index] = st1.vel[l][index];
+                int index = d_index2d(i,j,top_gmax);
+                for (int l = 0; l < dim; ++l)
+                {
+                    st2->vel[l][index] = st1.vel[l][index];
+                }
             }
             break;
-	case 3:
-            for (k = 0; k <= top_gmax[2]; ++k)
-            for (j = 0; j <= top_gmax[1]; ++j)
-            for (i = 0; i <= top_gmax[0]; ++i)
+	    
+        case 3:
+            for (int k = 0; k <= top_gmax[2]; ++k)
+            for (int j = 0; j <= top_gmax[1]; ++j)
+            for (int i = 0; i <= top_gmax[0]; ++i)
             {
-                index = d_index3d(i,j,k,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    st2->vel[l][index] = st1.vel[l][index];
+                int index = d_index3d(i,j,k,top_gmax);
+                for (int l = 0; l < dim; ++l)
+                {
+                    st2->vel[l][index] = st1.vel[l][index];
+                }
             }
-        }
+            break;
+    }
+}
+
+void HYPERB_SOLVER::addMeshFluxToAdvectionTerm(
+	const FSWEEP& flux, 
+	double B)
+{
+    switch (dim)
+    {
+        case 1:
+            for (int l = 0; l < dim; ++l)
+            {
+                for (int i = imin; i <= imax; ++i)
+                {
+                    int index = d_index1d(i,top_gmax);
+                    array[index] = adv_term[l][index] + B*flux.vel_flux[l][index];
+                }
+        
+                FT_ParallelExchGridArrayBuffer(array,front,NULL);
+                
+                for (int i = 0; i <= top_gmax[0]; ++i)
+                {
+                    int index = d_index1d(i,top_gmax);
+                    adv_term[l][index] = array[index];
+                }
+            }
+            break;
+    
+        case 2:
+            for (int l = 0; l < dim; ++l)
+            {
+                for (int j = 0; j <= top_gmax[1]; ++j)
+                for (int i = 0; i <= top_gmax[0]; ++i)
+                {
+                    int index = d_index2d(i,j,top_gmax);
+                    array[index] = adv_term[l][index] + B*flux.vel_flux[l][index];
+                }
+        
+                FT_ParallelExchGridArrayBuffer(array,front,NULL);
+
+                for (int j = 0; j <= top_gmax[1]; ++j)
+                for (int i = 0; i <= top_gmax[0]; ++i)
+                {
+                    int index = d_index2d(i,j,top_gmax);
+                    adv_term[l][index] = array[index];
+                }
+            }
+            break;
+    
+        case 3:
+            for (int l = 0; l < dim; ++l)
+            {
+                for (int k = 0; k <= top_gmax[2]; ++k)
+                for (int j = 0; j <= top_gmax[1]; ++j)
+                for (int i = 0; i <= top_gmax[0]; ++i)
+                {
+                    int index = d_index3d(i,j,k,top_gmax);
+                    array[index] = adv_term[l][index] + B*flux.vel_flux[l][index];
+                }
+        
+                FT_ParallelExchGridArrayBuffer(array,front,NULL);
+        
+                for (int k = 0; k <= top_gmax[2]; ++k)
+                for (int j = 0; j <= top_gmax[1]; ++j)
+                for (int i = 0; i <= top_gmax[0]; ++i)
+                {
+                    int index = d_index3d(i,j,k,top_gmax);
+                    adv_term[l][index] = array[index];
+                }
+            }
+            break;
+    }
 }
 
 void HYPERB_SOLVER::addMeshFluxToVst(
@@ -749,121 +892,129 @@ void HYPERB_SOLVER::addMeshFluxToVst(
 	FSWEEP flux, 
 	double chi)
 {
-        int             i,j,k,l,index;
-
 	max_speed = -HUGE;
-        switch (dim)
-        {
+    switch (dim)
+    {
         case 1:
-            for (l = 0; l < dim; ++l)
+            for (int l = 0; l < dim; ++l)
             {
-            	for (i = imin; i <= imax; ++i)
+                for (int i = imin; i <= imax; ++i)
                 {
-		    index = d_index1d(i,top_gmax);
-		    array[index] = state->vel[l][index] + 
-				chi*flux.vel_flux[l][index];
+                    int index = d_index1d(i,top_gmax);
+                    array[index] = state->vel[l][index] + chi*flux.vel_flux[l][index];
                     if (max_speed < fabs(array[index]))
-                    	max_speed = array[index];
+                    {
+                        max_speed = array[index];
+                    }
                 }
-		FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            	for (i = 0; i <= top_gmax[0]; ++i)
-		{
-		    index = d_index1d(i,top_gmax);
-		    state->vel[l][index] = array[index];
-		}
+        
+                FT_ParallelExchGridArrayBuffer(array,front,NULL);
+                
+                for (int i = 0; i <= top_gmax[0]; ++i)
+                {
+                    int index = d_index1d(i,top_gmax);
+                    state->vel[l][index] = array[index];
+                }
             }
             break;
+    
         case 2:
-            for (l = 0; l < dim; ++l)
+            for (int l = 0; l < dim; ++l)
             {
-                //TODO: Use top_gmax?? -- xli version does.
-                //      what is the difference?
-                    //for (j = 0; j <= top_gmax[1]; ++j)
-                    //for (i = 0; i <= top_gmax[0]; ++i)
-                for (j = jmin; j <= jmax; ++j)
-                for (i = imin; i <= imax; ++i)
+                for (int j = 0; j <= top_gmax[1]; ++j)
+                for (int i = 0; i <= top_gmax[0]; ++i)
                 {
-		    index = d_index2d(i,j,top_gmax);
-		    array[index] = state->vel[l][index] + 
-				chi*flux.vel_flux[l][index];
+                    int index = d_index2d(i,j,top_gmax);
+                    array[index] = state->vel[l][index] + chi*flux.vel_flux[l][index];
                     if (max_speed < fabs(array[index]))
-                    	max_speed = array[index];
+                    {
+                        max_speed = array[index];
+                    }
                 }
-		FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            	for (j = 0; j <= top_gmax[1]; ++j)
-            	for (i = 0; i <= top_gmax[0]; ++i)
-		{
-		    index = d_index2d(i,j,top_gmax);
-		    state->vel[l][index] = array[index];
-		}
+        
+                FT_ParallelExchGridArrayBuffer(array,front,NULL);
+
+                for (int j = 0; j <= top_gmax[1]; ++j)
+                for (int i = 0; i <= top_gmax[0]; ++i)
+                {
+                    int index = d_index2d(i,j,top_gmax);
+                    state->vel[l][index] = array[index];
+                }
             }
             break;
+    
         case 3:
-            for (l = 0; l < dim; ++l)
+            for (int l = 0; l < dim; ++l)
             {
-                //TODO: Use top_gmax?? -- xli version does.
-                //      what is the difference?
-                    //for (k = 0; k <= top_gmax[2]; ++k)
-                    //for (j = 0; j <= top_gmax[1]; ++j)
-                    //for (i = 0; i <= top_gmax[0]; ++i)
-            	for (k = kmin; k <= kmax; ++k)
-                for (j = jmin; j <= jmax; ++j)
-                for (i = imin; i <= imax; ++i)
+                for (int k = 0; k <= top_gmax[2]; ++k)
+                for (int j = 0; j <= top_gmax[1]; ++j)
+                for (int i = 0; i <= top_gmax[0]; ++i)
                 {
-		    index = d_index3d(i,j,k,top_gmax);
-		    array[index] = state->vel[l][index] + 
-				chi*flux.vel_flux[l][index];
+                    int index = d_index3d(i,j,k,top_gmax);
+                    array[index] = state->vel[l][index] + chi*flux.vel_flux[l][index];
                     if (max_speed < fabs(array[index]))
-                    	max_speed = array[index];
+                    {
+                        max_speed = array[index];
+                    }
                 }
-		FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            	for (k = 0; k <= top_gmax[2]; ++k)
-            	for (j = 0; j <= top_gmax[1]; ++j)
-            	for (i = 0; i <= top_gmax[0]; ++i)
-		{
-		    index = d_index3d(i,j,k,top_gmax);
-		    state->vel[l][index] = array[index];
-		}
+        
+                FT_ParallelExchGridArrayBuffer(array,front,NULL);
+        
+                for (int k = 0; k <= top_gmax[2]; ++k)
+                for (int j = 0; j <= top_gmax[1]; ++j)
+                for (int i = 0; i <= top_gmax[0]; ++i)
+                {
+                    int index = d_index3d(i,j,k,top_gmax);
+                    state->vel[l][index] = array[index];
+                }
             }
-	}
+            break;
+    }
 }
 
 void HYPERB_SOLVER::copyFromMeshVst(const SWEEP& state)
 {
-	int i,j,k,l,index;
-	int c;
-        switch (dim)
-        {
+    switch (dim)
+    {
         case 1:
-            for (i = 0; i <= top_gmax[0]; ++i)
+            for (int i = 0; i <= top_gmax[0]; ++i)
             {
-                index = d_index1d(i,top_gmax);
-		if (!soln_comp(top_comp[index])) continue;
-		for (l = 0; l < dim; ++l)
-		    soln[l][index] = state.vel[l][index];
+                int index = d_index1d(i,top_gmax);
+                if (!soln_comp(top_comp[index])) continue;
+                for (int l = 0; l < dim; ++l)
+                {
+                    soln[l][index] = state.vel[l][index];
+                }
             }
             break;
-	case 2:
-            for (j = 0; j <= top_gmax[1]; ++j)
-            for (i = 0; i <= top_gmax[0]; ++i)
+        
+        case 2:
+            for (int j = 0; j <= top_gmax[1]; ++j)
+            for (int i = 0; i <= top_gmax[0]; ++i)
             {
-                index = d_index2d(i,j,top_gmax);
-		if (!soln_comp(top_comp[index])) continue;
-		for (l = 0; l < dim; ++l)
-		    soln[l][index] = state.vel[l][index];
+                int index = d_index2d(i,j,top_gmax);
+                if (!soln_comp(top_comp[index])) continue;
+                for (int l = 0; l < dim; ++l)
+                {
+                    soln[l][index] = state.vel[l][index];
+                }
             }
             break;
-	case 3:
-            for (k = 0; k <= top_gmax[2]; ++k)
-            for (j = 0; j <= top_gmax[1]; ++j)
-            for (i = 0; i <= top_gmax[0]; ++i)
+        
+        case 3:
+            for (int k = 0; k <= top_gmax[2]; ++k)
+            for (int j = 0; j <= top_gmax[1]; ++j)
+            for (int i = 0; i <= top_gmax[0]; ++i)
             {
-                index = d_index3d(i,j,k,top_gmax);
-		if (!soln_comp(top_comp[index])) continue;
-		for (l = 0; l < dim; ++l)
-		    soln[l][index] = state.vel[l][index];
+                int index = d_index3d(i,j,k,top_gmax);
+                if (!soln_comp(top_comp[index])) continue;
+                for (int l = 0; l < dim; ++l)
+                {
+                    soln[l][index] = state.vel[l][index];
+                }
             }
-        }
+            break;
+    }
 }
 
 void HYPERB_SOLVER::appendGhostBuffer(
@@ -875,16 +1026,19 @@ void HYPERB_SOLVER::appendGhostBuffer(
 	int nb)
 {
 	int             i,j,k,index,ic[MAXD],ic_next[MAXD];
-        GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
-        GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
-        HYPER_SURF      *hs;
-        COMPONENT       comp;
-        double          crx_coords[MAXD];
-        POINTER         state;
+    GRID_DIRECTION  ldir[3] = {WEST,SOUTH,LOWER};
+    GRID_DIRECTION  rdir[3] = {EAST,NORTH,UPPER};
+    HYPER_SURF      *hs;
+    COMPONENT       comp;
+    double          crx_coords[MAXD];
+    POINTER         state;
 	int		is_crxing;
 
 	if (debugging("append_buffer"))
-                printf("Entering appendGhostBuffer()\n");
+    {
+        printf("Entering appendGhostBuffer()\n");
+    }
+
 	for (i = 0; i < dim; ++i) ic[i] = icoords[i];
 	index = d_index(ic,top_gmax,dim);
         comp = top_comp[index];
@@ -923,7 +1077,7 @@ void HYPERB_SOLVER::appendGhostBuffer(
 		    	setDirichletStates(vst,m_vst,hs,state,ic,idir,
 					nb,0,i,comp);
 		    	break;
-            case ELASTIC_BOUNDARY:
+            case ELASTIC_BOUNDARY://Never enters with af_findcrossing
 		    	setElasticStates(vst,m_vst,hs,state,ic,idir,
 					nb,0,i,comp);
 		    	break;
@@ -1342,7 +1496,6 @@ void HYPERB_SOLVER::setDirichletStates(
 }
 
 //Reflection Boundary Formulation of Porosity -- No relative tangential velocity
-
 void HYPERB_SOLVER::setElasticStates(
 	SWEEP *vst, 
 	SWEEP *m_vst,
@@ -1511,6 +1664,7 @@ void HYPERB_SOLVER::setElasticStates(
 
 void HYPERB_SOLVER::addSourceTerm(SWEEP *state, FSWEEP * flux)
 {
+    //TODO: implement
 }
 
 void upwind_flux(
@@ -1602,7 +1756,7 @@ static double linear_flux(
 	double wave_speed,
 	double u)
 {
-        return u;
+    return u;
 }
 
 static double linear_dF(
@@ -1610,24 +1764,68 @@ static double linear_dF(
 	double u)
 {
 	return 1.0;
-        //return wave_speed;
 }
 
 static double burger_flux(
 	double wave_speed,
 	double u)
 {
-        return 0.5*u*u;
+    return 0.5*u*u;
 }
 
 static double burger_dF(
 	double wave_speed,
 	double u)
 {
-        return u;
+    return u;
 }
 
-void Weno5_Get_Flux(
+void weno5_flux(
+	SWEEP *vst,
+	FSWEEP *vflux,
+	double lambda,
+	int n,
+	int dir,
+	int dim)
+{
+	double **vel = vst->vel;
+	double **vel_flux = vflux->vel_flux;
+	double a;
+	
+    int nrad = 3;
+
+	if (debugging("weno"))
+	{
+	    (void) printf("Entering weno5_flux()\n");
+	    (void) printf("dir = %d  n = %d\n",dir,n);
+	}
+
+	for (int i = 0; i < dim; ++i)
+	{
+	    if (i == dir)
+	    {
+            dF = burger_dF;
+            flux_func = burger_flux;
+	    }
+	    else
+	    {
+            dF = linear_dF;
+            flux_func = linear_flux;
+	    }
+
+	    Weno5_Get_Flux(vel[i],vel[dir],vel_flux[i],lambda,n);
+	    
+        if (i != dir)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                vel_flux[i][j] *= vel[dir][j+nrad];
+            }
+        }
+	}
+}	/* end weno5_flux */
+
+static void Weno5_Get_Flux(
 	double *u, 
 	double *v, 
 	double *flux, 
@@ -1647,8 +1845,8 @@ void Weno5_Get_Flux(
 
 	/* coefficients for 2rd-order ENO interpolation stencil */
 	double a[3][3] = {{1.0/3.0, -7.0/6.0, 11.0/6.0}, 
-			  {-1.0/6.0, 5.0/6.0, 1.0/3.0}, 
-			  {1.0/3.0, 5.0/6.0, -1.0/6.0}};
+                      {-1.0/6.0, 5.0/6.0, 1.0/3.0}, 
+                      {1.0/3.0, 5.0/6.0, -1.0/6.0}};
 
 	/* Optimal weights C_k */
 	double c[3] = {0.1,0.6,0.3};
@@ -1660,17 +1858,17 @@ void Weno5_Get_Flux(
 	double sum;
 
 	if (max_n < n)
+    {
+        max_n = n;
+        if (f != NULL)
         {
-            max_n = n;
-            if (f != NULL)
-            {
-                FT_FreeThese(3,f,fp,fm);
-            }
-            FT_VectorMemoryAlloc((POINTER*)&f,extend_size,sizeof(double));
-            FT_VectorMemoryAlloc((POINTER*)&fp,n+1,sizeof(double));
-            FT_VectorMemoryAlloc((POINTER*)&fm,n+1,sizeof(double));
-            FT_VectorMemoryAlloc((POINTER*)&fm_burg,n+1,sizeof(double));
+            FT_FreeThese(3,f,fp,fm);
         }
+        FT_VectorMemoryAlloc((POINTER*)&f,extend_size,sizeof(double));
+        FT_VectorMemoryAlloc((POINTER*)&fp,n+1,sizeof(double));
+        FT_VectorMemoryAlloc((POINTER*)&fm,n+1,sizeof(double));
+        FT_VectorMemoryAlloc((POINTER*)&fm_burg,n+1,sizeof(double));
+    }
 
 	/* Find the maximum of fabs(df(u))*/
 	max_df = 0;
@@ -1685,35 +1883,37 @@ void Weno5_Get_Flux(
 	for (i = 0; i < extend_size; ++i)
 	    f[i] = 0.5 * (flux_func(v[i],u[i]) + max_df * u[i]);
 
-	for (j = 0; j < n + 1; ++j)
 	/* To approximate flux at x_{j+1/2}, we use stencil
 	 S_k = {x_{j+k-2}, x_{j+k-1}, x_{j+k}} = {x[j+k-2+nrad],
 	 x[j+k-1+nrad], x[j+k+nrad]} */
+	for (j = 0; j < n + 1; ++j)
 	{
 		/* compute the weights omega[] */
 	    is[0] = 13.0/12.0*(f[j] - 2.0*f[j+1] + f[j+2])*(f[j] - 2.0
 		    *f[j+1] + f[j+2]) + 0.25*(f[j] - 4.0*f[j+1] + 3.0
 		    *f[j+2])*(f[j] - 4.0*f[j+1] + 3.0 * f[j+2]);
-	    is[1] = 13.0/12.0*(f[j+1] - 2.0*f[j+2] + f[j+3])
+	    
+        is[1] = 13.0/12.0*(f[j+1] - 2.0*f[j+2] + f[j+3])
 		    *(f[j+1] - 2.0*f[j+2] + f[j+3]) + 0.25*(f[j+1]
 		    -f[j+3])*(f[j+1] - f[j+3]);
-	    is[2] = 13.0/12.0*(f[j+2] - 2.0*f[j+3] + f[j+4])
+	    
+        is[2] = 13.0/12.0*(f[j+2] - 2.0*f[j+3] + f[j+4])
 		    *(f[j+2] - 2.0*f[j+3] + f[j+4]) + 0.25*(3.0*f[j+2] 
 		    - 4.0*f[j+3] + f[j+4])*(3.0*f[j+2] - 4.0*f[j+3] + f[j+4]);
 
 	    for (i = 0; i < nrad; ++i)
-		alpha[i] = c[i]/pow(eps + is[i],p);
+		    alpha[i] = c[i]/pow(eps + is[i],p);
 
 	    sum = alpha[0] + alpha[1] + alpha[2];
 	    for (i = 0; i < nrad; ++i)
-		omega[i] = alpha[i]/sum;
+		    omega[i] = alpha[i]/sum;
 
 		/* compute ENO approximation of the flux */
 	    for (i = 0; i < nrad; ++i) 
 	    {
-		q[i] = 0.0;
-		for (k = 0; k < nrad; ++k)
-		    q[i] += a[i][k] * f[j + i + k];
+            q[i] = 0.0;
+            for (k = 0; k < nrad; ++k)
+                q[i] += a[i][k] * f[j + i + k];
 	    }
 
 	    /* compute the linear combination of the r candidate
@@ -1721,158 +1921,124 @@ void Weno5_Get_Flux(
 	     approximation of the flux */
 	    fp[j] = 0.0;
 	    for (i = 0; i < nrad; ++i)
-		fp[j] += omega[i]*q[i];
+		    fp[j] += omega[i]*q[i];
 	}
 
 	/* f[i] = 0.5 * (f_{i - nrad} - max_df * u[i])
 	 * ensure that df[i] < 0*/
 	for (i = 0; i < extend_size; ++i)
 	    f[i] = 0.5*(flux_func(v[i],u[i]) + max_df*u[i]);
-	for (j = 0; j < n + 1; ++j)
+	
 	/* To approximate flux at x_{j+1/2}, we use stencil S_k =
 	 {x_{j+1-k+2}, x_{j+1-k+1}, x_{j+1-k}} = {x[j+1-k+2+nrad],
 	 x[j+1-k+1+nrad], x[j+1-k+nrad]} */
-
+    for (j = 0; j < n + 1; ++j)
 	{
 	    /* compute the weights omega[] */
 	    is[0] = 13.0/12.0*(f[j+5] - 2.0*f[j+4] + f[j+3])
 		    *(f[j+5] - 2.0*f[j+4] + f[j+3]) + 0.25*(f[j+5]
 		    - 4.0*f[j+4] + 3.0*f[j+3])*(f[j+5] - 4.0*f[j+4]
 		    + 3.0*f[j+3]);
-	    is[1] = 13.0/12.0*(f[j+4] - 2.0*f[j+3] + f[j+2])
+	    
+        is[1] = 13.0/12.0*(f[j+4] - 2.0*f[j+3] + f[j+2])
 		    *(f[j+4] - 2.0*f[j+3] + f[j+2]) + 0.25*(f[j+4]
 		    - f[j+2])*(f[j+4] - f[j+2]);
-	    is[2] = 13.0/12.0*(f[j+3] - 2.0*f[j+2] + f[j+1])
+	    
+        is[2] = 13.0/12.0*(f[j+3] - 2.0*f[j+2] + f[j+1])
 		    *(f[j+3] - 2.0*f[j+2] + f[j+1]) + 0.25*(3.0*f[j+3] 
 		    - 4.0*f[j+2] + f[j+1])*(3.0*f[j+3] - 4.0*f[j+2] + f[j+1]);
 
 	    for (i = 0; i < nrad; ++i)
-		alpha[i] = c[i]/pow(eps + is[i], p);
+		    alpha[i] = c[i]/pow(eps + is[i], p);
 
 	    sum = alpha[0] + alpha[1] + alpha[2];
 	    for (i = 0; i < nrad; ++i)
-		omega[i] = alpha[i]/sum;
+		    omega[i] = alpha[i]/sum;
 
 		/* compute ENO approximation of the flux */
 	    for (i = 0; i < nrad; ++i) 
 	    {
-		q[i] = 0.0;
-		for (k = 0; k < nrad; ++k)
-		    q[i] += a[i][k]*f[j+5-i-k];
+            q[i] = 0.0;
+            for (k = 0; k < nrad; ++k)
+                q[i] += a[i][k]*f[j+5-i-k];
 	    }
 
 		/* compute the linear combination of the r candidate stencils
 	     to get a higher order approximation of the flux */
 	    fm[j] = 0.0;
 	    for (i = 0; i < nrad; ++i)
-		fm[j] += omega[i]*q[i];
+		    fm[j] += omega[i]*q[i];
 	}
 	
-/*only for burger's equations*/
+    /*only for burger's equations*/
 	for (i = 0; i < extend_size; ++i)
+    {
 	    f[i] = 0.5*(flux_func(v[i],u[i]) - max_df*u[i]);
-	for (j = 0; j < n + 1; ++j)
+    }
+    
 	/* To approximate flux at x_{j+1/2}, we use stencil S_k =
 	 {x_{j+1-k+2}, x_{j+1-k+1}, x_{j+1-k}} = {x[j+1-k+2+nrad],
 	 x[j+1-k+1+nrad], x[j+1-k+nrad]} */
-
+    for (j = 0; j < n + 1; ++j)
 	{
 	    /* compute the weights omega[] */
 	    is[0] = 13.0/12.0*(f[j+5] - 2.0*f[j+4] + f[j+3])
 		    *(f[j+5] - 2.0*f[j+4] + f[j+3]) + 0.25*(f[j+5]
 		    - 4.0*f[j+4] + 3.0*f[j+3])*(f[j+5] - 4.0*f[j+4]
 		    + 3.0*f[j+3]);
-	    is[1] = 13.0/12.0*(f[j+4] - 2.0*f[j+3] + f[j+2])
+	    
+        is[1] = 13.0/12.0*(f[j+4] - 2.0*f[j+3] + f[j+2])
 		    *(f[j+4] - 2.0*f[j+3] + f[j+2]) + 0.25*(f[j+4]
 		    - f[j+2])*(f[j+4] - f[j+2]);
-	    is[2] = 13.0/12.0*(f[j+3] - 2.0*f[j+2] + f[j+1])
+	    
+        is[2] = 13.0/12.0*(f[j+3] - 2.0*f[j+2] + f[j+1])
 		    *(f[j+3] - 2.0*f[j+2] + f[j+1]) + 0.25*(3.0*f[j+3] 
 		    - 4.0*f[j+2] + f[j+1])*(3.0*f[j+3] - 4.0*f[j+2] + f[j+1]);
 
 	    for (i = 0; i < nrad; ++i)
-		alpha[i] = c[i]/pow(eps + is[i], p);
+	    	alpha[i] = c[i]/pow(eps + is[i], p);
 
 	    sum = alpha[0] + alpha[1] + alpha[2];
 	    for (i = 0; i < nrad; ++i)
-		omega[i] = alpha[i]/sum;
+            omega[i] = alpha[i]/sum;
 
 		/* compute ENO approximation of the flux */
 	    for (i = 0; i < nrad; ++i) 
 	    {
-		q[i] = 0.0;
-		for (k = 0; k < nrad; ++k)
-		    q[i] += a[i][k]*f[j+5-i-k];
+            q[i] = 0.0;
+            for (k = 0; k < nrad; ++k)
+                q[i] += a[i][k]*f[j+5-i-k];
 	    }
 
 		/* compute the linear combination of the r candidate stencils
 		 to get a higher order approximation of the flux */
 	    fm_burg[j] = 0.0;
 	    for (i = 0; i < nrad; ++i)
-		fm_burg[j] += omega[i]*q[i];
+            fm_burg[j] += omega[i]*q[i];
 	}
-/*end fm_burg*/
+    /*end fm_burg*/
 
 	/*upwinding strategy*/
 	for (j = 0; j < n; ++j)
 	{
 	    double fL, fR;
-	    aa = 0.5*(v[j+nrad-1]+v[j+nrad]);
+	    
+        aa = 0.5*(v[j+nrad-1]+v[j+nrad]);
 	    if (aa >= 0)
-		fL = fp[j];
+		    fL = fp[j];
 	    else
-		fL = fm[j];
+		    fL = fm[j];
 
 	    aa = 0.5*(v[j+nrad]+v[j+nrad+1]);
 	    if (aa >= 0)
-		fR = fp[j+1];
+		    fR = fp[j+1];
 	    else
-		fR = fm[j+1];
-	    if (u[j] == v[j]) /*using different strategy for burger and linear*/
-		flux[j] = lambda*(fp[j+1]+fm_burg[j+1] - fp[j]-fm_burg[j]);
+		    fR = fm[j+1];
+	    
+        if (u[j] == v[j]) /*using different strategy for burger and linear*/
+		    flux[j] = lambda*(fp[j+1]+fm_burg[j+1] - fp[j]-fm_burg[j]);
 	    else
 	        flux[j] = lambda*(fR - fL);
-	
 	}
-
 }
-
-void weno5_flux(
-	SWEEP *vst,
-	FSWEEP *vflux,
-	double lambda,
-	int n,
-	int dir,
-	int dim)
-{
-	double **vel = vst->vel;
-	double **vel_flux = vflux->vel_flux;
-	int i, j;
-	int nrad = 3;
-	double a;
-
-	if (debugging("weno"))
-	{
-	    (void) printf("Entering weno5_flux()\n");
-	    (void) printf("dir = %d  n = %d\n",dir,n);
-	}
-	for (i = 0; i < dim; ++i)
-	{
-	    if (i == dir)
-	    {
-		dF = burger_dF;
-		flux_func = burger_flux;
-	    }
-	    else
-	    {
-		dF = linear_dF;
-		flux_func = linear_flux;
-	    }
-	    Weno5_Get_Flux(vel[i],vel[dir],vel_flux[i],lambda,n);
-	    if (i != dir)
-	    for (j = 0; j < n; j++)
-	    {
-	       	vel_flux[i][j] *= vel[dir][j+nrad];
-	    }
-	}
-}	/* end weno5_flux */
 

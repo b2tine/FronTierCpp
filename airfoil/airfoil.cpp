@@ -165,7 +165,12 @@ int main(int argc, char **argv)
 	
     l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
 	l_cartesian->initMesh();
-    l_cartesian->writeMeshFileVTK();
+    
+    if (pp_numnodes() == 1)
+    {
+        l_cartesian->writeMeshFileVTK();
+        l_cartesian->writeCompGridMeshFileVTK();
+    }
         
 	l_cartesian->getInitialState = zero_state;
 
@@ -234,7 +239,11 @@ void airfoil_driver(Front *front,
 
         l_cartesian->printFrontInteriorStates(out_name);
         printAfExtraData(front,out_name);
-        FT_Draw(front);
+
+        if (!RestartRun && !ReSetTime)
+        {
+            FT_Draw(front);
+        }
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
@@ -254,8 +263,9 @@ void airfoil_driver(Front *front,
 	    if (!af_params->no_fluid)
 	    {
 	    	front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-            front->dt = std::min(front->dt,springCharTimeStep(front));
 	    }
+
+        front->dt = std::min(front->dt,springCharTimeStep(front));
 	}
 	else
 	{
@@ -324,7 +334,6 @@ void airfoil_driver(Front *front,
             printf("Time step from FrontHypTimeStep(): %f\n",front->dt);
         
         front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
-        front->dt = std::min(front->dt,springCharTimeStep(front));//TODO: this needed here?
 
         if (debugging("step_size"))
             printf("Time step from l_cartesian->max_dt(): %f\n",front->dt);
@@ -336,13 +345,15 @@ void airfoil_driver(Front *front,
         if (!af_params->no_fluid)
              l_cartesian->printEnstrophy();
 
+        setStressColor(front);
+
         if (FT_IsSaveTime(front))
 	    {
-            setStressColor(front);
             FT_Save(front);
             l_cartesian->printFrontInteriorStates(out_name);
 	    	printAfExtraData(front,out_name);
 	    }
+        
         if (debugging("trace"))
             (void) printf("After print output()\n");
         
@@ -380,8 +391,12 @@ void zero_state(
     IF_PARAMS *iFparams)
 {
     for (int i = 0; i < dim; ++i)
+    {
         field->vel[i][index] = 0.0;
+    }
+    
     field->pres[index] = 0.0;
+    field->movie_pres[index] = 0.0;
 }
 
 

@@ -38,12 +38,9 @@ static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
 
 void Incompress_Solver_Smooth_3D_Cartesian::computeAdvectionTerm()
 {
-	int index;
 	static HYPERB_SOLVER hyperb_solver(*front);
-    double speed;
 
 	static double *rho;
-    
     if (rho == nullptr)
 	{
 	    int size = (top_gmax[0]+1)*(top_gmax[1]+1)*(top_gmax[2]+1);
@@ -54,11 +51,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvectionTerm()
 	for (int j = 0; j <= top_gmax[1]; j++)
 	for (int i = 0; i <= top_gmax[0]; i++)
 	{
-	    index = d_index3d(i,j,k,top_gmax);
+	    int index = d_index3d(i,j,k,top_gmax);
 	    rho[index] = field->rho[index];
         for (int l = 0; l < dim; l++)
         {
             field->adv_term_old[l][index] = field->adv_term[l][index];
+            field->adv_term[l][index] = 0.0;
         }
 	}
 	hyperb_solver.rho = rho;
@@ -102,6 +100,35 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeAdvectionTerm()
     hyperb_solver.dt = m_dt;
     hyperb_solver.computeAdvectionTerm();
 
+    max_speed = 0.0;
+    for (int k = 0; k <= top_gmax[2]; k++)
+    for (int j = 0; j <= top_gmax[1]; j++)
+    for (int i = 0; i <= top_gmax[0]; i++)
+    {
+        int index = d_index3d(i,j,k,top_gmax);
+       
+        double speed = sqrt(sqr(field->vel[0][index])
+                          + sqr(field->vel[1][index])
+                          + sqr(field->vel[2][index]));
+
+        if (max_speed < speed)
+        {
+            max_speed = speed;
+            icrds_max[0] = i;
+            icrds_max[1] = j;
+            icrds_max[2] = k;
+        }
+        for (int l = 0; l < dim; ++l)
+        {
+            if (vmin[l] > field->vel[l][index])
+                vmin[l] = field->vel[l][index];
+            if (vmax[l] < field->vel[l][index])
+                vmax[l] = field->vel[l][index];
+        }
+    }
+    pp_global_max(&max_speed,1);
+    pp_global_min(vmin,dim);
+    pp_global_max(vmax,dim);
     //TODO: scatter adv_term?
 }
 
@@ -268,10 +295,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::computeNewVelocity(void)
             icrds_max[2] = k;
 	    }
 
+        //enforce upper bound fluid velocity -- useful hack for getting the
+        //projection method to relax into realistic flow on startup.
         if (speed > iFparams->ub_speed)
 	    {
 	    	for (l = 0; l < 3; ++l)
+            {
                 vel[l][index] *= iFparams->ub_speed/speed;
+            }
             speed = iFparams->ub_speed;
 	    }
 	}
@@ -561,7 +592,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
 	computeSourceTerm(double *coords, double *source) 
 {
     for (int i = 0; i < dim; ++i)
+    {
         source[i] = iFparams->gravity[i];
+    }
 
     if(iFparams->if_buoyancy)
     {
@@ -596,39 +629,31 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
     start_clock("solve");
 	setDomain();
 
-    //TODO: Put into a debugging string block
-    /*
-    ///////////////////////////////////////
-    ////     For grid debugging       ////
-    //////////////////////////////////////
-    printf("\ntopological grid:\n");
-    print_RECT_GRID_structure(top_grid);
-    printf("\ncomputational grid:\n");
-    RECT_GRID *rgr = computational_grid(front->interf);
-    print_RECT_GRID_structure(rgr);
-    auto coords0 = cell_center[0].getCoords();
-    printf("\ncell_center[0].coords = %f %f %f\n",
-            coords0[0],coords0[1],coords0[2]);
-    auto coords1 = cell_center[1].getCoords();
-    printf("\ncell_center[1].coords = %f %f %f\n",
-            coords1[0],coords1[1],coords1[2]);
-    clean_up(0);
-    ///////////////////////////////////////
-    */
-
 	setComponent();
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
 
+    //////////////////////////////////////////////////////
+    //TEMP DEBUG
+    if (debugging("print_grids"))
+    {
+        printf("\n\ncalling debug_print_grids() and exiting\n\n");
+        debug_print_grids();
+        LOC(); exit(0);
+    }
+    //////////////////////////////////////////////////////
+
 	paintAllGridPoint(TO_SOLVE);
 	setGlobalIndex();
-	if (debugging("trace"))
+	
+    if (debugging("trace"))
 	    printf("Passed setGlobalIndex()\n");
 
 	start_clock("setSmoothedProperties");
 	setSmoothedProperties();
 	stop_clock("setSmoothedProperties");
-	if (debugging("trace"))
+	
+    if (debugging("trace"))
 	    printf("Passed setSmoothedProperties()\n");
     
     addImmersedForce();
@@ -637,12 +662,14 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 
 	// 1) solve for intermediate velocity
 	start_clock("computeAdvection");
-    
     if (iFparams->extrapolate_advection)
+    {
         computeAdvectionTerm();
+    }
     else
+    {
         computeAdvection();
-	
+    }
     stop_clock("computeAdvection");
 	
     if (debugging("check_div") || debugging("step_size"))
@@ -656,8 +683,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	}
 
 	if (debugging("sample_velocity"))
-	    sampleVelocity();
-	
+    {
+        sampleVelocity();
+    }
 	
     start_clock("computeDiffusion");
 	
@@ -675,12 +703,15 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	    (void) printf("max speed occured at (%d %d %d)\n",icrds_max[0],
 				icrds_max[1],icrds_max[2]);
 	}
-	if (debugging("sample_velocity"))
-	    sampleVelocity();
+	
+    if (debugging("sample_velocity"))
+    {
+        sampleVelocity();
+    }
 
 	// 2) projection step
 	accum_dt += m_dt;
-	if (accum_dt >= min_dt)
+	if (accum_dt >= min_dt) //TODO: How to set min_dt to keep poisson solver stable??
 	{
 	    start_clock("computeProjection");
 	    computeProjection();
@@ -691,8 +722,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	    stop_clock("computePressure");
 	    
         if (debugging("trace"))
-		printf("min_pressure = %f  max_pressure = %f\n",
-			min_pressure,max_pressure);
+        {
+		    printf("min_pressure = %f  max_pressure = %f\n",
+                    min_pressure,max_pressure);
+        }
 
         //TODO: appendOpenEndStates() appears to be deprecated,
         //      and the OPEN_BOUNDARY condition replaced by the
@@ -731,13 +764,12 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
 	copyMeshStates();
 	stop_clock("copyMeshStates");
 
-    /* The following is for climate modelling */
-        if(iFparams->if_ref_pres == YES)
-            setReferencePressure();
+    if(iFparams->if_ref_pres == YES)
+    {
+        setReferencePressure();
+    }
 
 	setAdvectionDt();
-        //front->dt = std::min(max_dt, front->dt);
-        //m_dt = std::min(m_dt, front->dt);
 
 	stop_clock("solve");
 }	/* end solve */
@@ -773,6 +805,9 @@ void Incompress_Solver_Smooth_3D_Cartesian::
     return computeDiffusionCN();
 }
 
+//TODO: Should be using ADI scheme.
+//      Set up the explicit solver and patch together with
+//      the implicit solver.
 void Incompress_Solver_Smooth_3D_Cartesian::
 	computeDiffusionCN(void)
 {
@@ -896,8 +931,16 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                             */
                         }
 
+                        //TODO: Use linear extrapolation to approximate
+                        //      phi^{n+1} (since it is unknown at this point)
+                        //      Before computing the gradient here -- Precompute
+                        //      it at the beginning of the time step.
+                        //
+                        //      Currently we are using the gradient of phi from
+                        //      the previous time step phi^{n}.
                         auto grad_phi_tangent = computeGradPhiTangential(
                                 icoords,dir[nb],comp,hs,crx_coords);
+
                         U_nb[nb] += m_dt*grad_phi_tangent[l]/rho;
 
                     }
@@ -979,6 +1022,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             rhs += m_dt*source[l];
             rhs += m_dt*f_surf[l][index];
 
+            //TODO: can skip the if statement if grad_q gets set to zero
+            //      for methods that do not use lagged pressure.
             if (iFparams->num_scheme.projc_method == PMI ||
                 iFparams->num_scheme.projc_method == PMII)
             {
@@ -992,12 +1037,11 @@ void Incompress_Solver_Smooth_3D_Cartesian::
                 {
                     double W0 = -0.5*m_dt/old_dt;
                     double W1 = 1.0 + 0.5*m_dt/old_dt;
-                    rhs -= m_dt*(W0*adv_flux_old[l][index]
-                            + W1*adv_flux[l][index]);
+                    rhs += W0*adv_flux_old[l][index] + W1*adv_flux[l][index];
                 }
                 else
                 {
-                    rhs -= m_dt*adv_flux[l][index];
+                    rhs += adv_flux[l][index];
                 }
             }
             
@@ -1032,9 +1076,13 @@ void Incompress_Solver_Smooth_3D_Cartesian::
             I = ijk_to_I[i][j][k];
             index = d_index3d(i,j,k,top_gmax);
             if (I >= 0)
+            {
                 vel[l][index] = x[I-ilower];
+            }
             else
+            {
                 vel[l][index] = 0.0;
+            }
         }
 
     }
@@ -1726,27 +1774,47 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmII(void)
 //                = phi^{n+1} - 0.5*nu*div(u)
 void Incompress_Solver_Smooth_3D_Cartesian::computePressurePmIII(void)
 {
-    int i,j,k,index;
-    double mu0;
     double *rho = field->rho;
 	double *pres = field->pres;
+	double *movie_pres = field->movie_pres;
 	double *phi = field->phi;
-	double *q = field->q;
 	double *div_U = field->div_U;
+    double *mu = field->mu;
+	double *q = field->q;
+    double **grad_q = field->grad_q;
 
 	if (debugging("trace"))
 	    (void) printf("Entering computePressurePmIII()\n");
-    for (k = 0; k <= top_gmax[2]; k++)
-	for (j = 0; j <= top_gmax[1]; j++)
-    for (i = 0; i <= top_gmax[0]; i++)
-	{
-        index = d_index3d(i,j,k,top_gmax);
-        mu0 = field->mu[index];
-        pres[index] = phi[index] - 0.5*mu0*div_U[index];//If use computeDiffusionCN()
-            //pres[index] = phi[index] - mu0*div_U[index];//If use computeDiffusionImplicit()
-	    q[index] = 0.0;
 
-	    if (min_pressure > pres[index])
+    for (int k = 0; k <= top_gmax[2]; k++)
+	for (int j = 0; j <= top_gmax[1]; j++)
+    for (int i = 0; i <= top_gmax[0]; i++)
+	{
+        int index = d_index3d(i,j,k,top_gmax);
+
+        //save p^{n-1/2}
+        double old_pres = pres[index];
+        
+        //compute p^{n+1/2}
+        pres[index] = phi[index] - 0.5*mu[index]*div_U[index];//If use computeDiffusionCN()
+        //pres[index] = phi[index] - mu[index]*div_U[index];   //If use computeDiffusionImplicit()
+	    
+        //record q -- For PmIII q = 0 (for PmI and PmII q = p^{n+1/2})
+        q[index] = 0.0;
+        for (int l = 0; l < dim; ++l)
+        {
+            grad_q[l][index] = 0.0;
+        }
+
+        //linear extrapolation to get p^{n+1}
+        if (m_dt + old_dt != 0.0)
+        {
+            double W0 = -1.0*m_dt/(m_dt + old_dt);
+            double W1 = 1.0 + m_dt/(m_dt + old_dt);
+            movie_pres[index] = W0*old_pres + W1*pres[index];
+        }
+
+        if (min_pressure > pres[index])
             min_pressure = pres[index];
 	    if (max_pressure < pres[index])
             max_pressure = pres[index];
@@ -1801,9 +1869,10 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 {
     int i,j,k,index;
 	double *pres = field->pres;
-	min_pressure =  HUGE;
+	
+    //TODO: Why computing here and not after the update?
+    min_pressure =  HUGE;
 	max_pressure = -HUGE;
-
     for (k = 0; k <= top_gmax[2]; k++)
 	for (j = 0; j <= top_gmax[1]; j++)
     for (i = 0; i <= top_gmax[0]; i++)
@@ -1838,10 +1907,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::computePressure(void)
 	    clean_up(ERROR);
 	}
 
-    /*
     if (iFparams->num_scheme.projc_method == PMIII ||
         iFparams->num_scheme.projc_method == SIMPLE) return;
-    */
 
     computeGradientQ();
 }
@@ -1935,7 +2002,6 @@ void Incompress_Solver_Smooth_3D_Cartesian::surfaceTension(
 
 void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 {
-	int i;
 	COMPONENT comp;
 	double coords[MAXD];
 	int size = (int)cell_center.size();
@@ -1953,7 +2019,7 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	m_sigma = iFparams->surf_tension;
 	mu_min = rho_min = HUGE;
 	
-    for (i = 0; i < 2; ++i)
+    for (int i = 0; i < 2; ++i)
 	{
 	    if (ifluid_comp(m_comp[i]))
 	    {
@@ -1962,12 +2028,36 @@ void Incompress_Solver_Smooth_3D_Cartesian::setInitialCondition()
 	    }
 	}
 
+    double* mu = field->mu;
+    double* rho = field->rho;
+
+    for (int index = 0; index < size; index++)
+    {
+        mu[index] = 0.0;
+        rho[index] = 0.0;
+        
+        comp = top_comp[index];
+        if (!ifluid_comp(comp)) continue;
+
+        switch (comp)
+        {
+            case LIQUID_COMP1:
+                mu[index] = m_mu[0];
+                rho[index] = m_rho[0];
+                break;
+            case LIQUID_COMP2:
+                mu[index] = m_mu[1];
+                rho[index] = m_rho[1];
+                break;
+        }
+    }
+
 	double *pres = field->pres;
 	double *phi = field->phi;
     double *q = field->q;
 
 	// Initialize state at cell_center
-    for (i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
     {
         getRectangleCenter(i, coords);
         comp = top_comp[i];
@@ -2983,15 +3073,15 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                 double massFluid = rhoF*VolFluid;
                 
                 double dragForce[MAXD] = {0.0};
-                if (front->step > iFparams->fsi_startstep)
-                {
+                //if (front->step > iFparams->fsi_startstep)
+                //{
                     for (int i = 0; i < 3; ++i)
                     {
                         dragForce[i] = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
                         dragForce[i] *= ampFluidFactor;
                         //dragForce[i] *= massFluid/mass;
                     }
-                }
+                //}
 
                 if (debugging("string_fluid"))
                 {

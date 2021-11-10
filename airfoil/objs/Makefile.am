@@ -28,6 +28,8 @@ noinst_LTLIBRARIES = libairfoil.la
 
 
 libairfoil_la_SOURCES = \
+../FabricManager.h \
+../FabricManager.cpp \
 ../airfoil.h \
 ../airfoil_sv.h \
 ../afcnpy.cpp \
@@ -37,6 +39,7 @@ libairfoil_la_SOURCES = \
 ../afprop.cpp \
 ../afsetd.cpp \
 ../aftest.cpp \
+../afstat.cpp \
 ../afvelo.cpp \
 ../bending.h \
 ../bending.cpp \

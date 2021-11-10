@@ -336,6 +336,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	
 	    k0 = D[index];
 	    num_nb = 0;
+
+        //TODO: Precompute entries before filling matrix -- need to speedup
 	    for (l = 0; l < 4; ++l)
 	    {
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
@@ -643,7 +645,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 
                     /*
                     /////////////////////////////////////////////////////////////////////
-                    //TODO: Instead of calling getStateVar() we
+                    //TODO: Instead of calling getStateVar(),
                     //      should compute phi directly with:
                     //
                     //      n dot grad(phi^n+1) = 0.5*mu * n dot (grad^2(u^{*} + u^{n})
@@ -725,8 +727,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 
 
 	solver.SetMaxIter(40000);
-    solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
-        //solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+        //solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
+    solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
 
     use_neumann_solver = pp_min_status(use_neumann_solver);
 	
@@ -977,6 +979,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         
         //std::set<int> SetIndices;
 
+        //TODO: Precompute entries before filling matrix -- need to speedup
 	    for (l = 0; l < 6; ++l)
 	    {
 		    if (num_nb == 0) break;
@@ -1203,8 +1206,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 
 	solver.SetMaxIter(40000);
-    solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
-        //solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
+        //solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
+    solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
 

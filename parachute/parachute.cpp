@@ -126,8 +126,9 @@ int main(int argc, char **argv)
         optimizeElasticMesh(&front);
         set_equilibrium_mesh(&front);
         FT_SetGlobalIndex(&front);
-        static_mesh(front.interf) = YES;
+        //static_mesh(front.interf) = YES;
     }
+    static_mesh(front.interf) = YES;
 
     setMotionParams(&front);
 
@@ -139,8 +140,13 @@ int main(int argc, char **argv)
 	
     l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
     l_cartesian->initMesh();
-    l_cartesian->writeMeshFileVTK();
-	
+
+    if (pp_numnodes() == 1)
+    {
+        l_cartesian->writeMeshFileVTK();
+        l_cartesian->writeCompGridMeshFileVTK();
+    }
+
     //TODO: Why not use iFluid ambient_state()?
     //      Can specify an ambient velocity with input file option.
     //      "Enter fluid ambient velocity: "
@@ -172,7 +178,6 @@ int main(int argc, char **argv)
         {
 	        FT_Save(&front);
             FT_Draw(&front);
-                //vtkPlotSurfaceStress(&front);
         }
         
         if (ReSetTime)
@@ -218,13 +223,6 @@ int main(int argc, char **argv)
     }
 
     l_cartesian->initMovieVariables();
-    
-    //TODO: initMovieStress() is not implemented correctly.
-    //      See vtkPlotSurfaceStress() -- when it is working
-    //      correctly, consolidate functionality by passing
-    //      the stress array into initMovieStress() and modify
-    //      FT_AddVtkIntfcMovieVariable() in order to plot the
-    //      canopy surface stress.
     initMovieStress(in_name,&front);
 	    
 	if (!RestartRun && !ReSetTime)
@@ -284,14 +282,13 @@ void airfoil_driver(Front *front,
 	    setStressColor(front);
 	    FT_Save(front);
         
+        l_cartesian->printFrontInteriorStates(out_name);
+	    printAfExtraData(front,out_name);
+
         if (!RestartRun && !ReSetTime)
         {
             FT_Draw(front);
-                //vtkPlotSurfaceStress(front);
         }
-
-        l_cartesian->printFrontInteriorStates(out_name);
-	    printAfExtraData(front,out_name);
 
 	    FrontPreAdvance(front);
 	    FT_Propagate(front);
@@ -349,6 +346,7 @@ void airfoil_driver(Front *front,
         FT_Propagate(front);
         FT_RelinkGlobalIndex(front);
         FT_InteriorPropagate(front);
+        fflush(stdout);
 
         if (!af_params->no_fluid)
         {
@@ -417,7 +415,6 @@ void airfoil_driver(Front *front,
         if (FT_IsDrawTime(front))
         {
             FT_Draw(front);
-                //vtkPlotSurfaceStress(front);
         }
 
         if (FT_TimeLimitReached(front))

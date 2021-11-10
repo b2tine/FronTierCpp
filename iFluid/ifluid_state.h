@@ -5,7 +5,11 @@
 struct STATE
 {
     double dens;                /* Density */
-    double pres;                /* Pressure */
+    double pres;                /* Pressure at n+1/2 */
+
+    //TODO: if successful rename movie_pres to endstep_pres or similar
+    double movie_pres;          /* Lineraly Extrapolated Pressure at n+1 */
+    
     double phi;                 /* Potential */
     double grad_phi[MAXD];      /* Gradient of Potential */
     double q;                   /* approx pres */
@@ -30,6 +34,7 @@ struct STATE
     double impulse[MAXD];       /* Accum impact from external force */
     double bendforce[MAXD];       /* bending force */
 
+    double press_diff;          //For visualizing surface pressure
 
 	/* for collision */
 	struct UF
@@ -50,6 +55,7 @@ struct STATE
     double avgVel_old[3];
     double avgVel_postprox[3];
     double x_old[3];
+    double x_prevstep[3];
     int strain_num;
     int collsn_num;
 	int collsn_num_RG;
@@ -59,6 +65,7 @@ struct STATE
     bool has_strainlim_collsn;
     bool is_fixed;
 	bool is_movableRG;
+	bool is_load_node;
     bool is_stringpt;
     bool is_registeredpt;
 };
