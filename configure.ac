@@ -404,8 +404,8 @@ AM_COND_IF([CGAL_ARMA_OPT],
                              fabric/objs/Makefile
                              cfabric/Makefile
                              cfabric/objs/Makefile
-                             cAirfoil_new/Makefile
-                             cAirfoil_new/objs/Makefile
+                             cairfoil/Makefile
+                             cairfoil/objs/Makefile
                              cAirfoil/Makefile
                              cAirfoil/objs/Makefile])])
 

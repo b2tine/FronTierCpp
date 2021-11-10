@@ -28,7 +28,7 @@ if CGAL_ARMA_OPT
 MAYBE_FABRIC = fabric
 MAYBE_CFABRIC = cfabric
 MAYBE_CAIRFOIL = cAirfoil
-MAYBE_CAIRFOIL_NEW = cAirfoil_new
+MAYBE_CAIRFOIL_NEW = cairfoil
 endif
 
 if CGAL_INTFC_OPT

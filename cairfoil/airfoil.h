@@ -2,7 +2,8 @@
 #define AIRFOIL_H
 
 #include <FronTier.h>
-#include <iFluid.h>
+
+#include "cFabric.h"
 #include "airfoil_sv.h"
 #include "airfoil_gpu.cuh"
 

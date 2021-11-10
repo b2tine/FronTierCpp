@@ -118,8 +118,8 @@ static void elastic_point_propagate_fsi(
 	STATE *newsl,*newsr;
 	STATE *sl,*sr;
 	
-    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-    IF_FIELD *field = iFparams->field;
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    //FIELD *field = eqn_params->field; //TODO: Should do this...
 	
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	double area_dens = af_params->area_dens;
@@ -130,10 +130,10 @@ static void elastic_point_propagate_fsi(
     int* top_gmax = top_grid->gmax;
     double* top_h = top_grid->h;
 
-	double *mu = field->mu;
-	double **vel = field->vel;
-	double *vort = field->vort;
-	double *pres = field->pres;
+	double *mu = eqn_params->mu;
+	double **vel = eqn_params->vel;
+	double *vort = eqn_params->vort;
+	double *pres = eqn_params->pres;
 
 	double pp[MAXD],pm[MAXD],nor[MAXD];
 	double left_nor_speed,right_nor_speed;
@@ -175,41 +175,33 @@ static void elastic_point_propagate_fsi(
 	
     COMPONENT base_comp = positive_component(oldhs);
 	
-    if (dim == 2 && wave_type(oldhs) == ELASTIC_STRING)
-	{
-        FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-                getStatePres,&newsl->pres,&sl->pres);
-        FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-                getStatePres,&newsr->pres,&sr->pres);
-	}
-	else
-	{
-        //Normal stress (pressure)
-        FT_IntrpStateVarAtCoords(front,base_comp-1,pm,pres,
-                getStatePres,&newsl->pres,&sl->pres);
-        FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
-                getStatePres,&newsr->pres,&sr->pres);
+    //Normal stress (pressure)
+    FT_IntrpStateVarAtCoords(front,base_comp-1,pm,pres,
+            getStatePres,&newsl->pres,&sl->pres);
+    FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
+            getStatePres,&newsr->pres,&sr->pres);
 
-        /*
-        //Tangential stress (shear stress)
-	    for (int l = 0; l < dim; ++l)
-        {
-            FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vel[l],
-                    getStateVel[l],&vel_m[l],&sl->vel[l]);
-            FT_IntrpStateVarAtCoords(front,base_comp+1,pp,vel[l],
-                    getStateVel[l],&vel_p[l],&sr->vel[l]);
-        }
-        rect_in_which(pm,ic_m,top_grid);
-        int index_m = d_index(ic_m,top_gmax,dim);
-        FT_IntrpStateVarAtCoords(front,base_comp-1,pm,mu,
-                getStateMu,&mu_m,&mu[index_m]);
-        rect_in_which(pp,ic_p,top_grid);
-        int index_p = d_index(ic_p,top_gmax,dim);
-        FT_IntrpStateVarAtCoords(front,base_comp+1,pp,mu,
-                getStateMu,&mu_p,&mu[index_p]);
-        */
-	}
+    /*
+    //Tangential stress (shear stress)
+    for (int l = 0; l < dim; ++l)
+    {
+        FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vel[l],
+                getStateVel[l],&vel_m[l],&sl->vel[l]);
+        FT_IntrpStateVarAtCoords(front,base_comp+1,pp,vel[l],
+                getStateVel[l],&vel_p[l],&sr->vel[l]);
+    }
+    rect_in_which(pm,ic_m,top_grid);
+    int index_m = d_index(ic_m,top_gmax,dim);
+    FT_IntrpStateVarAtCoords(front,base_comp-1,pm,mu,
+            getStateMu,&mu_m,&mu[index_m]);
+    rect_in_which(pp,ic_p,top_grid);
+    int index_p = d_index(ic_p,top_gmax,dim);
+    FT_IntrpStateVarAtCoords(front,base_comp+1,pp,mu,
+            getStateMu,&mu_p,&mu[index_p]);
+    */
 
+    
+    
     /*
     double* intfc_vel = sl->vel;
     double rel_vel_m[MAXD] = {0.0};
@@ -245,7 +237,6 @@ static void elastic_point_propagate_fsi(
 	    if (front->step > af_params->fsi_startstep)
         {
             dv[i] = dP*nor[i]/area_dens; //dv has units of acceleration
-            //dv[i] = (sl->pres - sr->pres)*nor[i]/area_dens;
         }
         else if (debugging("rigid_canopy"))
         {
@@ -257,33 +248,6 @@ static void elastic_point_propagate_fsi(
 	    
         newsr->vel[i] = newsl->vel[i] = sl->vel[i];
         newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-	}
-
-	/* Interpolating vorticity for the hyper surface point */
-	if (dim == 2)
-	{
-	    if (wave_type(oldhs) == ELASTIC_STRING)
-	    {
-	        FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-                        getStateVort,&newsl->vort,&sl->vort);
-            FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),pres,
-                    getStateVort,&newsr->vort,&sr->vort);
-	        for (int i = 0; i < dim; ++i)
-	        {
-	            newsr->impulse[i] = newsl->impulse[i] = sl->impulse[i];
-                FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-                vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);
-                FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-                vel[i],getStateVel[i],&newsr->vel[i],&sr->vel[i]);
-	        }
-	    }
-	    else
-        {
-            FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vort,
-            getStateVort,&newsl->vort,&sl->vort);
-            FT_IntrpStateVarAtCoords(front,base_comp+1,pp,vort,
-            getStateVort,&newsr->vort,&sr->vort);
-        }
 	}
 }       /* elastic_point_propagate */
 
@@ -418,7 +382,7 @@ static void string_curve_propagation(
         ft_assign(right_state(newp),right_state(oldp),front->sizest);
     }
 	
-    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
     if (af_params->no_fluid) return;
 
@@ -436,9 +400,9 @@ static void string_curve_propagation(
     STATE *newsl,*newsr;
     COMPONENT base_comp = front->interf->default_comp;
 
-    IF_FIELD *field = iFparams->field;
-    double rhoF = iFparams->rho2;
-    double **vel = field->vel;
+        //FIELD *field = eqn_params->field;
+    double rhoF = eqn_params->rho2;
+    double **vel = eqn_params->vel;
 
     double c_drag = params->c_drag;
     double radius = params->radius;
@@ -527,7 +491,6 @@ static void string_curve_propagation(
                 newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	            newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
 	            newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
-	                //newsr->impulse[i] = newsl->impulse[i] = 0.0;
             }
 
             /*
@@ -559,8 +522,8 @@ static void string_curve_propagation(
 static void gore_curve_propagation(
         Front *front,
         POINTER wave,
-	CURVE *oldc,
-	CURVE *newc,
+        CURVE *oldc,
+        CURVE *newc,
         double dt)
 {
 	BOND *oldb,*newb;
@@ -595,12 +558,12 @@ static void gore_curve_propagation(
 
 //TODO: investigate -- currently it does not appear that gore seams are supported
 static void gore_point_propagate(
-	Front *front,
+        Front *front,
         POINTER wave,
-	POINT *oldp,
-	POINT *newp,
-	BOND *oldb,
-	double dt)
+        POINT *oldp,
+        POINT *newp,
+        BOND *oldb,
+        double dt)
 {
 	BOND_TRI **btris;
 	HYPER_SURF_ELEMENT *oldhse;
@@ -608,11 +571,11 @@ static void gore_point_propagate(
 	STATE *sl,*sr,*newsl,*newsr;
 	double mag_nor,branch_nor[MAXD],nor[MAXD];
 	double pm[MAXD],pp[MAXD],h;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	IF_FIELD *field = iFparams->field;
-	double **vel = field->vel;
-        double *pres = field->pres;
+	    //FIELD *field = eqn_params->field;
+	double **vel = eqn_params->vel;
+    double *pres = eqn_params->pres;
 	double area_dens = af_params->area_dens;
 	double left_nor_speed,right_nor_speed,dv;
 	COMPONENT base_comp;
@@ -1203,7 +1166,7 @@ static void load_node_propagate(
 	NODE *newn,
 	double dt)
 {
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	POINT *oldp,*newp;
 	double *g = af_params->gravity;
@@ -1292,18 +1255,18 @@ static void rg_string_node_propagate(
         NODE *newn,
         double dt)
 {
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-        AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
+	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	RECT_GRID *gr = computational_grid(front->interf);
-        POINT *oldp,*newp;
-        double *g = af_params->gravity;
-        double f[MAXD],accel[MAXD];
-        double kl = af_params->kl;
-        CURVE **c;
-        STATE *sl,*sr,*newsl,*newsr;
-        double vec[MAXD],vec_mag;
-        BOND *b;
-        int i,dim = FT_Dimension();
+    POINT *oldp,*newp;
+    double *g = af_params->gravity;
+    double f[MAXD],accel[MAXD];
+    double kl = af_params->kl;
+    CURVE **c;
+    STATE *sl,*sr,*newsl,*newsr;
+    double vec[MAXD],vec_mag;
+    BOND *b;
+    int i,dim = FT_Dimension();
 	HYPER_SURF *hs;
 	HYPER_SURF_ELEMENT *hse;
 	POINTER wave;

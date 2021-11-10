@@ -163,6 +163,8 @@ struct EQN_PARAMS
     double porosity;
     PORO_SCHEME poro_scheme;
 
+    int fsi_startstep;
+
     //bool no_fluid {false};
 
 //////////////////////////////

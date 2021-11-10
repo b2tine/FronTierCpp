@@ -365,8 +365,8 @@ extern void propagate_surface(
         HYPER_SURF         *hs;
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	double *g = iFparams->gravity;
+	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	double *g = eqn_params->gravity;
 
 	hs = Hyper_surf(surf);
 	unsort_surf_point(surf);
@@ -413,8 +413,8 @@ extern void propagate_node(
         STATE *sl,*sr;
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	double *g = iFparams->gravity;
+	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	double *g = eqn_params->gravity;
 	int dim = front->rect_grid->dim;
 
         sl = (STATE*)left_state(node->posn);
@@ -439,8 +439,8 @@ extern void propagate_curve(
         STATE *sl,*sr;
 	double dt = geom_set->dt;
 	Front *front = geom_set->front;
-	IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
-	double *g = iFparams->gravity;
+	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	double *g = eqn_params->gravity;
 	int dim = front->rect_grid->dim;
 
 	for (b = curve->first; b != curve->last; b = b->next)

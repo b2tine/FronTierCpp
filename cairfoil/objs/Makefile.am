@@ -1,7 +1,7 @@
 AM_CPPFLAGS = -I$(top_srcdir)/cairfoil \
+			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ @ARMA_CFLAGS@ \
 			  -I$(top_srcdir)/cFluid \
 			  -I$(top_srcdir)/CGAL_Interface \
-			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ @ARMA_CFLAGS@ \
 			  -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 

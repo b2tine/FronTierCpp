@@ -120,11 +120,8 @@ void setFabricPropagators(Front* front)
 	else
 	{
 	    front->_point_propagate = airfoil_point_propagate;
-	    if (dim == 3)
-	    {
-	    	front->curve_propagate = airfoil_curve_propagate;
-	    	front->node_propagate = airfoil_node_propagate;
-	    }
+        front->curve_propagate = airfoil_curve_propagate;
+        front->node_propagate = airfoil_node_propagate;
 	}
 
 	if (af_params->no_fluid == YES || af_params->is_parachute_system == NO)
@@ -257,7 +254,7 @@ void setFabricParams(Front* front)
 	FILE *infile = fopen(InName(front),"r");
 	char string[100];
 	
-    IF_PARAMS *iFparams = (IF_PARAMS*)front->extra1;
+    EQN_PARAMS *eqn_params = (EQN__PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
     af_params->attach_gores = NO;
@@ -280,19 +277,9 @@ void setFabricParams(Front* front)
 
     if (af_params->no_fluid == NO)
 	{
-	    if (FT_FrontContainWaveType(front,CONTACT))
-	    {
-            CursorAfterString(infile,"Enter surface tension:");
-            fscanf(infile,"%lf",&iFparams->surf_tension);
-            (void) printf("%f\n",iFparams->surf_tension);
-            CursorAfterString(infile,"Enter factor of smoothing radius:");
-            fscanf(infile,"%lf",&iFparams->smoothing_radius);
-            (void) printf("%f\n",iFparams->smoothing_radius);
-	    }
-	    
         if (FT_FrontContainWaveType(front,ELASTIC_BOUNDARY))
         {
-            iFparams->with_porosity = NO;
+            eqn_params->with_porosity = NO;
             af_params->with_porosity = NO;
             if(CursorAfterStringOpt(infile,"Enter yes to use porosity:"))
             {
@@ -300,29 +287,33 @@ void setFabricParams(Front* front)
                 (void) printf("%s\n",string);
                 if (string[0] == 'y' || string[0] == 'Y')
                 {
-                    iFparams->with_porosity = YES;
+                    eqn_params->with_porosity = YES;
                     af_params->with_porosity = YES;
                 }
             }
 
-            if (iFparams->with_porosity == YES)
+            if (eqn_params->with_porosity == YES)
             {
-                //TODO: This is just for reference; only the porous_coeff
-                //      values govern the permeability of the interface.
                 if (CursorAfterStringOpt(infile,"Enter porosity:"))
                 {
                     fscanf(infile,"%lf",&af_params->porosity);
                     (void) printf("%f\n",af_params->porosity);
                 }
+                eqn_params->porosity = af_params->porosity;
+                
+                /*
+                //TODO: ERGUN EQUATION
+                //
                 CursorAfterString(infile,"Enter viscous parameter:");
                 fscanf(infile,"%lf",&af_params->porous_coeff[0]);
                 (void) printf("%f\n",af_params->porous_coeff[0]);
                 CursorAfterString(infile,"Enter inertial parameter:");
                 fscanf(infile,"%lf",&af_params->porous_coeff[1]);
                 (void) printf("%f\n",af_params->porous_coeff[1]);
-                iFparams->porosity = af_params->porosity;
-                iFparams->porous_coeff[0] = af_params->porous_coeff[0];
-                iFparams->porous_coeff[1] = af_params->porous_coeff[1];
+                eqn_params->porosity = af_params->porosity;
+                eqn_params->porous_coeff[0] = af_params->porous_coeff[0];
+                eqn_params->porous_coeff[1] = af_params->porous_coeff[1];
+                */
             }
             
             CursorAfterString(infile,"Enter area density of canopy:");
@@ -337,7 +328,7 @@ void setFabricParams(Front* front)
             fscanf(infile,"%d",&af_params->fsi_startstep);
             printf("%d\n",af_params->fsi_startstep);
         }
-        iFparams->fsi_startstep = af_params->fsi_startstep;
+        eqn_params->fsi_startstep = af_params->fsi_startstep;
 
         if (CursorAfterStringOpt(infile,"Enter yes to disable FSI:"))
         {
@@ -346,15 +337,15 @@ void setFabricParams(Front* front)
 
             if (string[0] == 'y' || string[0] == 'Y')
             {
-                iFparams->with_porosity = NO;
+                eqn_params->with_porosity = NO;
+                eqn_params->fsi_startstep = 100000000;
                 af_params->with_porosity = NO;
-                iFparams->fsi_startstep = 100000000;
                 af_params->fsi_startstep = 100000000;
             }
         }
 
         for (int i = 0; i < dim; ++i)
-            af_params->gravity[i] = iFparams->gravity[i];
+            af_params->gravity[i] = eqn_params->gravity[i];
 	}
 
 
@@ -719,7 +710,7 @@ static void initVelocityFunc(
 	static SINGULAR_PARAMS *sing_params;
 	static FIXAREA_PARAMS *fixarea_params;
     
-    IF_PARAMS *iF_params = (IF_PARAMS*)front->extra1;
+    EQN_PARAMS *EQN_params = (EQN_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int dim = front->rect_grid->dim;
 	char string[100];
@@ -923,7 +914,7 @@ static void initVelocityFunc(
         {
             fscanf(infile,"%lf",af_params->gravity+i);
             printf(" %f",af_params->gravity[i]);
-            iF_params->gravity[i] = af_params->gravity[i];
+            eqn_params->gravity[i] = af_params->gravity[i];
         }
         printf("\n");
     }

@@ -26,11 +26,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <cFluid.h>
 #include "airfoil.h"
 
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
-static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,EQN_PARAMS*);
+static void zero_state(COMPONENT,double*,FIELD*,int,int,EQN_PARAMS*);
 static void xgraph_front(Front*,char*);
 static void initFabricModule(Front* front);
 
@@ -102,7 +101,7 @@ int main(int argc, char **argv)
     read_cFluid_params(in_name,&eqn_params);
     
     if (debugging("trace")) 
-        (void) printf("Passed read_iFparams()\n");
+        (void) printf("Passed read_cFluid_params()\n");
 
     level_func_pack.pos_component = GAS_COMP2;
 	if (!RestartRun)
