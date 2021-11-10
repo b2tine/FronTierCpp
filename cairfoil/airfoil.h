@@ -223,6 +223,7 @@ struct AF_PARAMS
     double total_gore_mass;         /* Total mass of gore */
 
 	boolean with_porosity {NO};          /* with or without porosity*/
+    PORO_SCHEME poro_scheme;
 	double porous_coeff[2];         /* viscous and inertial coefficients*/
 	double porosity {0.0};			/* canopy porosity */
 	

@@ -70,6 +70,10 @@ extern void read_cFluid_params(
     {
         eqn_params->prob_type = CHANNEL_FLOW;
     }
+    else if (string[0] == 'N' || string[0] == 'n')
+    {
+        eqn_params->prob_type = NO_FLUID;
+    }
     else if (string[0] == 'T' || string[0] == 't')
 	{
 	    if (string[10] == 'B' || string[10] == 'b')
@@ -118,7 +122,13 @@ extern void read_cFluid_params(
 	    	eqn_params->prob_type = ONED_ASINE;
 	}
 
-    if (eqn_params->prob_type == ERROR_TYPE)
+
+    if (eqn_params->prob_type == NO_FLUID)
+    {
+        fclose(infile);
+        return;
+    }
+    else if (eqn_params->prob_type == ERROR_TYPE)
     {
         printf("eqn_params->prob_type == ERROR_TYPE\n");
         LOC(); clean_up(ERROR);
@@ -302,6 +312,8 @@ void G_CARTESIAN::setInitialStates()
 {
 	switch (eqn_params->prob_type)
     {
+        case NO_FLUID:
+            return;
         case PROJECTILE:
         case FLUID_SOLID_CIRCLE:
         case FLUID_SOLID_RECT:

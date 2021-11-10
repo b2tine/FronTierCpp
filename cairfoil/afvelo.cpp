@@ -294,13 +294,13 @@ void setFabricParams(Front* front)
 
             if (eqn_params->with_porosity == YES)
             {
-                if (CursorAfterStringOpt(infile,"Enter porosity:"))
+                if (CursorAfterStringOpt(infile,"Enter fabric porosity:"))
                 {
                     fscanf(infile,"%lf",&af_params->porosity);
                     (void) printf("%f\n",af_params->porosity);
                 }
                 eqn_params->porosity = af_params->porosity;
-                
+
                 /*
                 //TODO: ERGUN EQUATION
                 //
@@ -314,6 +314,17 @@ void setFabricParams(Front* front)
                 eqn_params->porous_coeff[0] = af_params->porous_coeff[0];
                 eqn_params->porous_coeff[1] = af_params->porous_coeff[1];
                 */
+            
+                af_params->poro_scheme = PORO_SCHEME::NORMAL_REFLECTION;
+                if (CursorAfterStringOpt(infile,"Enter porosity ghost fluid method:"))
+                {
+                    fscanf(infile,"%s",string);
+                    (void) printf("%s\n",string);
+                    if (string[1] == 'e' || string[1] == 'E')
+                        af_params->poro_scheme = PORO_SCHEME::REFLECTION;
+                    else if (string[1] == 'i' || string[1] == 'I')
+                        af_params->poro_scheme = PORO_SCHEME::RIEMANN;
+                }
             }
             
             CursorAfterString(infile,"Enter area density of canopy:");
@@ -615,12 +626,14 @@ void setFabricParams(Front* front)
 	    }
     }
 
+    /*
     af_params->num_smooth_layers = 1;
 	if (CursorAfterStringOpt(infile,"Enter number of smooth layers:"))
 	{
         fscanf(infile,"%d",&af_params->num_smooth_layers);
         (void) printf("%d\n",af_params->num_smooth_layers);
 	}
+    */
 	
     if (af_params->is_parachute_system == YES && !af_params->rgb_payload)
     {

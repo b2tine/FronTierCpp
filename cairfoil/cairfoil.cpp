@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 	FT_Init(argc,argv,&f_basic);
 	f_basic.size_of_intfc_state = sizeof(STATE);
 	
-    if (f_basic.dim == 3)
+    if (f_basic.dim != 3)
     {
         printf("\nERROR: dim must be equal to 3\n");
         LOC(); clean_up(EXIT_FAILURE);
