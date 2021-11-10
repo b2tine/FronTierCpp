@@ -6,14 +6,15 @@
 #define FT_IFLUID_SOLVER_H
 
 #include <FronTier.h>
-#include <vector>
-#include <assert.h>
 
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscpc.h>
 
+#include <assert.h>
 #include <algorithm>
+#include <vector>
+#include <set>
 
 enum
 {
@@ -96,6 +97,7 @@ public:
 	void Reset_A();				// Set A[i][j]=0.0;
 	void Reset_b();
 	void Reset_x();
+    void FlushMatAssembly_A();
 	void Set_A(PetscInt i, PetscInt j, double val);	// A[i][j]=val;
     //void Set_A(PetscInt m, PetscInt* Iids, PetscInt n, PetscInt* Jids, double* vals);
 	void Add_A(PetscInt i, PetscInt j, double val);	// A[i][j]=A[i][j]+val;
@@ -338,8 +340,10 @@ class ELLIPTIC_SOLVER
         double *soln;		/* field variable of new step */
         double *source;		/* source field */
         double **vel;       /* velocity field */
+        double **prev_vel;  /* old velocity field */
         double *D;          /* div(D*grad)phi = source,  where D = 1.0/rho */
         double* rho;
+        double* mu;
 
 	    COMPONENT obst_comp;
         
@@ -349,6 +353,7 @@ class ELLIPTIC_SOLVER
         
         double (*getStateVar)(POINTER);
         double (*getStateVel[3])(POINTER);
+        double (*getStateOldVel[3])(POINTER);
 
         int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
                                     POINTER*,HYPER_SURF**,double*);
@@ -437,7 +442,8 @@ private:
         double *array;          // for scatter states;
 	SWEEP *st_field,st_tmp;
         FSWEEP *st_flux;
-        double **a,*b;
+        
+    double **a, *b; //*c;
 	
     void setSolverDomain(void);
 	void allocMeshVst(SWEEP*);
@@ -445,10 +451,13 @@ private:
 	void allocDirectionalVstFlux(SWEEP*,FSWEEP*);
 	void resetFlux(FSWEEP*);
 	void copyToMeshVst(SWEEP*);
-	void copyMeshVst(SWEEP,SWEEP*);
-	void computeMeshFlux(SWEEP,FSWEEP*);
+	void copyMeshVst(const SWEEP&,SWEEP*);
+	void computeMeshFlux(SWEEP,FSWEEP*); //TODO: can we pass const SWEEP& instead???
     void addSourceTerm(SWEEP*,FSWEEP*);
+    
+    void addMeshFluxToAdvectionTerm(const FSWEEP& flux, double B);
 	void addMeshFluxToVst(SWEEP*,FSWEEP,double);
+
 	void copyFromMeshVst(const SWEEP&);
 	void addFluxInDirection(int,SWEEP*,FSWEEP*);
 	void addFluxInDirection1d(int,SWEEP*,FSWEEP*);
@@ -466,8 +475,8 @@ private:
 };
 
 
-extern	void upwind_flux(SWEEP*,FSWEEP*,double,int,int,int);
-extern	void weno5_flux(SWEEP*,FSWEEP*,double,int,int,int);
+extern void upwind_flux(SWEEP*,FSWEEP*,double,int,int,int);
+extern void weno5_flux(SWEEP*,FSWEEP*,double,int,int,int);
 
 extern void viewTopVariable(Front*,double*,boolean,double,double,char*,char*);
 extern double   compBdryFlux(Front*,double*,double,int,double,

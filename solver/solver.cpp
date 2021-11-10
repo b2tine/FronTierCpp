@@ -76,14 +76,13 @@ void PETSc::Create(
     //      If not, simplify. We should not have to do index bookkeeping
     //      both inside and outside the class. Preferably only inside
     //      class member functions.
-	int n	= iupper - ilower + 1;
+	
+    int n	= iupper - ilower + 1;
 	
 	comm 	= Comm;
 	iLower	= ilower;	
 	iUpper 	= iupper;	
 	
-    /*MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DETERMINE,PETSC_DETERMINE,
-				d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);*/
     MatCreateAIJ(PETSC_COMM_WORLD,n,n,PETSC_DECIDE,PETSC_DECIDE,
        d_nz,PETSC_NULL,o_nz,PETSC_NULL,&A);
 
@@ -155,6 +154,12 @@ void PETSc::Reset_b()  //  Reset all entries to zero ;
 void PETSc::Reset_x()
 {
     VecZeroEntries(x);
+}
+
+void PETSc::FlushMatAssembly_A()
+{
+    ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY);
+    ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY);
 }
 
 /*

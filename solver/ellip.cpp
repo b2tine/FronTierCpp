@@ -270,10 +270,10 @@ void ELLIPTIC_SOLVER::solve1d(double *soln)
 
 void ELLIPTIC_SOLVER::solve2d(double *soln)
 {
-	int index,index_nb[4];
+	int index,index_nb[4],index_nb_opp[4];
 	double k0,k_nb[4];
 	double rhs,coeff[4];
-	int I,I_nb[4],I_oppnb[4];
+	int I,I_nb[4];
 	int i,j,l,icoords[MAXD];
 	COMPONENT comp;
 	double aII;
@@ -290,80 +290,14 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	POINTER intfc_state;
 	int icrds_max[MAXD],icrds_min[MAXD];
 
-	double *x;
-
+	double *xsol;
 	int size = iupper - ilower;
-
-    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-    for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
+    FT_VectorMemoryAlloc((POINTER*)&xsol,size,sizeof(double));
+    for (int ii = 0; ii < size; ++ii) xsol[ii] = 0.0;
 
     PETSc solver;
     solver.Create(ilower, iupper-1, 5, 5);
 
-    /*
-    //TODO: below is not efficient for moving objects,
-    //      because the matrix nonzero structure changes
-    //      resulting in petsc needing to allocate new
-    //      memory for new locations of non zero entries.
-    //      Even if there are still just 5 nonzeros per row
-    //      every time step, the location changes and petsc
-    //      allocates for the new position.
-    
-    if (first)
-    {
-        solver.Create(ilower, iupper-1, 5, 5);
-
-        //TODO: Above Matrix allocation overkill?
-        //      5 nonzero entries per row in diagonal blocks,
-        //      and 5 nonzero entries per row in off-diagonal blocks.
-        //
-        //      Below failed for serial run; inadequate nonzero entries
-        //      when allocate 3 nonzero entries per row in diagonal blocks,
-        //      and 2 nonzero entries per row in off-diagonal blocks.
-        //
-        //  solver.Create(ilower, iupper-1, 3, 2);
-        //
-        //      This may however be correct for parallel runs ...
-
-        //  For serial runs:
-        //
-        //  solver.Create(ilower, iupper-1, 5, 4);//This works
-        //  solver.Create(ilower, iupper-1, 5, 3);//This also works
-        //  solver.Create(ilower, iupper-1, 5, 2);//This works too
-        //  solver.Create(ilower, iupper-1, 5, 1);//this too
-        //  solver.Create(ilower, iupper-1, 5, 0);//TODO:test this to confirm below
-        //
-        //      It appears (and petsc manual suggests) that for
-        //      serial runs the matrix MatCreateAIJ() actually calls
-        //      MatCreateSeqAIJ() which only takes a single arg for
-        //      the number of nonzero entries per row.
-        //
-        //TODO: In light of the above discussion, we may be able to obtain
-        //      a speed up for parallel runs by using:
-        //
-        //      if (pp_numnodes() > 1)
-        //          solver.Create(ilower, iupper-1, 3, 2);
-        //      else
-        //          solver.Create(ilower, iupper-1, 5, 0);
-        //
-        //
-        //TODO: Further improvements to performance may be obtained by
-        //      modifying the PETSc::Create() method with currently calls
-        //      MatCreateAIJ() -- See petsc manual for optimal spares
-        //      matrix creation and memory allocation procedures.
-        //      According to the manual 50x speed up is possible for some
-        //      systems with the proper preallocation procedure.
-
-	    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-        first = false;
-    }
-    else
-    {
-        solver.SetPrevSolnInitialGuess();
-        for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
-    }
-    */
-	
     if (debugging("trace"))
             printf("Enterng solve2d()\n");
 	
@@ -386,19 +320,24 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    index_nb[1] = d_index2d(i+1,j,top_gmax);
 	    index_nb[2] = d_index2d(i,j-1,top_gmax);
 	    index_nb[3] = d_index2d(i,j+1,top_gmax);
-	    I_nb[0] = ij_to_I[i-1][j];
+	    
+        index_nb_opp[0] = d_index2d(i+1,j,top_gmax);
+	    index_nb_opp[1] = d_index2d(i-1,j,top_gmax);
+	    index_nb_opp[2] = d_index2d(i,j+1,top_gmax);
+	    index_nb_opp[3] = d_index2d(i,j-1,top_gmax);
+	    
+        I_nb[0] = ij_to_I[i-1][j];
 	    I_nb[1] = ij_to_I[i+1][j];
 	    I_nb[2] = ij_to_I[i][j-1];
 	    I_nb[3] = ij_to_I[i][j+1];
-	    I_oppnb[0] = ij_to_I[i+1][j];
-	    I_oppnb[1] = ij_to_I[i-1][j];
-	    I_oppnb[2] = ij_to_I[i][j+1];
-	    I_oppnb[3] = ij_to_I[i][j-1];
-	    icoords[0] = i;
+
+        icoords[0] = i;
 	    icoords[1] = j;
 	
 	    k0 = D[index];
 	    num_nb = 0;
+
+        //TODO: Precompute entries before filling matrix -- need to speedup
 	    for (l = 0; l < 4; ++l)
 	    {
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
@@ -409,17 +348,19 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                     
             if (status == CONST_V_PDE_BOUNDARY || status == CONST_P_PDE_BOUNDARY)
             {
-                //TODO: for OUTLET use regular index_nb[l] from above??
                 index_nb[l] = index;
             }
 
             k_nb[l] = 0.5*(k0 + D[index_nb[l]]);
-            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
+
+            coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]);
 	    }
 
+	    aII = 0.0;
 	    rhs = source[index];
 
-	    aII = 0.0;
+        //std::set<int> SetIndices;
+
 	    for (l = 0; l < 4; ++l)
         {
             refl_side[l] = NO;
@@ -428,15 +369,33 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                     &intfc_state,&hs,crx_coords);
             
-            if (status == NO_PDE_BOUNDARY || status == POROUS_BOUNDARY)
+            if (status == NO_PDE_BOUNDARY)
             {
+                /*
+                if (SetIndices.count(I_nb[l]) == 0)
+                {
+                    solver.Set_A(I,I_nb[l],coeff[l]);
+                    SetIndices.insert(I_nb[l]);
+                }
+                else
+                {
+                    solver.FlushMatAssembly_A();
+                    solver.Add_A(I,I_nb[l],coeff[l]);
+                    solver.FlushMatAssembly_A();
+                }
+                */
+                aII -= coeff[l];
                 solver.Set_A(I,I_nb[l],coeff[l]);
-                aII += -coeff[l];
             }
-            else if (status == CONST_V_PDE_BOUNDARY &&
-                      (wave_type(hs) == NEUMANN_BOUNDARY ||
-                       wave_type(hs) == MOVABLE_BODY_BOUNDARY))
+            else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
             {
+                //NEUMANN_BOUNDARY on domain hypersurface bdry
+                //  do-nothing
+            }
+            else if (!is_bdry_hs(hs) && 
+                     (wave_type(hs) == NEUMANN_BOUNDARY ||
+                      wave_type(hs) == MOVABLE_BODY_BOUNDARY))
+            { 
                 //grad(phi) dot normal = 0
                 int icoords_ghost[MAXD];
                 for (int m = 0; m < dim; ++m)
@@ -451,19 +410,12 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 ////////////////////////////////////////////////////////////////////////
                 ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryGNOR()  ///
                 //////////////////////////////////////////////////////////////////////
-
                 for (int m = 0; m < dim; ++m)
                 {
                     coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
                     coords_reflect[m] = coords_ghost[m];
                 }
 
-                //TODO: ELLIPTICAL_SOLVER::solve2d() (this function) should be a method of
-                //      the incompressible fluid solver so we can use methods such as the one
-                //      below, and avoid hard coding variable types into the solver library.
-                //
-                //      getRectangleCenter(index_nb[l],coords_ghost);
-                    
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,
                         dir[l],comp,nor,&hs,crx_coords);
@@ -472,10 +424,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //first reflect across the grid line containing intfc crossing,
                 coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
                 
-                //TODO: verify no conceptual difference between above and below ...
-                    //for (int m = 0; m < dim; ++m)
-                        //coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
-
                 //Reflect the displacement vector across the line
                 //containing the intfc normal vector
                 double v[MAXD];
@@ -493,124 +441,261 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
-                
-                ///////////////////////////////////////////////////////////////////////
-
+                ////////////////////////////////////////////////////////////////////////
 
                 /*
-                //NOTE: This method may not be appropriate for pressure wall boundary.
-                //      In particular, specifying the reflection distance, dist_reflect,
-                //      may be placing the reflection point too far away from the wall
-                //      for its interpolated pressure to be used as the ghost point
-                //      pressure (constant extrapolation).
-                //      This is my current suspicion for the presence of the large pressure
-                //      "halo" surrounding rigid bodies and unphysically reducing the
-                //      downstream pressure well past the object.
-                
-                ///////////////////////////////////////////////////////////////////////
+                ////////////////////////////////////////////////////////////////////////
                 ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
-                /////////////////////////////////////////////////////////////////////
-                
-                for (int m = 0; m < dim; ++m)
-                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                //////////////////////////////////////////////////////////////////////
+                int ghost_index = d_index(icoords_ghost,top_gmax,dim);
+                COMPONENT ghost_comp = top_comp[ghost_index];
 
-                double intfc_crx_coords[MAXD];
-                double nor[MAXD];
-                
-                //TODO: Remove when safe to do so.
-                //FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                //        comp,intfc_crx_coords,coords_reflect,nor);//
-                
+                for (int m = 0; m < dim; ++m)
+                {
+                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                }
+
                 double intrp_coeffs[MAXD] = {0.0};
-                HYPER_SURF_ELEMENT* phse;
-                HYPER_SURF* phs;
+                HYPER_SURF_ELEMENT* hsurf_elem;
+                HYPER_SURF* hsurf;
                 double range = 2;
 
-                FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
-                        crx_coords,intrp_coeffs,&phse,&phs,range);
+                FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
+                        crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
                 
-                //compute the normal vector at the interface point
+                double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+
+                //compute the normal and velocity vectors at the interface point
+                double vel_intfc[MAXD] = {0.0};
+
                 double ns[MAXD] = {0.0};
                 double ne[MAXD] = {0.0};
-                
-                normal(Bond_of_hse(phse)->start,phse,phs,ns,front);
-                normal(Bond_of_hse(phse)->end,phse,phs,ne,front);
 
+                normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
+                normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
+
+                POINTER ss;
+                POINTER se;
+
+                if (negative_component(hsurf) == 2 ||
+                    negative_component(hsurf) == 3)
+                {
+                    ss = left_state(Bond_of_hse(hsurf_elem)->start);
+                    se = left_state(Bond_of_hse(hsurf_elem)->end);
+                }
+                else if (positive_component(hsurf) == 2 ||
+                         positive_component(hsurf) == 3)
+                {
+                    ss = right_state(Bond_of_hse(hsurf_elem)->start);
+                    se = right_state(Bond_of_hse(hsurf_elem)->end);
+                }
+                else
+                {
+                    printf("setSlipBoundaryNIP() ERROR: "
+                            "no fluid component on hypersurface\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                double nor[MAXD];
                 for (int i = 0; i < dim; ++i)
+                {
                     nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+                    vel_intfc[i] = (1.0 - intrp_coeffs[0])*getStateVel[i](ss) + intrp_coeffs[0]*getStateVel[i](se);
+                }
 
                 double mag_nor = Magd(nor,dim);
                 for (int i = 0; i < dim; ++i)
                     nor[i] /= mag_nor;
 
-                if (comp == negative_component(phs))
+                if (comp == negative_component(hsurf))
                 {
                     for (int i = 0; i < dim; ++i)
                         nor[i] *= -1.0;
                 }
-        
+
+                //NOTE: must use unit-length vectors with FT_GridSizeInDir()
                 double dist_reflect = FT_GridSizeInDir(nor,front);
-                
-                //
-                // Compute dist_reflect as the diagonal length of rect grid blocks instead
-                //double dist_reflect = 0.0;
-                //for (int m = 0; m < dim; ++m)
-                //    dist_reflect += sqr(top_h[m]);
-                //dist_reflect = sqrt(dist_reflect);
-                //
+
+                    // Compute dist_reflect as the diagonal length of rect grid blocks
+                        //double dist_reflect = 0.0;
+                        //for (int j = 0; j < 3; ++j)
+                        //     dist_reflect += sqr(top_h[j]);
+                        //dist_reflect = sqrt(dist_reflect);
 
                 //The desired reflected point
-                for (int m = 0; m < dim; ++m)
-                    coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
-                ////////////////////////////////////////////////////////////////////
+                for (int j = 0; j < dim; ++j)
+                    coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
+                ///////////////////////////////////////////////////////////////////////
                 */
-
-
-                //Interpolate the pressure at the reflected point,
-                //which will serve as the ghost point pressure.
-                double pres_reflect;
-                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&pres_reflect,nullptr);//default_ans is interface state
-                    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                            getStateVar,&pres_reflect,&soln[index]);*/
                 
-                //TODO: getStateVar() returns phi which is what we are solving for.
-                //      More correct method would place the weights of the points
-                //      used to interpolate at the reflected point into the matrix.
-                //
-                //      try using FrontGetRectCellIntrpCoeffs() to modify matrix
-                //      (This function would only work for bilinear intrp 
-                //          i.e. no grid crxing)
+                
+                //Interpolate phi at the reflected point,
+                double phi_reflect;
+                /*
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,&soln[index]);
+                */
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
+                
+                aII -= coeff[l];
+                rhs -= coeff[l]*phi_reflect; 
+                
+                /*
+                static INTRP_CELL blk_cell;
+                static bool first_phi_reflect = true;
 
-                aII += -coeff[l];
-                rhs -= coeff[l]*pres_reflect; 
+                if (first_phi_reflect)
+                {
+                    const int MAX_NUM_VERTEX_IN_CELL = 20;
+                    uni_array(&blk_cell.var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.coeffs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    bi_array(&blk_cell.coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
+                    bi_array(&blk_cell.icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
+                    bi_array(&blk_cell.p_lin,MAXD+1,MAXD,sizeof(double));
+                    bi_array(&blk_cell.icoords_lin,MAXD+1,MAXD,sizeof(double));
+                    uni_array(&blk_cell.var_lin,MAXD+1,sizeof(double));
+                    first_phi_reflect = false;
+                }
+                blk_cell.is_linear = NO;
+                blk_cell.is_bilinear = NO;
+                
+                double phi_reflect;
+                FT_IntrpStateVarAtCoordsWithIntrpCoefs(front,&blk_cell,comp,
+                        coords_reflect,soln,getStateVar,&phi_reflect,&soln[index]);
 
-                //TODO: Does this need to be set here, or does this only refer
-                //      to rectangular domain boundaries?
-                //      
-                // use_neumann_solver = NO;
+                //Place interpolation coefficients of the points used in the
+                //approximiation into the system matrix.
+                if (blk_cell.is_bilinear)
+                {
+                    for (int m = 0; m < blk_cell.nv; ++m)
+                    {
+                        int* ic_intrp = blk_cell.icoords[m];
+                        int I_intrp = ij_to_I[ic_intrp[0]][ic_intrp[1]];
+                        if (I_intrp == I)
+                        {
+                           aII += coeff[l]*blk_cell.coeffs[m];
+                        }
+                        else if (SetIndices.count(I_intrp) == 0)
+                        {
+                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                            SetIndices.insert(I_intrp);
+                        }
+                        else
+                        {
+                            solver.FlushMatAssembly_A();
+                            solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                            solver.FlushMatAssembly_A();
+                        }
+                    }
+                }
+                else if (blk_cell.is_linear)
+                {
+                    for (int m = 0; m < blk_cell.nv_lin; ++m)
+                    {
+                        int* ic_intrp = blk_cell.icoords_lin[m];
+                        if (ic_intrp[0] == -1)
+                        {
+                            //move contribution of interface points to the RHS.
+                            rhs -= coeff[l]*blk_cell.coeffs[m]*blk_cell.var_lin[m];
+                        }
+                        else
+                        {
+                            int I_intrp = ij_to_I[ic_intrp[0]][ic_intrp[1]];
+                            if (I_intrp == I)
+                            {
+                               aII += coeff[l]*blk_cell.coeffs[m];
+                            }
+                            else if (SetIndices.count(I_intrp) == 0)
+                            {
+                                solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                                SetIndices.insert(I_intrp);
+                            }
+                            else
+                            {
+                                solver.FlushMatAssembly_A();
+                                solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                                solver.FlushMatAssembly_A();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    rhs -= coeff[l]*phi_reflect; 
+                }
+
+                aII -= coeff[l];
+                */
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                //TODO: getStateVar() will return phi, not pressure.
-                //      The pressure is updated at the flow through boundary,
-                //      but phi is not.
-                
-                //TODO: Should INLET/OUTLET just set the neighbor to the index value?
-                //      This would enforce the grad(phi) dot normal = 0 condition??
                 if (status == CONST_V_PDE_BOUNDARY)
                 {
                     //INLET
-                    rhs += -coeff[l]*getStateVar(intfc_state);
-                    aII += -coeff[l];
-                    use_neumann_solver = NO;
+                    // do-nothing
                 }
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
                     //OUTLET
-                    rhs += -coeff[l]*getStateVar(intfc_state);
-                    aII += -coeff[l];
+                    rhs -= coeff[l]*getStateVar(intfc_state);
+                    aII -= coeff[l];
                     use_neumann_solver = NO;
+
+                    /*
+                    /////////////////////////////////////////////////////////////////////
+                    //TODO: Instead of calling getStateVar(),
+                    //      should compute phi directly with:
+                    //
+                    //      n dot grad(phi^n+1) = 0.5*mu * n dot (grad^2(u^{*} + u^{n})
+                    //      t dot grad(phi^n+1) = 0.5*mu * t dot (grad^2(u^{*} + u^{n})
+                    //
+                    //      NOT SURE ABOUT THIS ... VIRTUALLY NO LITERATURE ON THE TOPIC ...
+                    //      CURRENTLY DOES NOT WORK
+
+
+                    std::vector<double> vector_laplacian(dim,0.0);
+                    for (int ii = 0; ii < dim; ++ii)
+                    {
+                        //compute laplacian i-th component of vel and prev_vel
+                        for (int m = 0; m < dim; ++m)
+                        {
+                            double laplacian = vel[m][index_nb_opp[l]]
+                                - 2.0*vel[m][index] + getStateVel[m](intfc_state);
+                            laplacian /= top_h[m]*top_h[m];
+
+                            double prev_laplacian = prev_vel[m][index_nb_opp[l]]
+                                - 2.0*prev_vel[m][index] + getStateOldVel[m](intfc_state);
+                            prev_laplacian /= top_h[m]*top_h[m];
+
+                            vector_laplacian[ii] += laplacian + prev_laplacian;
+                        }
+                    }
+
+                    double nor[MAXD];
+                    FT_NormalAtGridCrossing(front,icoords,
+                            dir[l],comp,nor,&hs,crx_coords);
+
+                    double sign = 1.0;
+                    if (l % 2 == 1)
+                    {
+                        for (int ii = 0; ii < dim; ++ii)
+                            nor[ii] *= -1.0;
+                        sign = -1.0;
+                    }
+
+                    double laplace_n = 0.0;
+                    for (int ii = 0; ii < dim; ++ii)
+                        laplace_n += vector_laplacian[ii]*nor[ii];
+
+                    
+                    //TODO: tangential components
+
+                    rhs += sign*dt*0.5*mu[index]*laplace_n/rho[index];
+                    use_neumann_solver = NO;
+                    /////////////////////////////////////////////////////////////////////
+                    */
                 }
             }
         }
@@ -622,7 +707,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	     * handle such case. If we have better understanding, this should
 	     * be changed back.
 	     */
-	    if(num_nb > 0)
+	    
+        if(num_nb > 0)
 	    {
             solver.Set_A(I,I,aII);
 	    }
@@ -632,17 +718,20 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 (void) printf("WARNING: isolated value!\n");
 
             solver.Set_A(I,I,1.0);
-            rhs = soln[index];//TODO: or use pressure (instead of phi)?
+            rhs = soln[index];
         }
-
         solver.Set_b(I,rhs);
-	}
+	
+        //SetIndices.clear();
+    }
+
+
+	solver.SetMaxIter(40000);
+        //solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
+    solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
 
     use_neumann_solver = pp_min_status(use_neumann_solver);
 	
-	solver.SetMaxIter(40000);
-    solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
-
 	start_clock("Petsc Solver");
 	if (use_neumann_solver)
 	{
@@ -672,7 +761,8 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         if(residual > 1)
 	    {
             printf("\n The solution diverges! The residual "
-                   "is %g. Solve again using GMRES!\n",residual);
+                   "is %g after %d iterations. Solve again using GMRES!\n",
+                   residual,num_iter);
             
             solver.Reset_x();
             solver.Solve_withPureNeumann_GMRES();
@@ -681,7 +771,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
                 
             if(residual > 1)
             {
-                //TODO: Fatal or Non-Fatal?
                 printf("\n The solution diverges using GMRES. \
                         The residual is %g after %d iterations. Exiting ...\n",
                         residual,num_iter);
@@ -699,8 +788,10 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
         //TODO: skip residual check? GMRES often worse
 	    if(residual > 1)
 	    {
-            printf("\n The solution diverges! The residual "
-                   "is %g. Solve again using GMRES!\n",residual);
+		    printf("\n The solution diverges! The residual "
+                    "is %g after %d iterations. Solve again using GMRES!\n",
+                    residual,num_iter);
+
             
             solver.Reset_x();
             solver.Solve_GMRES();
@@ -709,7 +800,6 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 
             if(residual > 1)
             {
-                //TODO: Fatal or Non-Fatal?
                 printf("\n The solution diverges using GMRES. \
                         The residual is %g after %d iterations. Exiting ...\n",
                         residual,num_iter);
@@ -720,7 +810,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	}
 	stop_clock("Petsc Solver");
 
-	solver.Get_x(x);
+	solver.Get_x(xsol);
 
 	if (debugging("PETSc"))
     {
@@ -736,7 +826,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	    I = ij_to_I[i][j];
 	    if (I == -1) continue;
 	    
-        soln[index] = x[I-ilower];
+        soln[index] = xsol[I-ilower];
 	    
         if (max_soln < soln[index]) 
 	    {
@@ -795,7 +885,7 @@ void ELLIPTIC_SOLVER::solve2d(double *soln)
 	if (debugging("trace"))
             printf("Leaving solve2d()\n");
 
-    FT_FreeThese(1,x);
+    FT_FreeThese(1,xsol);
 }	/* end solve2d */
 
 void ELLIPTIC_SOLVER::solve3d(double *soln)
@@ -817,47 +907,14 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	int status;
 	POINTER intfc_state;
 
-	double *x;
-	
+	double *xsol;	
     int size = iupper - ilower;
-    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-    for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
+    FT_VectorMemoryAlloc((POINTER*)&xsol,size,sizeof(double));
+    for (int ii = 0; ii < size; ++ii) xsol[ii] = 0.0;
         
     PETSc solver;
-    solver.Create(ilower, iupper-1, 7, 7);
+    solver.Create(ilower, iupper - 1, 7, 7);
     
-    /*
-    //TODO: below is not efficient for moving objects,
-    //      because the matrix nonzero structure changes
-    //      resulting in petsc needing to allocate new
-    //      memory for new locations of non zero entries.
-    //      Even if there are still just 7 nonzeros per row
-    //      every time step, the location changes and petsc
-    //      allocates for the new position.
-    
-    if (first)
-    {
-        //TODO: See discussion on petsc matrix initialization.
-        //      The following may offer better performance for
-        //      parallel runs.
-        //
-        //      if (pp_numnodes() > 1)
-        //          solver.Create(ilower, iupper-1, 3, 4);
-        //      else
-        //          solver.Create(ilower, iupper-1, 7, 0);
-        //
-	    
-        solver.Create(ilower, iupper-1, 7, 7);
-	    FT_VectorMemoryAlloc((POINTER*)&x,size,sizeof(double));
-        first = false;
-    }
-    else
-    {
-        solver.SetPrevSolnInitialGuess();
-        for (int ii = 0; ii < size; ++ii) x[ii] = 0.0;
-    }
-    */
-	
     solver.Reset_A();
 	solver.Reset_b();
 	solver.Reset_x();
@@ -880,13 +937,15 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    index_nb[3] = d_index3d(i,j+1,k,top_gmax);
 	    index_nb[4] = d_index3d(i,j,k-1,top_gmax);
 	    index_nb[5] = d_index3d(i,j,k+1,top_gmax);
+
 	    I_nb[0] = ijk_to_I[i-1][j][k];
 	    I_nb[1] = ijk_to_I[i+1][j][k];
 	    I_nb[2] = ijk_to_I[i][j-1][k];
 	    I_nb[3] = ijk_to_I[i][j+1][k];
 	    I_nb[4] = ijk_to_I[i][j][k-1];
 	    I_nb[5] = ijk_to_I[i][j][k+1];
-	    icoords[0] = i;
+	    
+        icoords[0] = i;
 	    icoords[1] = j;
 	    icoords[2] = k;
 	
@@ -895,6 +954,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
         //TODO: This loop should be consolidated with the next loop,
         //      no need to check the intersection twice like we currently are ...
+        //
+        //      Should however be checking if we've crossed back over, in the
+        //      case when interface highly curved/folded.
 	    for (l = 0; l < 6; ++l)
 	    {
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
@@ -903,10 +965,8 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             if (status != CONST_V_PDE_BOUNDARY)
                 num_nb++;
 
-            if (status == CONST_V_PDE_BOUNDARY ||
-                    status == CONST_P_PDE_BOUNDARY)
+            if (status == CONST_V_PDE_BOUNDARY || status == CONST_P_PDE_BOUNDARY)
             {
-                //TODO: for OUTLET use regular index_nb[l] from above??
                 index_nb[l] = index;
             }
     
@@ -914,9 +974,12 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             coeff[l] = k_nb[l]/(top_h[l/2]*top_h[l/2]); 
 	    }
 
-	    rhs = source[index];
-
 	    aII = 0.0;
+	    rhs = source[index];
+        
+        //std::set<int> SetIndices;
+
+        //TODO: Precompute entries before filling matrix -- need to speedup
 	    for (l = 0; l < 6; ++l)
 	    {
 		    if (num_nb == 0) break;
@@ -924,15 +987,33 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             status = (*findStateAtCrossing)(front,icoords,dir[l],comp,
                                 &intfc_state,&hs,crx_coords);
             
-            if (status == NO_PDE_BOUNDARY || status == POROUS_BOUNDARY)
+            if (status == NO_PDE_BOUNDARY)
             {
+                /*
                 //NOTE: Includes ELASTIC_BOUNDARY when af_findcrossing used
+                if (SetIndices.count(I_nb[l]) == 0)
+                {
+                    solver.Set_A(I,I_nb[l],coeff[l]);
+                    SetIndices.insert(I_nb[l]);
+                }
+                else
+                {
+                    solver.FlushMatAssembly_A();
+                    solver.Add_A(I,I_nb[l],coeff[l]);
+                    solver.FlushMatAssembly_A();
+                }
+                */
+                aII -= coeff[l];
                 solver.Set_A(I,I_nb[l],coeff[l]);
-                aII += -coeff[l];
             }
-            else if (status == CONST_V_PDE_BOUNDARY &&
-                      (wave_type(hs) == NEUMANN_BOUNDARY ||
-                       wave_type(hs) == MOVABLE_BODY_BOUNDARY))
+            else if (is_bdry_hs(hs) && wave_type(hs) == NEUMANN_BOUNDARY)
+            {
+                //NEUMANN_BOUNDARY on domain hypersurface bdry
+                //  do nothing
+            }
+            else if (!is_bdry_hs(hs) && 
+                     (wave_type(hs) == NEUMANN_BOUNDARY ||
+                      wave_type(hs) == MOVABLE_BODY_BOUNDARY))
             {
                 //grad(phi) dot normal = 0
                 int icoords_ghost[MAXD];
@@ -955,12 +1036,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                     coords_reflect[m] = coords_ghost[m];
                 }
 
-                //TODO: ELLIPTICAL_SOLVER::solve3d() (this function) should be a method of
-                //      the incompressible fluid solver so we can use methods such as the one
-                //      below, and avoid hard coding variable types into the solver library.
-                //
-                //      getRectangleCenter(index_nb[l],coords_ghost);
-                    
                 //Reflect the ghost point through intfc-mirror at crossing.
                 double nor[MAXD];
                 FT_NormalAtGridCrossing(front,icoords,dir[l],comp,nor,&hs,crx_coords);
@@ -968,12 +1043,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //first reflect across the grid line containing intfc crossing
                 coords_reflect[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
                 
-                //TODO: verify no conceptual difference between above and below ...
-                //
-                //    for (int m = 0; m < dim; ++m)
-                //        coords_reflect[m] = 2.0*crx_coords[m] - coords_ghost[m];
-                //
-
                 //Reflect the displacement vector across the line
                 //containing the intfc normal vector
                 double v[MAXD];
@@ -991,121 +1060,123 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
                 //The desired reflected point
                 for (int m = 0; m < dim; ++m)
                     coords_reflect[m] = crx_coords[m] + v[m];
-                ////////////////////////////////////////////////////////////////////
 
-
+                //Interpolate phi at the reflected point,
+                double phi_reflect;
                 /*
-                //NOTE: This method may not be appropriate for pressure wall boundary.
-                //      In particular, specifying the reflection distance, dist_reflect,
-                //      may be placing the reflection point too far away from the wall
-                //      for its interpolated pressure to be used as the ghost point
-                //      pressure (constant extrapolation).
-                //      This is my current suspicion for the presence of the large pressure
-                //      "halo" surrounding rigid bodies and unphysically reducing the
-                //      downstream pressure well past the object.
-
-
-                ///////////////////////////////////////////////////////////////////////
-                ///  matches Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP()  ///
-                /////////////////////////////////////////////////////////////////////
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,&soln[index]);
+                */
+                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
+                        getStateVar,&phi_reflect,nullptr);//default_ans is intfc state
+                    
+                aII -= coeff[l];
+                rhs -= coeff[l]*phi_reflect; 
                 
-                for (int m = 0; m < dim; ++m)
-                    coords_ghost[m] = top_L[m] + icoords_ghost[m]*top_h[m];
+                /*
+                static INTRP_CELL blk_cell;
+                static bool first_phi_reflect = true;
 
-                double intfc_crx_coords[MAXD];
-                double nor[MAXD];
-                
-                //TODO: Remove when safe to do so.
-                //FT_ReflectPointThroughBdry(front,hs,coords_ghost,
-                //        comp,intfc_crx_coords,coords_reflect,nor);//
-                
-                double intrp_coeffs[MAXD] = {0.0};
-                HYPER_SURF_ELEMENT* phse;
-                HYPER_SURF* phs;
-                double range = 2;
-
-                FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_BOUNDARIES,
-                        crx_coords,intrp_coeffs,&phse,&phs,range);
-                
-                // compute the normal at the interface point
-                TRI* nearTri = Tri_of_hse(phse);
-                const double* tnor = Tri_normal(nearTri);
-                
-                //NOTE: Tri_normal() does not return a unit vector
-                double mag_nor = Magd(tnor,dim);
-                for (int i = 0; i < dim; ++i)
-                    nor[i] = tnor[i]/mag_nor;
-
-                if (comp == negative_component(phs))
+                if (first_phi_reflect)
                 {
-                    for (int i = 0; i < dim; ++i)
-                        nor[i] *= -1.0;
+                    const int MAX_NUM_VERTEX_IN_CELL = 20;
+                    uni_array(&blk_cell.var,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.dist,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    uni_array(&blk_cell.coeffs,MAX_NUM_VERTEX_IN_CELL,sizeof(double));
+                    bi_array(&blk_cell.coords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(double));
+                    bi_array(&blk_cell.icoords,MAX_NUM_VERTEX_IN_CELL,MAXD,sizeof(int));
+                    bi_array(&blk_cell.p_lin,MAXD+1,MAXD,sizeof(double));
+                    bi_array(&blk_cell.icoords_lin,MAXD+1,MAXD,sizeof(double));
+                    uni_array(&blk_cell.var_lin,MAXD+1,sizeof(double));
+                    first_phi_reflect = false;
                 }
-        
-                //TODO: FT_GridSizeInDir(nor,front) returning large values,
-                //      but it may have been due to non normalized normal vec
-                //      which has since been corrected
-                double dist_reflect = FT_GridSizeInDir(nor,front);
+                blk_cell.is_linear = NO;
+                blk_cell.is_bilinear = NO;
                 
-                //
-                // Compute dist_reflect as the diagonal length of rect grid blocks instead
-                //double dist_reflect = 0.0;
-                //for (int m = 0; m < dim; ++m)
-                //    dist_reflect += sqr(top_h[m]);
-                //dist_reflect = sqrt(dist_reflect);
-                //
+                double phi_reflect;
+                FT_IntrpStateVarAtCoordsWithIntrpCoefs(front,&blk_cell,comp,
+                        coords_reflect,soln,getStateVar,&phi_reflect,&soln[index]);
 
-                //The desired reflected point
-                for (int m = 0; m < dim; ++m)
-                    coords_reflect[m] = intfc_crx_coords[m] + dist_reflect*nor[m];
-                ////////////////////////////////////////////////////////////////////
+                //Place interpolation coefficients of the points used in the
+                //approximiation into the system matrix.
+                if (blk_cell.is_bilinear)
+                {
+                    for (int m = 0; m < blk_cell.nv; ++m)
+                    {
+                        int* ic_intrp = blk_cell.icoords[m];
+                        int I_intrp = ijk_to_I[ic_intrp[0]][ic_intrp[1]][ic_intrp[2]];
+                        if (I_intrp == I)
+                        {
+                           aII += coeff[l]*blk_cell.coeffs[m];
+                        }
+                        else if (SetIndices.count(I_intrp) == 0)
+                        {
+                            solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                            SetIndices.insert(I_intrp);
+                        }
+                        else
+                        {
+                            solver.FlushMatAssembly_A();
+                            solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                            solver.FlushMatAssembly_A();
+                        }
+                    }
+                }
+                else if (blk_cell.is_linear)
+                {
+                    for (int m = 0; m < blk_cell.nv_lin; ++m)
+                    {
+                        int* ic_intrp = blk_cell.icoords_lin[m];
+                        if (ic_intrp[0] == -1)
+                        {
+                            //move contribution of interface points to the RHS.
+                            rhs -= coeff[l]*blk_cell.coeffs[m]*blk_cell.var_lin[m];
+                            //TODO: the value at the interface is itself computed
+                            //      via interpolation -- should use the interpolating
+                            //      points and corresponding coefficients in the matrix
+                            //      instead of using this.
+                        }
+                        else
+                        {
+                            int I_intrp = ijk_to_I[ic_intrp[0]][ic_intrp[1]][ic_intrp[2]];
+                            if (I_intrp == I)
+                            {
+                               aII += coeff[l]*blk_cell.coeffs[m];
+                            }
+                            else if (SetIndices.count(I_intrp) == 0)
+                            {
+                                solver.Set_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                                SetIndices.insert(I_intrp);
+                            }
+                            else
+                            {
+                                solver.FlushMatAssembly_A();
+                                solver.Add_A(I,I_intrp,coeff[l]*blk_cell.coeffs[m]);
+                                solver.FlushMatAssembly_A();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    rhs -= coeff[l]*phi_reflect; 
+                }
+
+                aII -= coeff[l];
                 */
-
-
-                //Interpolate the pressure at the reflected point,
-                //which will serve as the ghost point pressure.
-                double pres_reflect;
-                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&pres_reflect,&soln[index]);
-                /*
-                FT_IntrpStateVarAtCoords(front,comp,coords_reflect,soln,
-                        getStateVar,&pres_reflect,nullptr);//default_ans is intfc state
-                        // but intfc state may not have a valid phi ...
-                */
-                //TODO: getStateVar() returns phi which is what we are solving for.
-                //      More correct method would place the weights of the points
-                //      used to interpolate at the reflected point into the matrix.
-                //
-                //      try using FrontGetRectCellIntrpCoeffs() to modify matrix
-
-                aII += -coeff[l];
-                rhs -= coeff[l]*pres_reflect; 
-                
-                //TODO: Does this need to be set here, or does this only refer
-                //      to rectangular domain boundaries?
-                //
-                //use_neumann_solver = NO;
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                //TODO: getStateVar() will return phi, not pressure.
-                //      The pressure is updated at the flow through boundary,
-                //      but phi is not.
-                
-                //TODO: Should INLET/OUTLET just set the neighbor to the index value?
-                //      This would enforce the grad(phi) dot normal = 0 condition??
                 if (status == CONST_V_PDE_BOUNDARY)
                 {
                     //INLET
-                    rhs += -coeff[l]*getStateVar(intfc_state);
-                    aII += -coeff[l];
-                    use_neumann_solver = NO;
+                    // do nothing
                 }
                 else if (status == CONST_P_PDE_BOUNDARY)
                 {
                     //OUTLET
-                    rhs += -coeff[l]*getStateVar(intfc_state);
-                    aII += -coeff[l];
+                    rhs -= coeff[l]*getStateVar(intfc_state);
+                    aII -= coeff[l];
                     use_neumann_solver = NO;
                 }
             }
@@ -1128,11 +1199,14 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
             solver.Set_A(I,I,1.0);
             rhs = soln[index];
         }
-
         solver.Set_b(I,rhs);
+
+        //SetIndices.clear();
 	}
 
+
 	solver.SetMaxIter(40000);
+        //solver.SetTolerances(1.0e-10,1.0e-12,1.0e06);
     solver.SetTolerances(1.0e-14,1.0e-12,1.0e06);
 
 	use_neumann_solver = pp_min_status(use_neumann_solver);
@@ -1172,7 +1246,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
             if(residual > 1)
             {
-                //TODO: Fatal or Non-Fatal?
                 printf("\n The solution diverges using GMRES. \
                         The residual is %g after %d iterations. Exiting ...\n",
                         residual,num_iter);
@@ -1201,7 +1274,6 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
             if(residual > 1)
             {
-                //TODO: Fatal or Non-Fatal?
                 printf("\n The solution diverges using GMRES. \
                         The residual is %g after %d iterations. Exiting ...\n",
                         residual,num_iter);
@@ -1212,7 +1284,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 
 	stop_clock("Petsc Solver");
 
-	solver.Get_x(x);
+	solver.Get_x(xsol);
 
 	if (debugging("PETSc"))
     {
@@ -1229,7 +1301,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 	    I = ijk_to_I[i][j][k];
 	    if (I == -1) continue;
 	    
-        soln[index] = x[I-ilower];
+        soln[index] = xsol[I-ilower];
 	    
         if (max_soln < soln[index]) 
 	    {
@@ -1292,7 +1364,7 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
         error = checkSolver(icrds_max,YES);
     }
 
-    FT_FreeThese(1,x);
+    FT_FreeThese(1,xsol);
 }   /* end solve3d */
 
 /*
@@ -1616,7 +1688,9 @@ void ELLIPTIC_SOLVER::solve3d(double *soln)
 //        }
 //    //
 	FT_FreeThese(1,x);
-}*/	/* end solve3d */
+}
+*/
+
 double ELLIPTIC_SOLVER::checkSolver(
 	int *icoords,
 	boolean print_details)
