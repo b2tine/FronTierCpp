@@ -144,9 +144,6 @@ static void compute_total_canopy_force3d(
 	    (void) printf("Leaving compute_total_canopy_force3d()\n");
 }	/* end compute_total_canopy_force3d */
 
-//GFM at ELASTIC_BOUNDARY:
-//      Add artificial source terms at boundary and have
-//      the fluid solver treat as NO_PDE_BOUNDARY
 int af_find_state_at_crossing(
     Front *front,
     int *icoords,
@@ -162,35 +159,34 @@ int af_find_state_at_crossing(
 
     status = FT_StateStructAtGridCrossing2(front,icoords,
             dir,comp,state,hs,&hse,crx_coords);
-    
+
     if (status == NO)
         return NO_PDE_BOUNDARY;
-    else
+    if (wave_type(*hs) == FIRST_PHYSICS_WAVE_TYPE)
+        return NO_PDE_BOUNDARY;
+    if (wave_type(*hs) == ELASTIC_STRING)//2d string
+        return NO_PDE_BOUNDARY;
+    if (wave_type(*hs) == ELASTIC_BOUNDARY)
+        return CONST_V_PDE_BOUNDARY;
+    if (wave_type(*hs) == MOVABLE_BODY_BOUNDARY)
+        return CONST_V_PDE_BOUNDARY;
+    if (wave_type(*hs) == DIRICHLET_BOUNDARY)
     {
-        switch (wave_type(*hs))
-        {
-        case FIRST_PHYSICS_WAVE_TYPE:
-        case ELASTIC_STRING:
-        case ELASTIC_BOUNDARY:
-            return NO_PDE_BOUNDARY;
-        case MOVABLE_BODY_BOUNDARY:
-            return CONST_V_PDE_BOUNDARY;
-        case DIRICHLET_BOUNDARY:
-	        if (boundary_state_function(*hs) &&
-                strcmp(boundary_state_function_name(*hs),
+        if (boundary_state_function(*hs) &&
+            strcmp(boundary_state_function_name(*hs),
                 "flowThroughBoundaryState") == 0)
-                return CONST_P_PDE_BOUNDARY;
-            else
-                return CONST_V_PDE_BOUNDARY;
-        /*case ELASTIC_BOUNDARY:
-            return POROUS_BOUNDARY;*/
+        {
+            return CONST_P_PDE_BOUNDARY;
+        }
+        else
+        {
+            return CONST_V_PDE_BOUNDARY;
         }
     }
-    //TODO: this should return CONST_V_PDE_BOUNDARY,
-    //      or MOVABLE_BODY_BOUNDAY should return
-    //      NEUMANN_PDE_BOUNDARY in order to be consistent
+
     return NEUMANN_PDE_BOUNDARY;
-}       /* af_find_state_at_crossing */
+}       /* end af_find_state_at_crossing */
+
 
 static void compute_center_of_mass_velo(
 	ELASTIC_SET *geom_set)

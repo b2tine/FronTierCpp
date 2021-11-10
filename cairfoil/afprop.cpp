@@ -308,7 +308,7 @@ extern void airfoil_point_propagate(
     }
     else
     {
-        return ifluid_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
+        return cFluid_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
     }
 }       /* airfoil_point_propagate */
 
@@ -1372,7 +1372,7 @@ static void rg_string_node_propagate(
         printf("mass on rg_string_node = %g\n\n",mass);
     }
 	
-    ifluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
+    cFluid_point_propagate(front,wave,oldp,newp,hse,hs,dt,V);
 	
     if (dt > 0.0)
 	{
@@ -1502,12 +1502,12 @@ static void passive_curve_propagation(
 		hse = Hyper_surf_element((*btris)->tri);
 		hs = Hyper_surf((*btris)->surface);
 		FT_GetStatesAtPoint(oldp,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-		if (ifluid_comp(negative_component(hs)))
+		if (gas_comp(negative_component(hs)))
 		{
 		    oldst = (STATE*)left_state(oldp);
 		    btrist = (STATE*)sl;
 		}
-		else if (ifluid_comp(positive_component(hs)))
+		else if (gas_comp(positive_component(hs)))
 		{
 		    oldst = (STATE*)right_state(oldp);
 		    btrist = (STATE*)sr;
@@ -1516,8 +1516,7 @@ static void passive_curve_propagation(
 		    btrist->vel[i] = oldst->vel[i];
 	    }
 
-        //NOTE: Appears to call iFluid contact_point_propagate()
-            ifluid_point_propagate(front,wave,oldp,newp,
+            cFluid_point_propagate(front,wave,oldp,newp,
                         Hyper_surf_element(oldb->_btris[0]->tri),
                         Hyper_surf(oldb->_btris[0]->surface),dt,V);
         }

@@ -36,8 +36,11 @@ void setInitialIntfcAF(
 	char string[100];
 
 	level_func_pack->wave_type = ELASTIC_BOUNDARY;
+    
+    /*
 	eqn_params->m_comp1 = SOLID_COMP;
     eqn_params->m_comp2 = GAS_COMP2;
+    */
 
     if (CursorAfterStringOpt(infile,
             "Entering yes to set wave type to FIRST_PHYSICS_WAVE_TYPE: "))
@@ -52,7 +55,7 @@ void setInitialIntfcAF(
 	if (front->rect_grid->dim != 3)
 	{
         printf("\nERROR: dim must be equal to 3\n");
-        LOC(): clean_up(EXIT_FAILURE);
+        LOC(); clean_up(EXIT_FAILURE);
 	}
 	    
     return setInitialIntfcAF3d(front,level_func_pack,inname);

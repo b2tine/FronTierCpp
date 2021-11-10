@@ -10,6 +10,14 @@ struct FABRIC_STATE
     double fluid_accel[MAXD];       /* acceleration from fluid force */
     double other_accel[MAXD];       /* acceleration for special nodes */
     double impulse[MAXD];            /* Accum impact from external force */
+
+    //NOTE: shear_force currently not in use
+    double shear_force[MAXD];    /* force resulting from tangential stress of fluid on wall computed from
+                                    turb model + wall functions (IS ACTUALLY FORCE)*/
+
+    
+    /* Fabric Congiguration */
+    double bendforce[MAXD];       /* bending force */
     
     /* Collision Handling */
     struct UF
@@ -28,15 +36,21 @@ struct FABRIC_STATE
     double friction[3];
     double avgVel[3];
     double avgVel_old[3];
+    double avgVel_postprox[3];
     double x_old[3];
+    double x_prevstep[3];
     int strain_num;
     int collsn_num;
     int collsn_num_RG;
+    bool has_proximity;
+    bool has_strainlim_prox;
     bool has_collsn;
-    bool has_strainlim;
+    bool has_strainlim_collsn;
     bool is_fixed;
     bool is_movableRG;
+    bool is_load_node;
     bool is_stringpt;
+    bool is_registeredpt;
 };
 
 
@@ -56,6 +70,7 @@ struct STATE : public FABRIC_STATE
     double engy;                    /* energy density */
     double momn[MAXD];              /* momentum density */
     double vel[MAXD];               /* Velocities */
+    double vel_old[MAXD];               /* Velocities */
     double vort;                    /* Vorticity in 2D */
     //double vorticity[MAXD]; //TODO: 3d vorticity vector
     

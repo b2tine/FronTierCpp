@@ -28,11 +28,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
+#include "airfoil.h"
+
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <iFluid.h>
-#include <airfoil.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned, K> Vb;

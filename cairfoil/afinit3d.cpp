@@ -417,8 +417,8 @@ extern void initAirbag(FILE *infile,
         level_func_pack->func_params = (POINTER)&ellip_params;
         level_func_pack->func = ellipsoid_func;
 	level_func_pack->wave_type = ELASTIC_BOUNDARY;
-	level_func_pack->neg_component = LIQUID_COMP1;
-	level_func_pack->pos_component = LIQUID_COMP2;
+	level_func_pack->neg_component = GAS_COMP1;
+	level_func_pack->pos_component = GAS_COMP2;
 	level_func_pack->is_mono_hs = NO;
         CursorAfterString(infile,"Enter center of airbag:");
         fscanf(infile,"%lf %lf %lf",ellip_params.cen,

@@ -349,8 +349,11 @@ public:
 	double hmin;			// smallest spacing
 
     void setInitialIntfc(LEVEL_FUNC_PACK*,char*);// setup initial geometry
-	void setInitialStates(); 	// setup initial state
+
 	void initMesh(void);		// setup the cartesian grid
+	void setInitialStates(); 	// setup initial state
+
+	//void readFrontInteriorStates(char *restart_state_name); //TODO: write this
 
     int (*findStateAtCrossing)(Front*,int*,GRID_DIRECTION,int,
             POINTER*,HYPER_SURF**,double*);
@@ -554,7 +557,6 @@ protected:
 	
     void readBaseFront(int i);
 	void readBaseStates(char *restart_state_name);
-	void readFrontInteriorStates(char *restart_state_name);
 
 	void compSGS(void); //UNUSED FUNCTION (subgrid model by Hyunkyung Lim)
 

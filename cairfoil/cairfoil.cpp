@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "airfoil.h"
 
-static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
+static void airfoil_driver(Front*,CFABRIC_CARTESIAN*);
 static void zero_state(COMPONENT,double*,FIELD*,int,int,EQN_PARAMS*);
 static void xgraph_front(Front*,char*);
 static void initFabricModule(Front* front);
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
         LOC(); clean_up(EXIT_FAILURE);
     }
 
-	G_CARTESIAN* g_cartesian = new CFABRIC_CARTESIAN(&front);
+	CFABRIC_CARTESIAN* g_cartesian = new CFABRIC_CARTESIAN(&front);
 
 	/* Initialize basic computational data */
 
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
         g_cartesian->writeCompGridMeshFileVTK();
     }
         
-	g_cartesian->getInitialState = zero_state;
+	    //g_cartesian->getInitialState = zero_state;
 
     if (debugging("sample_velocity"))
         g_cartesian->initSampleVelocity(in_name);
@@ -178,17 +178,18 @@ int main(int argc, char **argv)
 	    	modifyInitialization(&front);
 	    	read_dirichlet_bdry_data(in_name,&front);
 		    g_cartesian->initMesh();
-            g_cartesian->setInitialCondition();
+            g_cartesian->setInitialStates();
 	    }
 	    else
 	    {
-            g_cartesian->readFrontInteriorStates(restart_state_name);
+            g_cartesian->readInteriorStates(restart_state_name);
+                //g_cartesian->readFrontInteriorStates(restart_state_name);
 	    	readAfExtraData(&front,restart_state_name);
 	    }
 	}
     else
     {
-        g_cartesian->setInitialCondition();
+        g_cartesian->setInitialStates();
     }
 
     g_cartesian->initMovieVariables();
@@ -208,8 +209,9 @@ int main(int argc, char **argv)
 	clean_up(0);
 }
 
+//void airfoil_driver(Front *front, G_CARTESIAN* g_cartesian)
 void airfoil_driver(Front *front,
-        g_cartesian *g_cartesian)
+        CFABRIC_CARTESIAN* g_cartesian)
 {
     double CFL;
     int  dim = front->rect_grid->dim;
@@ -332,8 +334,12 @@ void airfoil_driver(Front *front,
 
 	    print_airfoil_stat(front,out_name);
 
+        /*
+        //TODO: write printEnstrophy()
+        //
         if (!af_params->no_fluid)
              g_cartesian->printEnstrophy();
+        */
 
         setStressColor(front);
 

@@ -254,7 +254,7 @@ void setFabricParams(Front* front)
 	FILE *infile = fopen(InName(front),"r");
 	char string[100];
 	
-    EQN_PARAMS *eqn_params = (EQN__PARAMS*)front->extra1;
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
     af_params->attach_gores = NO;
@@ -710,7 +710,7 @@ static void initVelocityFunc(
 	static SINGULAR_PARAMS *sing_params;
 	static FIXAREA_PARAMS *fixarea_params;
     
-    EQN_PARAMS *EQN_params = (EQN_PARAMS*)front->extra1;
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int dim = front->rect_grid->dim;
 	char string[100];

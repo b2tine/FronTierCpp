@@ -164,6 +164,18 @@ struct INFLATION_ASSIST_PARAMS
     double delta_pres;
 };
 
+//for use with af_find_state_at_crossing()
+enum
+{
+    NO_PDE_BOUNDARY = 0,
+    CONST_V_PDE_BOUNDARY = 1,
+    CONST_P_PDE_BOUNDARY,
+    NEUMANN_PDE_BOUNDARY,
+    DIRICHLET_PDE_BOUNDARY,
+    MOVING_BOUNDARY,
+    MIXED_PDE_BOUNDARY
+};
+
 struct AF_PARAMS
 {
     int dim;
@@ -428,6 +440,8 @@ extern void CgalCanopySurface(FILE*,Front*,SURFACE**);
 extern void InstallNewLoadNode(Front*,int);
 
 // modules.cpp
+extern void initFabricDefault(Front*);
+extern void initFabricModules(Front*);
 extern void initParachuteDefault(Front*);
 extern void initParachuteModules(Front*);
 
