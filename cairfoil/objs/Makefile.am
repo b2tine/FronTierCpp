@@ -1,23 +1,15 @@
 AM_CPPFLAGS = -I$(top_srcdir)/cairfoil \
-			  -I$(top_srcdir)/folding \
-			  @NLOPT_CFLAGS@ @CVODE_CFLAGS@ \
-			  -I$(top_srcdir)/Collision \
-			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ @ARMA_CFLAGS@ \
 			  -I$(top_srcdir)/cFluid \
 			  -I$(top_srcdir)/CGAL_Interface \
+			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ @ARMA_CFLAGS@ \
 			  -I$(top_srcdir)/include \
 			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 
 AM_LDFLAGS = @CGAL_LIBS@ \
 			 @BOOST_LIBS@ \
-			 @ARMA_LIBS@ \
-			 @CVODE_LIBS@
+			 @ARMA_LIBS@
 
-
-if FOLDING_OPT
-AM_LDFLAGS += @NLOPT_LIBS@
-endif
 
 
 
@@ -46,22 +38,23 @@ libcairfoil_la_SOURCES = \
 ../cFabric.h \
 ../cFabric.cpp
 
+libcairfoil_la_SOURCES += \
+../CD_HSE.h \
+../CD_HSE.cpp \
+../AABB.h \
+../AABB.cpp \
+../collid.h \
+../dcollid.cpp \
+../dcollid3d.cpp \
+../vtk.h \
+../vtk.cpp
 
 
-if FOLDING_OPT
-libcairfoil_la_LIBADD = $(top_builddir)/folding/objs/libfolding.la
-else
-libcairfoil_la_LIBADD = $(top_builddir)/Collision/objs/libCollision.la
-endif
+libcairfoil_la_LIBADD = $(top_builddir)/cFluid/objs/libcFluid.la
 
 
-if FOLDING_OPT
 $(libcairfoil_la_DEPENDENCIES): FORCE
-	@$(MAKE) -C $(top_builddir)/folding/objs libfolding.la
-else
-$(libcairfoil_la_DEPENDENCIES): FORCE
-	@$(MAKE) -C $(top_builddir)/Collision/objs libCollision.la
-endif
+	@$(MAKE) -C $(top_builddir)/cFluid/objs libcFluid.la
 
 
 FORCE:

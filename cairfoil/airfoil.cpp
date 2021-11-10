@@ -26,11 +26,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 *	Copyright 1999 by The University at Stony Brook, All rights reserved.
 */
 
-#include <iFluid.h>
-#include <airfoil.h>
+#include <cFluid.h>
+#include "airfoil.h"
 
 static void airfoil_driver(Front*,Incompress_Solver_Smooth_Basis*);
-static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,IF_PARAMS*);
+static void zero_state(COMPONENT,double*,IF_FIELD*,int,int,EQN_PARAMS*);
 static void xgraph_front(Front*,char*);
 static void initFabricModule(Front* front);
 
@@ -45,22 +45,20 @@ int main(int argc, char **argv)
 	static Front front;
 	static F_BASIC_DATA f_basic;
 	static LEVEL_FUNC_PACK level_func_pack;
-	static IF_PARAMS iFparams;
+	static EQN_PARAMS eqn_params;
 	static AF_PARAMS af_params;
 	static RG_PARAMS rgb_params;
 
 	FT_Init(argc,argv,&f_basic);
 	f_basic.size_of_intfc_state = sizeof(STATE);
+	
+    if (f_basic.dim == 3)
+    {
+        printf("\nERROR: dim must be equal to 3\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
 
-	//Initialize Petsc before FT_StartUp()      
-    PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
-    if (debugging("trace")) printf("Passed PetscInitialize()\n");
-
-	Incompress_Solver_Smooth_Basis *l_cartesian = NULL;
-	if (f_basic.dim == 2)
-	    l_cartesian = new Incompress_Solver_Smooth_2D_Cartesian(front);
-	else if (f_basic.dim == 3)
-	    l_cartesian = new Incompress_Solver_Smooth_3D_Cartesian(front);
+	G_CARTESIAN* g_cartesian = new CFABRIC_CARTESIAN(&front);
 
 	/* Initialize basic computational data */
 
@@ -96,22 +94,17 @@ int main(int argc, char **argv)
 	if (debugging("trace"))
         (void) printf("Passed FT_StartUp()\n");
 
-    iFparams.dim = f_basic.dim;
-    front.extra1 = (POINTER)&iFparams;
+    eqn_params.dim = f_basic.dim;
+    front.extra1 = (POINTER)&eqn_params;
     front.extra2 = (POINTER)&af_params;
-    read_iFparams(in_name,&iFparams);
+        //front.extra3 = (POINTER)&rgb_params;
+    
+    read_cFluid_params(in_name,&eqn_params);
     
     if (debugging("trace")) 
         (void) printf("Passed read_iFparams()\n");
 
-    //2d initialization using old method 
-    if (FT_Dimension() == 2)
-        setInitialIntfcAF(&front,&level_func_pack,in_name);
-    else
-        level_func_pack.pos_component = LIQUID_COMP2;
-       
-    //TODO: to be removed
-	    //setInitialIntfcAF(&front,&level_func_pack,in_name);
+    level_func_pack.pos_component = GAS_COMP2;
 	if (!RestartRun)
 	{
 	    FT_InitIntfc(&front,&level_func_pack);
@@ -136,14 +129,14 @@ int main(int argc, char **argv)
             gview_plot_interface(gvdir,front.interf);
 	    }
 
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	    read_dirichlet_bdry_data(in_name,&front);
 
 	    if (f_basic.dim < 3)
             FT_ClipIntfcToSubdomain(&front);
 	}
 	else
 	{
-	    read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
+	    read_dirichlet_bdry_data(in_name,&front);
 	}
 
 	/* Time control */
@@ -161,23 +154,21 @@ int main(int argc, char **argv)
 	setMotionParams(&front);
 
     front._scatter_front_extra = scatterAirfoilExtra;
-	front._compute_force_and_torque = ifluid_compute_force_and_torque;
+	front._compute_force_and_torque = cfluid_compute_force_and_torque;
 	
-    l_cartesian->findStateAtCrossing = af_find_state_at_crossing;
-	l_cartesian->initMesh();
+    g_cartesian->findStateAtCrossing = af_find_state_at_crossing;
+	g_cartesian->initMesh();
     
     if (pp_numnodes() == 1)
     {
-        l_cartesian->writeMeshFileVTK();
-        l_cartesian->writeCompGridMeshFileVTK();
+        g_cartesian->writeMeshFileVTK();
+        g_cartesian->writeCompGridMeshFileVTK();
     }
         
-	l_cartesian->getInitialState = zero_state;
+	g_cartesian->getInitialState = zero_state;
 
-        //l_cartesian->skip_neumann_solver = YES;
-	
     if (debugging("sample_velocity"))
-        l_cartesian->initSampleVelocity(in_name);
+        g_cartesian->initSampleVelocity(in_name);
 
     if (RestartRun)
 	{
@@ -186,22 +177,22 @@ int main(int argc, char **argv)
 		    /* forbidden if restart with inherited states */
 	    	readAfExtraData(&front,restart_state_name);
 	    	modifyInitialization(&front);
-	    	read_iF_dirichlet_bdry_data(in_name,&front,f_basic);
-		    l_cartesian->initMesh();
-            l_cartesian->setInitialCondition();
+	    	read_dirichlet_bdry_data(in_name,&front);
+		    g_cartesian->initMesh();
+            g_cartesian->setInitialCondition();
 	    }
 	    else
 	    {
-            l_cartesian->readFrontInteriorStates(restart_state_name);
+            g_cartesian->readFrontInteriorStates(restart_state_name);
 	    	readAfExtraData(&front,restart_state_name);
 	    }
 	}
     else
     {
-        l_cartesian->setInitialCondition();
+        g_cartesian->setInitialCondition();
     }
 
-    l_cartesian->initMovieVariables();
+    g_cartesian->initMovieVariables();
     initMovieStress(in_name,&front);
 
     //TODO: NEED TO ZERO OUT OTHER FIELDS IN resetFronVelocity()?
@@ -213,13 +204,13 @@ int main(int argc, char **argv)
 
 	/* Propagate the front */
 
-	airfoil_driver(&front,l_cartesian);
+	airfoil_driver(&front,g_cartesian);
 
 	clean_up(0);
 }
 
 void airfoil_driver(Front *front,
-        Incompress_Solver_Smooth_Basis *l_cartesian)
+        g_cartesian *g_cartesian)
 {
     double CFL;
     int  dim = front->rect_grid->dim;
@@ -237,7 +228,7 @@ void airfoil_driver(Front *front,
 	    setStressColor(front);
 	    FT_Save(front);
 
-        l_cartesian->printFrontInteriorStates(out_name);
+        g_cartesian->printFrontInteriorStates(out_name);
         printAfExtraData(front,out_name);
 
         if (!RestartRun && !ReSetTime)
@@ -252,7 +243,7 @@ void airfoil_driver(Front *front,
 	    if (!af_params->no_fluid)
 	    {
             if (debugging("trace")) printf("Calling ifluid solve()\n");
-            l_cartesian->solve(front->dt);
+            g_cartesian->solve(front->dt);
             if (debugging("trace")) printf("Passed ifluid solve()\n");
 	    }
 	    print_airfoil_stat(front,out_name);
@@ -262,7 +253,7 @@ void airfoil_driver(Front *front,
 
 	    if (!af_params->no_fluid)
 	    {
-	    	front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
+	    	front->dt = std::min(front->dt,CFL*g_cartesian->max_dt);
 	    }
 
         front->dt = std::min(front->dt,springCharTimeStep(front));
@@ -288,7 +279,7 @@ void airfoil_driver(Front *front,
 	    if (!af_params->no_fluid)
 	    {
 	    	coating_mono_hyper_surf(front);
-	    	l_cartesian->applicationSetComponent();
+	    	g_cartesian->applicationSetComponent();
 	    }
 
 	    break_strings(front);
@@ -304,16 +295,16 @@ void airfoil_driver(Front *front,
         if (!af_params->no_fluid)
 	    {
 	    	coating_mono_hyper_surf(front);
-	    	l_cartesian->applicationSetStates();
+	    	g_cartesian->applicationSetStates();
 	    }
         
 	    if (!af_params->no_fluid)
 	    {
-            l_cartesian->solve(front->dt);
+            g_cartesian->solve(front->dt);
 	    }
 	    else
         {
-            l_cartesian->max_dt = HUGE;
+            g_cartesian->max_dt = HUGE;
         }
 
         if (debugging("trace"))
@@ -333,24 +324,24 @@ void airfoil_driver(Front *front,
         if (debugging("step_size"))
             printf("Time step from FrontHypTimeStep(): %f\n",front->dt);
         
-        front->dt = std::min(front->dt,CFL*l_cartesian->max_dt);
+        front->dt = std::min(front->dt,CFL*g_cartesian->max_dt);
 
         if (debugging("step_size"))
-            printf("Time step from l_cartesian->max_dt(): %f\n",front->dt);
+            printf("Time step from g_cartesian->max_dt(): %f\n",front->dt);
 
 	    /* Output section */
 
 	    print_airfoil_stat(front,out_name);
 
         if (!af_params->no_fluid)
-             l_cartesian->printEnstrophy();
+             g_cartesian->printEnstrophy();
 
         setStressColor(front);
 
         if (FT_IsSaveTime(front))
 	    {
             FT_Save(front);
-            l_cartesian->printFrontInteriorStates(out_name);
+            g_cartesian->printFrontInteriorStates(out_name);
 	    	printAfExtraData(front,out_name);
 	    }
         
@@ -383,12 +374,13 @@ void airfoil_driver(Front *front,
 }       /* end airfoil_driver */
 
 
+//TODO: cFluid FIELD
 void zero_state(
     COMPONENT comp,
     double *coords,
-	IF_FIELD *field,
+	FIELD *field,
 	int index, int dim,
-    IF_PARAMS *iFparams)
+    EQN_PARAMS *eqn_params)
 {
     for (int i = 0; i < dim; ++i)
     {
@@ -396,7 +388,6 @@ void zero_state(
     }
     
     field->pres[index] = 0.0;
-    field->movie_pres[index] = 0.0;
 }
 
 

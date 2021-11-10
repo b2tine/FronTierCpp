@@ -238,10 +238,6 @@ static void elastic_point_propagate_fsi(
 
 	/* Impulse is incremented by the fluid pressure force */
     
-    //TODO: Should we be using dP = sl->movie_pres - sr->movie_pres ???
-    //      The idea being that we are using the pressure p^{n} (movie_pres)
-    //      instead of the halfstep pressure p^{n-1/2} (pres).
-    
     double dP = sl->pres - sr->pres;
     for (int i = 0; i < dim; ++i)
 	{
