@@ -13,18 +13,11 @@ AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
 
 
-noinst_PROGRAMS = cairfoil \
-				  cFluid_test
-
+noinst_PROGRAMS = cairfoil
 
 
 cairfoil_SOURCES = fabric_Cplus.cpp
 cairfoil_LDADD = $(builddir)/objs/libcAirfoil.la
-
-
-
-cFluid_test_SOURCES = cFluid_test.cpp
-cFluid_test_LDADD = $(top_builddir)/cFluid/objs/libcFluid.la
 
 
 

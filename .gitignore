@@ -82,7 +82,6 @@ cfabric/fabric
 cfabric/cgal_intfc_test
 cfabric/fabric_Fortn
 cfabric/fabric_Cplus
-cAirfoil/cFluid_test
 cAirfoil/cairfoil
 FrontWrapper/example00
 CGAL_Interface/cgal_intfc_test

@@ -157,7 +157,8 @@ extern void initFabricModules(Front* front)
 extern void initFabricDefault(Front* front)
 {
 	AF_PARAMS* af_params = (AF_PARAMS*)front->extra2;
-    af_params->spring_model = MODEL1;
+    af_params->spring_model = MODEL2;
+        //af_params->spring_model = MODEL1;
     af_params->num_opt_round = 0;
 	    //af_params->num_opt_round = 20;
 	af_params->cut_vent = NO;

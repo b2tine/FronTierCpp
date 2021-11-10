@@ -732,6 +732,8 @@ extern void SMM_cFluidDriver()
 
         /* Output section */
 
+        print_airfoil_stat(front,OutName(front));
+
         if (FT_IsSaveTime(front))
         {
             SMM_Save();
