@@ -3966,6 +3966,8 @@ EXPORT void FT_PromptSetMixedTypeBoundary2d(
 		}
 	    }
 	}
+
+    fclose(infile);
 }	/* end FT_PromptSetMixedTypeBoundary2d */
 
 static boolean is_rect_side_node(

@@ -214,6 +214,7 @@ IMPORT	boolean check_degenerated_loop(TRI**,int*,POINT**,int);
 
 	/*fgb3dutil.c */
 IMPORT	void	adjust_crossings(int*,int*,INTERFACE*);
+IMPORT  double next_index_in_dir(const int* icoords, GRID_DIRECTION dir, const int* top_gmax, int dim);
 IMPORT	boolean	next_ip_in_dir(const int*,GRID_DIRECTION,int*,int*,int*);
 IMPORT	boolean	check_and_repair_crx(INTERFACE*,int*,int*);
 IMPORT	void 	fill_comps_in_box(int*,int*,int*,INTERFACE*);
