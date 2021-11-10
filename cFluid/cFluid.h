@@ -179,13 +179,6 @@ struct FLOW_THROUGH_PARAMS
     EQN_PARAMS *eqn_params;
 };
 
-struct CONST_WITH_WHITE_NOISE_PARAMS 
-{
-    int dim;
-    POINT *oldp;
-    COMPONENT comp;
-    EQN_PARAMS *eqn_params;
-};
 
 //TODO: This should be named PISTON_BDRY_PARAMS or similar
 //      -- not generic variable bdry
