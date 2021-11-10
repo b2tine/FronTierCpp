@@ -191,28 +191,35 @@ static void promptForDirichletBdryState(
         }
         state->engy = EosEnergy(state);
 
-        /*
-        TODO: Implement this for turbulent inlet bodunary condition
-
         if (CursorAfterStringOpt(infile,"Enter yes to add white noise:"))
         {
             fscanf(infile,"%s",s);
             printf("%s\n",s);
+            if (s[0] == 'y' || s[0] == 'Y')
+            {
+                eqn_params->perturb_const_inlet_bdry == true;
+                FT_InsertDirichletBoundary(front,cF_constantWithWhiteNoise,
+                        "cF_constantWithWhiteNoise",NULL,(POINTER)state,*hs,i_hs);
+            }
         }
-        */
+        else
+        {
+            FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,*hs,i_hs);
+                //FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,hs[0],i_hs);
+        }
 
-	    FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,hs[0],i_hs);
 	    for (i = 1; i < nhs; ++i)
         {
             bstate_index(hs[i]) = bstate_index(hs[0]);
         }
         break;
+
     case 'f':			// Flow through state
 	case 'F':
-	    /*FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
-			"cF_flowThroughBoundaryState",NULL,NULL,hs[0],i_hs);*/
 	    FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
-			"cF_flowThroughBoundaryState",NULL,NULL,*hs,i_hs);
+                "cF_flowThroughBoundaryState",NULL,NULL,*hs,i_hs);
+            /*FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
+                "cF_flowThroughBoundaryState",NULL,NULL,hs[0],i_hs);*/
 	    for (i = 1; i < nhs; ++i)
         {
             bstate_index(hs[i]) = bstate_index(hs[0]);
@@ -229,6 +236,97 @@ static void promptForDirichletBdryState(
 	    break;
 	}
 } 	/* end  promptForDirichletBdryState */
+
+extern void cF_constantWithWhiteNoise(
+        double          *p0,
+        HYPER_SURF      *hs,
+        Front           *front,
+        POINTER         params,
+        POINTER         state)
+{
+    //////////////////////////////////////////////////////////////////////////
+        //printf("\n\nERROR cF_constantWithWhiteNoise(): not implemented yet\n");
+        //LOC(); clean_up(EXIT_FAILURE);
+    //////////////////////////////////////////////////////////////////////////
+
+    /*
+    static auto seed = static_cast<long unsigned int>(
+        std::chrono::system_clock::now().time_since_epoch().count());
+    */
+    auto seed = static_cast<long unsigned int>(
+        std::chrono::system_clock::now().time_since_epoch().count());
+
+	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    CONST_WITH_WHITE_NOISE_PARAMS* wn_params = (CONST_WITH_WHITE_NOISE_PARAMS*)params;
+    int dim = wn_params->dim;
+    POINT *oldp = wn_params->oldp;
+    HYPER_SURF *oldhs = oldp->hs;
+        //HYPER_SURF_ELEMENT *oldhse = oldp->hse;
+
+	STATE *newst = (STATE*) state;
+
+    if (boundary_state(oldhs) != NULL)
+	{
+	    STATE *bstate = (STATE*)boundary_state(oldhs);
+
+	    newst->dens = bstate->dens;
+        newst->pres = bstate->pres;
+        
+        ////////////////////////////////////////////////////////////////////
+        double amp_white[MAXD];
+        for (int i = 0; i < dim; ++i)
+        {
+            amp_white[i] = 0.35*bstate->vel[i];
+        }
+
+        auto gen_sign =
+        std::bind(std::uniform_int_distribution<int>{-1,1},
+                                    std::default_random_engine{seed});
+
+        int sign = gen_sign();
+        /*
+        srand(time(nullptr));
+        int sign = 2*(rand() % 2) - 1;
+        */
+
+        for (int i = 0; i < dim; ++i)
+        {
+	    	newst->vel[i] = bstate->vel[i] + sign*amp_white[i];
+        }
+        ////////////////////////////////////////////////////////////////////
+
+        for (int i = 0; i < dim; ++i)
+        {
+	    	newst->momn[i] = newst->dens*newst->vel[i];
+        }
+	    newst->engy = EosEnergy(newst);
+	        //newst->engy = bstate->engy;
+	    
+        //TODO: Should vort/vorticity be non-zero for turbulent inlet bdry?
+        newst->vort = 0.0;
+
+        set_state_max_speed(front,newst,Coords(oldp));
+
+	    if (debugging("const_whitenoise_bdry"))
+	    {
+            printf("Preset boundary state %s:\n", 
+                eqn_params->perturb_const_inlet_bdry == false ?
+                    "\b" : "(With Velocity Perturbation)");
+            
+            print_general_vector("Velocity: ",newst->vel,dim,"\n");
+            print_general_vector("Momentum: ",newst->momn,dim,"\n");
+            printf("Density: %f\n",newst->dens);
+            printf("Energy: %f\n",newst->engy);
+            printf("Pressure: %f\n",newst->pres);
+            printf("Vorticity: %f\n",newst->vort);
+	    }
+    }
+    else
+    {
+        printf("\n\nERROR cF_constantWithWhiteNoise(): no boundary state found!\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+}
 
 extern void cF_variableBoundaryState(
         double          *p0,
@@ -1183,6 +1281,117 @@ static void dirichlet_point_propagate(
     int dim = front->rect_grid->dim;
 	STATE *sl,*sr,*newst = NULL;
 	STATE *bstate;
+	COMPONENT comp;
+
+	if (debugging("dirichlet_bdry"))
+	{
+	    printf("Entering dirichlet_point_propagate()\n");
+	    print_general_vector("oldp:  ",Coords(oldp),dim,"\n");
+	}
+
+	slsr(oldp,oldhse,oldhs,(POINTER*)&sl,(POINTER*)&sr);
+	if (gas_comp(negative_component(oldhs)))
+	{
+	    newst = (STATE*)left_state(newp);
+	    comp = negative_component(oldhs);
+        newst->eos = &(eqn_params->eos[comp]);
+	}
+	else if (gas_comp(positive_component(oldhs)))
+	{
+	    newst = (STATE*)right_state(newp);
+	    comp = positive_component(oldhs);
+        newst->eos = &(eqn_params->eos[comp]);
+	}
+	if (newst == NULL) return;	// node point
+
+	if (boundary_state_function(oldhs))
+	{
+        if (boundary_state(oldhs) != NULL)
+        {
+            /////////////////////////////////////////
+                //printf("\n\nNOT IMPLEMENTED YET\n");
+                //LOC(); clean_up(EXIT_FAILURE):
+            /////////////////////////////////////////
+            CONST_WITH_WHITE_NOISE_PARAMS wn_params;
+            oldp->hse = oldhse;
+            oldp->hs = oldhs;
+            wn_params.dim = front->rect_grid->dim;
+            wn_params.oldp = oldp;
+            wn_params.eqn_params = eqn_params;
+            wn_params.comp = comp;
+            (*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
+                (POINTER)&wn_params,(POINTER)newst);	
+        }
+        else
+        {
+            FLOW_THROUGH_PARAMS ft_params;
+            oldp->hse = oldhse;
+            oldp->hs = oldhs;
+            ft_params.oldp = oldp;
+            ft_params.eqn_params = eqn_params;
+            ft_params.comp = comp;
+            (*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
+                (POINTER)&ft_params,(POINTER)newst);	
+        }
+	}
+    else if (boundary_state(oldhs) != NULL)
+	{
+	    bstate = (STATE*)boundary_state(oldhs);
+
+	    newst->dens = bstate->dens;
+        newst->pres = bstate->pres;
+        for (int i = 0; i < dim; ++i)
+        {
+	    	newst->vel[i] = bstate->vel[i];
+        }
+
+        
+        for (int i = 0; i < dim; ++i)
+        {
+	    	newst->momn[i] = newst->dens*newst->vel[i];
+        }
+
+	    newst->engy = bstate->engy;
+	    
+        //TODO: Should vort/vorticity be non-zero for turbulent inlet bdry?
+        newst->vort = 0.0;
+
+        set_state_max_speed(front,newst,Coords(oldp));
+
+	    if (debugging("dirichlet_bdry"))
+	    {
+            printf("Preset boundary state %s:\n", 
+                eqn_params->perturb_const_inlet_bdry == false ?
+                    "\b" : "(With Velocity Perturbation)");
+            
+            print_general_vector("Velocity: ",newst->vel,dim,"\n");
+            printf("Density: %f\n",newst->dens);
+            printf("Energy: %f\n",newst->engy);
+            printf("Pressure: %f\n",newst->pres);
+            printf("Vorticity: %f\n",newst->vort);
+	    }
+	}
+
+	if (debugging("dirichlet_bdry"))
+	    printf("Leaving dirichlet_point_propagate()\n");
+        return;
+}	/* end dirichlet_point_propagate */
+
+/*
+static void dirichlet_point_propagate(
+        Front *front,
+        POINTER wave,
+        POINT *oldp,
+        POINT *newp,
+        HYPER_SURF_ELEMENT *oldhse,
+        HYPER_SURF         *oldhs,
+        double              dt,
+        double              *V)
+{
+	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    int dim = front->rect_grid->dim;
+	STATE *sl,*sr,*newst = NULL;
+	STATE *bstate;
 	FLOW_THROUGH_PARAMS ft_params;
 	COMPONENT comp;
 
@@ -1259,7 +1468,7 @@ static void dirichlet_point_propagate(
 	if (debugging("dirichlet_bdry"))
 	    printf("Leaving dirichlet_point_propagate()\n");
         return;
-}	/* end dirichlet_point_propagate */
+}*/	/* end dirichlet_point_propagate */
 
 static  void contact_point_propagate(
         Front *front,

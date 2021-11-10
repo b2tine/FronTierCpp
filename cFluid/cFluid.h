@@ -179,6 +179,14 @@ struct FLOW_THROUGH_PARAMS
     EQN_PARAMS *eqn_params;
 };
 
+struct CONST_WITH_WHITE_NOISE_PARAMS 
+{
+    int dim;
+    POINT *oldp;
+    COMPONENT comp;
+    EQN_PARAMS *eqn_params;
+};
+
 //TODO: This should be named PISTON_BDRY_PARAMS or similar
 //      -- not generic variable bdry
 struct VAR_BDRY_PARAMS 
@@ -608,6 +616,7 @@ extern void read_dirichlet_bdry_data(char*,Front*);
 extern void read_open_end_bdry_data(char*,Front*);
 extern void restart_set_dirichlet_bdry_function(Front*);
 
+extern void cF_constantWithWhiteNoise(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 extern void cF_variableBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 
 extern void cF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
