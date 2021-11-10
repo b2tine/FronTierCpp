@@ -84,6 +84,17 @@ enum class PORO_SCHEME
     RIEMANN
 };
 
+//TODO:Add function addImmersedForce() for drag on parachute strings
+//
+// For fluid drag on string chord
+struct FINITE_STRING 
+{
+    double radius;
+    double dens;
+    double c_drag;
+    double ampFluidFactor;
+};
+
 struct EQN_PARAMS
 {
     int dim;
