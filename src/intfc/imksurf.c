@@ -495,6 +495,7 @@ LOCAL	boolean install_bdry_objects(
 	    else
 	    	corner_coords[i][1] = dual_gr->U[i];
 	}
+
 	for (i = 0; i < 3; ++i)
 	{
 	    for (j = 0; j < 2; ++j)
