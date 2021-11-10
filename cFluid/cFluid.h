@@ -166,7 +166,7 @@ struct EQN_PARAMS
 
     int fsi_startstep;
 
-    //bool no_fluid {false};
+    bool no_fluid {false};
 
 //////////////////////////////
     

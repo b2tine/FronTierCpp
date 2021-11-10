@@ -66,13 +66,13 @@ extern void read_cFluid_params(
 	CursorAfterString(infile,"Enter problem type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
-	if (string[0] == 'C' || string[0] == 'c')
-    {
-        eqn_params->prob_type = CHANNEL_FLOW;
-    }
-    else if (string[0] == 'N' || string[0] == 'n')
+    if (string[0] == 'N' || string[0] == 'n')
     {
         eqn_params->prob_type = NO_FLUID;
+    }
+	else if (string[0] == 'C' || string[0] == 'c')
+    {
+        eqn_params->prob_type = CHANNEL_FLOW;
     }
     else if (string[0] == 'T' || string[0] == 't')
 	{
@@ -125,6 +125,7 @@ extern void read_cFluid_params(
 
     if (eqn_params->prob_type == NO_FLUID)
     {
+        eqn_params->no_fluid = true;
         fclose(infile);
         return;
     }
