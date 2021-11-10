@@ -41,7 +41,11 @@ libcairfoil_la_SOURCES = \
 ../afvelo.cpp \
 ../bending.h \
 ../bending.cpp \
-../cgal.cpp
+../cgal.cpp \
+../modules.cpp \
+../cFabric.h \
+../cFabric.cpp
+
 
 
 if FOLDING_OPT

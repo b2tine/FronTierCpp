@@ -17,6 +17,7 @@ AM_LDFLAGS = @CGAL_LIBS@ \
 			 @PETSC_LIBS@ \
 			 @CVODE_LIBS@
 
+
 if FOLDING_OPT
 AM_LDFLAGS += @NLOPT_LIBS@
 endif
