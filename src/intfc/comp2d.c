@@ -1139,7 +1139,11 @@ LIB_LOCAL boolean long_nearest_interface_point2d(
 	double    l, sx, sy, ex, ey, spe, sps, vp;
 
 	        /* Find Closest Point on Front: */
-	(void) printf("Warning: calling long_nearest_interface_point2d()\n");
+	if (debugging("efficiency"))
+    {
+        (void) printf("Warning: calling long_nearest_interface_point2d()\n");
+    }
+
 	p_closest = NULL;       c_closest = NULL;       b_closest = NULL;
 	min_distance = HUGE_VAL;
 	t_last = 0.0;

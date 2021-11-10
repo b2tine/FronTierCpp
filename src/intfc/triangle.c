@@ -228,7 +228,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 /*   however, INEXACT should be defined to be nothing.  ("#define INEXACT".) */
 
 #define INEXACT /* Nothing */
-/* #define INEXACT volatile */
+/*#define INEXACT volatile */
 
 /* For efficiency, a variety of data structures are allocated in bulk.  The  */
 /*   following constants determine how many of each structure is allocated   */
