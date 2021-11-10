@@ -67,23 +67,24 @@ extern double EosInternalEnergy(
 {
 	double		pres = state->pres;
 	double		dens = state->dens;
-	EOS_PARAMS	*eos = state->eos;
+	EOS_PARAMS* eos = state->eos;
 	double		gamma = eos->gamma;
 
-	return (pres+gamma*eos->pinf)/(gamma-1) - dens*eos->einf;
+	return (pres + gamma*eos->pinf)/(gamma - 1.0) - dens*eos->einf;
 }
 
 extern double EosEnergy(
 	STATE *state)
 {
-	int	i,dim = state->dim;
-	double	dens = state->dens;
-	double	*momn = state->momn;
-	double	e;
+	int	dim = state->dim;
+	double dens = state->dens;
+	double* momn = state->momn;
 	
-	e = 0.0;
-	for (i = 0; i < dim; ++i)
-	    e += 0.5*sqr(momn[i])/dens;
+	double e = 0.0;
+	for (int i = 0; i < dim; ++i)
+    {
+        e += 0.5*sqr(momn[i])/dens;
+    }
 	e += EosInternalEnergy(state);
 
 	return e;
@@ -106,22 +107,22 @@ extern double EosMaxBehindShockPres(
 	return p1;
 }	/* end EosMaxBehindShockPres */
 
-extern void CovertVstToState(
+extern void ConvertVstToState(
 	STATE		*state,
 	SWEEP		*vst,
 	EOS_PARAMS	*eos,
 	int		ind,
 	int		dim)
 {
-	int	i;
-
 	state->dim = dim;
 	state->eos = eos;
 	state->dens = vst->dens[ind];
 	state->engy = vst->engy[ind];
-	for (i = 0; i < dim; ++i)
-	    state->momn[i] = vst->momn[i][ind];
-	state->pres = EosPressure(state);
+	for (int i = 0; i < dim; ++i)
+    {
+        state->momn[i] = vst->momn[i][ind];
+    }
+    state->pres = EosPressure(state);
 }
 
 extern void EosSetTVDParams(

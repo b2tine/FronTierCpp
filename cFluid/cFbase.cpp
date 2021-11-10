@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "cFluid.h"
 
 static double (*getStateMom[MAXD])(Locstate) =
-               {getStateXmom,getStateYmom,getStateZmom};
+               {getStateXmom, getStateYmom, getStateZmom};
 
 void G_CARTESIAN::readBaseFront(int i)
 {
@@ -58,7 +58,7 @@ void G_CARTESIAN::readBaseFront(int i)
 }       /* end readBaseFront */
 
 void G_CARTESIAN::readBaseStates(
-        char *restart_name)
+        char *restart_state_name)
 {
         FILE *infile;
         int i,j,k,l,index;
@@ -75,9 +75,9 @@ void G_CARTESIAN::readBaseStates(
 	static boolean first = YES;
 
 	base_front->extra1 = (POINTER)eqn_params;
-        readFrontStates(base_front,restart_name);
+        readFrontStates(base_front,restart_state_name);
 
-        sprintf(fname,"%s-gas",restart_name);
+        sprintf(fname,"%s-gas",restart_state_name);
         infile = fopen(fname,"r");
 
         /* Initialize states in the interior regions */

@@ -81,12 +81,13 @@ extern void WENO_flux(
 	    vflux->engy_flux[i] = -lambda*(flux[4][i+1] - flux[4][i]);
 	    if (isnan(vflux->dens_flux[i]))
 	    {
-		int j;
-		for (j = 0; j < extend_size; ++j)
-		    printf("u = %f %f %f %f %f\n",
-			u_old[0][j],u_old[1][j],u_old[2][j],
-			u_old[3][j],u_old[4][j]);
-		clean_up(ERROR);
+            for (int j = 0; j < extend_size; ++j)
+            {
+                printf("u = %f %f %f %f %f\n",
+                u_old[0][j],u_old[1][j],u_old[2][j],
+                u_old[3][j],u_old[4][j]);
+            }
+            clean_up(ERROR);
 	    }
 	}
 }	/* end weno5_flux */
@@ -118,14 +119,17 @@ static void weno5_get_flux(
 
     	for(i = 0; i < extend_size; ++i)
     	{
-	    a = sqrt(gamma * u_old[5][i]/u_old[0][i]);
-	    v = u_old[1][i]/u_old[0][i];
-	    maxeig[0] = std::max(maxeig[0], fabs(v - a));
-	    maxeig[1] = std::max(maxeig[1], fabs(v));
-	    maxeig[4] = std::max(maxeig[4], fabs(v + a));
-	    for (j = 0; j < 6; ++j)
+            v = u_old[1][i]/u_old[0][i];
+            a = sqrt(gamma * u_old[5][i]/u_old[0][i]);
+            
+            maxeig[0] = std::max(maxeig[0], fabs(v - a));
+            maxeig[1] = std::max(maxeig[1], fabs(v));
+            maxeig[4] = std::max(maxeig[4], fabs(v + a));
+            
+            for (j = 0; j < 6; ++j)
                 u[j] = u_old[j][i];
-	    u2f(u,f[i]);
+	    
+            u2f(u,f[i]);
     	}
     	maxeig[2] = maxeig[1];
     	maxeig[3] = maxeig[1];
@@ -227,8 +231,7 @@ static void weno5_get_flux(
 	    for(k = 0; k < 5; ++k)
 	    {
 		gfluxp[j][k] = 0.5*(sten_f[k][j] + maxeig[j]*sten_u[k][j]);
-		gfluxm[j][k] = 0.5*(sten_f[5 - k][j] - maxeig[j]*
-				sten_u[5 - k][j]);
+		gfluxm[j][k] = 0.5*(sten_f[5 - k][j] - maxeig[j]*sten_u[5 - k][j]);
 	    }
 
 	    for(j = 0; j < 5; ++j)
@@ -285,9 +288,9 @@ static double weno5_scal(double *f)
     	double alpha[3];
     	double omega[3]; // weights for stencils
     	double sum;
-    	double a[3][5] = {{1.0/3, -7.0/6, 11.0/6, 0, 0}, 
-			  {0, -1.0/6, 5.0/6, 1.0/3, 0}, 
-			  {0, 0, 1.0/3, 5.0/6, -1.0/6}}; 
+    	double a[3][5] = {{1.0/3.0, -7.0/6.0, 11.0/6.0, 0, 0}, 
+			  {0, -1.0/6.0, 5.0/6.0, 1.0/3.0, 0}, 
+			  {0, 0, 1.0/3.0, 5.0/6.0, -1.0/6.0}}; 
 		//*** coefficients for 2nd-order ENO interpolation stencil
     	double w[5]; //weight for every point
 	double flux = 0.0;
@@ -325,12 +328,12 @@ static void f2is(
 	double *f, 
 	double *s)
 {
-	s[0] = 13.0/12*sqr((f[0] - 2.0*f[1] + f[2])) +
+	s[0] = 13.0/12.0*sqr((f[0] - 2.0*f[1] + f[2])) +
                 0.25*sqr((f[0] - 4.0*f[1] + 3.0*f[2]));
-        s[1] = 13.0/12*sqr((f[1] - 2.0*f[2] + f[3])) +
-                0.25*sqr((f[1] - f[3]));
-        s[2] = 13.0/12*sqr((f[2] - 2.0*f[3] + f[4])) +
-                0.25*sqr((3.0*f[2] - 4.0*f[3] + f[4]));
+    s[1] = 13.0/12.0*sqr((f[1] - 2.0*f[2] + f[3])) +
+            0.25*sqr((f[1] - f[3]));
+    s[2] = 13.0/12.0*sqr((f[2] - 2.0*f[3] + f[4])) +
+            0.25*sqr((3.0*f[2] - 4.0*f[3] + f[4]));
 }
 
 static void matmvec(
@@ -338,16 +341,14 @@ static void matmvec(
 	double L[5][5], 
 	std::vector<double> x)
 {
-    	int i, j;
-
-    	for(i = 0; i < 5; ++i)
-    	{
-	    b[i] = 0.0;
-	    for(j = 0; j < 5; ++j)
-	    {
-	    	b[i] += L[i][j] * x[j]; 
-	    }
-    	}
+    for (int i = 0; i < 5; ++i)
+    {
+        b[i] = 0.0;
+        for (int j = 0; j < 5; ++j)
+        {
+            b[i] += L[i][j] * x[j]; 
+        }
+    }
 }
 
 static void u2f(
@@ -356,11 +357,11 @@ static void u2f(
 {
 	double v = u[1]/u[0];
 
-    	f[0] = u[1];
-    	f[1] = v*u[1] + u[5];
-    	f[2] = v*u[2];
-    	f[3] = v*u[3];
-    	f[4] = v*(u[4] + u[5]);
+    f[0] = u[1];
+    f[1] = v*u[1] + u[5];
+    f[2] = v*u[2];
+    f[3] = v*u[3];
+    f[4] = v*(u[4] + u[5]);
 }
 
 //TODO: Not working correctly
