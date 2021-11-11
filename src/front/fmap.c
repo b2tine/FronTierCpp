@@ -3494,7 +3494,8 @@ EXPORT	boolean FT_FindNearestIntfcPointInRange(
 	int range)
 {
     //TODO: Is this a problem? Several functions pass INCLUDE_BOUNDARIES
-	return nearest_interface_point_within_range(coords,comp,front->interf,
+	
+    return nearest_interface_point_within_range(coords,comp,front->interf,
             bdry,NULL,p,t,phse,phs,range);
 	/*
     return nearest_interface_point_within_range(coords,comp,front->interf,

@@ -478,17 +478,39 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     //TODO: Why does this fail for INCLUDE_BOUNDARIES and NO_SUBDOMAIN values?
     //      Conversely, why does it work with NO_BOUNDARIES in the backward facing
     //      step scenario -- to what degree is it working?
+    //
+    //      nearest_intfc_point_in_range() etc. doesn't find NEUMANN_BOUNDARY
+    //      when is domain (rect) boundary, but nearest_intfc_point() does.
     
     /*
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
     */
-    /*      
-    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
+    /*
+    bool nip_found = 
+        FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
     */
-    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
+    /*
+    bool nip_found = 
+        FT_FindNearestIntfcPointInRange(front, comp, coords_ghost,INCLUDE_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
+
+    //FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
+      //      crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+
+    bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
+            NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+
+    if (!nip_found)
+    {
+        printf("ERROR G_CARTESIAN::setSlipBoundaryNIP(): "
+                "can't find nearest interface point\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+
 
     //TODO: We should get the ring of tris around the nearest interface point,
     //      and possible consider other nearby interface points that are within
