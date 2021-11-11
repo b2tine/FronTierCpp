@@ -842,6 +842,11 @@ void CollisionSolver3d::updateAverageVelocity(MotionState mstate)
                 {
                     sl->avgVel[k] +=
                         (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
+
+                    /////////////////////////////////////////////////////////////
+                    sl->impulse[k] +=
+                        (sl->collsnImpulse[k] + sl->friction[k])/sl->collsn_num;
+                    /////////////////////////////////////////////////////////////
                     
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {
@@ -1024,7 +1029,7 @@ void CollisionSolver3d::detectCollision(std::vector<CD_HSE*>& list)
             //revertAverageVelocity();
 
         computeImpactZoneJac(list);
-        //computeImpactZoneGS(list);
+            //computeImpactZoneGS(list);
     }
     stop_clock("computeImpactZone");
 
@@ -2542,6 +2547,11 @@ StrainStats CollisionSolver3d::computeStrainImpulsesPosn(
                             for (int j = 0; j < 3; ++j)
                             {
                                 sl[k]->avgVel[j] += sl[k]->strainImpulse[j];
+
+                                /*////////////////////////////////////////
+                                    sl[k]->impulse[j] += sl[k]->strainImpulse[j];
+                                */////////////////////////////////////////
+                                
                                 sl[k]->strainImpulse[j] = 0.0;
                             }
                             sl[k]->strain_num = 0;
@@ -2796,6 +2806,11 @@ StrainStats CollisionSolver3d::computeStrainRateImpulsesPosn(
                             for (int j = 0; j < 3; ++j)
                             {
                                 sl[k]->avgVel[j] += sl[k]->strainImpulse[j];
+                                
+                                /*////////////////////////////////////////
+                                    sl[k]->impulse[j] += sl[k]->strainImpulse[j];
+                                */////////////////////////////////////////
+
                                 sl[k]->strainImpulse[j] = 0.0;
                             }
                             sl[k]->strain_num = 0;
@@ -3016,6 +3031,11 @@ StrainStats CollisionSolver3d::computeStrainImpulsesVel(std::vector<CD_HSE*>& li
                         for (int j = 0; j < 3; ++j)
                         {
                             sl[k]->avgVel[j] += sl[k]->strainImpulse[j];
+                    
+                            /*////////////////////////////////////////////////////////////
+                                sl[k]->impulse[j] += sl[k]->strainImpulse[j];
+                            */////////////////////////////////////////////////////////////
+                
                             sl[k]->strainImpulse[j] = 0.0;
                         }
                         sl[k]->strain_num = 0;
@@ -3062,6 +3082,10 @@ void CollisionSolver3d::applyStrainImpulses(
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->strainImpulse[k]/sl->strain_num;
+
+                    /*////////////////////////////////////////////////////////////
+                        sl->impulse[k] += sl->strainImpulse[k]/sl->strain_num;
+                    */////////////////////////////////////////////////////////////
                 
                     if (std::isinf(sl->avgVel[k]) || std::isnan(sl->avgVel[k])) 
                     {

@@ -3,8 +3,8 @@ Domain limit in 1-th dimension: 0 1
 Domain limit in 2-th dimension: 0 1
     Domain limit in 2-th dimensionXXX: 0 3
 
-Computational grid: 100 100 100
-    Computational gridXXX: 50 50 50
+Computational grid: 50 50 50
+    Computational gridXXX: 100 100 100
     Computational gridXXX: 50 50 150
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -54,6 +54,8 @@ Entering yes to turn off fluid solver: no
 Enter interior propagator: p
 
 Enter yes to use eddy viscosity: yes
+Enter eddy viscosity model: VREMAN
+Enter model constant: 0.025
 
 
 //////////////////////////////////////////////////////////
@@ -180,7 +182,11 @@ Enter yes for debugging: yes
 
 Enter the debugging string: proximity
 Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+Enter the debugging string: max_speed
 Enter the debugging string: cfluid_dt
+
+Enter the debugging stringXXX: bendforce_off
 
 Enter the debugging stringX: elastic_buffer
 Enter the debugging stringX: collision_off

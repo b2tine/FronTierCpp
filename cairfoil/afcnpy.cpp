@@ -34,7 +34,6 @@ static void compute_total_canopy_force3d(Front*,double*,double*);
 static void setCurveVelocity(ELASTIC_SET*,CURVE*,double**,GLOBAL_POINT**);
 static void setSurfVelocity(ELASTIC_SET*,SURFACE*,double**,GLOBAL_POINT**);
 static void setNodeVelocity(ELASTIC_SET*,NODE*,double**,GLOBAL_POINT**);
-static void setNodeVelocity2d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
 static void setNodeVelocity3d(ELASTIC_SET*,NODE*,GLOBAL_POINT**);
 
 static void reduce_high_freq_vel(Front*,SURFACE*);
@@ -2670,7 +2669,6 @@ static void setSurfVelocity(
 	SURFACE *surf,
 	GLOBAL_POINT **point_set)
 {
-	int i,j;
 	TRI *tri;
 	POINT *p;
 	STATE *sl,*sr;
@@ -2684,6 +2682,8 @@ static void setSurfVelocity(
     int dim = front->rect_grid->dim;
     double nor_speed = 0.0;
     double max_nor_speed = 0.0;
+    double max_speed = 0.0;
+    double max_vel[MAXD] = {0.0};
     double *max_coords = nullptr;
 
     //temporary variable to test reduce_high_freq_vel() function 
@@ -2703,7 +2703,7 @@ static void setSurfVelocity(
 			tri = tri->next)
 	{
 	    hse = Hyper_surf_element(tri);
-	    for (i = 0; i < 3; ++i)
+	    for (int i = 0; i < 3; ++i)
         {
             p = Point_of_tri(tri)[i];
             if (sorted(p) || Boundary_point(p)) continue;
@@ -2712,9 +2712,11 @@ static void setSurfVelocity(
             FT_NormalAtPoint(p,front,nor,NO_COMP);
             FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
             vel = point_set[gindex]->v;
+
+            double speed = Mag3d(vel);
             nor_speed = scalar_product(vel,nor,3);
             
-            for (j = 0; j < 3; ++j)
+            for (int j = 0; j < 3; ++j)
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
@@ -2722,18 +2724,45 @@ static void setSurfVelocity(
                     //sr->vel[j] = nor_speed*nor[j];
             }
             
+            for (int j = 0; j < 3; ++j)
+            {
+                if (std::abs(max_vel[j]) < std::abs(vel[j]))
+                    max_vel[j] = vel[j];
+            }
+            /*
+            if (max_speed < speed)
+            {
+                max_speed = speed;
+                max_coords = Coords(p);
+                
+                for (int j = 0; j < 3; ++j)
+                {
+                    max_vel[j] = vel[j];
+                }
+            }
+            */
+
+            /*
             if (max_nor_speed < fabs(nor_speed))
             {
                 max_nor_speed = fabs(nor_speed);
                 max_coords = Coords(p);
                     //ft_assign(max_nor_speed_state,sl,fr->sizest);
             }
+            */
 
             sorted(p) = YES;
         }
 	}
 
-    set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
+    //TESTING NOW
+    for (int j = 0; j < 3; ++j)
+    {
+        set_max_front_speed(j,max_vel[j],nullptr,nullptr,front);
+        //set_max_front_speed(j,max_vel[j],nullptr,max_coords,front);
+    }
+    
+    //set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
     
     //TODO: add a switch for using reduce_high_freq_vel() when max_speed spikes abruptly
     if (debugging("reduce_highfreq_vel"))
@@ -2757,13 +2786,12 @@ static void setCurveVelocity(
 	CURVE *curve,
 	GLOBAL_POINT **point_set)
 {
-	int i,j;
 	BOND *b;
 	POINT *p;
 	BOND_TRI **btris;
 	STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
-        HYPER_SURF         *hs;
+    HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	double nor[MAXD];
 	double *vel = nullptr;
@@ -2772,9 +2800,11 @@ static void setCurveVelocity(
 	long gindex;
 	int dim = FT_Dimension();
 
+    double max_vel[3] = {0};
+    
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
-        double max_vel[3] = {0};
+        //double max_vel[3] = {0};
         double max_speed = 0.0;
 
         /*
@@ -2803,7 +2833,7 @@ static void setCurveVelocity(
                 crds_max = Coords(p);
             }
 
-            for (j = 0; j < 3; ++j)
+            for (int j = 0; j < 3; ++j)
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
@@ -2826,7 +2856,7 @@ static void setCurveVelocity(
                 crds_max = Coords(p);
             }
 
-            for (j = 0; j < 3; ++j)
+            for (int j = 0; j < 3; ++j)
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
@@ -2866,17 +2896,30 @@ static void setCurveVelocity(
                     crds_max = Coords(p);
                 }
                 
-                for (j = 0; j < 3; ++j)
+                for (int j = 0; j < 3; ++j)
                 {
                     sl->vel[j] = vel[j];
                     sr->vel[j] = vel[j];
                         //sl->vel[j] = nor_speed*nor[j];
                         //sr->vel[j] = nor_speed*nor[j];
                 }
+
+                for (int j = 0; j < 3; ++j)
+                {
+                    if (std::abs(max_vel[j]) < std::abs(vel[j]))
+                        max_vel[j] = vel[j];
+                }
             }
         }
     
-        set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
+        //TESTING NOW
+        for (int j = 0; j < 3; ++j)
+        {
+            set_max_front_speed(j,max_vel[j],nullptr,nullptr,front);
+            //set_max_front_speed(j,max_vel[j],nullptr,max_coords,front);
+        }
+    
+        //set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
     }
 
     /*
@@ -2893,64 +2936,20 @@ static void setNodeVelocity(
 	NODE *node,
 	GLOBAL_POINT **point_set)
 {
-	int dim = FT_Dimension();
-	switch(dim)
-	{
-	case 2:
-	    setNodeVelocity2d(geom_set,node,point_set);
-	    return;
-	case 3:
-	    setNodeVelocity3d(geom_set,node,point_set);
-	    return;
-	}
+    setNodeVelocity3d(geom_set,node,point_set);
 }	/* end setNodeVelocity */
-
-static void setNodeVelocity2d(
-	ELASTIC_SET *geom_set,
-	NODE *node,
-	GLOBAL_POINT **point_set)
-{
-	int i,j;
-	BOND *b;
-	POINT *p;
-	STATE *sl,*sr;
-    Front *front = geom_set->front;
-	double *vel = nullptr;
-	long gindex;
-
-    double max_speed = 0.0;
-
-	if (is_load_node(node))
-	{
-	    sl = (STATE*)left_state(node->posn);
-        sr = (STATE*)right_state(node->posn);
-	    gindex = Gindex(node->posn);
-	    vel = point_set[gindex]->v;
-        
-        for (j = 0; j < 2; ++j)
-        {
-            sl->vel[j] = vel[j];
-            sr->vel[j] = vel[j];
-            max_speed += sqr(vel[j]);
-        }
-
-        max_speed = sqrt(max_speed);
-        set_max_front_speed(2,max_speed,NULL,Coords(node->posn),front);
-	}
-}	/* end setNodeVelocity2d */
 
 static void setNodeVelocity3d(
 	ELASTIC_SET *geom_set,
 	NODE *node,
 	GLOBAL_POINT **point_set)
 {
-	int i,j;
 	BOND *b;
 	POINT *p;
 	BOND_TRI **btris;
 	STATE *sl,*sr;
 	HYPER_SURF_ELEMENT *hse;
-        HYPER_SURF         *hs;
+    HYPER_SURF         *hs;
 	Front *front = geom_set->front;
 	CURVE **c;
 	double nor[MAXD];
@@ -2961,6 +2960,8 @@ static void setNodeVelocity3d(
     double nor_speed = 0.0;
     double max_nor_speed = 0.0;
     double *crds_max = nullptr;
+
+    double max_vel[MAXD] = {0.0};
 
 	for (c = node->out_curves; c && *c; ++c)
     {
@@ -2982,7 +2983,7 @@ static void setNodeVelocity3d(
             if (hsbdry_type(*c) == PASSIVE_HSBDRY)
 		    {
                 //This sets the rg_string_node vel
-                for (j = 0; j < 3; ++j)
+                for (int j = 0; j < 3; ++j)
                 {
                     sl->vel[j] = vel[j];
                     sr->vel[j] = vel[j];
@@ -2998,15 +2999,20 @@ static void setNodeVelocity3d(
                 crds_max = Coords(p);
 		    }
 
-            for (j = 0; j < 3; ++j)
+            for (int j = 0; j < 3; ++j)
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
                     //sl->vel[j] = nor_speed*nor[j];
                     //sr->vel[j] = nor_speed*nor[j];
             }
+
+            for (int j = 0; j < 3; ++j)
+            {
+                if (std::abs(max_vel[j]) < std::abs(vel[j]))
+                    max_vel[j] = vel[j];
+            }
 		}
-        
     }
 
     for (c = node->in_curves; c && *c; ++c)
@@ -3029,7 +3035,7 @@ static void setNodeVelocity3d(
         
             if (hsbdry_type(*c) == PASSIVE_HSBDRY)
             {
-                for (j = 0; j < 3; ++j)
+                for (int j = 0; j < 3; ++j)
                 {
                     sl->vel[j] = vel[j];
                     sr->vel[j] = vel[j];
@@ -3045,17 +3051,30 @@ static void setNodeVelocity3d(
                 crds_max = Coords(p);
             }
 
-            for (j = 0; j < 3; ++j)
+            for (int j = 0; j < 3; ++j)
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
                     //sl->vel[j] = nor_speed*nor[j];
                     //sr->vel[j] = nor_speed*nor[j];
             }
+
+            for (int j = 0; j < 3; ++j)
+            {
+                if (std::abs(max_vel[j]) < std::abs(vel[j]))
+                    max_vel[j] = vel[j];
+            }
         }
     }
 
-    set_max_front_speed(3,max_nor_speed,NULL,crds_max,front);
+    //set_max_front_speed(3,max_nor_speed,NULL,crds_max,front);
+
+    //TESTING NOW
+    for (int j = 0; j < 3; ++j)
+    {
+        set_max_front_speed(j,max_vel[j],nullptr,nullptr,front);
+            //set_max_front_speed(j,max_vel[j],nullptr,max_coords,front);
+    }
 }	/* end setNodeVelocity3d */
 
 extern void set_geomset_velocity(
@@ -3070,16 +3089,15 @@ extern void set_geomset_velocity(
     {
 	    setSurfVelocity(geom_set,geom_set->surfs[i],point_set);
     }
+
     for (int i = 0; i < nc; ++i)
     {
         setCurveVelocity(geom_set,geom_set->curves[i],point_set);
     }
+    
     for (int i = 0; i < nn; ++i)
 	{
-        if (is_load_node(geom_set->nodes[i]))
-        {
-            continue;
-        }
+        if (is_load_node(geom_set->nodes[i])) continue;
         setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
 

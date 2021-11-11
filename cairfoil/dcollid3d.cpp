@@ -357,6 +357,11 @@ static void ProcessPointToTriCollsnGS(POINT* pts[])
             for (int k = 0; k < 3; ++k)
             {
                 sl->avgVel[k] += sl->collsnImpulse[k];
+                
+                /////////////////////////////////////////
+                    sl->impulse[k] += sl->collsnImpulse[k];
+                /////////////////////////////////////////
+                
                 sl->collsnImpulse[k] = 0.0;
                 
                 //move to new candidate position
@@ -379,6 +384,11 @@ static void ProcessPointToTriCollsnGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
+                    
+                    /////////////////////////////////////////
+                        sl->impulse[k] += sl->collsnImpulse[k];
+                    /////////////////////////////////////////
+                    
                     sl->collsnImpulse[k] = 0.0;
                 
                     //move to new candidate position
@@ -555,7 +565,6 @@ static void ProcessEdgeToEdgeGS(POINT* pts[])
     if (!is_detImpZone || string_string) //if (!is_detImpZone || string_string || rigid_body_point)
     {
         ProcessEdgeToEdgeCollsnGS(pts);
-
     }
     else
     {
@@ -576,6 +585,11 @@ static void ProcessEdgeToEdgeCollsnGS(POINT* pts[])
             for (int k = 0; k < 3; ++k)
             {
                 sl->avgVel[k] += sl->collsnImpulse[k];
+
+                /////////////////////////////////////////
+                    sl->impulse[k] += sl->collsnImpulse[k];
+                /////////////////////////////////////////
+                
                 sl->collsnImpulse[k] = 0.0;
                 //move to new candidate position
                 Coords(pts[j])[k] = sl->x_old[k] + sl->avgVel[k]*sl->collsn_dt;
@@ -604,6 +618,11 @@ static void ProcessEdgeToEdgeCollsnGS(POINT* pts[])
                 for (int k = 0; k < 3; ++k)
                 {
                     sl->avgVel[k] += sl->collsnImpulse[k];
+                
+                    /////////////////////////////////////////
+                        sl->impulse[k] += sl->collsnImpulse[k];
+                    /////////////////////////////////////////
+                    
                     sl->collsnImpulse[k] = 0.0;
                 
                     //move to new candidate position
