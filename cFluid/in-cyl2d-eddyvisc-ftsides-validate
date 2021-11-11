@@ -10,8 +10,8 @@ Redistribution interval: 1000000000
 Domain limit in 0-th dimension: 0 0.1
 Domain limit in 1-th dimension: 0 0.05
 
-Computational grid: 256 128
-    Computational gridXXX: 512 256
+Computational grid: 512 256
+    Computational gridXXX: 256 128
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -77,11 +77,11 @@ Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
 Type y to make movie of viscosity: y
 
-Type y to make vector velocity field movie: n
-Type y to make vector vorticity field movie: n
-Type y to make scalar density field movie: n
-Type y to make scalar pressure field movie: n
-Type y to make scalar viscosity field movie: n
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
+Type y to make scalar density field movie: y
+Type y to make scalar pressure field movie: y
+Type y to make scalar viscosity field movie: y
 
 ************Debugging options*****************
 Enter yes for debugging: yes

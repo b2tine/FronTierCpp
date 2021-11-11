@@ -109,7 +109,7 @@ Enter yes for collision substepping: yes
 Enter nsub per collision step: 30
     XXXEnter nsub per collision stepXXX: 75
 
-Enter spring solver time step relaxation parameter: 10.0
+Enter spring solver time step relaxation parameter: 5.0
     Enter spring solver time step relaxation parameterXXX: 10.0
 
 *********************************************

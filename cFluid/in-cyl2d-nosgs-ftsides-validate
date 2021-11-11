@@ -77,10 +77,10 @@ Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
 Type y to make movie of viscosity: n
 
-Type y to make vector velocity field movie: n
-Type y to make vector vorticity field movie: n
-Type y to make scalar density field movie: n
-Type y to make scalar pressure field movie: n
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
+Type y to make scalar density field movie: y
+Type y to make scalar pressure field movie: y
 Type y to make scalar viscosity field movie: n
 
 ************Debugging options*****************
