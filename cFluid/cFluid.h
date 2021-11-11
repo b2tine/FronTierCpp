@@ -96,6 +96,13 @@ struct FINITE_STRING
     double ampFluidFactor;
 };
 
+enum class EDDY_VISC_MODEL
+{
+    NONE,
+    VREMAN,
+    WALE
+};
+
 struct EQN_PARAMS
 {
     int dim;
@@ -155,6 +162,9 @@ struct EQN_PARAMS
 
 	//LES Turbulence
     bool use_eddy_viscosity {false};
+    EDDY_VISC_MODEL eddy_viscosity_model;
+    double C_v;
+
     bool perturb_const_inlet_bdry {false};
     
 /////////////////////////////    
@@ -462,7 +472,7 @@ protected:
 	/* Mesh operations */
 	void solveRungeKutta(int);
 	void addMeshFluxToVst(SWEEP*,const FSWEEP&,double);
-	void computeMeshFlux(SWEEP,FSWEEP*,double);
+	void computeMeshFlux(SWEEP&,FSWEEP*,double);
 	void copyMeshVst(const SWEEP&,SWEEP*);
 	void copyFromMeshVst(const SWEEP&);
 	void copyToMeshVst(SWEEP*);

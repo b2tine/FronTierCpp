@@ -68,9 +68,14 @@ void G_CARTESIAN::computeEddyViscosity2d()
                 LOC(); clean_up(EXIT_FAILURE);
         }
 
+        //TODO: Use model specified by eqn_params->eddy_viscosity_model
         mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
 
+        //TODO: Store computed eddy viscosity and use to compute the turbulent kinetic energy
+        //      (Vreman Model) k_turb = 2.0*mu_turb*|S|
+        //      The computed k_turb is then used in other SGS terms.
+        
         if (mu[index] > mu_max)
         {
             mu_max = mu[index];
@@ -111,9 +116,14 @@ void G_CARTESIAN::computeEddyViscosity3d()
                 LOC(); clean_up(EXIT_FAILURE);
         }
 
+        //TODO: Use model specified by eqn_params->eddy_viscosity_model
         mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
     
+        //TODO: Store computed eddy viscosity and use to compute the turbulent kinetic energy
+        //      (Vreman Model) k_turb = 2.0*mu_turb*|S|
+        //      The computed k_turb is then used in other SGS terms.
+        
         if (mu[index] > mu_max)
         {
             mu_max = mu[index];
@@ -123,13 +133,10 @@ void G_CARTESIAN::computeEddyViscosity3d()
 
 double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
 {
-    //printf("\nERROR computeEddyViscosityVremanModel(): function not implemented yet\n");
-    //LOC(); clean_up(EXIT_FAILURE);
-
     double **vel = field.vel;
 
-    double C_v = 0.025;
-        //double C_v = eqn_params->C_v;
+    double C_v = eqn_params->C_v;
+        //double C_v = 0.025;
     
     int index[6], index0;
     double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
@@ -245,18 +252,14 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
 
 double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
 {
-    //printf("\nERROR computeEddyViscosityVremanModel(): function not implemented yet\n");
-    //LOC(); clean_up(EXIT_FAILURE);
-
     double **vel = field.vel;
 
     double beta[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
 
-    //TODO:    //double C_v = eqn_params->C_v;
-    double C_v = 0.025;
+    double C_v = eqn_params->C_v;
+        //double C_v = 0.025;
     
 
-    //TODO: Implement computeVelocityGradient()
     auto alpha = computeVelocityGradient(icoords);
 
     double sum_alpha = 0.0;

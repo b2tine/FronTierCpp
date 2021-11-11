@@ -31,9 +31,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #endif
 
 static double weno5_scal(double *f);
-static void matmvec(double *b, double L[5][5], std::vector<double> x);
+static void matmvec(double *b, double L[5][5], const std::vector<double>& x);
 static void f2is(double *f, double *s);
-static void u2f(std::vector<double>,std::vector<double>&);
+static void u2f(const std::vector<double>&, std::vector<double>&);
 static void weno5_get_flux(POINTER,int,int,double**,double**);
 static void arti_compression(POINTER,double*,double*,double,double,double*,
                 int,double &c);
@@ -339,7 +339,7 @@ static void f2is(
 static void matmvec(
 	double *b, 
 	double L[5][5], 
-	std::vector<double> x)
+	const std::vector<double>& x)
 {
     for (int i = 0; i < 5; ++i)
     {
@@ -352,8 +352,8 @@ static void matmvec(
 }
 
 static void u2f(
-	std::vector<double> u,
-        std::vector<double> &f)
+    const std::vector<double>& u,
+    std::vector<double>& f)
 {
 	double v = u[1]/u[0];
 

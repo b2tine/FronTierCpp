@@ -218,12 +218,37 @@ extern void read_cFluid_params(
 	}
 
 	eqn_params->use_eddy_viscosity = false;
+	eqn_params->eddy_viscosity_model = EDDY_VISC_MODEL::NONE;
 	if (CursorAfterStringOpt(infile,"Enter yes to use eddy viscosity:"))
 	{
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
         if (string[0] == 'y' || string[0] == 'Y')
+        {
             eqn_params->use_eddy_viscosity = true;
+            CursorAfterString(infile,"Enter eddy viscosity model:");
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'v' || string[0] == 'V')
+            {
+                eqn_params->eddy_viscosity_model = EDDY_VISC_MODEL::VREMAN;
+                CursorAfterString(infile,"Enter model constant:");
+                fscanf(infile,"%lf",&eqn_params->C_v);
+                (void) printf("%f\n",eqn_params->C_v);
+            }
+            else if (string[0] == 'w' || string[0] == 'W')
+            {
+                eqn_params->eddy_viscosity_model = EDDY_VISC_MODEL::WALE;
+                printf("\nERROR: WALE Eddy Viscosity Model Not Implemented Yet\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+
+            if (eqn_params->eddy_viscosity_model == EDDY_VISC_MODEL::NONE)
+            {
+                printf("\nERROR: unrecognized eddy viscosity model\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+        }
 	}
 
 	eqn_params->use_base_soln = NO;

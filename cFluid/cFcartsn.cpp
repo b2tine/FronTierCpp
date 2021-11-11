@@ -307,6 +307,43 @@ void G_CARTESIAN::solveRungeKutta(int order)
 }	/* end solveRungeKutta */
 
 void G_CARTESIAN::computeMeshFlux(
+	SWEEP& m_vst,
+	FSWEEP* m_flux,
+	double delta_t)
+{
+	if(eqn_params->tracked)
+	{
+	    start_clock("get_ghost_state");
+	    get_ghost_state(m_vst, 2, 0);
+	    get_ghost_state(m_vst, 3, 1);
+	    scatMeshGhost();
+	    stop_clock("get_ghost_state");
+	    start_clock("solve_exp_value");
+	    solve_exp_value();
+	    stop_clock("solve_exp_value");
+	}
+
+	resetFlux(m_flux);
+	
+	for (int dir = 0; dir < dim; ++dir)
+	{
+	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
+	}
+    
+    //TODO: Use input file option instead of debugging string for viscous flux
+	if (!debugging("no_viscflux"))
+    {
+        addViscousFlux(&m_vst,m_flux,delta_t);
+    }
+	
+    addSourceTerm(m_vst,m_flux,delta_t);
+}	/* end computeMeshFlux */
+
+/*
+//TODO: Save temporarily while code is tested.
+//      Preliminary tests suggest that the new implementation (above)
+//      works correctly.
+void G_CARTESIAN::computeMeshFlux(
 	SWEEP m_vst,
 	FSWEEP *m_flux,
 	double delta_t)
@@ -338,7 +375,7 @@ void G_CARTESIAN::computeMeshFlux(
     }
 	
     addSourceTerm(m_vst,m_flux,delta_t);
-}	/* end computeMeshFlux */
+}*/	/* end computeMeshFlux */
 
 void G_CARTESIAN::resetFlux(FSWEEP *m_flux)
 {
@@ -5811,7 +5848,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	int *grid_icoords,
 	double dt,
 	SWEEP *m_vst,
-        FSWEEP *m_flux)
+    FSWEEP *m_flux)
 {
 	int i,l,n,index;
 	SCHEME_PARAMS scheme_params;

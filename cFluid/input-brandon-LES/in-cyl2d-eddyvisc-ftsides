@@ -39,7 +39,8 @@ Problem type can be
 	FLUID_SOLID_CIRCLE
 Enter problem type: FLUID_SOLID_CIRCLE
 
-Enter the center of the circle: 0.425 1.25
+Enter the center of the circle: 0.575 1.25
+    Enter the center of the circleXXX: 0.425 1.25
 Enter radius of the circle: 0.075
 Enter yes if the object is fixed: yes
 
