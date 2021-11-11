@@ -181,7 +181,7 @@ void CollisionSolver3d::recordOriginalPosition()
             STATE* sl = (STATE*)left_state(pt); 
             
             sl->has_collsn = false;
-            sl->has_strainlim = false;
+            sl->has_strainlim_prox = false;
             sl->collsn_dt = -1.0;
 
             if (isMovableRigidBody(pt))
@@ -778,8 +778,8 @@ void CollisionSolver3d::modifyStrainRate()
                     sl[0]->avgVel[j] += I0*e01[j];
                     sl[1]->avgVel[j] += I1*e01[j];
                 }
-                sl[0]->has_strainlim = true;
-                sl[1]->has_strainlim = true;
+                sl[0]->has_strainlim_collsn = true;
+                sl[1]->has_strainlim_collsn = true;
                 numStrainRateEdges++;
             }
 
@@ -915,7 +915,7 @@ void CollisionSolver3d::modifyStrain()
 		    STATE* sl = (STATE*)left_state(p);
             if (sl->strain_num > 0)
             {
-                sl->has_strainlim = true;
+                sl->has_strainlim_prox = true;
                 for (int j = 0; j > 3; ++j)
                 {
                     sl->avgVel[j] += sl->strainImpulse[j];
@@ -976,7 +976,8 @@ void CollisionSolver3d::updateFinalVelocity()
                 continue;
 
             STATE* sl = (STATE*)left_state(pt);
-            if (!sl->has_collsn && !sl->has_strainlim) continue;
+            if (!sl->has_collsn && 
+                !sl->has_strainlim_prox && !sl->has_strainlim_collsn) continue;
 
             for (int j = 0; j < 3; ++j)
             {
