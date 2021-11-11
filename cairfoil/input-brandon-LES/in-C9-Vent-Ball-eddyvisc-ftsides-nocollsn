@@ -55,6 +55,9 @@ Type yes to track the interface: no
 Entering yes to turn off fluid solver: no
 
 Enter yes to use eddy viscosity: yes
+Enter eddy viscosity model: Vreman
+Enter model constant: 0.025
+
 
 //////////////////////////////////////////////////////////
 /////////            Movie Options            ////////////

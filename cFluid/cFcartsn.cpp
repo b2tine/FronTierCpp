@@ -348,8 +348,6 @@ void G_CARTESIAN::computeMeshFlux(
 	FSWEEP *m_flux,
 	double delta_t)
 {
-	int dir;
-
 	if(eqn_params->tracked)
 	{
 	    start_clock("get_ghost_state");
@@ -363,7 +361,7 @@ void G_CARTESIAN::computeMeshFlux(
 	}
 
 	resetFlux(m_flux);
-	for (dir = 0; dir < dim; ++dir)
+	for (int dir = 0; dir < dim; ++dir)
 	{
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}

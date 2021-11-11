@@ -472,7 +472,7 @@ protected:
 	/* Mesh operations */
 	void solveRungeKutta(int);
 	void addMeshFluxToVst(SWEEP*,const FSWEEP&,double);
-	void computeMeshFlux(SWEEP&,FSWEEP*,double);
+    void computeMeshFlux(SWEEP&,FSWEEP*,double); //void computeMeshFlux(SWEEP,FSWEEP*,double);
 	void copyMeshVst(const SWEEP&,SWEEP*);
 	void copyFromMeshVst(const SWEEP&);
 	void copyToMeshVst(SWEEP*);

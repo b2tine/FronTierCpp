@@ -9,11 +9,10 @@ EXTRA_DIST = $(input_directories) \
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/cFluid \
-			  @MPI_CFLAGS@ \
 			  -I$(top_srcdir)/CGAL_Interface \
 			  @CGAL_CFLAGS@ @BOOST_CFLAGS@ \
 			  -I$(top_srcdir)/include \
-			  @HDF_CFLAGS@ @GD_CFLAGS@
+			  @MPI_CFLAGS@ @HDF_CFLAGS@ @GD_CFLAGS@
 
 AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@ @ARMA_LIBS@
 
