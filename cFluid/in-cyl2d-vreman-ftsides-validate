@@ -23,6 +23,8 @@ Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 527.2 0.0
 Enter pressure: 101325
 Enter density: 0.2199
+Enter temperature: 173
+
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -52,11 +54,11 @@ Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
 
-Enter density and pressure of ambient air: 0.15 7444.82
-    Enter density and pressure of ambient airXXX: 2.04152 101325
- 
-Enter density and viscosity of the fluid: 0.15 0.0000012166
-    Enter density and viscosity of the fluidXXX: 2.04152 0.000016558
+Enter density and pressure of ambient air: 2.03951 12949.8
+Enter density and viscosity of the fluid: 2.03951 0.000016542
+
+    Enter density and pressure of ambient airXXX: 0.15 7444.82
+    Enter density and viscosity of the fluidXXX: 0.15 0.0000012166
 
 Enter gravity: 0 0 
 
