@@ -154,6 +154,7 @@ struct EQN_PARAMS
 	double *pres;
     double *mu;
     double *k_turb;
+    double *temp;   //temperature
 
     //GFM
 	double **gnor;
@@ -298,8 +299,9 @@ struct FIELD
 	double *pres;
     double *vort;
     double **vorticity;
-    double *k_turb;
     double *mu;
+    double *k_turb;
+    double *temp;
 };
 
 struct SWEEP
@@ -308,8 +310,9 @@ struct SWEEP
     double **momn;          /* momentum vector */
     double *engy;           /* internal energy vector */
     double *pres;           /* used for EOS */
-    double *k_turb;
     double *mu;
+    double *k_turb;
+    double *temp;
 };
 
 struct FSWEEP

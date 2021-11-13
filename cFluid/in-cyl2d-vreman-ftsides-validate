@@ -75,6 +75,7 @@ Type y to make movie of pressure: y
 Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
 Type y to make movie of viscosity: y
+Type y to make movie of temperature: n
 Type y to make movie of turb kinetic energy: y
 
 Type y to make vector velocity field movie: n
@@ -82,6 +83,7 @@ Type y to make vector vorticity field movie: n
 Type y to make scalar density field movie: n
 Type y to make scalar pressure field movie: n
 Type y to make scalar viscosity field movie: n
+Type y to make scalar temperature field movie: n
 Type y to make scalar turb kinetic energy field movie: n
 
 ************Debugging options*****************

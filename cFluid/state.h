@@ -78,8 +78,8 @@ struct STATE : public FABRIC_STATE
     int dim;//TODO: can get rid of this?
     
     double mu;
+    double temp;
     double k_turb;
-    double temperature;
 };  
 
 
@@ -88,8 +88,8 @@ extern double getStateDens(POINTER);
 extern double getStatePres(POINTER);
 extern double getStateEngy(POINTER);
 extern double getStateMu(POINTER);
-extern double getStateKTurb(POINTER);
 extern double getStateTemp(POINTER);
+extern double getStateKTurb(POINTER);
 
 extern double getStateXmom(POINTER);
 extern double getStateYmom(POINTER);

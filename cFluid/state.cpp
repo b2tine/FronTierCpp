@@ -34,7 +34,7 @@ extern double getStateKTurb(POINTER state)
 extern double getStateTemp(POINTER state)
 {
     STATE *fstate = (STATE*)state;
-    return fstate->temperature;
+    return fstate->temp;
 }   /* end getStateTemp */
 
 extern double getStateXmom(POINTER state)

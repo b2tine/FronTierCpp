@@ -10,8 +10,8 @@ Redistribution interval: 1000000000
 Domain limit in 0-th dimension: 0 3.3
 Domain limit in 1-th dimension: 0 2.5
 
-Computational grid: 250 190
-    XXXComputational gridXXX: 350 270
+Computational grid: 350 270
+    XXXComputational gridXXX: 250 190
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -53,6 +53,9 @@ Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.67 0 0
 Enter density and pressure of ambient air: 1.0 20.0
+
+    XXXEnter gamma, pinf, einf of ambient airXXX: 1.67 100 0
+    XXXEnter density and pressure of ambient airXXX: 1.0 0.0
  
 Enter density and viscosity of the fluid: 1.0 0.0001
     XXXEnter density and viscosity of the fluidXXX: 1.0 0.0007
@@ -74,6 +77,7 @@ Type y to make movie of pressure: y
 Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
 Type y to make movie of viscosity: y
+Type y to make movie of temperature: n
 Type y to make movie of turb kinetic energy: y
 
 Type y to make vector velocity field movie: n
@@ -81,6 +85,7 @@ Type y to make vector vorticity field movie: n
 Type y to make scalar density field movie: n
 Type y to make scalar pressure field movie: n
 Type y to make scalar viscosity field movie: n
+Type y to make scalar temperature field movie: n
 Type y to make scalar turb kinetic energy field movie: n
 
 ************Debugging options*****************

@@ -188,6 +188,14 @@ static void promptForDirichletBdryState(
             state->k_turb = 0.0;
         ////////////////////////////////////
 
+        state->temp = 293.15;
+        //Optional for now
+	    if (CursorAfterStringOpt(infile,"Enter Temperature:"))
+        {
+	        fscanf(infile,"%lf",&state->temp);
+	        (void) printf("%f\n",state->temp);
+        }
+
 	    CursorAfterString(infile,"Enter density:");
 	    fscanf(infile,"%lf",&state->dens);
 	    (void) printf("%f\n",state->dens);
@@ -847,7 +855,9 @@ extern void cF_flowThroughBoundaryState2d(
         (void) printf("new velocity after normal prop: %f %f %f\n",
             newst->vel[0],newst->vel[1],newst->vel[2]);
     }
+
     
+    /*
     //Tangential
 	Tan_stencil** tsten = FrontGetTanStencils(front,oldp,nrad);
 
@@ -909,6 +919,7 @@ extern void cF_flowThroughBoundaryState2d(
 	    newst->dens -= dt/dn*f_dens;
 	    newst->k_turb -= dt/dn*f_kturb;
 	}
+    */
     
     set_state_max_speed(front,newst,p0);
 	
@@ -1697,7 +1708,7 @@ static void rgbody_point_propagate_in_fluid(
     if (m_temp != NULL)
     {
         FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
-            getStateTemp,&newst->temperature,&oldst->temperature);
+            getStateTemp,&newst->temp,&oldst->temp);
     }
     */
     
