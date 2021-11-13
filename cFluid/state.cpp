@@ -25,11 +25,17 @@ extern double getStateMu(POINTER state)
 	return fstate->mu;
 }	/* end getStateMu */
 
+extern double getStateKTurb(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->k_turb;
+}	/* end getStateKTurb */
+
 extern double getStateTemp(POINTER state)
 {
     STATE *fstate = (STATE*)state;
     return fstate->temperature;
-}   /* end getStateMTemp */
+}   /* end getStateTemp */
 
 extern double getStateXmom(POINTER state)
 {

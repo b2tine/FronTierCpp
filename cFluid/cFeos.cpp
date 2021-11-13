@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 extern double EosPressure(
 	STATE *state)
 {
+	double 		k_turb = state->k_turb;
 	double 		dens = state->dens;
 	double 		engy = state->engy;
 	double 		*momn = state->momn;
@@ -35,13 +36,15 @@ extern double EosPressure(
 	EOS_PARAMS	*eos = state->eos;
 	double		gamma = eos->gamma;
 
-	if (dens <= 0.0)
-	    return 0.0;
+	if (dens <= 0.0) return 0.0;
+
 	ke = 0.0;
 	for (i = 0; i < dim; ++i)
 	    ke += sqr(momn[i]);
 	ke *= 0.5/dens;
-	pres = (gamma - 1.0)*(engy - ke + dens*eos->einf) - gamma*eos->pinf;
+    
+	pres = (gamma - 1.0)*(engy - ke - k_turb + dens*eos->einf) - gamma*eos->pinf;
+	    //pres = (gamma - 1.0)*(engy - ke + dens*eos->einf) - gamma*eos->pinf;
 	
 	return pres;
 }	/* end EosPressure */
@@ -79,13 +82,16 @@ extern double EosEnergy(
 	int	dim = state->dim;
 	double dens = state->dens;
 	double* momn = state->momn;
+	double k_turb = state->k_turb;
 	
 	double e = 0.0;
 	for (int i = 0; i < dim; ++i)
     {
-        e += 0.5*sqr(momn[i])/dens;
+        //e += 0.5*sqr(momn[i])/dens;
+        e += 0.5*sqr(momn[i])/dens + k_turb;
     }
-	e += EosInternalEnergy(state);
+
+    e += EosInternalEnergy(state);
 
 	return e;
 }
@@ -101,7 +107,7 @@ extern double EosMaxBehindShockPres(
 	double c4,c5,p1;
 
 	im2 = M2*gamma*pres*dens;
-	c4 = (gamma -1.0)/(gamma + 1.0);
+	c4 = (gamma - 1.0)/(gamma + 1.0);
 	c5 = 2.0/(gamma + 1.0);
 	p1 = c5*im2/dens - c4*pres;
 	return p1;
@@ -118,6 +124,7 @@ extern void ConvertVstToState(
 	state->eos = eos;
 	state->dens = vst->dens[ind];
 	state->engy = vst->engy[ind];
+	state->k_turb = vst->k_turb[ind];
 	for (int i = 0; i < dim; ++i)
     {
         state->momn[i] = vst->momn[i][ind];

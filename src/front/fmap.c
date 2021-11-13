@@ -4146,6 +4146,11 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	double		*coordsref,
 	double		*nor)
 {
+    /////////////////////////////////////////////////////////////////////////////
+        printf("ERROR: FT_ReflectPointThroughBdry() not implemented yet.\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    /////////////////////////////////////////////////////////////////////////////
+
 	HYPER_SURF_ELEMENT *hsebdry;
     HYPER_SURF *hsbdry;
     double t[MAXD];

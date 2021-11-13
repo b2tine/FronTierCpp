@@ -153,6 +153,7 @@ struct EQN_PARAMS
 	double *engy;
 	double *pres;
     double *mu;
+    double *k_turb;
 
     //GFM
 	double **gnor;
@@ -297,6 +298,7 @@ struct FIELD
 	double *pres;
     double *vort;
     double **vorticity;
+    double *k_turb;
     double *mu;
 };
 
@@ -306,6 +308,7 @@ struct SWEEP
     double **momn;          /* momentum vector */
     double *engy;           /* internal energy vector */
     double *pres;           /* used for EOS */
+    double *k_turb;
     double *mu;
 };
 
@@ -344,7 +347,7 @@ public:
 	
     EQN_PARAMS* eqn_params;
 
-	G_CARTESIAN(Front* ft)
+	explicit G_CARTESIAN(Front* ft)
         : front{ft}
     {
         //eqn_params = (EQN_PARAMS*)front->extra1;

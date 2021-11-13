@@ -184,6 +184,10 @@ static void promptForDirichletBdryState(
 	    fscanf(infile,"%lf",&state->pres);
 	    (void) printf("%f\n",state->pres);
 
+        ////////////////////////////////////
+            state->k_turb = 0.0;
+        ////////////////////////////////////
+
 	    CursorAfterString(infile,"Enter density:");
 	    fscanf(infile,"%lf",&state->dens);
 	    (void) printf("%f\n",state->dens);
@@ -707,12 +711,14 @@ extern void cF_flowThroughBoundaryState2d(
 	double v[3][MAXD];	// velocity in the orthogonal direction
 	double vort[3];		// vorticity stencil
 	double pres[3];		// pressure stencil
+	double k_turb[3];   // turbulent kinetic energy stencil
 	double dens[3];		// pressure stencil
 	double f_u;		    // u flux in the sweeping direction
 	double f_v[MAXD];	// v flux in the orthogonal direction
 	double f_vort;		// vort flux
 	double f_pres;		// pressure flux
 	double f_dens;		// density flux
+	double f_kturb;		// turbulent kinetic energy flux
 	
     int dim = front->rect_grid->dim;
     double dn, dt = front->dt;
@@ -743,6 +749,7 @@ extern void cF_flowThroughBoundaryState2d(
     newst->vort = oldst->vort;
     newst->pres = oldst->pres;
     newst->dens = oldst->dens;
+    newst->k_turb = oldst->k_turb;
 
     newst->eos = &eqn_params->eos[comp]; 
 
@@ -779,6 +786,7 @@ extern void cF_flowThroughBoundaryState2d(
 	    vort[j] = oldst->vort;
 	    pres[j] = oldst->pres;
 	    dens[j] = oldst->dens;
+	    k_turb[j] = oldst->k_turb;
 	}
 
     STATE s1;
@@ -796,10 +804,13 @@ extern void cF_flowThroughBoundaryState2d(
             getStatePres,&pres[2],&oldst->pres);
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->dens,
             getStateDens,&dens[2],&oldst->dens);
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->k_turb,
+            getStateKTurb,&k_turb[2],&oldst->k_turb);
 
     s1.vort = vort[2];
 	s1.pres = pres[2];
 	s1.dens = dens[2];
+	s1.k_turb = k_turb[2];
 	
     for (i = 0; i < dim; ++i)
 	{
@@ -819,6 +830,7 @@ extern void cF_flowThroughBoundaryState2d(
 	f_vort = linear_flux(u[1],vort[0],vort[1],vort[2]);
 	f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
 	f_dens = linear_flux(u[1],dens[0],dens[1],dens[2]);
+	f_kturb = linear_flux(u[1],k_turb[0],k_turb[1],k_turb[2]);
 
 	for (i = 0; i < dim; ++i)
     {
@@ -827,6 +839,7 @@ extern void cF_flowThroughBoundaryState2d(
 	newst->vort -= dt/dn*f_vort;
 	newst->pres -= dt/dn*f_pres;
 	newst->dens -= dt/dn*f_dens;
+	newst->k_turb -= dt/dn*f_kturb;
 
     if (debugging("flow_through"))
     {
@@ -874,6 +887,7 @@ extern void cF_flowThroughBoundaryState2d(
 	    	vort[j] = sts[j-1]->vort;
 	    	pres[j] = sts[j-1]->pres;
 	    	dens[j] = sts[j-1]->dens;
+	    	k_turb[j] = sts[j-1]->k_turb;
 	    }
 
 	    f_u = burger_flux(u[0],u[1],u[2]);
@@ -884,6 +898,7 @@ extern void cF_flowThroughBoundaryState2d(
 	    f_vort = linear_flux(u[1],vort[0],vort[1],vort[2]);
 	    f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
 	    f_dens = linear_flux(u[1],dens[0],dens[1],dens[2]);
+	    f_kturb = linear_flux(u[1],k_turb[0],k_turb[1],k_turb[2]);
 
 	    for (i = 0; i < dim; ++i)
         {
@@ -892,6 +907,7 @@ extern void cF_flowThroughBoundaryState2d(
 	    newst->vort -= dt/dn*f_vort;
 	    newst->pres -= dt/dn*f_pres;
 	    newst->dens -= dt/dn*f_dens;
+	    newst->k_turb -= dt/dn*f_kturb;
 	}
     
     set_state_max_speed(front,newst,p0);
@@ -903,9 +919,11 @@ extern void cF_flowThroughBoundaryState2d(
         printf("Vorticity: %f\n",newst->vort);
 	    printf("Pressure: %f\n",newst->pres);
 	    printf("Density: %f\n",newst->dens);
+	    printf("Turbulent Kinetic Energy: %f\n",newst->k_turb);
 	}
 }       /* end cF_flowThroughBoundaryState2d */
 
+//TODO: k_turb
 extern void cF_flowThroughBoundaryState3d(
         double          *p0,
         HYPER_SURF      *hs,
@@ -924,11 +942,13 @@ extern void cF_flowThroughBoundaryState3d(
 	double vort[3];		// vorticity stencil
 	double pres[3];		// pressure stencil
 	double dens[3];		// pressure stencil
+	double k_turb[3];   // turbulent kinetic energy stencil
 	double f_u;		    // u flux in the sweeping direction
 	double f_v[MAXD];	// v flux in the orthogonal direction
 	double f_vort;		// vort flux
 	double f_pres;		// pressure flux
 	double f_dens;		// density flux
+	double f_kturb;		// turbulent kinetic energy flux
 	
 	int i,j,dim = front->rect_grid->dim;
     double dn, dt = front->dt;
@@ -957,6 +977,7 @@ extern void cF_flowThroughBoundaryState3d(
     }
     newst->pres = oldst->pres;
     newst->dens = oldst->dens;
+    newst->k_turb = oldst->k_turb;
 
     newst->eos = &eqn_params->eos[comp]; 
 
@@ -990,6 +1011,7 @@ extern void cF_flowThroughBoundaryState3d(
 
 	    pres[j] = oldst->pres;
 	    dens[j] = oldst->dens;
+	    k_turb[j] = oldst->k_turb;
 	}
 
     STATE s1;
@@ -1005,9 +1027,12 @@ extern void cF_flowThroughBoundaryState3d(
             getStatePres,&pres[2],&oldst->pres);
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->dens,
             getStateDens,&dens[2],&oldst->dens);
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->k_turb,
+            getStateKTurb,&k_turb[2],&oldst->k_turb);
 
 	s1.pres = pres[2];
 	s1.dens = dens[2];
+	s1.k_turb = k_turb[2];
 	
     for (i = 0; i < dim; ++i)
 	{
@@ -1026,6 +1051,7 @@ extern void cF_flowThroughBoundaryState3d(
     }
 	f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
 	f_dens = linear_flux(u[1],dens[0],dens[1],dens[2]);
+	f_kturb = linear_flux(u[1],k_turb[0],k_turb[1],k_turb[2]);
 
 	for (i = 0; i < dim; ++i)
     {
@@ -1033,6 +1059,7 @@ extern void cF_flowThroughBoundaryState3d(
     }
 	newst->pres -= dt/dn*f_pres;
 	newst->dens -= dt/dn*f_dens;
+	newst->k_turb -= dt/dn*f_kturb;
 
     if (debugging("flow_through"))
     {
@@ -1082,6 +1109,7 @@ extern void cF_flowThroughBoundaryState3d(
 
                 pres[j] = sts[j-1]->pres;
                 dens[j] = sts[j-1]->dens;
+                k_turb[j] = sts[j-1]->k_turb;
             }
 
             f_u = burger_flux(u[0],u[1],u[2]);
@@ -1091,6 +1119,7 @@ extern void cF_flowThroughBoundaryState3d(
             }
             f_pres = linear_flux(u[1],pres[0],pres[1],pres[2]);
             f_dens = linear_flux(u[1],dens[0],dens[1],dens[2]);
+            f_kturb = linear_flux(u[1],k_turb[0],k_turb[1],k_turb[2]);
 
             for (i = 0; i < dim; ++i)
             {
@@ -1098,6 +1127,7 @@ extern void cF_flowThroughBoundaryState3d(
             }
             newst->pres -= dt/dn*f_pres;
             newst->dens -= dt/dn*f_dens;
+            newst->k_turb -= dt/dn*f_kturb;
         }
 	}
 	
@@ -1109,6 +1139,7 @@ extern void cF_flowThroughBoundaryState3d(
 	    print_general_vector("Velocity: ",newst->vel,dim,"\n");
 	    printf("Pressure: %f\n",newst->pres);
 	    printf("Density: %f\n",newst->dens);
+	    printf("Turbulent Kinetic Energy: %f\n",newst->k_turb);
 	}
 }       /* end cF_flowThroughBoundaryState3d */
 
@@ -1162,6 +1193,7 @@ static  void neumann_point_propagate(
 	double *m_dens = eqn_params->dens;
 	double *m_engy = eqn_params->engy;
 	double *m_mu = eqn_params->mu;
+    double *m_kturb = eqn_params->k_turb;
 
 	double nor[MAXD],tan[MAXD],p1[MAXD];
 	double *p0 = Coords(oldp);
@@ -1194,6 +1226,7 @@ static  void neumann_point_propagate(
 	tan[0] = -nor[1];
     tan[1] = nor[0];
 
+    //TODO:Can get rid of this -- handled by rgbody_point_propagate()
 	if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
 	{
         double omega_dt,crds_com[MAXD];
@@ -1225,6 +1258,9 @@ static  void neumann_point_propagate(
 
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
 			getStatePres,&newst->pres,&oldst->pres);
+    
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
+			getStateKTurb,&newst->k_turb,&oldst->k_turb);
     
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
 			getStateMu,&newst->mu,&oldst->mu);
@@ -1348,10 +1384,13 @@ static  void contact_point_propagate(
         double              *V)
 {
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-        int i, dim = front->rect_grid->dim;
-	double **m_mom = eqn_params->mom;
+    int i, dim = front->rect_grid->dim;
+	
+    double **m_mom = eqn_params->mom;
 	double *m_dens = eqn_params->dens;
 	double *m_engy = eqn_params->engy;
+	double *m_kturb = eqn_params->k_turb;
+
 	double *p0;
 	STATE *oldst,*newst;
 	POINTER sl,sr;
@@ -1397,15 +1436,23 @@ static  void contact_point_propagate(
 	*newst = *oldst;
 	newst->dim = dim;
 	newst->eos = &eos[negative_component(oldhs)];
-	FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
+	
+    FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
 			m_dens,2,&default_var);
 	FT_IntrpStateVarAtCoords(front,negative_component(oldhs),p0,
 		m_dens,getStateDens,&newst->dens,&default_var);
-	FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
+	
+    FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
 			m_engy,2,&default_var);
 	FT_IntrpStateVarAtCoords(front,negative_component(oldhs),p0,
 		m_engy,getStateEngy,&newst->engy,&default_var);
-	for (i = 0; i < dim; ++i)
+	
+    FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
+			m_kturb,2,&default_var);
+	FT_IntrpStateVarAtCoords(front,negative_component(oldhs),p0,
+		m_kturb,getStateKTurb,&newst->k_turb,&default_var);
+	
+    for (i = 0; i < dim; ++i)
 	{
 	    FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
 			m_mom[i],2,&default_var);
@@ -1421,15 +1468,23 @@ static  void contact_point_propagate(
 	*newst = *oldst;
 	newst->dim = dim;
 	newst->eos = &eos[positive_component(oldhs)];
-	FT_NearestRectGridVarInRange(front,positive_component(oldhs),p0,
+	
+    FT_NearestRectGridVarInRange(front,positive_component(oldhs),p0,
 			m_dens,2,&default_var);
 	FT_IntrpStateVarAtCoords(front,positive_component(oldhs),p0,
 		m_dens,getStateDens,&newst->dens,&default_var);
+
 	FT_NearestRectGridVarInRange(front,positive_component(oldhs),p0,
 			m_engy,2,&default_var);
 	FT_IntrpStateVarAtCoords(front,positive_component(oldhs),p0,
 		m_engy,getStateEngy,&newst->engy,&default_var);
-	for (i = 0; i < dim; ++i)
+	
+	FT_NearestRectGridVarInRange(front,positive_component(oldhs),p0,
+			m_kturb,2,&default_var);
+	FT_IntrpStateVarAtCoords(front,positive_component(oldhs),p0,
+		m_kturb,getStateKTurb,&newst->k_turb,&default_var);
+	
+    for (i = 0; i < dim; ++i)
 	{
 	    FT_NearestRectGridVarInRange(front,positive_component(oldhs),p0,
 			m_mom[i],2,&default_var);
@@ -1487,6 +1542,7 @@ static void rgbody_point_propagate_in_fluid(
 	double *m_dens = eqn_params->dens;
 	double *m_engy = eqn_params->engy;
     double *m_mu = eqn_params->mu;
+    double *m_kturb = eqn_params->k_turb;
 	
     double nor[MAXD],p1[MAXD];
 	double *p0 = Coords(oldp);
@@ -1630,6 +1686,9 @@ static void rgbody_point_propagate_in_fluid(
 	
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
 			getStatePres,&newst->pres,&oldst->pres);
+    
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
+			getStateKTurb,&newst->k_turb,&oldst->k_turb);
     
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
 			getStateMu,&newst->mu,&oldst->mu);

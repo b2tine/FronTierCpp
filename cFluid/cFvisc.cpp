@@ -8,6 +8,7 @@ static double (*getStateMom[MAXD])(Locstate) =
                {getStateXmom,getStateYmom,getStateZmom};
 
 
+//TODO: Add viscous heat flux
 void G_CARTESIAN::addViscousFlux(
         SWEEP* m_vst,
         FSWEEP *m_flux,
@@ -477,6 +478,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
 }
 
+//TODO: Heat Flux
 void G_CARTESIAN::computeViscousFlux2d(
         int* icoords,
         SWEEP* m_vst,
@@ -508,7 +510,6 @@ void G_CARTESIAN::computeViscousFlux2d(
     double v_xy = 0.25*(sten[2][2].vel[1] - sten[2][0].vel[1]
             - sten[0][2].vel[1] + sten[0][0].vel[1])/top_h[0]/top_h[1];
     
-    //TODO: Get mu from m_vst instead?
     double* mu = field.mu;
     int index = d_index(icoords,top_gmax,dim);
     
@@ -528,6 +529,7 @@ void G_CARTESIAN::computeViscousFlux2d(
             + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
 }
 
+//TODO: Heat Flux
 void G_CARTESIAN::computeViscousFlux3d(
         int* icoords,
         SWEEP* m_vst,
@@ -595,7 +597,6 @@ void G_CARTESIAN::computeViscousFlux3d(
     double w_yz = 0.25*(sten[2][2][1].vel[2] - sten[2][0][1].vel[2]
             - sten[0][2][1].vel[2] + sten[0][0][1].vel[2])/top_h[1]/top_h[2];
 
-    //TODO: Get mu from m_vst instead?
     double* mu = field.mu;
     int index = d_index(icoords,top_gmax,dim);
     

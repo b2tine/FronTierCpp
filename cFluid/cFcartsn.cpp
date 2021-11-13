@@ -49,11 +49,10 @@ static void printInputStencil(SWEEP,int);
 void G_CARTESIAN::initMesh(void)
 {
 	int i,j,k, index;
-	double coords[2];
-	int num_cells;
+	double coords[MAXD];
 
 	// init cell_center
-	L_RECTANGLE       rectangle;
+	L_RECTANGLE rectangle;
 
 	if (debugging("trace"))
 	    (void) printf("Entering g_cartesian.initMesh()\n");
@@ -66,7 +65,7 @@ void G_CARTESIAN::initMesh(void)
 	FT_MakeGridIntfc(front);
 	setDomain();
 	
-    num_cells = 1;
+    int num_cells = 1;
 	for (i = 0; i < dim; ++i)
 	{
 	    num_cells *= (top_gmax[i] + 1);
@@ -114,7 +113,8 @@ void G_CARTESIAN::initMesh(void)
 	
 	setComponent();
 	FT_FreeGridIntfc(front);
-	if (debugging("trace"))
+	
+    if (debugging("trace"))
 	    (void) printf("Leaving g_cartesian.initMesh()\n");
 }
 
@@ -812,9 +812,7 @@ void G_CARTESIAN::save(char *filename)
 		clean_up(EXIT_FAILURE);
 	}
 	
-	// secondly print out the interface
-		
-	if(exists_interface(intfc))
+	if (exists_interface(intfc))
 	{
 	    CURVE		**cur;
 	    CURVE		*curve;
@@ -883,6 +881,7 @@ void G_CARTESIAN::setDomain()
 	    }
 	    
         FT_VectorMemoryAlloc((POINTER*)&eqn_params->mu,size,sizeof(double));
+        FT_VectorMemoryAlloc((POINTER*)&eqn_params->k_turb,size,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->dens,size,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->pres,size,sizeof(double));
 	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->engy,size,sizeof(double));
@@ -907,6 +906,7 @@ void G_CARTESIAN::setDomain()
         }
 	    
 	    field.mu = eqn_params->mu;
+	    field.k_turb = eqn_params->k_turb;
         field.dens = eqn_params->dens;
 	    field.engy = eqn_params->engy;
 	    field.pres = eqn_params->pres;
@@ -943,6 +943,7 @@ void G_CARTESIAN::allocMeshVst(
 	FT_MatrixMemoryAlloc((POINTER*)&vst->momn,MAXD,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->k_turb,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->mu,size,sizeof(double));
 }	/* end allocMeshVst*/
 
@@ -978,6 +979,7 @@ void G_CARTESIAN::allocDirVstFlux(
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->mu,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->k_turb,size,sizeof(double));
 
 	FT_MatrixMemoryAlloc((POINTER*)&flux->momn_flux,MAXD,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&flux->dens_flux,size,sizeof(double));
@@ -988,7 +990,7 @@ void G_CARTESIAN::freeDirVstFlux(
         SWEEP* vst,
         FSWEEP* flux)
 {
-    FT_FreeThese(5,vst->dens,vst->engy,vst->pres,vst->momn,vst->mu);
+    FT_FreeThese(6,vst->dens,vst->engy,vst->pres,vst->momn,vst->mu,vst->k_turb);
     FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }	/* end allocDirMeshVstFlux */
 
@@ -1036,6 +1038,7 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
     HYPER_SURF_ELEMENT *hse;
     
     double *mu = field.mu;
+    double *k_turb = field.k_turb;
 	double *dens = field.dens;
 	double *engy = field.engy;
 	double **momn = field.momn;
@@ -1064,6 +1067,9 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
     {
         FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
     
+        fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateKTurb(sl),
+            WID,DEC,getStateKTurb(sr));
+        
         fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateMu(sl),
             WID,DEC,getStateMu(sr));
         
@@ -1087,6 +1093,7 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
 		    index = d_index1d(i,top_gmax);
+            fprintf(outfile,"%*.*f\n",WID,DEC,k_turb[index]);
             fprintf(outfile,"%*.*f\n",WID,DEC,mu[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
@@ -1101,6 +1108,7 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    {
 		    index = d_index2d(i,j,top_gmax);
+            fprintf(outfile,"%*.*f\n",WID,DEC,k_turb[index]);
             fprintf(outfile,"%*.*f\n",WID,DEC,mu[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
@@ -1116,6 +1124,7 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    {
 		    index = d_index3d(i,j,k,top_gmax);
+            fprintf(outfile,"%*.*f\n",WID,DEC,k_turb[index]);
             fprintf(outfile,"%*.*f\n",WID,DEC,mu[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
@@ -1156,6 +1165,7 @@ extern void readFrontStates(
         FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
         lstate = (STATE*)sl;	rstate = (STATE*)sr;
 
+        fscanf(infile,"%lf %lf",&lstate->k_turb,&rstate->k_turb);
         fscanf(infile,"%lf %lf",&lstate->mu,&rstate->mu);
         fscanf(infile,"%lf %lf",&lstate->dens,&rstate->dens);
         fscanf(infile,"%lf %lf",&lstate->engy,&rstate->engy);
@@ -1196,6 +1206,7 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
 	EOS_PARAMS	*eos = eqn_params->eos;
     
     double *mu = field.mu;
+    double *k_turb = field.k_turb;
 	double *dens = field.dens;
 	double *engy = field.engy;
 	double *pres = field.pres;
@@ -1224,7 +1235,6 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
     
     m_smoothing_radius = std::max(top_h[0], top_h[1]);
     m_smoothing_radius = std::max(m_smoothing_radius, top_h[2]);
-	    //m_smoothing_radius = top_h[0] < top_h[1] ? top_h[1] : top_h[0];
 	m_smoothing_radius *= 2.0;
 	
 	st_tmp.dim = eqn_params->dim;
@@ -1244,12 +1254,14 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
             comp = top_comp[index];
             st_tmp.eos = &(eos[comp]);
                 
+            fscanf(infile,"%lf",&k_turb[index]);
             fscanf(infile,"%lf",&mu[index]);
             fscanf(infile,"%lf",&dens[index]);
             fscanf(infile,"%lf",&engy[index]);
             st_tmp.mu = mu[index];
             st_tmp.dens = dens[index];
             st_tmp.engy = engy[index];
+            st_tmp.k_turb = k_turb[index];
             for (l = 0; l < dim; ++l)
             {
                 fscanf(infile,"%lf",&momn[l][index]);
@@ -1268,12 +1280,14 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
             comp = top_comp[index];
             st_tmp.eos = &(eos[comp]);
 
+            fscanf(infile,"%lf",&k_turb[index]);
             fscanf(infile,"%lf",&mu[index]);
 	    	fscanf(infile,"%lf",&dens[index]);
 	    	fscanf(infile,"%lf",&engy[index]);
             st_tmp.mu = mu[index];
             st_tmp.dens = dens[index];
             st_tmp.engy = engy[index];
+            st_tmp.k_turb = k_turb[index];
             for (l = 0; l < dim; ++l)
             {
                 fscanf(infile,"%lf",&momn[l][index]);
@@ -1511,21 +1525,40 @@ void G_CARTESIAN::initMovieVariables()
 				"dens",0,eqn_params->dens,getStateDens,
 				var_max,var_min);
 	    }
-	    CursorAfterString(infile,"Type y to make movie of pressure:");
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'Y' || string[0] == 'y')
-	    {
-		if (set_bound)
-		{
-		    CursorAfterString(infile,"Enter min and max pressure:");
-                    fscanf(infile,"%lf %lf",&var_min,&var_max);
-                    (void) printf("%f %f\n",var_min,var_max);
-		}
-		FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
-				"pres",0,eqn_params->pres,getStatePres,
-				var_max,var_min);
-	    }
+	    
+        CursorAfterString(infile,"Type y to make movie of pressure:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
+        {
+            if (set_bound)
+            {
+                CursorAfterString(infile,"Enter min and max pressure:");
+                        fscanf(infile,"%lf %lf",&var_min,&var_max);
+                        (void) printf("%f %f\n",var_min,var_max);
+            }
+            
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+                    "pres",0,eqn_params->pres,getStatePres,
+                    var_max,var_min);
+        }
+	    
+        CursorAfterString(infile,"Type y to make movie of turb kinetic energy:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
+        {
+            if (set_bound)
+            {
+                CursorAfterString(infile,"Enter min and max turb kinetic energy:");
+                        fscanf(infile,"%lf %lf",&var_min,&var_max);
+                        (void) printf("%f %f\n",var_min,var_max);
+            }
+            
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+                    "k_turb",0,eqn_params->k_turb,getStateKTurb,
+                    var_max,var_min);
+        }
 	    
         CursorAfterString(infile,"Type y to make movie of viscosity:");
         fscanf(infile,"%s",string);
@@ -1695,6 +1728,14 @@ void G_CARTESIAN::initMovieVariables()
                 (void)printf("%s\n",string);
                 if (string[0] == 'Y' || string[0] == 'y')
                     FT_AddVtkScalarMovieVariable(front,"VISC",field.mu);
+            }
+	    if (CursorAfterStringOpt(infile,
+               "Type y to make scalar turb kinetic energy field movie:"))
+            {
+                fscanf(infile,"%s",string);
+                (void)printf("%s\n",string);
+                if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkScalarMovieVariable(front,"KTURB",field.k_turb);
             }
 	}
 
@@ -1970,6 +2011,7 @@ void G_CARTESIAN::copyMeshStates()
 	double *pres = eqn_params->pres;
 	double *engy = eqn_params->engy;
 	double *mu = eqn_params->mu;
+	double *k_turb = eqn_params->k_turb;
 	double *vort = eqn_params->vort;
 	double **vorticity = eqn_params->vorticity;
 	int symmetry[MAXD];
@@ -1987,7 +2029,9 @@ void G_CARTESIAN::copyMeshStates()
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	    symmetry[0] = ODD;
+	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
+	    
+        symmetry[0] = ODD;
 	    FT_ParallelExchGridArrayBuffer(mom[0],front,symmetry);
 	    FT_ParallelExchGridArrayBuffer(vel[0],front,symmetry);
 	    break;
@@ -2005,6 +2049,8 @@ void G_CARTESIAN::copyMeshStates()
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
+
 	    symmetry[0] = symmetry[1] = ODD;
 	    FT_ParallelExchGridArrayBuffer(vort,front,symmetry);
 	    
@@ -2031,6 +2077,7 @@ void G_CARTESIAN::copyMeshStates()
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
 	    
 	    symmetry[0] = symmetry[1] = symmetry[2] = ODD;
         for (l = 0; l < dim; ++l)
@@ -2041,7 +2088,7 @@ void G_CARTESIAN::copyMeshStates()
         for (l = 0; l < dim; ++l)
 	    {
 	    	symmetry[0] = symmetry[1] = symmetry[2] = EVEN;
-        symmetry[l] = ODD;
+            symmetry[l] = ODD;
             FT_ParallelExchGridArrayBuffer(mom[l],front,symmetry);
 	    	FT_ParallelExchGridArrayBuffer(vel[l],front,symmetry);
 	    }
@@ -2968,6 +3015,7 @@ void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 	FT_ParallelExchGridArrayBuffer(m_vst->engy,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->pres,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->mu,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->k_turb,front,nullptr);
 	
     /*
 	int i,j,k,l,index;
@@ -3163,6 +3211,7 @@ void G_CARTESIAN::copyMeshVst(
             m_vst->dens[index] = m_vst_orig.dens[index];
             m_vst->engy[index] = m_vst_orig.engy[index];
             m_vst->pres[index] = m_vst_orig.pres[index];
+            m_vst->k_turb[index] = m_vst_orig.k_turb[index];
             m_vst->mu[index] = m_vst_orig.mu[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = m_vst_orig.momn[l][index];
@@ -3176,6 +3225,7 @@ void G_CARTESIAN::copyMeshVst(
             m_vst->dens[index] = m_vst_orig.dens[index];
             m_vst->engy[index] = m_vst_orig.engy[index];
             m_vst->pres[index] = m_vst_orig.pres[index];
+            m_vst->k_turb[index] = m_vst_orig.k_turb[index];
             m_vst->mu[index] = m_vst_orig.mu[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = m_vst_orig.momn[l][index];
@@ -3190,6 +3240,7 @@ void G_CARTESIAN::copyMeshVst(
             m_vst->dens[index] = m_vst_orig.dens[index];
             m_vst->engy[index] = m_vst_orig.engy[index];
             m_vst->pres[index] = m_vst_orig.pres[index];
+            m_vst->k_turb[index] = m_vst_orig.k_turb[index];
             m_vst->mu[index] = m_vst_orig.mu[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = m_vst_orig.momn[l][index];
@@ -3206,6 +3257,7 @@ void G_CARTESIAN::copyToMeshVst(
 	double **momn = field.momn;
 	double *engy = field.engy;
 	double *pres = field.pres;
+	double *k_turb = field.k_turb;
 	double *mu = field.mu;
 
 	switch (dim)
@@ -3217,6 +3269,7 @@ void G_CARTESIAN::copyToMeshVst(
             m_vst->dens[index] = dens[index];
             m_vst->engy[index] = engy[index];
             m_vst->pres[index] = pres[index];
+            m_vst->k_turb[index] = k_turb[index];
             m_vst->mu[index] = mu[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = momn[l][index];
@@ -3231,6 +3284,7 @@ void G_CARTESIAN::copyToMeshVst(
             m_vst->dens[index] = dens[index];
             m_vst->engy[index] = engy[index];
             m_vst->pres[index] = pres[index];
+            m_vst->k_turb[index] = k_turb[index];
             m_vst->mu[index] = mu[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = momn[l][index];
@@ -3246,6 +3300,7 @@ void G_CARTESIAN::copyToMeshVst(
             m_vst->dens[index] = dens[index];
             m_vst->engy[index] = engy[index];
             m_vst->pres[index] = pres[index];
+            m_vst->k_turb[index] = k_turb[index];
             m_vst->mu[index] = mu[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = momn[l][index];
@@ -3265,6 +3320,7 @@ void G_CARTESIAN::copyFromMeshVst(
 	double **momn = field.momn;
 	double *engy = field.engy;
 	double *pres = field.pres;
+	double *k_turb = field.k_turb;
 	double *mu = field.mu;
 	
 	//GFM
@@ -3289,6 +3345,7 @@ void G_CARTESIAN::copyFromMeshVst(
             state.dens = m_vst.dens[index];
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
+            state.k_turb = m_vst.k_turb[index];
             state.mu = m_vst.mu[index];
         
             for (l = 0; l < dim; ++l)
@@ -3303,6 +3360,7 @@ void G_CARTESIAN::copyFromMeshVst(
             dens[index] = state.dens;
             engy[index] = state.engy;
             pres[index] = state.pres;
+            k_turb[index] = state.k_turb;
             mu[index] = state.mu;
         
             for (l = 0; l < dim; ++l)
@@ -3320,6 +3378,7 @@ void G_CARTESIAN::copyFromMeshVst(
             state.dens = m_vst.dens[index];
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
+            state.k_turb = m_vst.k_turb[index];
             state.mu = m_vst.mu[index];
         
             for (l = 0; l < dim; ++l)
@@ -3334,6 +3393,7 @@ void G_CARTESIAN::copyFromMeshVst(
             dens[index] = state.dens;
             engy[index] = state.engy;
             pres[index] = state.pres;
+            k_turb[index] = state.k_turb;
             mu[index] = state.mu;
         
             for (l = 0; l < dim; ++l)
@@ -3352,6 +3412,7 @@ void G_CARTESIAN::copyFromMeshVst(
             state.dens = m_vst.dens[index];
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
+            state.k_turb = m_vst.k_turb[index];
             state.mu = m_vst.mu[index];
         
             for (l = 0; l < dim; ++l)
@@ -3366,6 +3427,7 @@ void G_CARTESIAN::copyFromMeshVst(
             dens[index] = state.dens;
             engy[index] = state.engy;
             pres[index] = state.pres;
+            k_turb[index] = state.k_turb;
             mu[index] = state.mu;
         
             for (l = 0; l < dim; ++l)
@@ -3833,7 +3895,7 @@ void G_CARTESIAN::scatMeshStates()
 void G_CARTESIAN::freeVst(
 	SWEEP *vst)
 {
-	FT_FreeThese(5,vst->dens,vst->momn,vst->engy,vst->pres,vst->mu);
+	FT_FreeThese(6,vst->dens,vst->momn,vst->engy,vst->pres,vst->mu,vst->k_turb);
 }	/* end freeVst */
 
 void G_CARTESIAN::freeFlux(
@@ -5457,6 +5519,9 @@ void G_CARTESIAN::setNeumannStates(
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
 	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->k_turb,getStateKTurb,&st_tmp.k_turb,&m_vst->k_turb[index]);
+	    
         //TODO: for loop instead of if statements
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->momn[0],getStateXmom,&st_tmp.momn[0],&m_vst->momn[0][index]);
@@ -5512,6 +5577,7 @@ void G_CARTESIAN::setNeumannStates(
             vst->dens[nrad-i] = st_tmp.dens;
             vst->engy[nrad-i] = st_tmp.engy;
             vst->pres[nrad-i] = st_tmp.pres;
+            vst->k_turb[nrad-i] = st_tmp.k_turb;
                 
             for (j = 0; j < 3; j++)
                 vst->momn[j][nrad-i] = 0.0;
@@ -5536,6 +5602,7 @@ void G_CARTESIAN::setNeumannStates(
             vst->dens[n+nrad+i-1] = st_tmp.dens;
             vst->engy[n+nrad+i-1] = st_tmp.engy;
             vst->pres[n+nrad+i-1] = st_tmp.pres;
+            vst->k_turb[n+nrad+i-1] = st_tmp.k_turb;
         
             for (j = 0; j < 3; j++)
                 vst->momn[j][n+nrad+i-1] = 0.0;
@@ -5588,6 +5655,8 @@ void G_CARTESIAN::setDirichletStates(
               vst->dens[nrad-k] = state->dens;
               vst->engy[nrad-k] = state->engy;
               vst->pres[nrad-k] = state->pres;
+              vst->k_turb[nrad-k] = state->k_turb;
+              //TODO: Need turb inlet with correct energy spectrum
             
               for (j = 0; j < 3; j++)
                   vst->momn[j][nrad-k] = 0.0;
@@ -5618,6 +5687,7 @@ void G_CARTESIAN::setDirichletStates(
                 vst->dens[nrad-k] = m_vst->dens[index];
                 vst->engy[nrad-k] = m_vst->engy[index];
                 vst->pres[nrad-k] = m_vst->pres[index];
+                vst->k_turb[nrad-k] = m_vst->k_turb[index];
 
                 for (j = 0; j < 3; j++)
                     vst->momn[j][nrad-k] = 0.0;
@@ -5654,6 +5724,7 @@ void G_CARTESIAN::setDirichletStates(
                 vst->dens[n+nrad+k-1] = state->dens;
                 vst->engy[n+nrad+k-1] = state->engy;
                 vst->pres[n+nrad+k-1] = state->pres;
+                vst->k_turb[n+nrad+k-1] = state->k_turb;
                 
                 for (j = 0; j < 3; j++)
                     vst->momn[j][n+nrad+k-1] = 0.0;
@@ -5684,6 +5755,7 @@ void G_CARTESIAN::setDirichletStates(
                 vst->dens[n+nrad+k-1] = m_vst->dens[index];
                 vst->engy[n+nrad+k-1] = m_vst->engy[index];
                 vst->pres[n+nrad+k-1] = m_vst->pres[index];
+                vst->k_turb[n+nrad+k-1] = m_vst->k_turb[index];
 
                 for (j = 0; j < 3; j++)
                     vst->momn[j][n+nrad+k-1] = 0.0;
@@ -5881,6 +5953,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    	vst.dens[i] = 0.0; 
 	    	vst.pres[i] = 0.0; 
 	    	vst.engy[i] = 0.0; 
+	    	vst.k_turb[i] = 0.0; 
 	    	vst.momn[0][i] = vst.momn[1][i] = vst.momn[2][i] = 0.0;
 	    }
 	    i = seg_min;
@@ -5888,10 +5961,13 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    index = d_index(icoords,top_gmax,dim);
 	    comp = top_comp[index];
 	    n = 0;
+
 	    vst.dens[n+nrad] = m_vst->dens[index];
-            vst.engy[n+nrad] = m_vst->engy[index];
-            vst.pres[n+nrad] = m_vst->pres[index];
-	    for (l = 0; l < dim; ++l)
+        vst.engy[n+nrad] = m_vst->engy[index];
+        vst.pres[n+nrad] = m_vst->pres[index];
+        vst.k_turb[n+nrad] = m_vst->k_turb[index];
+	    
+        for (l = 0; l < dim; ++l)
             	vst.momn[l][n+nrad] = m_vst->momn[(l+idir)%dim][index];
 	    for (l = dim; l < 3; ++l)
             	vst.momn[l][n+nrad] = 0.0;
@@ -5909,6 +5985,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    	    vst.dens[n+nrad] = m_vst->dens[index];
 	    	    vst.engy[n+nrad] = m_vst->engy[index];
 	    	    vst.pres[n+nrad] = m_vst->pres[index];
+	    	    vst.k_turb[n+nrad] = m_vst->k_turb[index];
 		    for (l = 0; l < dim; ++l)
 	    	    	vst.momn[l][n+nrad] = m_vst->momn[(l+idir)%dim][index];
 		    for (l = dim; l < 3; ++l)

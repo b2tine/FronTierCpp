@@ -54,11 +54,8 @@ Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
 
-Enter density and pressure of ambient air: 2.03951 12949.8
-Enter density and viscosity of the fluid: 2.03951 0.000016542
-
-    Enter density and pressure of ambient airXXX: 0.15 7444.82
-    Enter density and viscosity of the fluidXXX: 0.15 0.0000012166
+Enter density and pressure of ambient air: 0.15 7449.16
+Enter density and viscosity of the fluid: 0.15 0.0000012166
 
 Enter gravity: 0 0 
 
@@ -78,12 +75,14 @@ Type y to make movie of pressure: y
 Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
 Type y to make movie of viscosity: y
+Type y to make movie of turb kinetic energy: y
 
-Type y to make vector velocity field movie: y
-Type y to make vector vorticity field movie: y
-Type y to make scalar density field movie: y
-Type y to make scalar pressure field movie: y
-Type y to make scalar viscosity field movie: y
+Type y to make vector velocity field movie: n
+Type y to make vector vorticity field movie: n
+Type y to make scalar density field movie: n
+Type y to make scalar pressure field movie: n
+Type y to make scalar viscosity field movie: n
+Type y to make scalar turb kinetic energy field movie: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes

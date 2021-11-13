@@ -12,6 +12,8 @@ static double (*getStateMom[MAXD])(Locstate) =
 void G_CARTESIAN::computeSGSTerms()
 {
     computeEddyViscosity();
+        //computeTurbulentKineticEnergy();
+        //computeTurbulentHeatFlux();
 }
 
 void G_CARTESIAN::computeEddyViscosity()
@@ -39,6 +41,7 @@ void G_CARTESIAN::computeEddyViscosity()
 void G_CARTESIAN::computeEddyViscosity2d()
 {
     double* mu = field.mu;
+    double* k_turb = field.k_turb;
 
     for (int j = imin[1]; j <= imax[1]; ++j)
     for (int i = imin[0]; i <= imax[0]; ++i)
@@ -50,6 +53,7 @@ void G_CARTESIAN::computeEddyViscosity2d()
         if (!gas_comp(comp))
         {
             mu[index] = 0.0;
+            k_turb[index] = 0.0;
             continue;
         }
 
@@ -86,6 +90,7 @@ void G_CARTESIAN::computeEddyViscosity2d()
 void G_CARTESIAN::computeEddyViscosity3d()
 {
     double* mu = field.mu;
+    double* k_turb = field.k_turb;
 
     for (int k = imin[2]; k <= imax[2]; ++k)
     for (int j = imin[1]; j <= imax[1]; ++j)
@@ -98,6 +103,7 @@ void G_CARTESIAN::computeEddyViscosity3d()
         if (!gas_comp(comp))
         {
             mu[index] = 0.0;
+            k_turb[index] = 0.0;
             continue;
         }
 
@@ -120,10 +126,6 @@ void G_CARTESIAN::computeEddyViscosity3d()
         mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
     
-        //TODO: Store computed eddy viscosity and use to compute the turbulent kinetic energy
-        //      (Vreman Model) k_turb = 2.0*mu_turb*|S|
-        //      The computed k_turb is then used in other SGS terms.
-        
         if (mu[index] > mu_max)
         {
             mu_max = mu[index];
@@ -252,14 +254,6 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
 
 double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
 {
-    double **vel = field.vel;
-
-    double beta[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
-
-    double C_v = eqn_params->C_v;
-        //double C_v = 0.025;
-    
-
     auto alpha = computeVelocityGradient(icoords);
 
     double sum_alpha = 0.0;
@@ -269,6 +263,8 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
         sum_alpha += alpha[i][j]*alpha[i][j];
     }
  
+    double beta[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
+
     for (int i = 0; i < dim; ++i)
     for (int j = 0; j < dim; ++j)
     {
@@ -283,9 +279,11 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
                   + beta[0][0]*beta[2][2] - beta[0][2]*beta[0][2]
                   + beta[1][1]*beta[2][2] - beta[1][2]*beta[1][2];
 
+    double nu_t;
+    double C_v = eqn_params->C_v; //double C_v = 0.025;
+
     //see Vreman's implementation, he actually uses 1.0e-12 when checking B_beta
     //  (about 10x larger than MACH_EPS)
-    double nu_t;
     if (sum_alpha < MACH_EPS || B_beta < MACH_EPS)
     {
         nu_t = 0.0;
@@ -295,13 +293,10 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
         nu_t = C_v*sqrt(B_beta/sum_alpha);
     }
 
-    int index = d_index(icoords,top_gmax,dim);
-    double mu_t = nu_t*field.dens[index];
-
-    if (std::isinf(mu_t) || std::isnan(mu_t))
+    if (std::isinf(nu_t) || std::isnan(nu_t))
     {
         printf("\nERROR: inf/nan eddy viscosity!\n");
-        printf("nu_t = %g  dens[%d] = %g\n",nu_t,index,field.dens[index]);
+        printf("nu_t = %g\n",nu_t);
         printf("B_beta = %g  sum_alpha = %g\n",B_beta,sum_alpha);
 
         printf("\n");
@@ -314,6 +309,7 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
             printf("\n\n");
         }
 
+        int index = d_index(icoords,top_gmax,dim);
         auto coords = cell_center[index].getCoords();
         printf("coords = ");
         for (int i = 0; i < dim; ++i)
@@ -325,6 +321,46 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
         LOC(); clean_up(EXIT_FAILURE);
     }
 
+
+    int index = d_index(icoords,top_gmax,dim);
+    double mu_t = nu_t*field.dens[index];
+
+    //Compute turbulent kinetic energy: 
+    //                                             
+    //        k_turb = 2.0*nu_t*|S|
+    //
+    //  where S = 0.5*(du_i/dx_j + du_j/dx_i)
+    //  
+    //  and |S| = sqrt(2.0*S_ij*S_ij) = |sqrt(2.0)*S|_{Frobenius}
+    
+    std::vector<std::vector<double>> S(dim,std::vector<double>(dim,0.0));
+    for (int i = 0; i < dim; ++i)
+    for (int j = 0; j < dim; ++j)
+    {
+        S[i][j] = 0.5*(alpha[i][j] + alpha[j][i]);
+    }
+
+    double NormFrobenius = 0.0;
+    for (int i = 0; i < dim; ++i)
+    for (int j = 0; j < dim; ++j)
+    {
+        NormFrobenius += S[i][j]*S[i][j];
+    }
+    NormFrobenius = std::sqrt(2.0)*std::sqrt(NormFrobenius);
+
+    //NOTE: this is essential density*k_turb since using mu_t instead of nu_t
+    field.k_turb[index] = 2.0*mu_t*NormFrobenius;
+
+    //TODO: Is this the correct handling of turbulent kinetic energy here?
+    //      Or should pressure be isolated, and compute the flux of the TKE
+    //      independtly in the WENO convective flux computations???
+    
+    field.pres[index] += 2.0/3.0*field.k_turb[index];
+
+    //TODO: Return a std::pair<double,double> instead of opaquely
+    //      adding 2/3*k_turb to the pressure as a side effect of
+    //      this function 
+    
     return mu_t;
 }   /* end computeEddyViscosityVremanModel_BdryAware */
 
@@ -421,9 +457,6 @@ void G_CARTESIAN::setSlipBoundary(
         double** vel,
         double* v_slip)
 {
-    //printf("\nERROR setSlipBoundary(): function not implemented yet\n");
-    //LOC(); clean_up(EXIT_FAILURE);
-
     setSlipBoundaryNIP(icoords,idir,nb,comp,hs,state,vel,v_slip);
 
     //TODO: Write GNOR implementation and compare results.
@@ -480,7 +513,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     //      step scenario -- to what degree is it working?
     //
     //      nearest_intfc_point_in_range() etc. doesn't find NEUMANN_BOUNDARY
-    //      when is domain (rect) boundary, but nearest_intfc_point() does.
+    //      when it is domain (rect) boundary, but nearest_intfc_point() does.
     
     /*
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,

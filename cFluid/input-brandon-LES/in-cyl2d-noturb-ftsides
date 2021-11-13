@@ -39,7 +39,8 @@ Problem type can be
 	FLUID_SOLID_CIRCLE
 Enter problem type: FLUID_SOLID_CIRCLE
 
-Enter the center of the circle: 0.425 1.25
+Enter the center of the circle: 0.575 1.25
+    Enter the center of the circleXXX: 0.425 1.25
 Enter radius of the circle: 0.075
 Enter yes if the object is fixed: yes
 
@@ -63,7 +64,8 @@ Type yes to track the interface: no
 *******************************************************
 
 Enter yes to use eddy viscosity: no
-
+Enter eddy viscosity model: Vreman
+Enter model constant: 0.025
 
 *******************************************************
 
@@ -71,13 +73,15 @@ Type y to make movie of density: y
 Type y to make movie of pressure: y
 Type y to make movie of vorticity: y
 Type y to make movie of velocity: y
-Type y to make movie of viscosity: y
+Type y to make movie of viscosity: n
+Type y to make movie of turb kinetic energy: n
 
 Type y to make vector velocity field movie: n
 Type y to make vector vorticity field movie: n
 Type y to make scalar density field movie: n
 Type y to make scalar pressure field movie: n
 Type y to make scalar viscosity field movie: n
+Type y to make scalar turb kinetic energy field movie: n
 
 ************Debugging options*****************
 Enter yes for debugging: yes
