@@ -305,9 +305,15 @@ printf("nb %d:  len = %g   sv->len0[%d] = %g\n", j, len, j, sv->len0[j]);
         //zero compressive stress
         if (dL <= 0.0) continue;
         
+
+        /*
+        double CTOL = 0.5;
+        if (dL < -1.0*CTOL*sv->len0[j]) continue;
+        
         //TODO: Should allow some compressive stress, after allowing to compress
         //      without resistance by some preset amount. Apply restoring force if
         //      edge length is less than 0.75% of the original length for example.
+        */
 
 	    for (int k = 0; k < dim; ++k)
 	    {

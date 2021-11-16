@@ -21,7 +21,7 @@ public: //public temporarily
 public:
 
     //TODO: Will need to abandon this Ctor taking Front* front
-    FabricManager(Front* fr)
+    explicit FabricManager(Front* fr)
         : front{fr}, 
         collision_solver{std::unique_ptr<CollisionSolver3d>(new CollisionSolver3d)}
     {

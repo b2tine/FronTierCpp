@@ -23,14 +23,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "cFluid.h"
 
+
+//TODO: Do we need to use a different equation of state?
+
 extern double EosPressure(
 	STATE *state)
 {
-	double 		k_turb = state->k_turb;
 	double 		dens = state->dens;
 	double 		engy = state->engy;
 	double 		*momn = state->momn;
-	double 		ke,pres;
+	    //double 		k_turb = state->k_turb;
+	
+    double 		ke,pres;
 	int		i;
 	int		dim = state->dim;
 	EOS_PARAMS	*eos = state->eos;
@@ -43,8 +47,9 @@ extern double EosPressure(
 	    ke += sqr(momn[i]);
 	ke *= 0.5/dens;
     
-	pres = (gamma - 1.0)*(engy - ke - k_turb + dens*eos->einf) - gamma*eos->pinf;
-	    //pres = (gamma - 1.0)*(engy - ke + dens*eos->einf) - gamma*eos->pinf;
+    pres = (gamma - 1.0)*(engy - ke + dens*eos->einf) - gamma*eos->pinf;
+	
+        //pres = (gamma - 1.0)*(engy - ke - k_turb + dens*eos->einf) - gamma*eos->pinf;
 	
 	return pres;
 }	/* end EosPressure */
@@ -82,13 +87,13 @@ extern double EosEnergy(
 	int	dim = state->dim;
 	double dens = state->dens;
 	double* momn = state->momn;
-	double k_turb = state->k_turb;
+	    //double k_turb = state->k_turb;
 	
 	double e = 0.0;
 	for (int i = 0; i < dim; ++i)
     {
-        //e += 0.5*sqr(momn[i])/dens;
-        e += 0.5*sqr(momn[i])/dens + k_turb;
+        e += 0.5*sqr(momn[i])/dens;
+            //e += 0.5*sqr(momn[i])/dens + k_turb;
     }
 
     e += EosInternalEnergy(state);
@@ -124,7 +129,8 @@ extern void ConvertVstToState(
 	state->eos = eos;
 	state->dens = vst->dens[ind];
 	state->engy = vst->engy[ind];
-	state->k_turb = vst->k_turb[ind];
+	    //state->k_turb = vst->k_turb[ind];
+
 	for (int i = 0; i < dim; ++i)
     {
         state->momn[i] = vst->momn[i][ind];

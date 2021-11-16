@@ -91,6 +91,7 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         }
         else
         {
+            vs->temp = m_vst->temp[idx_nb];
             for (int l = 0; l < dim; ++l)
             {
                 vs->vel[l] = m_vst->momn[l][idx_nb]/m_vst->dens[idx_nb];
@@ -125,6 +126,7 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         }
         else
         {
+            vs->temp = m_vst->temp[idx_nb];
             for (int l = 0; l < dim; ++l)
             {
                 vs->vel[l] = m_vst->momn[l][idx_nb]/m_vst->dens[idx_nb];
@@ -146,8 +148,18 @@ void G_CARTESIAN::setViscousGhostState(
     
     int ghost_index = d_index(vs->icoords,top_gmax,dim);
     auto ghost_coords = cell_center[ghost_index].getCoords();
+    COMPONENT ghost_comp = vs->comp;
+
+    int range = 2;
     
     //TODO: Figure out which is the correct boundary enum
+
+    /*
+    bool nip_found =
+    FT_FindNearestIntfcPointInRange(front,ghost_comp,&ghost_coords[0],
+            INCLUDE_BOUNDARIES,nip_coords,intrp_coeffs,&hse,&hs,range);
+    */
+
 
     /*
     bool nip_found = nearest_interface_point_within_range(&ghost_coords[0],
@@ -155,18 +167,27 @@ void G_CARTESIAN::setViscousGhostState(
                 nip_coords,intrp_coeffs,&hse,&hs,3);
     */
 
-    bool nip_found = nearest_interface_point(&ghost_coords[0],
-                comp,front->interf,NO_SUBDOMAIN,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);
+//bool nip_found = nearest_interface_point(&ghost_coords[0],
+//          comp,front->interf,NO_SUBDOMAIN,nullptr,
+//        nip_coords,intrp_coeffs,&hse,&hs);
 
         /*bool nip_found = nearest_interface_point(&ghost_coords[0],
                     comp,front->interf,NO_BOUNDARIES,nullptr,
                     nip_coords,intrp_coeffs,&hse,&hs);*/
-            /*
-            bool nip_found = nearest_interface_point(&ghost_coords[0],
-                        comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
-                        nip_coords,intrp_coeffs,&hse,&hs);*/
+    /*
+    bool nip_found = nearest_interface_point(&ghost_coords[0],
+                comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs);*/
     
+    /*bool nip_found = nearest_interface_point(&ghost_coords[0],
+                ghost_comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs);*/
+    bool nip_found = nearest_interface_point(&ghost_coords[0],
+                ghost_comp,front->interf,NO_SUBDOMAIN,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs);
+
+
+
     if (!nip_found)
     {
         printf("ERROR G_CARTESIAN::setViscousGhostState(): "
@@ -213,6 +234,8 @@ void G_CARTESIAN::setDirichletViscousGhostState(
 
     for (int i = 0; i < dim; ++i)
         vs->vel[i] = state->vel[i];
+
+    vs->temp = state->temp;
 
     FT_FreeThese(1,state);
 }
@@ -330,15 +353,20 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     int index = d_index(icoords,top_gmax,dim);
     //TODO: ADD DEBUG BLOCK HERE -- LIKE setSlipBoundaryNIP()
 
+    //Interpolate Temperature
+    double temp_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
+            getStateTemp,&temp_reflect,&m_vst->temp[index]);
+
     //Interpolate Density and Momentum at the reflected point
     //and compute the velocity.
     double dens_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
+            getStateDens,&dens_reflect,&m_vst->dens[index]);
     /*
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
             getStateDens,&dens_reflect,nullptr);
     */
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
-            getStateDens,&dens_reflect,&m_vst->dens[index]);
 
     double mom_reflect[MAXD];
     double vel_reflect[MAXD];
@@ -388,13 +416,15 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         }
         */
             
-        //What about this?
         double vel_ghost_rel[MAXD];
         for (int j = 0; j < dim; ++j)
         {
             vel_ghost_rel[j] = vel_rel_tan[j] + vel_ghost_nor[j];
             vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
         }
+
+        double temp_ghost = temp_reflect;
+        vs->temp = temp_ghost;
 
         return;
     }
@@ -466,6 +496,15 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         //vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
     
+    //////////////////////////////////////////////////////////////////////////////////////
+    double Pr = 0.71;
+    double Cp = 1004.7;
+    double temp_ghost = temp_reflect;
+        + 0.5*pow(Pr,1.0/3.0)*(Dotd(vel_ghost_tan,vel_ghost_tan,dim) - Dotd(vel_ghost_rel,vel_ghost_rel,dim)) / Cp;
+
+    vs->temp = temp_ghost;
+    //////////////////////////////////////////////////////////////////////////////////////
+
     if (debugging("slip_boundary"))
     {
         printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);

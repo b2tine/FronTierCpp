@@ -2720,8 +2720,8 @@ static void setSurfVelocity(
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                //sl->vel[j] = nor_speed*nor[j];
+                //sr->vel[j] = nor_speed*nor[j];
             }
             
             for (int j = 0; j < 3; ++j)
@@ -2729,40 +2729,22 @@ static void setSurfVelocity(
                 if (std::abs(max_vel[j]) < std::abs(vel[j]))
                     max_vel[j] = vel[j];
             }
-            /*
-            if (max_speed < speed)
-            {
-                max_speed = speed;
-                max_coords = Coords(p);
-                
-                for (int j = 0; j < 3; ++j)
-                {
-                    max_vel[j] = vel[j];
-                }
-            }
-            */
-
-            /*
+            
             if (max_nor_speed < fabs(nor_speed))
             {
                 max_nor_speed = fabs(nor_speed);
                 max_coords = Coords(p);
-                    //ft_assign(max_nor_speed_state,sl,fr->sizest);
             }
-            */
 
             sorted(p) = YES;
         }
 	}
-
-    //TESTING NOW
+    
     for (int j = 0; j < 3; ++j)
     {
         set_max_front_speed(j,max_vel[j],nullptr,nullptr,front);
-        //set_max_front_speed(j,max_vel[j],nullptr,max_coords,front);
     }
-    
-    //set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
+    set_max_front_speed(dim,max_nor_speed,NULL,max_coords,front);
     
     //TODO: add a switch for using reduce_high_freq_vel() when max_speed spikes abruptly
     if (debugging("reduce_highfreq_vel"))
@@ -2804,42 +2786,7 @@ static void setCurveVelocity(
     
     if (hsbdry_type(curve) == STRING_HSBDRY)
     {
-        //double max_vel[3] = {0};
         double max_speed = 0.0;
-
-        /*
-        //TODO: Nodes set in other functions, and in this case if max speed is set
-        //      then it would be overwriting the value set when traversing the mono_comp_hsbry
-        //      reducing the time step unnecessarily.
-        
-        NODE* string_nodes[2];
-        string_nodes[0] = curve->start;
-        string_nodes[1] = curve->end;
-
-        for (int i = 0; i < 2; ++i)
-        {
-            if (!is_string_node(string_nodes[i])) continue;
-
-            p = curve->start->posn;
-            gindex = Gindex(p);
-            sl = (STATE*)left_state(p);
-            sr = (STATE*)right_state(p);
-            vel = point_set[gindex]->v;
-            
-            double speed = Mag3d(vel);
-            if (max_speed < speed)
-            {
-                max_speed = speed;
-                crds_max = Coords(p);
-            }
-
-            for (int j = 0; j < 3; ++j)
-            {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
-            }
-        }
-        */
 
         for (b = curve->first; b != curve->last; b = b->next)
         {
@@ -2900,8 +2847,8 @@ static void setCurveVelocity(
                 {
                     sl->vel[j] = vel[j];
                     sr->vel[j] = vel[j];
-                        //sl->vel[j] = nor_speed*nor[j];
-                        //sr->vel[j] = nor_speed*nor[j];
+                    //sl->vel[j] = nor_speed*nor[j];
+                    //sr->vel[j] = nor_speed*nor[j];
                 }
 
                 for (int j = 0; j < 3; ++j)
@@ -2912,23 +2859,18 @@ static void setCurveVelocity(
             }
         }
     
-        //TESTING NOW
         for (int j = 0; j < 3; ++j)
         {
             set_max_front_speed(j,max_vel[j],nullptr,nullptr,front);
-            //set_max_front_speed(j,max_vel[j],nullptr,max_coords,front);
         }
     
-        //set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
+        set_max_front_speed(dim,max_nor_speed,NULL,crds_max,front);
     }
 
-    /*
-    //TODO: How significant is this????
     for (b = curve->first; b != NULL; b = b->next)
     {
 	    set_bond_length(b,dim);
     }
-    */
 }	/* end setCurveVelocity */
 
 static void setNodeVelocity(
@@ -3001,8 +2943,8 @@ static void setNodeVelocity3d(
 
             for (int j = 0; j < 3; ++j)
             {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
+                    sl->vel[j] = vel[j];
+                    sr->vel[j] = vel[j];
                     //sl->vel[j] = nor_speed*nor[j];
                     //sr->vel[j] = nor_speed*nor[j];
             }
@@ -3013,6 +2955,12 @@ static void setNodeVelocity3d(
                     max_vel[j] = vel[j];
             }
 		}
+        
+        for (int j = 0; j < 3; ++j)
+        {
+            set_max_front_speed(j,max_vel[j],nullptr,nullptr,front);
+        }
+        set_max_front_speed(3,max_nor_speed,NULL,crds_max,front);
     }
 
     for (c = node->in_curves; c && *c; ++c)
@@ -3055,8 +3003,8 @@ static void setNodeVelocity3d(
             {
                 sl->vel[j] = vel[j];
                 sr->vel[j] = vel[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                //sl->vel[j] = nor_speed*nor[j];
+                //sr->vel[j] = nor_speed*nor[j];
             }
 
             for (int j = 0; j < 3; ++j)
@@ -3065,15 +3013,12 @@ static void setNodeVelocity3d(
                     max_vel[j] = vel[j];
             }
         }
-    }
 
-    //set_max_front_speed(3,max_nor_speed,NULL,crds_max,front);
-
-    //TESTING NOW
-    for (int j = 0; j < 3; ++j)
-    {
-        set_max_front_speed(j,max_vel[j],nullptr,nullptr,front);
-            //set_max_front_speed(j,max_vel[j],nullptr,max_coords,front);
+        for (int j = 0; j < 3; ++j)
+        {
+            set_max_front_speed(j,max_vel[j],nullptr,nullptr,front);
+        }
+        set_max_front_speed(3,max_nor_speed,NULL,crds_max,front);
     }
 }	/* end setNodeVelocity3d */
 
@@ -3100,9 +3045,6 @@ extern void set_geomset_velocity(
         if (is_load_node(geom_set->nodes[i])) continue;
         setNodeVelocity(geom_set,geom_set->nodes[i],point_set);
 	}
-
-    //TODO: add rgb_surfs ?
-
 }	/* end set_geomset_velocity */
 
 extern void collectNodeExtra(

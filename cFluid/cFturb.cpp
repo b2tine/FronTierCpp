@@ -12,7 +12,6 @@ static double (*getStateMom[MAXD])(Locstate) =
 void G_CARTESIAN::computeSGSTerms()
 {
     computeEddyViscosity();
-        //computeTurbulentKineticEnergy();
         //computeTurbulentHeatFlux();
 }
 
@@ -76,10 +75,6 @@ void G_CARTESIAN::computeEddyViscosity2d()
         mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
 
-        //TODO: Store computed eddy viscosity and use to compute the turbulent kinetic energy
-        //      (Vreman Model) k_turb = 2.0*mu_turb*|S|
-        //      The computed k_turb is then used in other SGS terms.
-        
         if (mu[index] > mu_max)
         {
             mu_max = mu[index];
@@ -353,9 +348,11 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
 
     //TODO: Is this the correct handling of turbulent kinetic energy here?
     //      Or should pressure be isolated, and compute the flux of the TKE
-    //      independtly in the WENO convective flux computations???
+    //      independently in the WENO convective flux computations???
     
-    field.pres[index] += 2.0/3.0*field.k_turb[index];
+    /*
+        field.pres[index] += 2.0/3.0*field.k_turb[index];
+    */
 
     //TODO: Return a std::pair<double,double> instead of opaquely
     //      adding 2/3*k_turb to the pressure as a side effect of
@@ -506,7 +503,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double intrp_coeffs[MAXD] = {0.0};
     HYPER_SURF_ELEMENT* hsurf_elem;
     HYPER_SURF* hsurf;
-    double range = 2;
+    int range = 2;
 
     //TODO: Why does this fail for INCLUDE_BOUNDARIES and NO_SUBDOMAIN values?
     //      Conversely, why does it work with NO_BOUNDARIES in the backward facing
@@ -526,6 +523,14 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     */
     /*
     bool nip_found = 
+        FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
+    bool nip_found = 
+        FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    /*
+    bool nip_found = 
         FT_FindNearestIntfcPointInRange(front, comp, coords_ghost,INCLUDE_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
     */
@@ -533,8 +538,11 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     //FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
       //      crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
 
-    bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
-            NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+    //bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
+      //      INCLUDE_BOUNDARIES,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+
+    //bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
+      //      NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
 
     if (!nip_found)
     {

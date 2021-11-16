@@ -44,7 +44,7 @@ extern void WENO_flux(
         FSWEEP *vflux,
         int n)
 {
-	double *u_old[7]; //double *u_old[6];
+    double *u_old[6]; //double *u_old[7];
 	double *flux[5];
 	int i,extend_size,ghost_size;
 	SCHEME_PARAMS *scheme_params = (SCHEME_PARAMS*)params;
@@ -56,8 +56,11 @@ extern void WENO_flux(
 	u_old[3] = vst->momn[2];
 	u_old[4] = vst->engy;
 	u_old[5] = vst->pres;
+
     //TODO: k_turb flux independent of pressure flux?
+    /*
     u_old[6] = vst->k_turb;
+*/
 
 	flux[0] = vflux->dens_flux;
 	flux[1] = vflux->momn_flux[0];
@@ -151,11 +154,11 @@ static void weno5_get_flux(
 	    u_mid[7] = u_mid[3]/u_mid[0]; //w
 	    u_mid[9] = sqr(u_mid[5]) + sqr(u_mid[6]) + sqr(u_mid[7]);
         
-        
+        /*
         double k_turb = 0.5*(u_old[6][i-1] + u_old[6][i]);
         u_mid[8] = (u_mid[4] - 0.5*u_mid[0]*u_mid[9] - k_turb)*(gamma - 1.0);
-            //u_mid[8] = (u_mid[4] - 0.5*u_mid[0]*u_mid[9])*(gamma - 1.0); //pressure
-	    
+        */
+        u_mid[8] = (u_mid[4] - 0.5*u_mid[0]*u_mid[9])*(gamma - 1.0); //pressure
 
         u_mid[10] = sqrt(gamma*u_mid[8]/u_mid[0]);
 
