@@ -80,6 +80,17 @@ void G_CARTESIAN::computeEddyViscosity2d()
         //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
 
+        
+        /*
+        //TURBULENT HEAT FLUX
+        /////////////////////////////////////////
+        double Pr_turb = 0.9;
+        double Cp = 1004.7;
+        Ktherm[index] = Cp*mu[index]/Pr_turb;
+        /////////////////////////////////////////
+        */
+
+
         if (mu[index] > mu_max)
         {
             mu_max = mu[index];
@@ -131,6 +142,17 @@ void G_CARTESIAN::computeEddyViscosity3d()
         //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
     
+
+        /*
+        //TURBULENT HEAT FLUX
+        /////////////////////////////////////////
+        double Pr_turb = 0.9;
+        double Cp = 1004.7;
+        Ktherm[index] = Cp*mu[index]/Pr_turb;
+        /////////////////////////////////////////
+        */
+
+
         if (mu[index] > mu_max)
         {
             mu_max = mu[index];
@@ -729,14 +751,16 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
+    /*
     /////////////////////////////////////////////////////////////////////////
     //TODO: Does this even have anything to do with eddy viscosity???
     if (eqn_params->use_eddy_viscosity == NO)
     {
-        /*
-        for (int j = 0; j < dim; ++j)
-            v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
-        */
+        //for (int j = 0; j < dim; ++j)
+        //{
+        //    //TODO: Is this correct?
+        //    v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
+        //}
 
         //What about this?
         double vel_ghost_rel[MAXD] = {0.0};
@@ -749,6 +773,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         return;
     }
     /////////////////////////////////////////////////////////////////////////
+    */
 
     if (debugging("slip_boundary"))
     {

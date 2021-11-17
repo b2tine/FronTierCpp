@@ -609,8 +609,8 @@ void G_CARTESIAN::initChannelFlowStates()
     m_mu[0] = eqn_params->mu1;
     m_mu[1] = eqn_params->mu2;
 
-    m_temp[0] = eqn_params->temp1;
-    m_temp[1] = eqn_params->temp2;
+    m_temp[0] = eqn_params->T1;
+    m_temp[1] = eqn_params->T2;
 
     m_comp[0] = SOLID_COMP;
     m_comp[1] = GAS_COMP2;

@@ -131,6 +131,7 @@ void G_CARTESIAN::setComponent(void)
 	double		*dens = field.dens;
 	double		*engy = field.engy;
 	double		*pres = field.pres;
+	double		*temp = field.temp;
 	double		**momn = field.momn;
 	int		size = (int)cell_center.size();
 	
@@ -286,6 +287,7 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	    {
 		    if (a[i][j] != 0.0)
             {
+                //TODO: see comments in addMeshFluxToVst()
                 addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
             }
 	    }
@@ -301,6 +303,7 @@ void G_CARTESIAN::solveRungeKutta(int order)
         }
 	}
 
+    //TODO: see comments in copyFromMeshVst()
 	copyFromMeshVst(st_field[0]);
 
 	stop_clock("solveRungeKutta");
@@ -663,7 +666,7 @@ void G_CARTESIAN::solve(double dt)
 	
     ///////////////////////////////////////////////////////////////////////////
     
-    updateDyanmicViscosity();
+    computeDynamicViscosity();
 
     computeSGSTerms();
     
@@ -2075,9 +2078,13 @@ void G_CARTESIAN::copyMeshStates()
 	    FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
+
+        //TODO: Need to communicate mu and k_turb?
+        //      Should be same values that were computed before
+        //      the call to advanceSolution()
 	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
-	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
 	    
         symmetry[0] = ODD;
 	    FT_ParallelExchGridArrayBuffer(mom[0],front,symmetry);
@@ -2096,9 +2103,13 @@ void G_CARTESIAN::copyMeshStates()
         FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
+
+        //TODO: Need to communicate mu and k_turb?
+        //      Should be same values that were computed before
+        //      the call to advanceSolution()
 	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
-	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
 
 	    symmetry[0] = symmetry[1] = ODD;
 	    FT_ParallelExchGridArrayBuffer(vort,front,symmetry);
@@ -2125,10 +2136,14 @@ void G_CARTESIAN::copyMeshStates()
         FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
-	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
 	    
+        //TODO: Need to communicate mu and k_turb?
+        //      Should be same values that were computed before
+        //      the call to advanceSolution()
+	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
+
 	    symmetry[0] = symmetry[1] = symmetry[2] = ODD;
         for (l = 0; l < dim; ++l)
 	    {
@@ -3064,12 +3079,9 @@ void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 	FT_ParallelExchGridVectorArrayBuffer(m_vst->momn,front);
 	FT_ParallelExchGridArrayBuffer(m_vst->engy,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->pres,front,nullptr);
-	FT_ParallelExchGridArrayBuffer(m_vst->k_turb,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->temp,front,nullptr);
-	
-    //TODO: Need to do this here? Mu should not have changed since
-    //      the beginning of the time step when it was computed.
     FT_ParallelExchGridArrayBuffer(m_vst->mu,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->k_turb,front,nullptr);
 	
     /*
 	int i,j,k,l,index;
@@ -3265,9 +3277,9 @@ void G_CARTESIAN::copyMeshVst(
             m_vst->dens[index] = m_vst_orig.dens[index];
             m_vst->engy[index] = m_vst_orig.engy[index];
             m_vst->pres[index] = m_vst_orig.pres[index];
+            m_vst->temp[index] = m_vst_orig.temp[index];
             m_vst->mu[index] = m_vst_orig.mu[index];
             m_vst->k_turb[index] = m_vst_orig.k_turb[index];
-            m_vst->temp[index] = m_vst_orig.temp[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
@@ -3280,9 +3292,9 @@ void G_CARTESIAN::copyMeshVst(
             m_vst->dens[index] = m_vst_orig.dens[index];
             m_vst->engy[index] = m_vst_orig.engy[index];
             m_vst->pres[index] = m_vst_orig.pres[index];
+            m_vst->temp[index] = m_vst_orig.temp[index];
             m_vst->mu[index] = m_vst_orig.mu[index];
             m_vst->k_turb[index] = m_vst_orig.k_turb[index];
-            m_vst->temp[index] = m_vst_orig.temp[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
@@ -3296,9 +3308,9 @@ void G_CARTESIAN::copyMeshVst(
             m_vst->dens[index] = m_vst_orig.dens[index];
             m_vst->engy[index] = m_vst_orig.engy[index];
             m_vst->pres[index] = m_vst_orig.pres[index];
+            m_vst->temp[index] = m_vst_orig.temp[index];
             m_vst->mu[index] = m_vst_orig.mu[index];
             m_vst->k_turb[index] = m_vst_orig.k_turb[index];
-            m_vst->temp[index] = m_vst_orig.temp[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
@@ -3314,9 +3326,9 @@ void G_CARTESIAN::copyToMeshVst(
 	double **momn = field.momn;
 	double *engy = field.engy;
 	double *pres = field.pres;
+	double *temp = field.temp;
 	double *mu = field.mu;
 	double *k_turb = field.k_turb;
-	double *temp = field.temp;
 
 	switch (dim)
 	{
@@ -3327,9 +3339,9 @@ void G_CARTESIAN::copyToMeshVst(
             m_vst->dens[index] = dens[index];
             m_vst->engy[index] = engy[index];
             m_vst->pres[index] = pres[index];
+            m_vst->temp[index] = temp[index];
             m_vst->mu[index] = mu[index];
             m_vst->k_turb[index] = k_turb[index];
-            m_vst->temp[index] = temp[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = momn[l][index];
 	    }
@@ -3343,9 +3355,9 @@ void G_CARTESIAN::copyToMeshVst(
             m_vst->dens[index] = dens[index];
             m_vst->engy[index] = engy[index];
             m_vst->pres[index] = pres[index];
+            m_vst->temp[index] = temp[index];
             m_vst->mu[index] = mu[index];
             m_vst->k_turb[index] = k_turb[index];
-            m_vst->temp[index] = temp[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = momn[l][index];
 	    }
@@ -3360,9 +3372,9 @@ void G_CARTESIAN::copyToMeshVst(
             m_vst->dens[index] = dens[index];
             m_vst->engy[index] = engy[index];
             m_vst->pres[index] = pres[index];
+            m_vst->temp[index] = temp[index];
             m_vst->mu[index] = mu[index];
             m_vst->k_turb[index] = k_turb[index];
-            m_vst->temp[index] = temp[index];
             for (l = 0; l < dim; ++l)
                 m_vst->momn[l][index] = momn[l][index];
 	    }
@@ -3381,9 +3393,9 @@ void G_CARTESIAN::copyFromMeshVst(
 	double **momn = field.momn;
 	double *engy = field.engy;
 	double *pres = field.pres;
+	double *temp = field.temp;
 	double *mu = field.mu;
 	double *k_turb = field.k_turb;
-	double *temp = field.temp;
 	
 	//GFM
 	if(eqn_params->tracked)
@@ -3407,9 +3419,9 @@ void G_CARTESIAN::copyFromMeshVst(
             state.dens = m_vst.dens[index];
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
+            state.temp = m_vst.temp[index];
             state.mu = m_vst.mu[index];
             state.k_turb = m_vst.k_turb[index];
-            state.temp = m_vst.temp[index];
         
             for (l = 0; l < dim; ++l)
                 state.momn[l] = m_vst.momn[l][index];
@@ -3419,13 +3431,15 @@ void G_CARTESIAN::copyFromMeshVst(
                 state.eos = &(eqn_params->eos[comp]);
                 checkCorrectForTolerance(&state);
             }
+            //TODO: If energy changed in checkCorrectForTolerance(),
+            //      then need to recompute pressure and temperature
         
             dens[index] = state.dens;
             engy[index] = state.engy;
             pres[index] = state.pres;
+            temp[index] = state.temp;
             mu[index] = state.mu;
             k_turb[index] = state.k_turb;
-            temp[index] = state.temp;
         
             for (l = 0; l < dim; ++l)
                 momn[l][index] = state.momn[l];
@@ -3442,9 +3456,9 @@ void G_CARTESIAN::copyFromMeshVst(
             state.dens = m_vst.dens[index];
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
+            state.temp = m_vst.temp[index];
             state.mu = m_vst.mu[index];
             state.k_turb = m_vst.k_turb[index];
-            state.temp = m_vst.temp[index];
         
             for (l = 0; l < dim; ++l)
                 state.momn[l] = m_vst.momn[l][index];
@@ -3454,13 +3468,15 @@ void G_CARTESIAN::copyFromMeshVst(
                 state.eos = &(eqn_params->eos[comp]);
                 checkCorrectForTolerance(&state);
             }
+            //TODO: If energy changed in checkCorrectForTolerance(),
+            //      then need to recompute pressure and temperature
         
             dens[index] = state.dens;
             engy[index] = state.engy;
             pres[index] = state.pres;
+            temp[index] = state.temp;
             mu[index] = state.mu;
             k_turb[index] = state.k_turb;
-            temp[index] = state.temp;
         
             for (l = 0; l < dim; ++l)
                 momn[l][index] = state.momn[l];
@@ -3478,9 +3494,9 @@ void G_CARTESIAN::copyFromMeshVst(
             state.dens = m_vst.dens[index];
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
+            state.temp = m_vst.temp[index];
             state.mu = m_vst.mu[index];
             state.k_turb = m_vst.k_turb[index];
-            state.temp = m_vst.temp[index];
         
             for (l = 0; l < dim; ++l)
                 state.momn[l] = m_vst.momn[l][index];
@@ -3490,13 +3506,15 @@ void G_CARTESIAN::copyFromMeshVst(
                 state.eos = &(eqn_params->eos[comp]);
                 checkCorrectForTolerance(&state);
             }
+            //TODO: If energy changed in checkCorrectForTolerance(),
+            //      then need to recompute pressure and temperature
         
             dens[index] = state.dens;
             engy[index] = state.engy;
             pres[index] = state.pres;
+            temp[index] = state.temp;
             mu[index] = state.mu;
             k_turb[index] = state.k_turb;
-            temp[index] = state.temp;
         
             for (l = 0; l < dim; ++l)
                 momn[l][index] = state.momn[l];
@@ -3963,7 +3981,7 @@ void G_CARTESIAN::scatMeshStates()
 void G_CARTESIAN::freeVst(
 	SWEEP *vst)
 {
-	FT_FreeThese(7,vst->dens,vst->momn,vst->engy,vst->pres,vst->mu,vst->k_turb,vst->temp);
+	FT_FreeThese(7,vst->dens,vst->momn,vst->engy,vst->pres,vst->temp,vst->mu,vst->k_turb);
 }	/* end freeVst */
 
 void G_CARTESIAN::freeFlux(

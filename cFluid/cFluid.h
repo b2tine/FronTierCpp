@@ -138,8 +138,8 @@ struct EQN_PARAMS
 	
     double mu1;
 	double mu2;
-    double T1;
-    double T2;
+    double T1; //reference temperature comp1
+    double T2; //reference temperature comp2
 
 	double gamma;
 	double gravity[MAXD];
@@ -155,9 +155,9 @@ struct EQN_PARAMS
 	double *dens;
 	double *engy;
 	double *pres;
+    double *temp;   //temperature
     double *mu;
     double *k_turb;
-    double *temp;   //temperature
 
     //GFM
 	double **gnor;
@@ -304,8 +304,6 @@ struct FIELD
     double **vorticity;
     double *temp;
     double *mu;
-    double *mu_total
-    double *mu_turb;
     double *k_turb;
 };
 

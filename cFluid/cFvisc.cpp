@@ -71,6 +71,15 @@ void G_CARTESIAN::computeDynamicViscosity2d()
         //Sutherland's Law Viscosity
         mu[index] = mu_reference*std::sqrt(T_reference)/(1.0 + T_reference/temp[index]);
 
+        /*
+        //HEAT FLUX
+        /////////////////////////////////////////
+        double Pr = 0.71;
+        double Cp = 1004.7;
+        Ktherm[index] = Cp*mu[index]/Pr;
+        /////////////////////////////////////////
+        */
+
         if (mu[index] > mu_max)
         {
             mu_max = mu[index];
@@ -118,6 +127,15 @@ void G_CARTESIAN::computeDynamicViscosity3d()
         //Sutherland's Law Viscosity
         mu[index] = mu_reference*std::sqrt(T_reference)/(1.0 + T_reference/temp[index]);
     
+        /*
+        //HEAT FLUX
+        /////////////////////////////////////////
+        double Pr = 0.71;
+        double Cp = 1004.7;
+        Ktherm[index] = Cp*mu[index]/Pr;
+        /////////////////////////////////////////
+        */
+
         if (mu[index] > mu_max)
         {
             mu_max = mu[index];
@@ -522,15 +540,14 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double mag_vtan = Magd(vel_rel_tan,dim);
 
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    /*
     if (eqn_params->use_eddy_viscosity == NO) //TODO: Does this even have anything to do with eddy viscosity???
     {
-        /*
-        for (int j = 0; j < dim; ++j)
-        {
-            //TODO: Is this correct?
-            vs->vel[j] = vel_reflect[j] + vel_ghost_nor[j];
-        }
-        */
+        //for (int j = 0; j < dim; ++j)
+        //{
+        //    //TODO: Is this correct?
+        //    vs->vel[j] = vel_reflect[j] + vel_ghost_nor[j];
+        //}
             
         double vel_ghost_rel[MAXD];
         for (int j = 0; j < dim; ++j)
@@ -544,6 +561,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
         return;
     }
+    */
 
     if (debugging("slip_boundary"))
     {
@@ -681,7 +699,14 @@ void G_CARTESIAN::computeViscousFlux2d(
     double tauxy_y = mu[index]*(u_yy + v_xy);
     double tauxy_x = mu[index]*(u_xy + v_xx);
     
-    /*
+    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
+    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
+    
+    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
+            + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
+
+    //Heat Flux (No turbulence at this point)
+    /////////////////////////////////////////////////////////////////////////
     double T_x = 0.5*(sten[1][2].temp - sten[1][0].temp)/top_h[0];
     double T_y = 0.5*(sten[2][1].temp - sten[0][1].temp)/top_h[1];
 
@@ -689,19 +714,14 @@ void G_CARTESIAN::computeViscousFlux2d(
             + sten[1][0].temp)/sqr(top_h[0]);
     double T_yy = (sten[2][1].temp - 2.0*sten[1][1].temp 
             + sten[0][1].temp)/sqr(top_h[1]);
-    */
     
-    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
-    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
+    double Pr = 0.71;
+    double Cp = 1004.7;
     
-    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
-            + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
+    double Ktherm = Cp*mu[index]/Pr;
 
-    /*
-    //Heat Flux: lambda is thermal conductivity (\lambda = C_{p}{\mu}/{Pr})
-    
-    v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy);
-    */
+    v_flux->engy_flux += delta_t*Ktherm*(T_xx + T_yy);
+    /////////////////////////////////////////////////////////////////////////
 }
 
 //TODO: Heat Flux
@@ -794,7 +814,17 @@ void G_CARTESIAN::computeViscousFlux3d(
     double tauxz_z = mu[index]*(u_zz + w_xz);
     double tauyz_z = mu[index]*(v_zz + w_yz);
     
-    /*
+    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y + tauxz_z);
+    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y + tauyz_z);
+    v_flux->momn_flux[2] = delta_t*(tauxz_x + tauyz_y + tauzz_z);
+    
+    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
+            + v*tauxy_y + w_x*tauxz + w*tauxz_x + u_y*tauxy + u*tauxy_y
+            + v_y*tauyy + v*tauyy_y + w_y*tauyz + w*tauyz_y + u_z*tauxz
+            + u*tauxz_z + v_z*tauyz + v*tauyz_z + w_z*tauzz + w*tauzz_z);
+
+    //Heat Flux (No turbulence at this point)
+    /////////////////////////////////////////////////////////////////////////
     double T_x = 0.5*(sten[1][1][2].temp - sten[1][1][0].temp)/top_h[0];
     double T_y = 0.5*(sten[1][2][1].temp - sten[1][0][1].temp)/top_h[1];
     double T_z = 0.5*(sten[2][1][1].temp - sten[0][1][1].temp)/top_h[2];
@@ -805,22 +835,14 @@ void G_CARTESIAN::computeViscousFlux3d(
             + sten[1][0][1].temp)/sqr(top_h[1]);
     double T_zz = (sten[2][1][1].temp - 2.0*sten[1][1][1].temp
             + sten[0][1][1].temp)/sqr(top_h[2]);
-    */
     
-    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y + tauxz_z);
-    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y + tauyz_z);
-    v_flux->momn_flux[2] = delta_t*(tauxz_x + tauyz_y + tauzz_z);
+    double Pr = 0.71;
+    double Cp = 1004.7;
     
-    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
-            + v*tauxy_y + w_x*tauxz + w*tauxz_x + u_y*tauxy + u*tauxy_y
-            + v_y*tauyy + v*tauyy_y + w_y*tauyz + w*tauyz_y + u_z*tauxz
-            + u*tauxz_z + v_z*tauyz + v*tauyz_z + w_z*tauzz + w*tauzz_z);
-
-    /*
-    //Heat Flux: lambda is thermal conductivity (\lambda = C_{p}{\mu}/{Pr})
+    double Ktherm = Cp*mu[index]/Pr;
     
-    v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy + T_zz);
-    */
+    v_flux->engy_flux += delta_t*Ktherm*(T_xx + T_yy + T_zz);
+    /////////////////////////////////////////////////////////////////////////
 }
 
 
