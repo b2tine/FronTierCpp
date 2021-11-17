@@ -1291,19 +1291,27 @@ static void dirichlet_point_propagate(
 	{
 	    newst = (STATE*)left_state(newp);
 	    comp = negative_component(oldhs);
-	        //newst->eos = sl->eos;
         newst->eos = &(eqn_params->eos[comp]);
 	}
 	else if (gas_comp(positive_component(oldhs)))
 	{
 	    newst = (STATE*)right_state(newp);
 	    comp = positive_component(oldhs);
-	        //newst->eos = sr->eos;
         newst->eos = &(eqn_params->eos[comp]);
 	}
 	if (newst == NULL) return;	// node point
 
-	if (boundary_state(oldhs) != NULL)
+	if (boundary_state_function(oldhs))
+	{
+	    oldp->hse = oldhse;
+	    oldp->hs = oldhs;
+	    ft_params.oldp = oldp;
+	    ft_params.eqn_params = eqn_params;
+	    ft_params.comp = comp;
+	    (*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
+			(POINTER)&ft_params,(POINTER)newst);	
+	}
+    else if (boundary_state(oldhs) != NULL)  // if (boundary_state(oldhs) != NULL)
 	{
 	    bstate = (STATE*)boundary_state(oldhs);
 
@@ -1340,16 +1348,7 @@ static void dirichlet_point_propagate(
             printf("Vorticity: %f\n",newst->vort);
 	    }
 	}
-	else if (boundary_state_function(oldhs))
-	{
-	    oldp->hse = oldhse;
-	    oldp->hs = oldhs;
-	    ft_params.oldp = oldp;
-	    ft_params.eqn_params = eqn_params;
-	    ft_params.comp = comp;
-	    (*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
-			(POINTER)&ft_params,(POINTER)newst);	
-	}
+
 	if (debugging("dirichlet_bdry"))
 	    printf("Leaving dirichlet_point_propagate()\n");
         return;
