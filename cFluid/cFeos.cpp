@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "cFluid.h"
 
 
+/*
 //TODO: May not need these three functions -- at least not here ...
 //////////////////////////////////////////////////////////////////
 extern double EosViscositySutherland(
@@ -60,7 +61,7 @@ extern double EosThermalConductivity(
     return K;
 }
 //////////////////////////////////////////////////////////////////
-
+*/
 
 
 //TODO: Is there a better way to define this?

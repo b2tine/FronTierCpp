@@ -662,12 +662,10 @@ extern void cFluid_point_propagate(Front*,POINTER,POINT*,POINT*,
 
 extern boolean reflectNeumannState(Front*,HYPER_SURF*,double*,COMPONENT,SWEEP*,STATE*);
 extern void reflectVectorThroughPlane(double*,double*,double*,int);
+extern void findGhostState(STATE,STATE,STATE*);
 
 // cFeos.cpp
-extern double EosViscositySutherland(STATE*);
 extern double EosTemperature(STATE*);
-extern double EosSpecificHeatConstPres(STATE*);
-extern double EosThermalConductivity(STATE*);
 extern double EosPressure(STATE*);
 extern double EosInternalEnergy(STATE*);
 extern double EosEnergy(STATE*);
@@ -676,7 +674,11 @@ extern double EosSoundSpeedSqr(STATE*);
 extern double EosMaxBehindShockPres(double,STATE*);
 extern void EosSetTVDParams(SCHEME_PARAMS*,EOS_PARAMS*);
 extern void ConvertVstToState(STATE*,SWEEP*,EOS_PARAMS*,int,int);
-extern void findGhostState(STATE,STATE,STATE*);
+
+//TODO: These three functions likely to be removed
+//extern double EosViscositySutherland(STATE*);
+//extern double EosSpecificHeatConstPres(STATE*);
+//extern double EosThermalConductivity(STATE*);
 
 /* Riemann solution functions */
 // cFriem.cpp
