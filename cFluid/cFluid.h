@@ -138,6 +138,9 @@ struct EQN_PARAMS
 	
     double mu1;
 	double mu2;
+    double T1;
+    double T2;
+
 	double gamma;
 	double gravity[MAXD];
 	double Mach_number;
@@ -299,9 +302,11 @@ struct FIELD
 	double *pres;
     double *vort;
     double **vorticity;
-    double *mu;
-    double *k_turb;
     double *temp;
+    double *mu;
+    double *mu_total
+    double *mu_turb;
+    double *k_turb;
 };
 
 struct SWEEP
@@ -422,6 +427,7 @@ protected:
 	// member data: 
 	int m_comp[2];
 	double m_mu[2];
+	double m_temp[2];
 	double m_dens[2];		    // two component at most
 	double m_smoothing_radius;	// used by getSmoothingFunction()
 
@@ -521,6 +527,11 @@ protected:
     void computeViscousFlux3d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
             double delta_t, VStencil3d* vsten);
     
+
+    //Temperature dependent viscosity -- Sutherland's Law
+    void computeDynamicViscosity();
+    void computeDynamicViscosity2d();
+    void computeDynamicViscosity3d();
 
     //For LES turbulence
     void computeSGSTerms();
@@ -655,6 +666,10 @@ extern boolean reflectNeumannState(Front*,HYPER_SURF*,double*,COMPONENT,SWEEP*,S
 extern void reflectVectorThroughPlane(double*,double*,double*,int);
 
 // cFeos.cpp
+extern double EosViscositySutherland(STATE*);
+extern double EosTemperature(STATE*);
+extern double EosSpecificHeatConstPres(STATE*);
+extern double EosThermalConductivity(STATE*);
 extern double EosPressure(STATE*);
 extern double EosInternalEnergy(STATE*);
 extern double EosEnergy(STATE*);

@@ -663,6 +663,8 @@ void G_CARTESIAN::solve(double dt)
 	
     ///////////////////////////////////////////////////////////////////////////
     
+    updateDyanmicViscosity();
+
     computeSGSTerms();
     
     ///////////////////////////////////////////////////////////////////////////
@@ -3062,9 +3064,12 @@ void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 	FT_ParallelExchGridVectorArrayBuffer(m_vst->momn,front);
 	FT_ParallelExchGridArrayBuffer(m_vst->engy,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->pres,front,nullptr);
-	FT_ParallelExchGridArrayBuffer(m_vst->mu,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->k_turb,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->temp,front,nullptr);
+	
+    //TODO: Need to do this here? Mu should not have changed since
+    //      the beginning of the time step when it was computed.
+    FT_ParallelExchGridArrayBuffer(m_vst->mu,front,nullptr);
 	
     /*
 	int i,j,k,l,index;
@@ -3983,115 +3988,153 @@ void G_CARTESIAN::addMeshFluxToVst(
 	{
 	case 1:
 	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index1d(i,top_gmax);
-		comp = top_comp[index];
-		if (!gas_comp(comp))
-		{
-		    m_vst->dens[index] = 0.0;
-		    m_vst->engy[index] = 0.0;
-		    for (l = 0; l < dim; ++l)
-		    	m_vst->momn[l][index] = 0.0; 
-		    continue;
-		}
-		eos = &(eqn_params->eos[comp]);
+        {
+            index = d_index1d(i,top_gmax);
+            comp = top_comp[index];
+            if (!gas_comp(comp))
+            {
+                m_vst->mu[index] = 0.0;
+                m_vst->temp[index] = 0.0;
+                m_vst->k_turb[index] = 0.0;
+                m_vst->dens[index] = 0.0;
+                m_vst->engy[index] = 0.0;
+                m_vst->pres[index] = 0.0;
+                for (l = 0; l < dim; ++l)
+                    m_vst->momn[l][index] = 0.0; 
+                continue;
+            }
+            eos = &(eqn_params->eos[comp]);
 
-		m_vst->dens[index] += chi*m_flux.dens_flux[index];
-		m_vst->engy[index] += chi*m_flux.engy_flux[index];
-		ke = u = 0.0;
-		for (l = 0; l < dim; ++l)
-		{
-		    m_vst->momn[l][index] += 
-			chi*m_flux.momn_flux[l][index];
-		    ke += sqr(m_vst->momn[l][index]);
-		    u += sqr(m_vst->momn[l][index]);
-		}
-		
-		ConvertVstToState(&st, m_vst, eos, index, dim);
-		checkCorrectForTolerance(&st);
-		m_vst->dens[index] = st.dens;
-		m_vst->pres[index] = st.pres;
-		m_vst->engy[index] = st.engy;
-		u = sqrt(u)/m_vst->dens[index];
-		c = EosSoundSpeed(&st);
-		temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
-                if (max_speed < temp)
-                    max_speed = temp;
-	    }
-	    scatMeshVst(m_vst);
+            m_vst->dens[index] += chi*m_flux.dens_flux[index];
+            m_vst->engy[index] += chi*m_flux.engy_flux[index];
+            ke = u = 0.0;
+            for (l = 0; l < dim; ++l)
+            {
+                m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
+                ke += sqr(m_vst->momn[l][index]);
+                u += sqr(m_vst->momn[l][index]);
+            }
+            
+            ConvertVstToState(&st, m_vst, eos, index, dim);
+            checkCorrectForTolerance(&st);
+
+            //TODO: If engy is updated by checkCorrectForTolerance(),
+            //      then need to update pressure and temperature also
+            m_vst->dens[index] = st.dens;
+            m_vst->engy[index] = st.engy;
+            m_vst->pres[index] = st.pres;
+            m_vst->temp[index] = st.temp;
+
+            u = sqrt(u)/m_vst->dens[index];
+            c = EosSoundSpeed(&st);
+            temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
+            if (max_speed < temp)
+                max_speed = temp;
+        }
+
+        scatMeshVst(m_vst);
 	    break;
-	case 2:
+	
+    case 2:
 	    for (j = imin[1]; j <= imax[1]; ++j)
 	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index2d(i,j,top_gmax);
-		comp = top_comp[index];
-		if (!gas_comp(comp))
-		{
-		    m_vst->dens[index] = 0.0;
-		    m_vst->engy[index] = 0.0;
-		    for (l = 0; l < dim; ++l)
-		    	m_vst->momn[l][index] = 0.0; 
-		    continue;
-		}
-		eos = &(eqn_params->eos[comp]);
+        {
+            index = d_index2d(i,j,top_gmax);
+            comp = top_comp[index];
+            if (!gas_comp(comp))
+            {
+                m_vst->mu[index] = 0.0;
+                m_vst->temp[index] = 0.0;
+                m_vst->k_turb[index] = 0.0;
+                m_vst->dens[index] = 0.0;
+                m_vst->engy[index] = 0.0;
+                m_vst->pres[index] = 0.0;
+                for (l = 0; l < dim; ++l)
+                    m_vst->momn[l][index] = 0.0; 
+                continue;
+            }
+            eos = &(eqn_params->eos[comp]);
 
-		m_vst->dens[index] += chi*m_flux.dens_flux[index];
-		m_vst->engy[index] += chi*m_flux.engy_flux[index];
-		ke = u = 0.0;
-		for (l = 0; l < dim; ++l)
-		{
-		    m_vst->momn[l][index] += 
-			chi*m_flux.momn_flux[l][index];
-		    ke += sqr(m_vst->momn[l][index]);
-		    u += sqr(m_vst->momn[l][index]);
-		}
-		
-		ConvertVstToState(&st, m_vst, eos, index, dim);
-		checkCorrectForTolerance(&st);
-		m_vst->dens[index] = st.dens;
-		m_vst->pres[index] = st.pres;
-		m_vst->engy[index] = st.engy;
-		u = sqrt(u)/m_vst->dens[index];
-		c = EosSoundSpeed(&st);
-		temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
-                if (max_speed < temp)
-                    max_speed = temp;
-	    }
-	    scatMeshVst(m_vst);
+            m_vst->dens[index] += chi*m_flux.dens_flux[index];
+            m_vst->engy[index] += chi*m_flux.engy_flux[index];
+            ke = u = 0.0;
+            for (l = 0; l < dim; ++l)
+            {
+                m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
+                ke += sqr(m_vst->momn[l][index]);
+                u += sqr(m_vst->momn[l][index]);
+            }
+            
+            ConvertVstToState(&st, m_vst, eos, index, dim);
+            checkCorrectForTolerance(&st);
+
+            //TODO: If engy is updated by checkCorrectForTolerance(),
+            //      then need to update pressure and temperature also
+            m_vst->dens[index] = st.dens;
+            m_vst->engy[index] = st.engy;
+            m_vst->pres[index] = st.pres;
+            m_vst->temp[index] = st.temp;
+            
+            u = sqrt(u)/m_vst->dens[index];
+            c = EosSoundSpeed(&st);
+            temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
+            if (max_speed < temp)
+                max_speed = temp;
+        }
+
+        scatMeshVst(m_vst);
 	    break;
-	case 3:
+
+    case 3:
 	    for (k = imin[2]; k <= imax[2]; ++k)
 	    for (j = imin[1]; j <= imax[1]; ++j)
 	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index3d(i,j,k,top_gmax);
-		comp = top_comp[index];
-		eos = &(eqn_params->eos[comp]);
+        {
+            index = d_index3d(i,j,k,top_gmax);
+            comp = top_comp[index];
+            if (!gas_comp(comp))
+            {
+                m_vst->mu[index] = 0.0;
+                m_vst->temp[index] = 0.0;
+                m_vst->k_turb[index] = 0.0;
+                m_vst->dens[index] = 0.0;
+                m_vst->engy[index] = 0.0;
+                m_vst->pres[index] = 0.0;
+                for (l = 0; l < dim; ++l)
+                    m_vst->momn[l][index] = 0.0; 
+                continue;
+            }
+            eos = &(eqn_params->eos[comp]);
 
-		m_vst->dens[index] += chi*m_flux.dens_flux[index];
-		m_vst->engy[index] += chi*m_flux.engy_flux[index];
-		ke = u = 0.0;
-		for (l = 0; l < dim; ++l)
-		{
-		    m_vst->momn[l][index] += 
-				chi*m_flux.momn_flux[l][index];
-		    ke += sqr(m_vst->momn[l][index]);
-		    u += sqr(m_vst->momn[l][index]);
-		}
-		
-		ConvertVstToState(&st, m_vst, eos, index, dim);
-		checkCorrectForTolerance(&st);
-		m_vst->dens[index] = st.dens;
-		m_vst->pres[index] = st.pres;
-		m_vst->engy[index] = st.engy;
-		u = sqrt(u)/m_vst->dens[index];
-		c = EosSoundSpeed(&st);
-		temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
-                if (max_speed < temp)
-                    max_speed = temp;
-	    }
-	    scatMeshVst(m_vst);
+            m_vst->dens[index] += chi*m_flux.dens_flux[index];
+            m_vst->engy[index] += chi*m_flux.engy_flux[index];
+            ke = u = 0.0;
+            for (l = 0; l < dim; ++l)
+            {
+                m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
+                ke += sqr(m_vst->momn[l][index]);
+                u += sqr(m_vst->momn[l][index]);
+            }
+            
+            ConvertVstToState(&st, m_vst, eos, index, dim);
+            checkCorrectForTolerance(&st);
+
+            //TODO: If engy is updated by checkCorrectForTolerance(),
+            //      then need to update pressure and temperature also
+            m_vst->dens[index] = st.dens;
+            m_vst->engy[index] = st.engy;
+            m_vst->pres[index] = st.pres;
+            m_vst->temp[index] = st.temp;
+            
+            u = sqrt(u)/m_vst->dens[index];
+            c = EosSoundSpeed(&st);
+            temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
+            if (max_speed < temp)
+                max_speed = temp;
+        }
+
+        scatMeshVst(m_vst);
+        break;
 	}
 }	/* end addMeshFluxToVst */
 

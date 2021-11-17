@@ -8,7 +8,124 @@ static double (*getStateMom[MAXD])(Locstate) =
                {getStateXmom,getStateYmom,getStateZmom};
 
 
-//TODO: Add viscous heat flux
+void G_CARTESIAN::computeDynamicViscosity()
+{
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    mu_max = std::max(eqn_params->mu1,eqn_params->mu2);
+
+    //TODO: add input file option for this
+    //
+    //  if (!eqn_params->temp_dependent_viscosity) return;
+
+    switch (dim)
+    {
+        case 2:
+            computeDynamicViscosity2d();
+            break;
+        case 3:
+            computeDynamicViscosity3d();
+            break;
+        default:
+            printf("\nERROR computeDynamicViscosity(): invalid dim\n");
+            printf("\t\t dim = %d\n\n",dim);
+            LOC(); clean_up(EXIT_FAILURE);
+    }
+}
+
+void G_CARTESIAN::computeDynamicViscosity2d()
+{
+    double* mu = field.mu;
+    double* temp = field.temp;
+
+    for (int j = imin[1]; j <= imax[1]; ++j)
+    for (int i = imin[0]; i <= imax[0]; ++i)
+    {
+        int icoords[MAXD] = {i, j, 0};
+        int index = d_index(icoords,top_gmax,dim);
+        
+        COMPONENT comp = top_comp[index];
+        if (!gas_comp(comp))
+        {
+            mu[index] = 0.0;
+            continue;
+        }
+
+        double T_reference;
+        double mu_reference;
+        switch (comp)
+        {
+            case GAS_COMP1:
+                T_reference = eqn_params->T1;
+                mu_reference = eqn_params->mu1;
+                break;
+            case GAS_COMP2:
+                T_reference = eqn_params->T2;
+                mu_reference = eqn_params->mu2;
+                break;
+            default:
+                printf("\nERROR computeEddyViscosity2d(): unrecognized component!\n");
+                printf("\t\tcomp = %d\n", comp);
+                LOC(); clean_up(EXIT_FAILURE);
+        }
+
+        //Sutherland's Law Viscosity
+        mu[index] = mu_reference*std::sqrt(T_reference)/(1.0 + T_reference/temp[index]);
+
+        if (mu[index] > mu_max)
+        {
+            mu_max = mu[index];
+        }
+    }
+}
+
+void G_CARTESIAN::computeDynamicViscosity3d()
+{
+    double* mu = field.mu;
+    double* temp = field.temp;
+
+    for (int k = imin[2]; k <= imax[2]; ++k)
+    for (int j = imin[1]; j <= imax[1]; ++j)
+    for (int i = imin[0]; i <= imax[0]; ++i)
+    {
+        int icoords[MAXD] = {i, j, k};
+        int index = d_index(icoords,top_gmax,dim);
+        
+        COMPONENT comp = top_comp[index];
+        if (!gas_comp(comp))
+        {
+            mu[index] = 0.0;
+            continue;
+        }
+
+        double T_reference;
+        double mu_reference;
+        switch (comp)
+        {
+            case GAS_COMP1:
+                T_reference = eqn_params->T1;
+                mu_reference = eqn_params->mu1;
+                break;
+            case GAS_COMP2:
+                T_reference = eqn_params->T2;
+                mu_reference = eqn_params->mu2;
+                break;
+            default:
+                printf("\nERROR computeEddyViscosity3d(): unrecognized component!\n");
+                printf("\t\tcomp = %d\n", comp);
+                LOC(); clean_up(EXIT_FAILURE);
+        }
+
+        //Sutherland's Law Viscosity
+        mu[index] = mu_reference*std::sqrt(T_reference)/(1.0 + T_reference/temp[index]);
+    
+        if (mu[index] > mu_max)
+        {
+            mu_max = mu[index];
+        }
+    }
+}
+
+
 void G_CARTESIAN::addViscousFlux(
         SWEEP* m_vst,
         FSWEEP *m_flux,
@@ -232,10 +349,9 @@ void G_CARTESIAN::setDirichletViscousGhostState(
     else
         state_along_hypersurface_element(comp,intrp_coeffs,hse,hs,(POINTER)state);
 
+    vs->temp = state->temp;
     for (int i = 0; i < dim; ++i)
         vs->vel[i] = state->vel[i];
-
-    vs->temp = state->temp;
 
     FT_FreeThese(1,state);
 }
@@ -406,7 +522,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double mag_vtan = Magd(vel_rel_tan,dim);
 
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-    if (eqn_params->use_eddy_viscosity == NO)
+    if (eqn_params->use_eddy_viscosity == NO) //TODO: Does this even have anything to do with eddy viscosity???
     {
         /*
         for (int j = 0; j < dim; ++j)
@@ -438,9 +554,11 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
     }
 
+    //TODO: Use viscosity computed by sutherland's law and current density,
+    //      instead of the reference viscosity and density?
+    //          -- I believe so ...
     double mu_l;
     double rho_l;
-
     switch (comp)
     {
         case GAS_COMP1:
@@ -461,8 +579,8 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     //      when the initial guess for the dimensionless wall velocity
     //      was in the range of 40-50.
     double tau_wall[MAXD] = {0.0};
-    double mag_tau_wall = computeWallShearStress(mag_vtan,
-                    dist_reflect,mu_l,rho_l,45.0);
+    double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l,45.0);
+    
     if (mag_vtan > MACH_EPS)
     {
         for (int j = 0; j < dim; ++j)
@@ -492,15 +610,17 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
         
-        vs->vel[j] = v_slip[j];
-        //vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
+        vs->vel[j] = v_slip[j]; //vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
     
+    //Compute Ghost Temperature
     //////////////////////////////////////////////////////////////////////////////////////
     double Pr = 0.71;
     double Cp = 1004.7;
-    double temp_ghost = temp_reflect;
-        + 0.5*pow(Pr,1.0/3.0)*(Dotd(vel_ghost_tan,vel_ghost_tan,dim) - Dotd(vel_ghost_rel,vel_ghost_rel,dim)) / Cp;
+    
+    //TODO: Use interface relative velocity or actual velocity? 
+    double temp_ghost = temp_reflect + 
+        0.5*pow(Pr,1.0/3.0)*(Dotd(vel_ghost_tan,vel_ghost_tan,dim) - Dotd(vel_ghost_rel,vel_ghost_rel,dim)) / Cp;
 
     vs->temp = temp_ghost;
     //////////////////////////////////////////////////////////////////////////////////////

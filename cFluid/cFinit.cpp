@@ -135,7 +135,10 @@ extern void read_cFluid_params(
         LOC(); clean_up(ERROR);
     }
 
+    
+    //set params
     set_cFluid_params(infile,eqn_params);
+
 
     printf("Available numerical schemes are:\n");
     printf("\tTVD_1st_order\n");
@@ -450,6 +453,8 @@ static void getAmbientState(
 	EOS_PARAMS	*eos;
 	double mu1 = eqn_params->mu1;
 	double mu2 = eqn_params->mu2;
+	double T1 = eqn_params->T1;
+	double T2 = eqn_params->T2;
 	double rho1 = eqn_params->rho1;
 	double rho2 = eqn_params->rho2;
 	double p1 = eqn_params->p1;
@@ -475,6 +480,7 @@ static void getAmbientState(
 	{
 	case GAS_COMP1:
         state->mu = mu1;
+        state->temp = T1;
 	    state->dens = rho1;
 	    state->pres = p1;
 	    for (i = 0; i < dim; ++i)
@@ -486,6 +492,7 @@ static void getAmbientState(
 	    break;
 	case GAS_COMP2:
         state->mu = mu2;
+        state->temp = T2;
 	    state->dens = rho2;
 	    state->pres = p2;
 	    for (i = 0; i < dim; ++i)
@@ -497,6 +504,7 @@ static void getAmbientState(
 	    break;
 	case SOLID_COMP:
         state->mu = 0.0;
+        state->temp = 0.0;
 	    state->dens = 0.0;
 	    state->pres = 0.0;
 	    for (i = 0; i < dim; ++i)
@@ -533,17 +541,24 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 	(eqn_params->eos[GAS_COMP2]).pinf = pinf;
 	(eqn_params->eos[GAS_COMP2]).einf = einf;
 	
+    //TODO: Only enter density once
 	CursorAfterString(infile,"Enter density and pressure of ambient air:");
 	fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->p2);
 	(void) printf("%f %f\n",eqn_params->rho2,eqn_params->p2);
 
-    CursorAfterString(infile,"Enter density and viscosity of the fluid:");
-    fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->mu2);
-    (void) printf("%f %f\n",eqn_params->rho2,eqn_params->mu2);
+    CursorAfterString(infile,"Enter temperature and viscosity of the fluid:");
+    fscanf(infile,"%lf %lf",&eqn_params->T2,&eqn_params->mu2);
+    (void) printf("%f %f\n",eqn_params->T2,eqn_params->mu2);
 
     eqn_params->rho1 = eqn_params->rho2;
     eqn_params->mu1 = eqn_params->mu2;
     eqn_params->p1 = eqn_params->p2;
+    eqn_params->T1 = eqn_params->T2;
+
+	(eqn_params->eos[GAS_COMP1]).mu_ref = eqn_params->mu2;
+	(eqn_params->eos[GAS_COMP1]).temp_ref = eqn_params->T2;
+	(eqn_params->eos[GAS_COMP2]).mu_ref = eqn_params->mu2;
+	(eqn_params->eos[GAS_COMP2]).temp_ref = eqn_params->T2;
 
 	CursorAfterString(infile,"Enter gravity:");
 	for (int i = 0; i < dim; ++i)
@@ -581,6 +596,7 @@ void G_CARTESIAN::initChannelFlowStates()
 	INTERFACE *intfc = front->interf;
 	
     double *mu = field.mu;
+    double *temp = field.temp;
 	double *dens = field.dens;
 	double *engy = field.engy;
 	double *pres = field.pres;
@@ -593,13 +609,15 @@ void G_CARTESIAN::initChannelFlowStates()
     m_mu[0] = eqn_params->mu1;
     m_mu[1] = eqn_params->mu2;
 
+    m_temp[0] = eqn_params->temp1;
+    m_temp[1] = eqn_params->temp2;
+
     m_comp[0] = SOLID_COMP;
     m_comp[1] = GAS_COMP2;
 
     next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
     {
-        //TODO: This should be setting interface state and not using ambient state?
 	    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
 	    getAmbientState(sl,eqn_params,Coords(p),negative_component(hs));
 	    getAmbientState(sr,eqn_params,Coords(p),positive_component(hs));
@@ -621,6 +639,7 @@ void G_CARTESIAN::initChannelFlowStates()
             getAmbientState(&state,eqn_params,coords,comp);
 
             mu[index] = state.mu;
+            temp[index] = state.temp;
             dens[index] = state.dens;
             pres[index] = state.pres;
             engy[index] = state.engy;
@@ -644,6 +663,7 @@ void G_CARTESIAN::initChannelFlowStates()
             getAmbientState(&state,eqn_params,coords,comp);
 
             mu[index] = state.mu;
+            temp[index] = state.temp;
             dens[index] = state.dens;
             pres[index] = state.pres;
             engy[index] = state.engy;

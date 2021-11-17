@@ -148,7 +148,9 @@ int main(int argc, char **argv)
 	    }
 	}
 	else
+    {
 	    restart_set_dirichlet_bdry_function(&front);
+    }
 
 	/* Initialize velocity field function */
 

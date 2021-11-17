@@ -24,7 +24,59 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "cFluid.h"
 
 
-//TODO: Do we need to use a different equation of state?
+//TODO: May not need these three functions -- at least not here ...
+//////////////////////////////////////////////////////////////////
+extern double EosViscositySutherland(
+	STATE *state)
+{
+    double mu0 = state->eos->mu_ref;
+    double T0 = state->eos->temp_ref;
+
+    double T = state->temp;
+
+    double mu = mu0*std::sqrt(T)/(1.0 + T0/T);
+    return mu;
+}
+
+extern double EosSpecificHeatConstPres(
+	STATE *state)
+{
+    double R = 287.058; //Hardcode R for prototyping
+	
+    double gamma = state->eos->gamma;
+
+    double Cp = R*gamma/(gamma - 1.0);
+    return Cp;
+}
+
+extern double EosThermalConductivity(
+	STATE *state)
+{
+    double Pr = 0.71; //Hardcode prandtl number for prototyping
+
+    double mu = state->mu;
+
+    double K = EosSpecificHeatConstPres(state)*mu/Pr;
+    return K;
+}
+//////////////////////////////////////////////////////////////////
+
+
+
+//TODO: Is there a better way to define this?
+extern double EosTemperature(
+	STATE *state)
+{
+    double R = 287.058; //Hardcode R for prototyping
+
+    double pres = state->pres;
+    double dens = state->dens;
+
+    double T = pres/dens/R;
+        //double T = EosInternalEnergy(state)/Cv;
+
+    return T;
+}
 
 extern double EosPressure(
 	STATE *state)
@@ -129,13 +181,16 @@ extern void ConvertVstToState(
 	state->eos = eos;
 	state->dens = vst->dens[ind];
 	state->engy = vst->engy[ind];
-	    //state->k_turb = vst->k_turb[ind];
+	    
+    state->k_turb = vst->k_turb[ind];
 
 	for (int i = 0; i < dim; ++i)
     {
         state->momn[i] = vst->momn[i][ind];
     }
     state->pres = EosPressure(state);
+
+    state->temp = EosTemperature(state);
 }
 
 extern void EosSetTVDParams(

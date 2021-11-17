@@ -18,7 +18,7 @@ void G_CARTESIAN::computeSGSTerms()
 void G_CARTESIAN::computeEddyViscosity()
 {
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-    mu_max = std::max(eqn_params->mu1,eqn_params->mu2);
+        //mu_max = std::max(eqn_params->mu1,eqn_params->mu2);
 
     if (!eqn_params->use_eddy_viscosity) return;
 
@@ -56,6 +56,8 @@ void G_CARTESIAN::computeEddyViscosity2d()
             continue;
         }
 
+        //TODO: Need to use Sutherland viscosity
+        /*
         double mu_molecular;
         switch (comp)
         {
@@ -70,9 +72,12 @@ void G_CARTESIAN::computeEddyViscosity2d()
                 printf("\t\tcomp = %d\n", comp);
                 LOC(); clean_up(EXIT_FAILURE);
         }
+        */
 
         //TODO: Use model specified by eqn_params->eddy_viscosity_model
-        mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
+        mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
+        
+        //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
 
         if (mu[index] > mu_max)
@@ -102,6 +107,8 @@ void G_CARTESIAN::computeEddyViscosity3d()
             continue;
         }
 
+        //TODO: Need to use Sutherland viscosity
+        /*
         double mu_molecular;
         switch (comp)
         {
@@ -116,9 +123,12 @@ void G_CARTESIAN::computeEddyViscosity3d()
                 printf("\t\tcomp = %d\n", comp);
                 LOC(); clean_up(EXIT_FAILURE);
         }
+        */
 
         //TODO: Use model specified by eqn_params->eddy_viscosity_model
-        mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
+        mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
+        
+        //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
     
         if (mu[index] > mu_max)
@@ -128,6 +138,7 @@ void G_CARTESIAN::computeEddyViscosity3d()
     }
 }
 
+//TODO: Can remove this
 double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
 {
     double **vel = field.vel;
@@ -719,6 +730,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double mag_vtan = Magd(vel_rel_tan,dim);
 
     /////////////////////////////////////////////////////////////////////////
+    //TODO: Does this even have anything to do with eddy viscosity???
     if (eqn_params->use_eddy_viscosity == NO)
     {
         /*
@@ -747,9 +759,11 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
     }
 
+    //TODO: Use viscosity computed by sutherland's law and current density,
+    //      instead of the reference viscosity and density?
+    //          -- I believe so ...
     double mu_l;
     double rho_l;
-
     switch (comp)
     {
         case GAS_COMP1:

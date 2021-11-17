@@ -15,8 +15,8 @@ struct VSWEEP
     int icoords[MAXD];
     COMPONENT comp;
     double vel[MAXD];
-    double mu;
     double temp;
+    double mu;
 };
 
 struct VStencil2d

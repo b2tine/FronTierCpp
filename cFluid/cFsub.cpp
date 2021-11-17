@@ -74,8 +74,6 @@ static void cF_variableBoundaryState3d(double*,HYPER_SURF*,Front*,
 static void pipe_end_func(Front*,POINTER,int*,COMPONENT,
 				int,int,int*,Locstate);
 
-static void get_turbulent_inlet_bdry_params(int dim, FILE *infile, POINTER *func_params);
-
 
 extern void read_dirichlet_bdry_data(
 	char *inname,
@@ -188,13 +186,18 @@ static void promptForDirichletBdryState(
             state->k_turb = 0.0;
         ////////////////////////////////////
 
-        state->temp = 293.15;
-        //Optional for now
-	    if (CursorAfterStringOpt(infile,"Enter Temperature:"))
-        {
-	        fscanf(infile,"%lf",&state->temp);
-	        (void) printf("%f\n",state->temp);
-        }
+	    CursorAfterString(infile,"Enter temperature:");
+	    fscanf(infile,"%lf",&state->temp);
+	    (void) printf("%f\n",state->temp);
+            /*
+            state->temp = 293.15;
+            //Optional for now
+            if (CursorAfterStringOpt(infile,"Enter Temperature:"))
+            {
+                fscanf(infile,"%lf",&state->temp);
+                (void) printf("%f\n",state->temp);
+            }
+            */
 
 	    CursorAfterString(infile,"Enter density:");
 	    fscanf(infile,"%lf",&state->dens);
@@ -906,6 +909,9 @@ extern void cF_flowThroughBoundaryState2d(
 	    newst->pres -= dt/dn*f_pres;
 	    newst->dens -= dt/dn*f_dens;
 	}
+
+    newst->temp = EosTemperature(newst);
+    newst->engy = EosEnergy(newst);
     
     set_state_max_speed(front,newst,p0);
 	
@@ -914,8 +920,10 @@ extern void cF_flowThroughBoundaryState2d(
 	    printf("flow through boundary state:\n");
 	    print_general_vector("Velocity: ",newst->vel,dim,"\n");
         printf("Vorticity: %f\n",newst->vort);
-	    printf("Pressure: %f\n",newst->pres);
 	    printf("Density: %f\n",newst->dens);
+	    printf("Energy: %f\n",newst->engy);
+	    printf("Pressure: %f\n",newst->pres);
+	    printf("Temperature: %f\n",newst->temp);
 	}
 }       /* end cF_flowThroughBoundaryState2d */
 
@@ -1114,14 +1122,19 @@ extern void cF_flowThroughBoundaryState3d(
         }
 	}
 	
+    newst->temp = EosTemperature(newst);
+    newst->engy = EosEnergy(newst);
+    
     set_state_max_speed(front,newst,p0);
 	
     if (debugging("flow_through"))
 	{
 	    printf("flow through boundary state:\n");
 	    print_general_vector("Velocity: ",newst->vel,dim,"\n");
-	    printf("Pressure: %f\n",newst->pres);
 	    printf("Density: %f\n",newst->dens);
+	    printf("Energy: %f\n",newst->engy);
+	    printf("Pressure: %f\n",newst->pres);
+	    printf("Temperature: %f\n",newst->temp);
 	}
 }       /* end cF_flowThroughBoundaryState3d */
 
@@ -1174,6 +1187,7 @@ static  void neumann_point_propagate(
     double *m_pres = eqn_params->pres;
 	double *m_dens = eqn_params->dens;
 	double *m_engy = eqn_params->engy;
+	double *m_temp = eqn_params->temp;
 	double *m_mu = eqn_params->mu;
     double *m_kturb = eqn_params->k_turb;
 
@@ -1238,15 +1252,7 @@ static  void neumann_point_propagate(
         FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
 	}
 
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
-			getStatePres,&newst->pres,&oldst->pres);
-    
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
-			getStateKTurb,&newst->k_turb,&oldst->k_turb);
-    
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
-			getStateMu,&newst->mu,&oldst->mu);
-    
+
     FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
 			getStateDens,&newst->dens,&oldst->dens);
 
@@ -1261,6 +1267,19 @@ static  void neumann_point_propagate(
     s = mag_vector(vel,dim);
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 	set_state_max_speed(front,newst,Coords(newp));
+	
+    
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
+			getStatePres,&newst->pres,&oldst->pres);
+    
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
+			getStateKTurb,&newst->k_turb,&oldst->k_turb);
+    
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,&oldst->mu);
+
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
+        getStateTemp,&newst->temp,&oldst->temp);
 }	/* end neumann_point_propagate */
 
 static void dirichlet_point_propagate(
@@ -1317,12 +1336,13 @@ static void dirichlet_point_propagate(
 
 	    newst->dens = bstate->dens;
         newst->pres = bstate->pres;
+        newst->temp = bstate->temp;
+
         for (int i = 0; i < dim; ++i)
         {
 	    	newst->vel[i] = bstate->vel[i];
         }
 
-        
         for (int i = 0; i < dim; ++i)
         {
 	    	newst->momn[i] = newst->dens*newst->vel[i];
@@ -1370,6 +1390,7 @@ static  void contact_point_propagate(
     double **m_mom = eqn_params->mom;
 	double *m_dens = eqn_params->dens;
 	double *m_engy = eqn_params->engy;
+	double *m_temp = eqn_params->temp;
 	double *m_kturb = eqn_params->k_turb;
 
 	double *p0;
@@ -1428,11 +1449,6 @@ static  void contact_point_propagate(
 	FT_IntrpStateVarAtCoords(front,negative_component(oldhs),p0,
 		m_engy,getStateEngy,&newst->engy,&default_var);
 	
-    FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
-			m_kturb,2,&default_var);
-	FT_IntrpStateVarAtCoords(front,negative_component(oldhs),p0,
-		m_kturb,getStateKTurb,&newst->k_turb,&default_var);
-	
     for (i = 0; i < dim; ++i)
 	{
 	    FT_NearestRectGridVarInRange(front,negative_component(oldhs),p0,
@@ -1459,11 +1475,6 @@ static  void contact_point_propagate(
 			m_engy,2,&default_var);
 	FT_IntrpStateVarAtCoords(front,positive_component(oldhs),p0,
 		m_engy,getStateEngy,&newst->engy,&default_var);
-	
-	FT_NearestRectGridVarInRange(front,positive_component(oldhs),p0,
-			m_kturb,2,&default_var);
-	FT_IntrpStateVarAtCoords(front,positive_component(oldhs),p0,
-		m_kturb,getStateKTurb,&newst->k_turb,&default_var);
 	
     for (i = 0; i < dim; ++i)
 	{
@@ -1522,6 +1533,7 @@ static void rgbody_point_propagate_in_fluid(
 	double *m_pres = eqn_params->pres;
 	double *m_dens = eqn_params->dens;
 	double *m_engy = eqn_params->engy;
+	double *m_temp = eqn_params->temp;
     double *m_mu = eqn_params->mu;
     double *m_kturb = eqn_params->k_turb;
 	
@@ -1567,7 +1579,6 @@ static void rgbody_point_propagate_in_fluid(
             double omega_dt,crds_com[MAXD];
             omega_dt = angular_velo(oldhs)*dt;
 
-            //TODO: test/verify
             for (i = 0; i < dim; ++i)
     	    {
                 vel[i] = center_of_mass_velo(oldhs)[i];
@@ -1665,23 +1676,6 @@ static void rgbody_point_propagate_in_fluid(
         }
 	
 	
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
-			getStatePres,&newst->pres,&oldst->pres);
-    
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
-			getStateKTurb,&newst->k_turb,&oldst->k_turb);
-    
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
-			getStateMu,&newst->mu,&oldst->mu);
-    
-    /*
-    if (m_temp != NULL)
-    {
-        FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
-            getStateTemp,&newst->temp,&oldst->temp);
-    }
-    */
-    
     FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
 			getStateDens,&newst->dens,&oldst->dens);
 
@@ -1698,6 +1692,19 @@ static void rgbody_point_propagate_in_fluid(
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 	set_state_max_speed(front,newst,Coords(newp));
         
+	
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
+			getStatePres,&newst->pres,&oldst->pres);
+    
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
+			getStateKTurb,&newst->k_turb,&oldst->k_turb);
+    
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,&oldst->mu);
+    
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
+        getStateTemp,&newst->temp,&oldst->temp);
+    
     if(!debugging("collision_off"))
     {
         /* copy newst to the other STATE; used in collision solver */

@@ -60,6 +60,9 @@ struct EOS_PARAMS
     double  gamma;
     double  pinf;
     double  einf;
+
+    double mu_ref;      //reference viscosity
+    double temp_ref;    //reference temperature
 };
 
 
@@ -79,6 +82,7 @@ struct STATE : public FABRIC_STATE
     
     double mu;
     double temp;
+
     double k_turb;
 };  
 
