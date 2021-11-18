@@ -1,7 +1,7 @@
-Max time: 2.0
+Max time: 2.5
 Max step: 15000
 Print interval: 0.01
-Movie frame interval: 0.0001
+Movie frame interval: 0.00025
 CFL factor: 0.5
 Redistribution interval: 1000000000
 
@@ -10,8 +10,8 @@ Redistribution interval: 1000000000
 Domain limit in 0-th dimension: 0 3.3
 Domain limit in 1-th dimension: 0 2.5
 
-Computational grid: 350 270
-    XXXComputational gridXXX: 250 190
+Computational grid: 250 190
+    XXXComputational gridXXX: 350 270
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -20,10 +20,10 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 100.0 0
-Enter pressure: 191325
-Enter temperature: 450
-Enter density: 3.0
+Enter velocity: 50.0 0
+Enter pressure: 102000
+Enter temperature: 200.0
+Enter density: 1.77664
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 

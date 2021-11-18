@@ -10,8 +10,8 @@ Redistribution interval: 1000000000
 Domain limit in 0-th dimension: 0 3.3
 Domain limit in 1-th dimension: 0 2.5
 
-Computational grid: 350 270
-    XXXComputational gridXXX: 250 190
+Computational grid: 250 190
+    XXXComputational gridXXX: 350 270
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -21,9 +21,9 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 50.0 0
-Enter pressure: 102000
-Enter temperature: 200.0
-Enter density: 1.77664
+Enter pressure: 101325
+Enter temperature: 293.15
+Enter density: 1.2041
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -53,10 +53,9 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.2041 101325
+Enter density and pressure of ambient air: 1.00851 101325
 
-Enter temperature and viscosity of the fluid: 293.15 0.00001813
-    XXXEnter temperature of ambient airXXX: 293.15
+Enter temperature and viscosity of the fluid: 350.0 1.716e-05
 
 Enter gravity: 0 0 
 

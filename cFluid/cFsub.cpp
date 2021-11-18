@@ -911,8 +911,8 @@ extern void cF_flowThroughBoundaryState2d(
 	    newst->dens -= dt/dn*f_dens;
 	}
 
-    newst->temp = EosTemperature(newst);
     newst->engy = EosEnergy(newst);
+    newst->temp = EosTemperature(newst);
     
     set_state_max_speed(front,newst,p0);
 	
@@ -1123,8 +1123,8 @@ extern void cF_flowThroughBoundaryState3d(
         }
 	}
 	
-    newst->temp = EosTemperature(newst);
     newst->engy = EosEnergy(newst);
+    newst->temp = EosTemperature(newst);
     
     set_state_max_speed(front,newst,p0);
 	
@@ -1218,42 +1218,20 @@ static  void neumann_point_propagate(
 	for (i = 0; i < dim; ++i)
 	    p1[i] = p0[i] + nor[i]*dn;
     
-    //TODO: tangent vector not used,
-    //      and this is in general not correct
-	tan[0] = -nor[1];
-    tan[1] = nor[0];
+        
+    for (i = 0; i < dim; ++i) vel[i] = 0.0;
 
-    //TODO:Can get rid of this -- handled by rgbody_point_propagate()
-	if (wave_type(oldhs) == MOVABLE_BODY_BOUNDARY)
-	{
-        double omega_dt,crds_com[MAXD];
-        omega_dt = angular_velo(oldhs)*dt;
-        for (i = 0; i < dim; ++i)
-        {
-            vel[i] = center_of_mass_velo(oldhs)[i];
-            crds_com[i] = Coords(oldp)[i] + dt*vel[i]
-                            - center_of_mass(oldhs)[i];
-        }
-    
-        //if (dim == 2) //This is only for rotations in xy plane
-        vel[0] += -angular_velo(oldhs)*crds_com[1]*cos(omega_dt) -
-                 angular_velo(oldhs)*crds_com[0]*sin(omega_dt);
-        vel[1] +=  angular_velo(oldhs)*crds_com[0]*cos(omega_dt) -
-                 angular_velo(oldhs)*crds_com[1]*sin(omega_dt);
-	}
-	else
-	{
-        for (i = 0; i < dim; ++i) vel[i] = 0.0;
-	}
-
-	for (i = 0; i < dim; ++i)
+	
+    for (i = 0; i < dim; ++i)
 	{
         Coords(newp)[i] = Coords(oldp)[i] + dt*vel[i];
 	    newst->vel[i] = vel[i];
         FT_RecordMaxFrontSpeed(i,fabs(vel[i]),NULL,Coords(newp),front);
 	}
 
-
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
+			getStatePres,&newst->pres,&oldst->pres);
+    
     FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
 			getStateDens,&newst->dens,&oldst->dens);
 
@@ -1269,18 +1247,18 @@ static  void neumann_point_propagate(
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 	set_state_max_speed(front,newst,Coords(newp));
 	
-    
-    FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
-			getStatePres,&newst->pres,&oldst->pres);
-    
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
-			getStateKTurb,&newst->k_turb,&oldst->k_turb);
-    
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
-			getStateMu,&newst->mu,&oldst->mu);
 
+        //newst->temp = EosTemperature(newst);
+    
+    //TODO: Interpolate temperature, or use EOSTemperature()?
     FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
         getStateTemp,&newst->temp,&oldst->temp); 
+
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,&oldst->mu);
+	
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
+			getStateKTurb,&newst->k_turb,&oldst->k_turb);
 }	/* end neumann_point_propagate */
 
 static void dirichlet_point_propagate(
@@ -1676,6 +1654,8 @@ static void rgbody_point_propagate_in_fluid(
                                     oldhs,dt,vel);
         }
 	
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
+			getStatePres,&newst->pres,&oldst->pres);
 	
     FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
 			getStateDens,&newst->dens,&oldst->dens);
@@ -1693,18 +1673,17 @@ static void rgbody_point_propagate_in_fluid(
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 	set_state_max_speed(front,newst,Coords(newp));
         
-	
-    FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
-			getStatePres,&newst->pres,&oldst->pres);
+        //newst->temp = EosTemperature(newst);
     
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
-			getStateKTurb,&newst->k_turb,&oldst->k_turb);
+    //TODO: Interpolate temperature, or use EOSTemperature()?
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
+        getStateTemp,&newst->temp,&oldst->temp);
     
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
 			getStateMu,&newst->mu,&oldst->mu);
     
-    FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
-        getStateTemp,&newst->temp,&oldst->temp);
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
+			getStateKTurb,&newst->k_turb,&oldst->k_turb);
     
     if(!debugging("collision_off"))
     {
