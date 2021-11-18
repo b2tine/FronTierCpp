@@ -183,6 +183,7 @@ static void promptForDirichletBdryState(
 	    (void) printf("%f\n",state->pres);
 
         ////////////////////////////////////
+        //TODO: Need k_turb with correct energy spectrum at inlet
             state->k_turb = 0.0;
         ////////////////////////////////////
 
@@ -1279,7 +1280,7 @@ static  void neumann_point_propagate(
 			getStateMu,&newst->mu,&oldst->mu);
 
     FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
-        getStateTemp,&newst->temp,&oldst->temp);
+        getStateTemp,&newst->temp,&oldst->temp); 
 }	/* end neumann_point_propagate */
 
 static void dirichlet_point_propagate(

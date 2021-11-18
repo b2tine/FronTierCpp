@@ -61,6 +61,11 @@ struct EOS_PARAMS
     double  pinf;
     double  einf;
 
+    //TODO: store specific gas constant, R, here?
+    double R;
+
+    //TODO: Do we need these here?
+    //
     double mu_ref;      //reference viscosity
     double temp_ref;    //reference temperature
 };
@@ -82,8 +87,8 @@ struct STATE : public FABRIC_STATE
     
     double mu;
     double temp;
-
     double k_turb;
+    double Ktherm;
 };  
 
 

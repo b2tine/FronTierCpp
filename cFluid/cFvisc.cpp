@@ -36,6 +36,7 @@ void G_CARTESIAN::computeDynamicViscosity2d()
 {
     double* mu = field.mu;
     double* temp = field.temp;
+    double* Ktherm = field.Ktherm;
 
     for (int j = imin[1]; j <= imax[1]; ++j)
     for (int i = imin[0]; i <= imax[0]; ++i)
@@ -47,9 +48,11 @@ void G_CARTESIAN::computeDynamicViscosity2d()
         if (!gas_comp(comp))
         {
             mu[index] = 0.0;
+            Ktherm[index] = 0.0;
             continue;
         }
 
+        //TODO: Is reference the ambient state values or specific empirical values?
         double T_reference;
         double mu_reference;
         switch (comp)
@@ -69,16 +72,27 @@ void G_CARTESIAN::computeDynamicViscosity2d()
         }
 
         //Sutherland's Law Viscosity
-        mu[index] = mu_reference*std::sqrt(T_reference)/(1.0 + T_reference/temp[index]);
+        double S = 110.4;
+        double C = 1.716e-05*(273.15 + S)/std::pow(273.15,1.5);
+        mu[index] = C*std::pow(temp[index],1.5)/(temp[index] + S);
+            //mu[index] = mu_reference*std::sqrt(T_reference)/(1.0 + T_reference/temp[index]);
 
-        /*
-        //HEAT FLUX
+        //HEAT FLUX -- compute thermal conductivity, Ktherm.
         /////////////////////////////////////////
+        double gamma = eqn_params->eos[comp].gamma;
+            //double R = eqn_params-eos[comp].R;
+        double R = 287.058;
+                
+                //EOS_PARAMS* eos = &(eqn_params->eos[comp]);
+                //double gamma = eos->gamma;
+                //double R = eos->R;
+
+        double Cp = R*gamma/(gamma - 1.0);
+            //double Cp = 1004.7;
+
         double Pr = 0.71;
-        double Cp = 1004.7;
         Ktherm[index] = Cp*mu[index]/Pr;
         /////////////////////////////////////////
-        */
 
         if (mu[index] > mu_max)
         {
@@ -91,6 +105,7 @@ void G_CARTESIAN::computeDynamicViscosity3d()
 {
     double* mu = field.mu;
     double* temp = field.temp;
+    double* Ktherm = field.Ktherm;
 
     for (int k = imin[2]; k <= imax[2]; ++k)
     for (int j = imin[1]; j <= imax[1]; ++j)
@@ -103,9 +118,11 @@ void G_CARTESIAN::computeDynamicViscosity3d()
         if (!gas_comp(comp))
         {
             mu[index] = 0.0;
+            Ktherm[index] = 0.0;
             continue;
         }
 
+        //TODO: Is reference the ambient state values or specific empirical values?
         double T_reference;
         double mu_reference;
         switch (comp)
@@ -125,16 +142,27 @@ void G_CARTESIAN::computeDynamicViscosity3d()
         }
 
         //Sutherland's Law Viscosity
-        mu[index] = mu_reference*std::sqrt(T_reference)/(1.0 + T_reference/temp[index]);
+        double S = 110.4;
+        double C = 1.716e-05*(273.15 + S)/std::pow(273.15,1.5);
+        mu[index] = C*std::pow(temp[index],1.5)/(temp[index] + S);
+            //mu[index] = mu_reference*std::sqrt(T_reference)/(1.0 + T_reference/temp[index]);
     
-        /*
-        //HEAT FLUX
+        //HEAT FLUX -- compute thermal conductivity, Ktherm.
         /////////////////////////////////////////
+        double gamma = eqn_params->eos[comp].gamma;
+            //double R = eqn_params-eos[comp].R;
+        double R = 287.058;
+                
+                //EOS_PARAMS* eos = &(eqn_params->eos[comp]);
+                //double gamma = eos->gamma;
+                //double R = eos->R;
+
+        double Cp = R*gamma/(gamma - 1.0);
+            //double Cp = 1004.7;
+
         double Pr = 0.71;
-        double Cp = 1004.7;
         Ktherm[index] = Cp*mu[index]/Pr;
         /////////////////////////////////////////
-        */
 
         if (mu[index] > mu_max)
         {
@@ -362,6 +390,7 @@ void G_CARTESIAN::setDirichletViscousGhostState(
     STATE* state;
     FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
 
+    //TODO: check for boundary_state_function first
     if (boundary_state(hs) != nullptr)
         ft_assign((POINTER)state,boundary_state(hs),front->sizest);
     else
@@ -574,7 +603,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
     //TODO: Use viscosity computed by sutherland's law and current density,
     //      instead of the reference viscosity and density?
-    //          -- I believe so ...
     double mu_l;
     double rho_l;
     switch (comp)
@@ -592,6 +620,11 @@ void G_CARTESIAN::setNeumannViscousGhostState(
             LOC(); clean_up(EXIT_FAILURE);
             break;
     }
+
+    /*
+    double mu_l = field.mu[index];
+    double rho_l = field.dens[index];
+    */
     
     //NOTE: In all numerical experiments, Newton's method converged
     //      when the initial guess for the dimensionless wall velocity
@@ -633,8 +666,19 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     
     //Compute Ghost Temperature
     //////////////////////////////////////////////////////////////////////////////////////
+
+    double gamma = eqn_params->eos[comp].gamma;
+        //double R = eqn_params-eos[comp].R;
+    double R = 287.058;
+            
+            //EOS_PARAMS* eos = &(eqn_params->eos[comp]);
+            //double gamma = eos->gamma;
+            //double R = eos->R;
+
+    double Cp = R*gamma/(gamma - 1.0);
+        //double Cp = 1004.7;
+
     double Pr = 0.71;
-    double Cp = 1004.7;
     
     //TODO: Use interface relative velocity or actual velocity? 
     double temp_ghost = temp_reflect + 
@@ -715,12 +759,22 @@ void G_CARTESIAN::computeViscousFlux2d(
     double T_yy = (sten[2][1].temp - 2.0*sten[1][1].temp 
             + sten[0][1].temp)/sqr(top_h[1]);
     
+    /*
+    double gamma = eqn_params->eos[comp].gamma;
+        //double R = eqn_params-eos[comp].R;
+    double R = 287.058;
+
+    double Cp = R*gamma/(gamma - 1.0);
+        //double Cp = 1004.7;
+
     double Pr = 0.71;
-    double Cp = 1004.7;
     
     double Ktherm = Cp*mu[index]/Pr;
+    */
 
-    v_flux->engy_flux += delta_t*Ktherm*(T_xx + T_yy);
+    double* Ktherm = field.Ktherm;
+
+    v_flux->engy_flux += delta_t*Ktherm[index]*(T_xx + T_yy);
     /////////////////////////////////////////////////////////////////////////
 }
 
@@ -836,12 +890,22 @@ void G_CARTESIAN::computeViscousFlux3d(
     double T_zz = (sten[2][1][1].temp - 2.0*sten[1][1][1].temp
             + sten[0][1][1].temp)/sqr(top_h[2]);
     
+    /*
+    double gamma = eqn_params->eos[comp].gamma;
+        //double R = eqn_params-eos[comp].R;
+    double R = 287.058;
+
+    double Cp = R*gamma/(gamma - 1.0);
+        //double Cp = 1004.7;
+
     double Pr = 0.71;
-    double Cp = 1004.7;
     
     double Ktherm = Cp*mu[index]/Pr;
+    */
     
-    v_flux->engy_flux += delta_t*Ktherm*(T_xx + T_yy + T_zz);
+    double* Ktherm = field.Ktherm;
+    
+    v_flux->engy_flux += delta_t*Ktherm[index]*(T_xx + T_yy + T_zz);
     /////////////////////////////////////////////////////////////////////////
 }
 

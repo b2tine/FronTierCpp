@@ -41,6 +41,7 @@ void G_CARTESIAN::computeEddyViscosity2d()
 {
     double* mu = field.mu;
     double* k_turb = field.k_turb;
+    double* Ktherm = field.Ktherm;
 
     for (int j = imin[1]; j <= imax[1]; ++j)
     for (int i = imin[0]; i <= imax[0]; ++i)
@@ -75,20 +76,30 @@ void G_CARTESIAN::computeEddyViscosity2d()
         */
 
         //TODO: Use model specified by eqn_params->eddy_viscosity_model
-        mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
+        double mu_turb = computeEddyViscosityVremanModel_BdryAware(icoords);
+
+        mu[index] += mu_turb;
+            //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
         
         //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
 
         
-        /*
         //TURBULENT HEAT FLUX
         /////////////////////////////////////////
+        
+        double gamma = eqn_params->eos[comp].gamma;
+            //double R = eqn_params-eos[comp].R;
+        double R = 287.058;
+                
+                //EOS_PARAMS* eos = &(eqn_params->eos[comp]);
+                //double gamma = eos->gamma;
+                //double R = eos->R;
+        
         double Pr_turb = 0.9;
-        double Cp = 1004.7;
-        Ktherm[index] = Cp*mu[index]/Pr_turb;
+        double Cp = R*gamma/(gamma - 1.0);
+        Ktherm[index] += Cp*mu_turb/Pr_turb;
         /////////////////////////////////////////
-        */
 
 
         if (mu[index] > mu_max)
@@ -102,6 +113,7 @@ void G_CARTESIAN::computeEddyViscosity3d()
 {
     double* mu = field.mu;
     double* k_turb = field.k_turb;
+    double* Ktherm = field.Ktherm;
 
     for (int k = imin[2]; k <= imax[2]; ++k)
     for (int j = imin[1]; j <= imax[1]; ++j)
@@ -137,20 +149,30 @@ void G_CARTESIAN::computeEddyViscosity3d()
         */
 
         //TODO: Use model specified by eqn_params->eddy_viscosity_model
-        mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
+        double mu_turb = computeEddyViscosityVremanModel_BdryAware(icoords);
+
+        mu[index] += mu_turb;
+            //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
         
         //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
     
 
-        /*
         //TURBULENT HEAT FLUX
         /////////////////////////////////////////
+        
+        double gamma = eqn_params->eos[comp].gamma;
+            //double R = eqn_params-eos[comp].R;
+        double R = 287.058;
+                
+                //EOS_PARAMS* eos = &(eqn_params->eos[comp]);
+                //double gamma = eos->gamma;
+                //double R = eos->R;
+        
         double Pr_turb = 0.9;
-        double Cp = 1004.7;
-        Ktherm[index] = Cp*mu[index]/Pr_turb;
+        double Cp = R*gamma/(gamma - 1.0);
+        Ktherm[index] += Cp*mu_turb/Pr_turb;
         /////////////////////////////////////////
-        */
 
 
         if (mu[index] > mu_max)
@@ -786,7 +808,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 
     //TODO: Use viscosity computed by sutherland's law and current density,
     //      instead of the reference viscosity and density?
-    //          -- I believe so ...
     double mu_l;
     double rho_l;
     switch (comp)
@@ -804,6 +825,11 @@ void G_CARTESIAN::setSlipBoundaryNIP(
             LOC(); clean_up(EXIT_FAILURE);
             break;
     }
+
+    /*
+    double mu_l = field.mu[index];
+    double rho_l = field.dens[index];
+    */
     
     double tau_wall[MAXD] = {0.0};
     double mag_tau_wall = computeWallShearStress(mag_vtan,

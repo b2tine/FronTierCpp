@@ -157,7 +157,8 @@ struct EQN_PARAMS
 	double *pres;
     double *temp;   //temperature
     double *mu;
-    double *k_turb;
+    double *Ktherm; //thermal conductivity
+    double *k_turb; //turbulent kinetic energy
 
     //GFM
 	double **gnor;
@@ -304,7 +305,8 @@ struct FIELD
     double **vorticity;
     double *temp;
     double *mu;
-    double *k_turb;
+    double *Ktherm; //thermal conductivity
+    double *k_turb; //turbulent kinetic energy
 };
 
 struct SWEEP
@@ -316,6 +318,7 @@ struct SWEEP
     double *mu;
     double *k_turb;
     double *temp;
+    double *Ktherm; //thermal conductivity
 };
 
 struct FSWEEP
