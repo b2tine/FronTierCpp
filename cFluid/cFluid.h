@@ -503,8 +503,12 @@ protected:
     
 	/* Viscous flux */
     void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
+    
     void fillViscousFluxStencil2d(int* icoords, SWEEP* m_vst, VStencil2d* vsten);
+    void fillViscousFluxStencil2d_5pt(int* icoords, SWEEP* m_vst, VStencil2d_5pt* vsten);
+
     void fillViscousFluxStencil3d(int* icoords, SWEEP* m_vst, VStencil3d* vsten);
+        //void fillViscousFluxStencil3d_5pt(int* icoords, SWEEP* m_vst, VStencil3d_5pt* vsten);
     
     virtual void setViscousGhostState(int* icoords, COMPONENT comp, VSWEEP* vs, SWEEP* m_vst);
     
@@ -517,6 +521,8 @@ protected:
     
     void computeViscousFlux2d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
             double delta_t, VStencil2d* vsten);
+    void computeViscousFlux2d_5pt(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
+            double delta_t, VStencil2d_5pt* vsten);
 
     void computeViscousFlux3d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
             double delta_t, VStencil3d* vsten);

@@ -25,11 +25,14 @@ void G_CARTESIAN::addViscousFlux(
                 int index = d_index(icoords,top_gmax,dim);
                 if (!gas_comp(top_comp[index])) continue;
                 
-                VStencil2d vsten;
-                fillViscousFluxStencil2d(icoords,m_vst,&vsten);
+                //VStencil2d vsten;
+                //fillViscousFluxStencil2d(icoords,m_vst,&vsten);
+                VStencil2d_5pt vsten;
+                fillViscousFluxStencil2d_5pt(icoords,m_vst,&vsten);
                 
                 VFLUX v_flux;
-                computeViscousFlux2d(icoords,m_vst,&v_flux,delta_t,&vsten);
+                //computeViscousFlux2d(icoords,m_vst,&v_flux,delta_t,&vsten);
+                computeViscousFlux2d_5pt(icoords,m_vst,&v_flux,delta_t,&vsten);
 
                 for (int k = 0; k < dim; ++k)
                     m_flux->momn_flux[k][index] += v_flux.momn_flux[k];
@@ -67,8 +70,6 @@ void G_CARTESIAN::addViscousFlux(
     }
 }
 
-//TODO: For 4th order approximation to viscous flux need
-//      to add points points i-2 and i+2 to stencil in each direction.
 void G_CARTESIAN::fillViscousFluxStencil2d(
         int* icoords,
         SWEEP* m_vst,
@@ -83,6 +84,41 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         VSWEEP* vs = &vsten->st[j][i];
         vs->icoords[0] = icoords[0] + i - 1;
         vs->icoords[1] = icoords[1] + j - 1;
+        
+        int idx_nb = d_index(vs->icoords,top_gmax,dim);
+        vs->comp = top_comp[idx_nb];
+        
+        if (vs->comp != comp)
+        {
+            setViscousGhostState(icoords,comp,vs,m_vst);
+        }
+        else
+        {
+            vs->temp = m_vst->temp[idx_nb];
+            for (int l = 0; l < dim; ++l)
+            {
+                vs->vel[l] = m_vst->momn[l][idx_nb]/m_vst->dens[idx_nb];
+            }
+        }
+    }
+}
+
+//TODO: For 4th order approximation to viscous flux need
+//      to add points points i-2 and i+2 to stencil in each direction.
+void G_CARTESIAN::fillViscousFluxStencil2d_5pt(
+        int* icoords,
+        SWEEP* m_vst,
+        VStencil2d_5pt* vsten)
+{
+    int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+
+    for (int j = 0; j < 5; ++j)
+    for (int i = 0; i < 5; ++i)
+    {
+        VSWEEP* vs = &vsten->st[j][i];
+        vs->icoords[0] = icoords[0] + i - 2;
+        vs->icoords[1] = icoords[1] + j - 2;
         
         int idx_nb = d_index(vs->icoords,top_gmax,dim);
         vs->comp = top_comp[idx_nb];
@@ -154,7 +190,9 @@ void G_CARTESIAN::setViscousGhostState(
     auto ghost_coords = cell_center[ghost_index].getCoords();
     COMPONENT ghost_comp = vs->comp;
 
+    //Why can we use nearest_intfc_point_in_range()???
     int range = 2;
+    //int range = 3;
     
     //TODO: Figure out which is the correct boundary enum
 
@@ -231,6 +269,7 @@ void G_CARTESIAN::setDirichletViscousGhostState(
     STATE* state;
     FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
 
+    //TODO: Switch order?
     if (boundary_state(hs) != nullptr)
         ft_assign((POINTER)state,boundary_state(hs),front->sizest);
     else
@@ -533,8 +572,6 @@ void G_CARTESIAN::computeViscousFlux2d(
         double delta_t,
         VStencil2d* vsten)
 {
-    //TODO: For 4th order approximation to viscous flux need
-    //      to add points points i-2 and i+2 to stencil in each direction.
     auto sten = vsten->st;
 
     double u = sten[1][1].vel[0];
@@ -559,6 +596,87 @@ void G_CARTESIAN::computeViscousFlux2d(
     double v_xy = 0.25*(sten[2][2].vel[1] - sten[2][0].vel[1]
             - sten[0][2].vel[1] + sten[0][0].vel[1])/top_h[0]/top_h[1];
     
+    double* mu = field.mu;
+    int index = d_index(icoords,top_gmax,dim);
+    
+    double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y);
+    double tauyy = 2.0/3.0*mu[index]*(2.0*v_y - u_x);
+    double tauxy = mu[index]*(u_y + v_x);
+
+    double tauxx_x = 2.0/3.0*mu[index]*(2.0*u_xx - v_xy);
+    double tauyy_y = 2.0/3.0*mu[index]*(2.0*v_yy - u_xy);
+    double tauxy_y = mu[index]*(u_yy + v_xy);
+    double tauxy_x = mu[index]*(u_xy + v_xx);
+    
+    /*
+    double T_x = 0.5*(sten[1][2].temp - sten[1][0].temp)/top_h[0];
+    double T_y = 0.5*(sten[2][1].temp - sten[0][1].temp)/top_h[1];
+
+    double T_xx = (sten[1][2].temp - 2.0*sten[1][1].temp
+            + sten[1][0].temp)/sqr(top_h[0]);
+    double T_yy = (sten[2][1].temp - 2.0*sten[1][1].temp 
+            + sten[0][1].temp)/sqr(top_h[1]);
+    */
+    
+    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
+    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
+    
+    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
+            + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
+
+    /*
+    //Heat Flux: lambda is thermal conductivity (\lambda = C_{p}{\mu}/{Pr})
+    
+    v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy);
+    */
+}
+
+//4th order centered difference
+void G_CARTESIAN::computeViscousFlux2d_5pt(
+        int* icoords,
+        SWEEP* m_vst,
+        VFLUX* v_flux,
+        double delta_t,
+        VStencil2d_5pt* vsten)
+{
+    auto sten = vsten->st;
+
+    double u = sten[2][2].vel[0];
+    double v = sten[2][2].vel[1];
+    
+    double u_x = (-sten[2][4].vel[0] + 8.0*sten[2][3].vel[0] 
+            - 8.0*sten[2][1].vel[0] + sten[2][0].vel[0])/12.0/top_h[0];
+    
+    double u_y = (-sten[4][2].vel[0] + 8.0*sten[3][2].vel[0] 
+            - 8.0*sten[1][2].vel[0] + sten[0][2].vel[0])/12.0/top_h[1];
+    
+    double v_x = (-sten[2][4].vel[1] + 8.0*sten[2][3].vel[1] 
+            - 8.0*sten[2][1].vel[1] + sten[2][0].vel[1])/12.0/top_h[0];
+
+    double v_y = (-sten[4][2].vel[1] + 8.0*sten[3][2].vel[1] 
+            - 8.0*sten[1][2].vel[1] + sten[0][2].vel[1])/12.0/top_h[1];
+    
+    /*
+    double u_x = 0.5*(sten[1][2].vel[0] - sten[1][0].vel[0])/top_h[0];
+    double u_y = 0.5*(sten[2][1].vel[0] - sten[0][1].vel[0])/top_h[1];
+    double v_x = 0.5*(sten[1][2].vel[1] - sten[1][0].vel[1])/top_h[0];
+    double v_y = 0.5*(sten[2][1].vel[1] - sten[0][1].vel[1])/top_h[1];
+
+    double u_xx = (sten[1][2].vel[0] - 2.0*sten[1][1].vel[0]
+            + sten[1][0].vel[0])/sqr(top_h[0]);
+    double u_yy = (sten[2][1].vel[0] - 2.0*sten[1][1].vel[0] 
+            + sten[0][1].vel[0])/sqr(top_h[1]);
+    double v_xx = (sten[1][2].vel[1] - 2.0*sten[1][1].vel[1]
+            + sten[1][0].vel[1])/sqr(top_h[0]);
+    double v_yy = (sten[2][1].vel[1] - 2.0*sten[1][1].vel[1]
+            + sten[0][1].vel[1])/sqr(top_h[1]);
+    
+    double u_xy = 0.25*(sten[2][2].vel[0] - sten[2][0].vel[0]
+            - sten[0][2].vel[0] + sten[0][0].vel[0])/top_h[0]/top_h[1];
+    double v_xy = 0.25*(sten[2][2].vel[1] - sten[2][0].vel[1]
+            - sten[0][2].vel[1] + sten[0][0].vel[1])/top_h[0]/top_h[1];
+    */
+
     double* mu = field.mu;
     int index = d_index(icoords,top_gmax,dim);
     
