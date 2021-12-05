@@ -332,9 +332,26 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
     for (int i = 0; i < dim; ++i)
     for (int j = 0; j < dim; ++j)
     {
+        //TODO: For compressible flow S may be different ...
         S[i][j] = 0.5*(alpha[i][j] + alpha[j][i]);
+
     }
 
+    /////////////////////////////////////////////////////////////////////
+    //TODO: Is this what it should be instead for compressible flow?
+    //
+    //  for (int i = 0; i < dim; ++i)
+    //  for (int j = 0; j < dim; ++j)
+    //  {
+    //      S[i][j] = alpha[i][j] + alpha[j][i];
+    //  }
+    //
+    //  for (int i = 0; i < dim; ++i)
+    //  {
+    //      S[i][i] -= 2.0/3.0*alpha[i][i];
+    //  }
+    /////////////////////////////////////////////////////////////////////
+    
     double NormFrobenius = 0.0;
     for (int i = 0; i < dim; ++i)
     for (int j = 0; j < dim; ++j)
@@ -718,13 +735,14 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
+    /*
+    //TODO: CAN WE GET RID OF THIS?
+    //      THIS SHOULD ONLY BE DONE IF NO DIFFUSIVE FLUX BEING USED?
     /////////////////////////////////////////////////////////////////////////
     if (eqn_params->use_eddy_viscosity == NO)
     {
-        /*
-        for (int j = 0; j < dim; ++j)
-            v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
-        */
+        //for (int j = 0; j < dim; ++j)
+          //  v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
 
         //What about this?
         double vel_ghost_rel[MAXD] = {0.0};
@@ -737,6 +755,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         return;
     }
     /////////////////////////////////////////////////////////////////////////
+    */
 
     if (debugging("slip_boundary"))
     {
@@ -794,7 +813,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     for (int j = 0; j < dim; ++j)
     {
         vel_ghost_tan[j] = vel_rel_tan[j]
-            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+            - (dist_reflect + dist_ghost)/mu_reflect*tau_wall[j];
 
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];

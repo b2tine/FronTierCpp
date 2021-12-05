@@ -1728,6 +1728,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
         icoords[0] = i;
         icoords[1] = j;
 
+        //TODO: Skip this if surface tension not being used
         status = FT_FindNearestIntfcPointInRange(front,
                 comp,center,NO_BOUNDARIES,point,t,&hse,&hs,range);
 
@@ -1818,6 +1819,9 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 rho[index] = m_rho[1];
                 break;
             }
+
+            //CALLING THIS HERE ONLY SO THE SLIP WALL VELOCITY IS SET IN THE "ghost_data" ARRAY
+            auto alpha = computeVelocityGradient(icoords);
 	    }
 
         //For computing viscous flux time step restriction
@@ -2648,6 +2652,9 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 rho[index] = m_rho[1];
                 break;
             }
+
+            //CALLING THIS HERE ONLY SO THE SLIP WALL VELOCITY IS SET IN THE "ghost_data" ARRAY
+            auto alpha = computeVelocityGradient(icoords);
 	    }
 
         //For computing viscous flux time step restriction
@@ -5331,6 +5338,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
+    /*
+    //TODO: CAN WE GET RID OF THIS?
+    //      THIS SHOULD ONLY BE DONE IF NO DIFFUSIVE FLUX BEING USED?
     /////////////////////////////////////////////////////////////////////////
     if (iFparams->use_eddy_visc == NO)
     {
@@ -5345,7 +5355,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         return;
     }
     /////////////////////////////////////////////////////////////////////////
-    
+    */
+
     if (debugging("slip_boundary"))
     {
         fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
@@ -5392,16 +5403,14 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     
     //TODO: Need to ensure intfc state is set correctly if we want to
     //      use it as the default value (by passing nullptr as last arg).
-    //
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
-                getStateMu,&mu_reflect,nullptr);
-    
-    if (mu_reflect < MACH_EPS) mu_reflect = field->mu[index];
-
     /*
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
-                getStateMu,&mu_reflect,&field->mu[index]);
+                getStateMu,&mu_reflect,nullptr);
     */
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
+                getStateMu,&mu_reflect,&field->mu[index]);
+    
+    if (mu_reflect < MACH_EPS) mu_reflect = field->mu[index];
 
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
