@@ -643,7 +643,12 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
 
     double u = sten[2][2].vel[0];
     double v = sten[2][2].vel[1];
-    
+
+    /*
+    double u = sten[1][1].vel[0];
+    double v = sten[1][1].vel[1];
+    */
+
     double u_x = (-sten[2][4].vel[0] + 8.0*sten[2][3].vel[0] 
             - 8.0*sten[2][1].vel[0] + sten[2][0].vel[0])/12.0/top_h[0];
     
@@ -661,7 +666,21 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
     double u_y = 0.5*(sten[2][1].vel[0] - sten[0][1].vel[0])/top_h[1];
     double v_x = 0.5*(sten[1][2].vel[1] - sten[1][0].vel[1])/top_h[0];
     double v_y = 0.5*(sten[2][1].vel[1] - sten[0][1].vel[1])/top_h[1];
+    */
 
+    double u_xx = (-sten[2][4].vel[0] + 16.0*sten[2][3].vel[0] - 30.0*sten[2][2].vel[0]
+            + 16.0*sten[2][1].vel[0] - sten[2][0].vel[0])/12.0/sqr(top_h[0]);
+
+    double u_yy = (-sten[4][2].vel[0] + 16.0*sten[3][2].vel[0] - 30.0*sten[2][2].vel[0]
+            + 16.0*sten[1][2].vel[0] - sten[0][2].vel[0])/12.0/sqr(top_h[1]);
+
+    double v_xx = (-sten[2][4].vel[1] + 16.0*sten[2][3].vel[1] - 30.0*sten[2][2].vel[1]
+            + 16.0*sten[2][1].vel[1] - sten[2][0].vel[1])/12.0/sqr(top_h[0]);
+
+    double v_yy = (-sten[4][2].vel[1] + 16.0*sten[3][2].vel[1] - 30.0*sten[2][2].vel[1]
+            + 16.0*sten[1][2].vel[1] - sten[0][2].vel[1])/12.0/sqr(top_h[1]);
+
+    /*
     double u_xx = (sten[1][2].vel[0] - 2.0*sten[1][1].vel[0]
             + sten[1][0].vel[0])/sqr(top_h[0]);
     double u_yy = (sten[2][1].vel[0] - 2.0*sten[1][1].vel[0] 
@@ -670,6 +689,11 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
             + sten[1][0].vel[1])/sqr(top_h[0]);
     double v_yy = (sten[2][1].vel[1] - 2.0*sten[1][1].vel[1]
             + sten[0][1].vel[1])/sqr(top_h[1]);
+    
+    
+    //TODO: PICK BACK UP HERE -- compute 4th order approx to mixed partials
+    //
+    
     
     double u_xy = 0.25*(sten[2][2].vel[0] - sten[2][0].vel[0]
             - sten[0][2].vel[0] + sten[0][0].vel[0])/top_h[0]/top_h[1];
