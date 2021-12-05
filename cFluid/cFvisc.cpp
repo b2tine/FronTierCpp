@@ -67,6 +67,8 @@ void G_CARTESIAN::addViscousFlux(
     }
 }
 
+//TODO: For 4th order approximation to viscous flux need
+//      to add points points i-2 and i+2 to stencil in each direction.
 void G_CARTESIAN::fillViscousFluxStencil2d(
         int* icoords,
         SWEEP* m_vst,
@@ -100,6 +102,8 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
     }
 }
 
+//TODO: For 4th order approximation to viscous flux need
+//      to add points points i-2 and i+2 to stencil in each direction.
 void G_CARTESIAN::fillViscousFluxStencil3d(
         int* icoords,
         SWEEP* m_vst,
@@ -405,16 +409,18 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
+    /*
+    //TODO: CAN WE GET RID OF THIS?
+    //      THIS SHOULD ONLY BE DONE IF NO DIFFUSIVE FLUX BEING USED?
+    /////////////////////////////////////////////////////////////////////////
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
     if (eqn_params->use_eddy_viscosity == NO)
     {
-        /*
-        for (int j = 0; j < dim; ++j)
-        {
-            //TODO: Is this correct?
-            vs->vel[j] = vel_reflect[j] + vel_ghost_nor[j];
-        }
-        */
+        //for (int j = 0; j < dim; ++j)
+        //{
+        //    //TODO: Is this correct?
+        //    vs->vel[j] = vel_reflect[j] + vel_ghost_nor[j];
+        //}
             
         double vel_ghost_rel[MAXD];
         for (int j = 0; j < dim; ++j)
@@ -428,6 +434,8 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
         return;
     }
+    /////////////////////////////////////////////////////////////////////////
+    */
 
     if (debugging("slip_boundary"))
     {
@@ -486,7 +494,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     for (int j = 0; j < dim; ++j)
     {
         vel_ghost_tan[j] = vel_rel_tan[j]
-            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+            - (dist_reflect + dist_ghost)/mu_reflect*tau_wall[j];
 
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         
@@ -525,6 +533,8 @@ void G_CARTESIAN::computeViscousFlux2d(
         double delta_t,
         VStencil2d* vsten)
 {
+    //TODO: For 4th order approximation to viscous flux need
+    //      to add points points i-2 and i+2 to stencil in each direction.
     auto sten = vsten->st;
 
     double u = sten[1][1].vel[0];
@@ -592,6 +602,8 @@ void G_CARTESIAN::computeViscousFlux3d(
         double delta_t,
         VStencil3d* vsten)
 {
+    //TODO: For 4th order approximation to viscous flux need
+    //      to add points points i-2 and i+2 to stencil in each direction.
     auto sten = vsten->st;
 
     double u = sten[1][1][1].vel[0];
