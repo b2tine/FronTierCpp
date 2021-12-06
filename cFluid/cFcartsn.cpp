@@ -887,6 +887,8 @@ void G_CARTESIAN::setDomain()
 	    }
 	    
         FT_VectorMemoryAlloc((POINTER*)&eqn_params->mu,size,sizeof(double));
+        FT_VectorMemoryAlloc((POINTER*)&eqn_params->mu_lam,size,sizeof(double));
+        FT_VectorMemoryAlloc((POINTER*)&eqn_params->mu_turb,size,sizeof(double));
         FT_VectorMemoryAlloc((POINTER*)&eqn_params->k_turb,size,sizeof(double));
         FT_VectorMemoryAlloc((POINTER*)&eqn_params->temp,size,sizeof(double));
         FT_VectorMemoryAlloc((POINTER*)&eqn_params->Ktherm,size,sizeof(double));
@@ -914,6 +916,8 @@ void G_CARTESIAN::setDomain()
         }
 	    
 	    field.mu = eqn_params->mu;
+	    field.mu_lam = eqn_params->mu_lam;
+	    field.mu_turb = eqn_params->mu_turb;
 	    field.k_turb = eqn_params->k_turb;
 	    field.temp = eqn_params->temp;
 	    field.Ktherm = eqn_params->Ktherm;
@@ -954,6 +958,8 @@ void G_CARTESIAN::allocMeshVst(
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->mu,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->mu_lam,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->mu_turb,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->k_turb,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->temp,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->Ktherm,size,sizeof(double));
@@ -991,6 +997,8 @@ void G_CARTESIAN::allocDirVstFlux(
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->mu,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->mu_lam,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->mu_turb,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->k_turb,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->temp,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->Ktherm,size,sizeof(double));
@@ -1004,7 +1012,8 @@ void G_CARTESIAN::freeDirVstFlux(
         SWEEP* vst,
         FSWEEP* flux)
 {
-    FT_FreeThese(8,vst->dens,vst->engy,vst->pres,vst->momn,vst->mu,vst->temp,vst->k_turb,vst->Ktherm);
+    FT_FreeThese(10,vst->dens,vst->engy,vst->pres,vst->momn,vst->mu,
+            vst->mu_lam,vst->mu_turb,vst->temp,vst->k_turb,vst->Ktherm);
     FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }	/* end allocDirMeshVstFlux */
 
@@ -1039,6 +1048,7 @@ void G_CARTESIAN::checkFlux(FSWEEP *flux)
 	}
 }
 
+//TODO: update for mu_lam, mu_turb, Ktherm etc.
 void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 {
 	int i,j,k,l,index;
@@ -1158,6 +1168,7 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	fclose(outfile);
 }
 
+//TODO: update for mu_lam, mu_turb, Ktherm etc.
 extern void readFrontStates(
 	Front		*front,
 	char		*restart_name)
@@ -1218,6 +1229,7 @@ extern void readFrontStates(
 	fclose(infile);
 }
 
+//TODO: update for mu_lam, mu_turb, Ktherm etc.
 void G_CARTESIAN::readInteriorStates(char *restart_name)
 {
 	FILE *infile;
@@ -3091,6 +3103,8 @@ void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 	FT_ParallelExchGridArrayBuffer(m_vst->pres,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->temp,front,nullptr);
     FT_ParallelExchGridArrayBuffer(m_vst->mu,front,nullptr);
+    FT_ParallelExchGridArrayBuffer(m_vst->mu_lam,front,nullptr);
+    FT_ParallelExchGridArrayBuffer(m_vst->mu_turb,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->k_turb,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->Ktherm,front,nullptr);
 	
@@ -3290,6 +3304,8 @@ void G_CARTESIAN::copyMeshVst(
             m_vst->pres[index] = m_vst_orig.pres[index];
             m_vst->temp[index] = m_vst_orig.temp[index];
             m_vst->mu[index] = m_vst_orig.mu[index];
+            m_vst->mu_lam[index] = m_vst_orig.mu_lam[index];
+            m_vst->mu_turb[index] = m_vst_orig.mu_turb[index];
             m_vst->k_turb[index] = m_vst_orig.k_turb[index];
             m_vst->Ktherm[index] = m_vst_orig.Ktherm[index];
             for (l = 0; l < dim; ++l)
@@ -3306,6 +3322,8 @@ void G_CARTESIAN::copyMeshVst(
             m_vst->pres[index] = m_vst_orig.pres[index];
             m_vst->temp[index] = m_vst_orig.temp[index];
             m_vst->mu[index] = m_vst_orig.mu[index];
+            m_vst->mu_lam[index] = m_vst_orig.mu_lam[index];
+            m_vst->mu_turb[index] = m_vst_orig.mu_turb[index];
             m_vst->k_turb[index] = m_vst_orig.k_turb[index];
             m_vst->Ktherm[index] = m_vst_orig.Ktherm[index];
             for (l = 0; l < dim; ++l)
@@ -3323,6 +3341,8 @@ void G_CARTESIAN::copyMeshVst(
             m_vst->pres[index] = m_vst_orig.pres[index];
             m_vst->temp[index] = m_vst_orig.temp[index];
             m_vst->mu[index] = m_vst_orig.mu[index];
+            m_vst->mu_lam[index] = m_vst_orig.mu_lam[index];
+            m_vst->mu_turb[index] = m_vst_orig.mu_turb[index];
             m_vst->k_turb[index] = m_vst_orig.k_turb[index];
             m_vst->Ktherm[index] = m_vst_orig.Ktherm[index];
             for (l = 0; l < dim; ++l)
@@ -3342,6 +3362,8 @@ void G_CARTESIAN::copyToMeshVst(
 	double *pres = field.pres;
 	double *temp = field.temp;
 	double *mu = field.mu;
+	double *mu_lam = field.mu_lam;
+	double *mu_turb = field.mu_turb;
 	double *k_turb = field.k_turb;
 	double *Ktherm = field.Ktherm;
 
@@ -3356,6 +3378,8 @@ void G_CARTESIAN::copyToMeshVst(
             m_vst->pres[index] = pres[index];
             m_vst->temp[index] = temp[index];
             m_vst->mu[index] = mu[index];
+            m_vst->mu_lam[index] = mu_lam[index];
+            m_vst->mu_turb[index] = mu_turb[index];
             m_vst->k_turb[index] = k_turb[index];
             m_vst->Ktherm[index] = Ktherm[index];
             for (l = 0; l < dim; ++l)
@@ -3373,6 +3397,8 @@ void G_CARTESIAN::copyToMeshVst(
             m_vst->pres[index] = pres[index];
             m_vst->temp[index] = temp[index];
             m_vst->mu[index] = mu[index];
+            m_vst->mu_lam[index] = mu_lam[index];
+            m_vst->mu_turb[index] = mu_turb[index];
             m_vst->k_turb[index] = k_turb[index];
             m_vst->Ktherm[index] = Ktherm[index];
             for (l = 0; l < dim; ++l)
@@ -3391,6 +3417,8 @@ void G_CARTESIAN::copyToMeshVst(
             m_vst->pres[index] = pres[index];
             m_vst->temp[index] = temp[index];
             m_vst->mu[index] = mu[index];
+            m_vst->mu_lam[index] = mu_lam[index];
+            m_vst->mu_turb[index] = mu_turb[index];
             m_vst->k_turb[index] = k_turb[index];
             m_vst->Ktherm[index] = Ktherm[index];
             for (l = 0; l < dim; ++l)
@@ -3413,6 +3441,8 @@ void G_CARTESIAN::copyFromMeshVst(
 	double *pres = field.pres;
 	double *temp = field.temp;
 	    double *mu = field.mu;
+	    double *mu_lam = field.mu_lam;
+	    double *mu_turb = field.mu_turb;
 	    double *k_turb = field.k_turb;
 	    double *Ktherm = field.Ktherm;
 	
@@ -3440,6 +3470,8 @@ void G_CARTESIAN::copyFromMeshVst(
             state.pres = m_vst.pres[index];
             state.temp = m_vst.temp[index];
                 state.mu = m_vst.mu[index];
+                state.mu_lam = m_vst.mu_lam[index];
+                state.mu_turb = m_vst.mu_turb[index];
                 state.k_turb = m_vst.k_turb[index];
                 state.Ktherm = m_vst.Ktherm[index];
         
@@ -3459,6 +3491,8 @@ void G_CARTESIAN::copyFromMeshVst(
             pres[index] = state.pres;
             temp[index] = state.temp;
                 mu[index] = state.mu;
+                mu_lam[index] = state.mu_lam;
+                mu_turb[index] = state.mu_turb;
                 k_turb[index] = state.k_turb;
                 Ktherm[index] = state.Ktherm;
         
@@ -3479,6 +3513,8 @@ void G_CARTESIAN::copyFromMeshVst(
             state.pres = m_vst.pres[index];
             state.temp = m_vst.temp[index];
                 state.mu = m_vst.mu[index];
+                state.mu_lam = m_vst.mu_lam[index];
+                state.mu_turb = m_vst.mu_turb[index];
                 state.k_turb = m_vst.k_turb[index];
                 state.Ktherm = m_vst.Ktherm[index];
         
@@ -3498,6 +3534,8 @@ void G_CARTESIAN::copyFromMeshVst(
             pres[index] = state.pres;
             temp[index] = state.temp;
                 mu[index] = state.mu;
+                mu_lam[index] = state.mu_lam;
+                mu_turb[index] = state.mu_turb;
                 k_turb[index] = state.k_turb;
                 Ktherm[index] = state.Ktherm;
         
@@ -3519,6 +3557,8 @@ void G_CARTESIAN::copyFromMeshVst(
             state.pres = m_vst.pres[index];
             state.temp = m_vst.temp[index];
                 state.mu = m_vst.mu[index];
+                state.mu_lam = m_vst.mu_lam[index];
+                state.mu_turb = m_vst.mu_turb[index];
                 state.k_turb = m_vst.k_turb[index];
                 state.Ktherm = m_vst.Ktherm[index];
         
@@ -3538,6 +3578,8 @@ void G_CARTESIAN::copyFromMeshVst(
             pres[index] = state.pres;
             temp[index] = state.temp;
                 mu[index] = state.mu;
+                mu_lam[index] = state.mu_lam;
+                mu_turb[index] = state.mu_turb;
                 k_turb[index] = state.k_turb;
                 Ktherm[index] = state.Ktherm;
         
@@ -4006,7 +4048,8 @@ void G_CARTESIAN::scatMeshStates()
 void G_CARTESIAN::freeVst(
 	SWEEP *vst)
 {
-	FT_FreeThese(8,vst->dens,vst->momn,vst->engy,vst->pres,vst->temp,vst->mu,vst->k_turb,vst->Ktherm);
+	FT_FreeThese(10,vst->dens,vst->momn,vst->engy,vst->pres,vst->temp,
+            vst->mu,vst->mu_lam,vst->mu_turb,vst->k_turb,vst->Ktherm);
 }	/* end freeVst */
 
 void G_CARTESIAN::freeFlux(

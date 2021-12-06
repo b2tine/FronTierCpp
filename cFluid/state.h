@@ -86,6 +86,8 @@ struct STATE : public FABRIC_STATE
     int dim;//TODO: can get rid of this?
     
     double mu;
+    double mu_lam;
+    double mu_turb;
     double temp;
     double k_turb;
     double Ktherm;

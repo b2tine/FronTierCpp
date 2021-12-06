@@ -157,6 +157,8 @@ struct EQN_PARAMS
 	double *pres;
     double *temp;   //temperature
     double *mu;
+    double *mu_lam;
+    double *mu_turb;
     double *Ktherm; //thermal conductivity
     double *k_turb; //turbulent kinetic energy
 
@@ -305,6 +307,8 @@ struct FIELD
     double **vorticity;
     double *temp;
     double *mu;
+    double *mu_lam;
+    double *mu_turb;
     double *Ktherm; //thermal conductivity
     double *k_turb; //turbulent kinetic energy
 };
@@ -316,6 +320,8 @@ struct SWEEP
     double *engy;           /* internal energy vector */
     double *pres;           /* used for EOS */
     double *mu;
+    double *mu_lam;
+    double *mu_turb;
     double *k_turb;
     double *temp;
     double *Ktherm; //thermal conductivity

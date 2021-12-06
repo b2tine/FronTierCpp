@@ -35,6 +35,7 @@ void G_CARTESIAN::computeDynamicViscosity()
 void G_CARTESIAN::computeDynamicViscosity2d()
 {
     double* mu = field.mu;
+    double* mu_lam = field.mu_lam;
     double* temp = field.temp;
     double* Ktherm = field.Ktherm;
 
@@ -53,6 +54,8 @@ void G_CARTESIAN::computeDynamicViscosity2d()
         }
 
         //TODO: Is reference the ambient state values or specific empirical values?
+        //
+        //      Hardcode below for now
         double T_reference;
         double mu_reference;
         switch (comp)
@@ -74,7 +77,9 @@ void G_CARTESIAN::computeDynamicViscosity2d()
         //Sutherland's Law Viscosity
         double S = 110.4;
         double C = 1.716e-05*(273.15 + S)/std::pow(273.15,1.5);
-        mu[index] = C*std::pow(temp[index],1.5)/(temp[index] + S);
+        mu_lam[index] = C*std::pow(temp[index],1.5)/(temp[index] + S);
+        mu[index] = mu_lam[index];
+
             //mu[index] = mu_reference*std::sqrt(T_reference)/(1.0 + T_reference/temp[index]);
 
         //HEAT FLUX -- compute thermal conductivity, Ktherm.
@@ -91,7 +96,7 @@ void G_CARTESIAN::computeDynamicViscosity2d()
             //double Cp = 1004.7;
 
         double Pr = 0.71;
-        Ktherm[index] = Cp*mu[index]/Pr;
+        Ktherm[index] = Cp*mu_lam[index]/Pr;
         /////////////////////////////////////////
 
         if (mu[index] > mu_max)
@@ -104,6 +109,7 @@ void G_CARTESIAN::computeDynamicViscosity2d()
 void G_CARTESIAN::computeDynamicViscosity3d()
 {
     double* mu = field.mu;
+    double* mu_lam = field.mu_lam;
     double* temp = field.temp;
     double* Ktherm = field.Ktherm;
 
@@ -123,6 +129,8 @@ void G_CARTESIAN::computeDynamicViscosity3d()
         }
 
         //TODO: Is reference the ambient state values or specific empirical values?
+        //
+        //      Hardcode below for now
         double T_reference;
         double mu_reference;
         switch (comp)
@@ -144,7 +152,10 @@ void G_CARTESIAN::computeDynamicViscosity3d()
         //Sutherland's Law Viscosity
         double S = 110.4;
         double C = 1.716e-05*(273.15 + S)/std::pow(273.15,1.5);
-        mu[index] = C*std::pow(temp[index],1.5)/(temp[index] + S);
+        mu_lam[index] = C*std::pow(temp[index],1.5)/(temp[index] + S);
+        mu[index] = mu_lam[index];
+        
+        //mu[index] = C*std::pow(temp[index],1.5)/(temp[index] + S);
             //mu[index] = mu_reference*std::sqrt(T_reference)/(1.0 + T_reference/temp[index]);
     
         //HEAT FLUX -- compute thermal conductivity, Ktherm.
@@ -161,7 +172,7 @@ void G_CARTESIAN::computeDynamicViscosity3d()
             //double Cp = 1004.7;
 
         double Pr = 0.71;
-        Ktherm[index] = Cp*mu[index]/Pr;
+        Ktherm[index] = Cp*mu_lam[index]/Pr;
         /////////////////////////////////////////
 
         if (mu[index] > mu_max)
@@ -603,6 +614,9 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
     //TODO: Use viscosity computed by sutherland's law and current density,
     //      instead of the reference viscosity and density?
+    //      
+    //      Need to record mu_turb separately
+    /*
     double mu_l;
     double rho_l;
     switch (comp)
@@ -620,11 +634,10 @@ void G_CARTESIAN::setNeumannViscousGhostState(
             LOC(); clean_up(EXIT_FAILURE);
             break;
     }
-
-    /*
-    double mu_l = field.mu[index];
-    double rho_l = field.dens[index];
     */
+
+    double mu_l = field.mu_lam[index];
+    double rho_l = field.dens[index];
     
     //NOTE: In all numerical experiments, Newton's method converged
     //      when the initial guess for the dimensionless wall velocity
@@ -681,8 +694,10 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double Pr = 0.71;
     
     //TODO: Use interface relative velocity or actual velocity? 
+    double sqrmag_vel_tan = Dotd(vel_rel_tan,vel_rel_tan,dim);
+    double sqrmag_vel_ghost_tan = Dotd(vel_ghost_tan,vel_ghost_tan,dim);
     double temp_ghost = temp_reflect + 
-        0.5*pow(Pr,1.0/3.0)*(Dotd(vel_ghost_tan,vel_ghost_tan,dim) - Dotd(vel_ghost_rel,vel_ghost_rel,dim)) / Cp;
+        0.5*pow(Pr,1.0/3.0)*(sqrmag_vel_tan - sqrmag_vel_ghost_tan)/Cp;
 
     vs->temp = temp_ghost;
     //////////////////////////////////////////////////////////////////////////////////////

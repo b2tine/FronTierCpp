@@ -596,6 +596,7 @@ void G_CARTESIAN::initChannelFlowStates()
 	INTERFACE *intfc = front->interf;
 	
     double *mu = field.mu;
+    double *mu_lam = field.mu_lam;
     double *temp = field.temp;
 	double *dens = field.dens;
 	double *engy = field.engy;
@@ -639,6 +640,7 @@ void G_CARTESIAN::initChannelFlowStates()
             getAmbientState(&state,eqn_params,coords,comp);
 
             mu[index] = state.mu;
+            mu_lam[index] = state.mu;
             temp[index] = state.temp;
             dens[index] = state.dens;
             pres[index] = state.pres;
@@ -663,6 +665,7 @@ void G_CARTESIAN::initChannelFlowStates()
             getAmbientState(&state,eqn_params,coords,comp);
 
             mu[index] = state.mu;
+            mu_lam[index] = state.mu;
             temp[index] = state.temp;
             dens[index] = state.dens;
             pres[index] = state.pres;

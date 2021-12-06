@@ -1777,6 +1777,14 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
     int index = d_index(icoords,top_gmax,dim);
     //TODO: ADD DEBUG BLOCK HERE -- LIKE setSlipBoundaryNIP()
 
+    //Interpolate Temperature
+    double temp_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
+            getStateTemp,&temp_reflect,&m_vst->temp[index]);
+
+    double temp_ghost = temp_reflect;
+    vs->temp = temp_ghost;
+
     //Interpolate Density and Momentum at the reflected point and compute the velocity.
     double dens_reflect;
     /*

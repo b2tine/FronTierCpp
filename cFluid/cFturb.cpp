@@ -40,6 +40,8 @@ void G_CARTESIAN::computeEddyViscosity()
 void G_CARTESIAN::computeEddyViscosity2d()
 {
     double* mu = field.mu;
+    double* mu_lam = field.mu_lam;
+    double* mu_turb = field.mu_turb;
     double* k_turb = field.k_turb;
     double* Ktherm = field.Ktherm;
 
@@ -76,9 +78,11 @@ void G_CARTESIAN::computeEddyViscosity2d()
         */
 
         //TODO: Use model specified by eqn_params->eddy_viscosity_model
-        double mu_turb = computeEddyViscosityVremanModel_BdryAware(icoords);
+        
+        //TODO: Need to record mu_turb separately
 
-        mu[index] += mu_turb;
+        mu_turb[index] = computeEddyViscosityVremanModel_BdryAware(icoords);
+        mu[index] += mu_turb[index];
             //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
         
         //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
@@ -98,7 +102,7 @@ void G_CARTESIAN::computeEddyViscosity2d()
         
         double Pr_turb = 0.9;
         double Cp = R*gamma/(gamma - 1.0);
-        Ktherm[index] += Cp*mu_turb/Pr_turb;
+        Ktherm[index] += Cp*mu_turb[index]/Pr_turb;
         /////////////////////////////////////////
 
 
@@ -112,6 +116,8 @@ void G_CARTESIAN::computeEddyViscosity2d()
 void G_CARTESIAN::computeEddyViscosity3d()
 {
     double* mu = field.mu;
+    double* mu_lam = field.mu_lam;
+    double* mu_turb = field.mu_turb;
     double* k_turb = field.k_turb;
     double* Ktherm = field.Ktherm;
 
@@ -149,9 +155,8 @@ void G_CARTESIAN::computeEddyViscosity3d()
         */
 
         //TODO: Use model specified by eqn_params->eddy_viscosity_model
-        double mu_turb = computeEddyViscosityVremanModel_BdryAware(icoords);
-
-        mu[index] += mu_turb;
+        mu_turb[index] = computeEddyViscosityVremanModel_BdryAware(icoords);
+        mu[index] += mu_turb[index];
             //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
         
         //mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
@@ -171,7 +176,7 @@ void G_CARTESIAN::computeEddyViscosity3d()
         
         double Pr_turb = 0.9;
         double Cp = R*gamma/(gamma - 1.0);
-        Ktherm[index] += Cp*mu_turb/Pr_turb;
+        Ktherm[index] += Cp*mu_turb[index]/Pr_turb;
         /////////////////////////////////////////
 
 
@@ -808,6 +813,9 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 
     //TODO: Use viscosity computed by sutherland's law and current density,
     //      instead of the reference viscosity and density?
+    //
+    //      Need to record mu_turb separately
+    /*
     double mu_l;
     double rho_l;
     switch (comp)
@@ -825,11 +833,10 @@ void G_CARTESIAN::setSlipBoundaryNIP(
             LOC(); clean_up(EXIT_FAILURE);
             break;
     }
-
-    /*
-    double mu_l = field.mu[index];
-    double rho_l = field.dens[index];
     */
+
+    double mu_l = field.mu_lam[index];
+    double rho_l = field.dens[index];
     
     double tau_wall[MAXD] = {0.0};
     double mag_tau_wall = computeWallShearStress(mag_vtan,
@@ -859,7 +866,8 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     for (int j = 0; j < dim; ++j)
     {
         vel_ghost_tan[j] = vel_rel_tan[j]
-            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+            - (dist_reflect + dist_ghost)/mu_reflect*tau_wall[j];
+        //vel_ghost_tan[j] = vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
 
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
