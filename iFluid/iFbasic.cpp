@@ -2547,9 +2547,9 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
-	    index  = d_index3d(i,j,k,top_gmax);			
+	    index = d_index3d(i,j,k,top_gmax);			
 	    
-        comp  = cell_center[index].comp;
+        comp = cell_center[index].comp;
 	    if (!ifluid_comp(comp)) 
         {
             mu[index] = 0.0;
@@ -2653,7 +2653,10 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 break;
             }
 
-            //CALLING THIS HERE ONLY SO THE SLIP WALL VELOCITY IS SET IN THE "ghost_data" ARRAY
+            //TODO: Handle this better
+            //
+            //      CALLING THIS HERE ONLY SO THE SLIP WALL VELOCITY IS SET
+            //      IN THE "ghost_data" ARRAY
             auto alpha = computeVelocityGradient(icoords);
 	    }
 
@@ -2662,6 +2665,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         if (rho[index] < rho_min) rho_min = rho[index];
 	}
 
+    //TODO: communicate ghost_data array?
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);

@@ -302,8 +302,18 @@ printf("nb %d:  len = %g   sv->len0[%d] = %g\n", j, len, j, sv->len0[j]);
 
         double dL = len - sv->len0[j];
         
+        /*
         //zero compressive stress
         if (dL <= 0.0) continue;
+        */
+
+        if (dL <= 0.0)
+        {
+            if (!debugging("allow_compressive_stress"))
+            {
+                continue;
+            }
+        }
 
 	    for (int k = 0; k < dim; ++k)
 	    {
