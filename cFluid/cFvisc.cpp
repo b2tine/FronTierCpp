@@ -103,8 +103,8 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
     }
 }
 
-//TODO: For 4th order approximation to viscous flux need
-//      to add points points i-2 and i+2 to stencil in each direction.
+//For 4th order approximation to viscous flux 
+//add points i-2 and i+2 to stencil in each direction.
 void G_CARTESIAN::fillViscousFluxStencil2d_5pt(
         int* icoords,
         SWEEP* m_vst,
@@ -113,6 +113,11 @@ void G_CARTESIAN::fillViscousFluxStencil2d_5pt(
     int index = d_index(icoords,top_gmax,dim);
     COMPONENT comp = top_comp[index];
 
+    //TODO: buffer not wide enough near boundary
+    //
+    //      need to copy the i+1 state to the i+2 state
+    //      if i+1 point is on rect domain boundary
+    
     for (int j = 0; j < 5; ++j)
     for (int i = 0; i < 5; ++i)
     {
@@ -689,12 +694,27 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
             + sten[1][0].vel[1])/sqr(top_h[0]);
     double v_yy = (sten[2][1].vel[1] - 2.0*sten[1][1].vel[1]
             + sten[0][1].vel[1])/sqr(top_h[1]);
+    */
     
     
     //TODO: PICK BACK UP HERE -- compute 4th order approx to mixed partials
     //
+    //      FILL IN THE ARRAY INDEX VALUES
+    
+    double u_xy = 
+          (sten[0][3].vel[0] + sten[1][4].vel[0] + sten[3][0].vel[0] + sten[4][1].vel[0])/18.0/top_h[0]/top_h[1]
+        - (sten[0][1].vel[0] + sten[1][0].vel[0] + sten[4][3].vel[0] + sten[3][4].vel[0])/18.0/top_h[0]/top_h[1]
+        - (sten[0][4].vel[0] + sten[4][0].vel[0] - sten[0][0].vel[0] - sten[4][4].vel[0])/144.0/top_h[0]/top_h[1]
+        + (sten[1][1].vel[0] + sten[3][3].vel[0] - sten[1][3].vel[0] - sten[3][1].vel[0])*4.0/9.0/top_h[0]/top_h[1];
+    
+    double v_xy = 
+          (sten[0][3].vel[1] + sten[1][4].vel[1] + sten[3][0].vel[1] + sten[4][1].vel[1])/18.0/top_h[0]/top_h[1]
+        - (sten[0][1].vel[1] + sten[1][0].vel[1] + sten[4][3].vel[1] + sten[3][4].vel[1])/18.0/top_h[0]/top_h[1]
+        - (sten[0][4].vel[1] + sten[4][0].vel[1] - sten[0][0].vel[1] - sten[4][4].vel[1])/144.0/top_h[0]/top_h[1]
+        + (sten[1][1].vel[1] + sten[3][3].vel[1] - sten[1][3].vel[1] - sten[3][1].vel[1])*4.0/9.0/top_h[0]/top_h[1];
     
     
+    /*
     double u_xy = 0.25*(sten[2][2].vel[0] - sten[2][0].vel[0]
             - sten[0][2].vel[0] + sten[0][0].vel[0])/top_h[0]/top_h[1];
     double v_xy = 0.25*(sten[2][2].vel[1] - sten[2][0].vel[1]
