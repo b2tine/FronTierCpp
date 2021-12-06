@@ -1661,6 +1661,28 @@ void Incompress_Solver_Smooth_2D_Basis::sampleVelocity()
 	count++;
 }	/* end sampleVelocity2d */
 
+void Incompress_Solver_Smooth_Basis::clearGhostData()
+{
+    int num_cells = 1;
+    for (int i = 0; i < dim; ++i)
+    {
+        num_cells *= (top_gmax[i] + 1);
+    }
+
+    int nfaces = 2*dim;
+	for (int l = 0; l < nfaces; ++l)
+    {
+        for (int i = 0; i < num_cells; ++i)
+        {
+            for (int j = 0; j < dim; ++j)
+            {
+                ghost_data[l][i].vel[j] = 0.0;
+                ghost_data[l][i].force[j] = 0.0;
+            }
+        }
+    }
+}
+
 //TODO: factor into separate components -- surf tension, turbulence etc.
 //
 //TODO: put clock() calls on LES turb models

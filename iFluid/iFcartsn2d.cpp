@@ -680,6 +680,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	paintAllGridPoint(TO_SOLVE);
 	setGlobalIndex();
 
+    clearGhostData();
+
     start_clock("setSmoothedProperties");
 	setSmoothedProperties();
 	stop_clock("setSmoothedProperties");
@@ -688,10 +690,14 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	start_clock("computeAdvection");
     
     if (iFparams->extrapolate_advection)
+    {
 	    computeAdvectionTerm();
+    }
     else
+    {
         computeAdvection();
-	
+    }
+
 	stop_clock("computeAdvection");
     if (debugging("check_div") || debugging("step_size"))
 	{

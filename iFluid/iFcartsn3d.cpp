@@ -649,6 +649,8 @@ void Incompress_Solver_Smooth_3D_Cartesian::solve(double dt)
     if (debugging("trace"))
 	    printf("Passed setGlobalIndex()\n");
 
+    clearGhostData();
+
 	start_clock("setSmoothedProperties");
 	setSmoothedProperties();
 	stop_clock("setSmoothedProperties");

@@ -282,6 +282,7 @@ struct OPEN_PIPE_PARAMS
 };
 
 
+//Used for storing wall model computations
 struct GHOST_COMPUTATION
 {
     //int icoords[MAXD];
@@ -501,8 +502,9 @@ protected:
 	void paintConnectedRegion(int,int);
 	boolean paintToSolveGridPoint2(int);
 
-    //for storing precomputed values (to avoid recomputing)
+    //for storing precomputed values from wall model
     std::vector<GHOST_COMPUTATION> ghost_data[6];
+    void clearGhostData();
 
 protected:
 
