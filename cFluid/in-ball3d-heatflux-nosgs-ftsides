@@ -1,7 +1,7 @@
 Max time: 1.0
 Max step: 100000
-Print interval: 0.025
-Movie frame interval: 0.005
+Print interval: 0.005
+Movie frame interval: 0.0005
 CFL factor: 0.5
 Redistribution interval: 10000000000000
 
@@ -22,9 +22,9 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 50.0 0 0
-Enter pressure: 80
-Enter density: 2.0
+Enter velocity: 150.0 0 0
+Enter pressure: 3350
+Enter density: 3.675
 
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -57,13 +57,16 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.0 1.0
+Enter density and pressure of ambient air: 1.29 750
 
 Enter yes for heat flux: yes
 
 Enter the specific gas constant: 287.058
 Enter the Prandtl number: 0.71
 
+Enter the reference molecular viscosity: 1.716e-05
+Enter the reference temperature: 273.0
+Enter the effective temperature: 111.0
 
 Enter gravity: 0 0 0
 
