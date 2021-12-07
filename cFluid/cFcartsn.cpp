@@ -3371,7 +3371,6 @@ void G_CARTESIAN::copyToMeshVst(
 	}
 }	/* end copyToMeshVst */
 
-//TODO: velocity?
 void G_CARTESIAN::copyFromMeshVst(
 	const SWEEP& m_vst)
 {
@@ -4064,7 +4063,6 @@ void G_CARTESIAN::addMeshFluxToVst(
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
         m_vst->temp[index] = st.temp;
-            //m_vst->temp[index] = EosTemperature(&st);
 		
         u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
@@ -4081,6 +4079,14 @@ void G_CARTESIAN::addMeshFluxToVst(
 	    {
 		index = d_index3d(i,j,k,top_gmax);
 		comp = top_comp[index];
+		if (!gas_comp(comp))
+		{
+		    m_vst->dens[index] = 0.0;
+		    m_vst->engy[index] = 0.0;
+		    for (l = 0; l < dim; ++l)
+		    	m_vst->momn[l][index] = 0.0; 
+		    continue;
+		}
 		eos = &(eqn_params->eos[comp]);
 
 		m_vst->dens[index] += chi*m_flux.dens_flux[index];
@@ -4101,7 +4107,6 @@ void G_CARTESIAN::addMeshFluxToVst(
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
         m_vst->temp[index] = st.temp;
-            //m_vst->temp[index] = EosTemperature(&st);
 
 		u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);

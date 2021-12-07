@@ -23,9 +23,10 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 50.0 0 0
-Enter pressure: 80
-Enter density: 2.0
-
+Enter pressure: 3350
+Enter density: 3.675
+    XXXEnter pressureXXX: 80
+    XXXEnter densityXXX: 2.0
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -57,7 +58,8 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.0 1.0
+Enter density and pressure of ambient air: 1.29 750
+    XXXEnter density and pressure of ambient airXXX: 1.0 1.0
 
 Enter yes for heat flux: yes
 

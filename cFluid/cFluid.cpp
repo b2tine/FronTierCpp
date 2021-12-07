@@ -171,9 +171,7 @@ int main(int argc, char **argv)
         g_cartesian.writeMeshFileVTK();
         g_cartesian.writeCompGridMeshFileVTK();
     }
-
-    g_cartesian.initMovieVariables();
-
+    
     if (RestartRun)
 	{
 	    readFrontStates(&front,restart_state_name);
@@ -183,6 +181,8 @@ int main(int argc, char **argv)
 	{
 	    g_cartesian.setInitialStates();
 	}
+
+    g_cartesian.initMovieVariables();
 
 	if (debugging("trace"))
 	    printf("Passed state initialization()\n");
