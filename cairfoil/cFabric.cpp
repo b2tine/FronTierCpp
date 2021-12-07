@@ -394,185 +394,213 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
 	{
 	case 0:
 	    for (i = 1; i <= nrad; ++i)
-	    {
-		ic[idir] = icoords[idir] - i;
-		index = d_index(ic,top_gmax,dim);
+        {
+            ic[idir] = icoords[idir] - i;
+            index = d_index(ic,top_gmax,dim);
 
-//	 	The following is for debugging		    
-		boolean status;
-//		check neighbor in ldir[idir] 
-		for (k = 0; k < dim; ++k)
-		    ic_next[k] = ic[k];
-		ic_next[idir]++;
-		status = FT_StateStructAtGridCrossing(front,grid_intfc,
-			ic_next,ldir[idir],comp,(POINTER*)&state,
-			&hs,crx_coords);
-/*
-		if (status)
-		if (status && wave_type(hs) != 6)
-		    printf("HI,status=%d, wave_type(*hs)=%d\n",status,wave_type(hs));
-*/
+            //The following is for debugging		    
+            boolean status;
+            
+            //check neighbor in ldir[idir] 
+            for (k = 0; k < dim; ++k)
+                ic_next[k] = ic[k];
+            
+            ic_next[idir]++;
+            
+            status = FT_StateStructAtGridCrossing(front,grid_intfc,
+                ic_next,ldir[idir],comp,(POINTER*)&state,
+                &hs,crx_coords);
+    /*
+            if (status)
+            if (status && wave_type(hs) != 6)
+                printf("HI,status=%d, wave_type(*hs)=%d\n",status,wave_type(hs));
+    */
 
-		if (!needBufferFromIntfc(comp,cell_center[index].comp) && !status)
-		{
-		    vst->dens[nrad-i] = m_vst->dens[index];
-		    vst->engy[nrad-i] = m_vst->engy[index];
-		    vst->pres[nrad-i] = m_vst->pres[index];
-
-		    for (j = 0; j < 3; j++)
-			vst->momn[j][nrad-i] = 0.0;
-		    if (dim == 1)
-			vst->momn[0][nrad-i] = m_vst->momn[0][index];
-		    else if (dim == 2)
-                for(j = 0; j < 2; j++)
-			    vst->momn[j][nrad-i] = 
-			    	 	m_vst->momn[ind2[idir][j]][index];
-		    else if (dim == 3){
-			for (j = 0; j < 3; j++){
-			    vst->momn[j][nrad-i] = 
-			    	 	m_vst->momn[ind3[idir][j]][index];
-			}
-
-		    }
-
-		}
-		else
-		{
-		    if (!status) /* extreme cases */
+            if (!needBufferFromIntfc(comp,cell_center[index].comp) && !status)
             {
-                double coords[MAXD], wtol[MAXD], tol[MAXD];
-                int ic_tmp[MAXD];
-                for (k = 0; k < dim; ++k)
-                                tol[k] = 2.0 * IG_TOL * top_h[k];
-                /* check neighbor in the opposite direction */
-                for (k = 0; k < dim; ++k)
-                                ic_tmp[k] = ic[k];
-                            ic_tmp[idir]--;
-                status = FT_StateStructAtGridCrossing(front,grid_intfc,
-                        ic_tmp,rdir[idir],comp,(POINTER*)&state,
-                        &hs,crx_coords);
-                if(!status)
+                vst->dens[nrad-i] = m_vst->dens[index];
+                vst->engy[nrad-i] = m_vst->engy[index];
+                vst->pres[nrad-i] = m_vst->pres[index];
+
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][nrad-i] = 0.0;
+                
+                if (dim == 1)
                 {
-                    /* check second neighbor in the same direction */
-                    for (k = 0; k < dim; ++k)
-                                    ic_tmp[k] = ic[k];
-                                ic_tmp[idir] += 2;
-                                status = FT_StateStructAtGridCrossing(front,
-                                            grid_intfc,ic_tmp,ldir[idir],comp,
-                                            (POINTER*)&state,&hs,crx_coords);
-                    if (!status)
+                    vst->momn[0][nrad-i] = m_vst->momn[0][index];
+                }
+                else if (dim == 2)
+                {
+                    for(j = 0; j < 2; j++)
                     {
-                    /* must be something wrong */
+                        vst->momn[j][nrad-i] = m_vst->momn[ind2[idir][j]][index];
+                    }
+                }
+                else if (dim == 3)
+                {
+                    for (j = 0; j < 3; j++)
+                    {
+                        vst->momn[j][nrad-i] = m_vst->momn[ind3[idir][j]][index];
+                    }
+                }
+            }
+            else
+            {
+                if (!status) /* extreme cases */
+                {
+                    double coords[MAXD], wtol[MAXD], tol[MAXD];
+                    int ic_tmp[MAXD];
+
+                    for (k = 0; k < dim; ++k)
+                        tol[k] = 2.0 * IG_TOL * top_h[k];
+
+                    /* check neighbor in the opposite direction */
+                    for (k = 0; k < dim; ++k)
+                        ic_tmp[k] = ic[k];
+
+                    ic_tmp[idir]--;
+
+                    status = FT_StateStructAtGridCrossing(front,grid_intfc,
+                            ic_tmp,rdir[idir],comp,(POINTER*)&state,
+                            &hs,crx_coords);
+
+                    if(!status)
+                    {
+                        /* check second neighbor in the same direction */
+                        for (k = 0; k < dim; ++k)
+                            ic_tmp[k] = ic[k];
+
+                        ic_tmp[idir] += 2;
+                        
+                        status = FT_StateStructAtGridCrossing(front,grid_intfc,
+                                ic_tmp,ldir[idir],comp,(POINTER*)&state,
+                                &hs,crx_coords);
+                        
+                        if (!status)
+                        {
+                            /* must be something wrong */
                             printf("In appendGhostBuffer() Case 0\n");
                             printf("ERROR: No crossing found!\n");
                             print_int_vector("ic=",ic,dim,"\n");
                             printf("direction: %s side %d\n",
                             grid_direction_name(ldir[idir]), nb);
-                    clean_up(ERROR);
+                            clean_up(ERROR);
+                        }
+                        else
+                        {
+                            /* check if crossing is close enough */
+                            boolean close_enough = YES;
+                            for (k = 0; k < dim; ++k)
+                            {
+                                coords[k] = top_L[k]+ic_next[k]*top_h[k];
+                                wtol[k] = crx_coords[k] - coords[k];
+                                
+                                if (fabs(wtol[k]) > tol[k])
+                                    close_enough = NO;
+                            }
+                            
+                            if (!close_enough)
+                            {
+                                (void) printf("ERROR: Not close enough!\n");
+                                clean_up(ERROR);
+                            }
+                        }
                     }
                     else
                     {
-                    /* check if crossing is close enough */
+                        /* check if crossing is close enough */
                         boolean close_enough = YES;
-                                    for (k = 0; k < dim; ++k)
-                                    {
-                                        coords[k] = top_L[k]+ic_next[k]*top_h[k];
-                                        wtol[k] = crx_coords[k] - coords[k];
-                                        if (fabs(wtol[k]) > tol[k])
-                                            close_enough = NO;
-                                    }
-                                    if (!close_enough)
-                                    {
-                                        (void) printf("ERROR: Not close enough!\n");
-                                        clean_up(ERROR);
-                                    }
-                    }
-                }
-                else
-                {
-                    /* check if crossing is close enough */
-                    boolean close_enough = YES;
-                    for (k = 0; k < dim; ++k)
-                    {
-                        coords[k] = top_L[k] + ic[k] * top_h[k];
-                        wtol[k] = crx_coords[k] - coords[k];
-                        if (fabs(wtol[k]) > tol[k])
-                            close_enough = NO;
-                    }
-                    if (!close_enough)
-                    {
-                        (void) printf("ERROR: Not close enough!\n");
-                        clean_up(ERROR);
-                    }
-                }
-                
-            }
+                        for (k = 0; k < dim; ++k)
+                        {
+                            coords[k] = top_L[k] + ic[k] * top_h[k];
+                            wtol[k] = crx_coords[k] - coords[k];
+                        
+                            if (fabs(wtol[k]) > tol[k])
+                                close_enough = NO;
+                        }
 
-		    switch (wave_type(hs))
-		    {
-		    case NEUMANN_BOUNDARY:
-		    case MOVABLE_BODY_BOUNDARY:
-		    	setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
-						nb,0,i,comp);
-		    	break;
-		    case ELASTIC_BOUNDARY:
-		    	setElasticStates(vst,m_vst,hs,state,ic_next,idir,
-						nb,0,i,comp);
-			break;
-		    case DIRICHLET_BOUNDARY:
-		    	setDirichletStates(state,vst,m_vst,hs,ic_next,
-					idir,nb,0,i);
-		    	break;
-		    case FIRST_PHYSICS_WAVE_TYPE:
-		    	GFMGhostState(ic,comp,&ghost_st);
-		    	for (k = i; k <= nrad; ++k)
-		    	{
-		    	    vst->dens[nrad-k] = ghost_st.dens;
-		    	    vst->engy[nrad-k] = ghost_st.engy;
-		    	    vst->pres[nrad-k] = ghost_st.pres;
-			
-			    for (j=0; j < 3; j++)
-			    	    vst->momn[j][nrad-k] = 0.0;
-			    if (dim == 1)
-				vst->momn[0][nrad-k] = ghost_st.momn[0];
-			    else if (dim == 2)
-			    	for (j=0; j < 2; j++)
-				    vst->momn[j][nrad-k] = 
-				     	    ghost_st.momn[ind2[idir][j]];
-			    else if (dim == 3)
-			    	for (j = 0; j < 3; j++)
-				    vst->momn[j][nrad-k] = 
-				     	    ghost_st.momn[ind3[idir][j]];
-		    	}
-		    	break;
-		    default:
-		    	(void) printf("In appendGhostBuffer(): ");
-		    	(void) print_wave_type("Unknown wave type ",
-					wave_type(hs),"\n",front->interf);
-		    	(void) print_int_vector("icoords=", icoords,3,"\n");
-		    	clean_up(ERROR);
-		    }
-		    break;
-		}
-	    
+                        if (!close_enough)
+                        {
+                            (void) printf("ERROR: Not close enough!\n");
+                            clean_up(ERROR);
+                        }
+                    }
+                    
+                }
+
+                switch (wave_type(hs))
+                {
+                case NEUMANN_BOUNDARY:
+                case MOVABLE_BODY_BOUNDARY:
+                    setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
+                            nb,0,i,comp);
+                    break;
+                case ELASTIC_BOUNDARY:
+                    setElasticStates(vst,m_vst,hs,state,ic_next,idir,
+                            nb,0,i,comp);
+                break;
+                case DIRICHLET_BOUNDARY:
+                    setDirichletStates(state,vst,m_vst,hs,ic_next,
+                        idir,nb,0,i);
+                    break;
+                case FIRST_PHYSICS_WAVE_TYPE:
+                    GFMGhostState(ic,comp,&ghost_st);
+                    
+                    for (k = i; k <= nrad; ++k)
+                    {
+                        vst->dens[nrad-k] = ghost_st.dens;
+                        vst->engy[nrad-k] = ghost_st.engy;
+                        vst->pres[nrad-k] = ghost_st.pres;
+                
+                        for (j=0; j < 3; j++)
+                            vst->momn[j][nrad-k] = 0.0;
+
+                        if (dim == 1)
+                        {
+                            vst->momn[0][nrad-k] = ghost_st.momn[0];
+                        }
+                        else if (dim == 2)
+                        {
+                            for (j=0; j < 2; j++)
+                            vst->momn[j][nrad-k] = ghost_st.momn[ind2[idir][j]];
+                        }
+                        else if (dim == 3)
+                        {    
+                            for (j = 0; j < 3; j++)
+                                vst->momn[j][nrad-k] = ghost_st.momn[ind3[idir][j]];
+                        }
+                    }
+                    break;
+                default:
+                    (void) printf("In appendGhostBuffer(): ");
+                    (void) print_wave_type("Unknown wave type ",
+                        wave_type(hs),"\n",front->interf);
+                    (void) print_int_vector("icoords=", icoords,3,"\n");
+                    clean_up(ERROR);
+                }
+                break;
+            }
+            
         }
 	    break;
 
 	case 1:
 	    for (i = 1; i <= nrad; ++i)  //nrad=3
 	    {
-		ic[idir] = icoords[idir] + i;
-		index = d_index(ic,top_gmax,dim);
+            ic[idir] = icoords[idir] + i;
+            index = d_index(ic,top_gmax,dim);
 
-//		For debugging
-		boolean status;
-//		check neighbor in rdir[idir] 
-		for (k = 0; k < dim; ++k)
-			ic_next[k] = ic[k];
-		ic_next[idir]--;
-		status = FT_StateStructAtGridCrossing(front,grid_intfc,
-				icoords,rdir[idir],comp,(POINTER*)&state,
-				&hs,crx_coords);
+            //For debugging
+            boolean status;
+            
+            //check neighbor in rdir[idir] 
+            for (k = 0; k < dim; ++k)
+                ic_next[k] = ic[k];
+
+            ic_next[idir]--;
+            status = FT_StateStructAtGridCrossing(front,grid_intfc,
+                    icoords,rdir[idir],comp,(POINTER*)&state,
+                    &hs,crx_coords);
 
 //For the needBufferFromIntfc function, if the two component are different,
 //YES is returned. Then for the following, the if statement is satisfied when 
@@ -581,150 +609,173 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
 //Then !status exclude the possibility of meeting elastic boundary.
 
 
-		if (!needBufferFromIntfc(comp,cell_center[index].comp) && !status )
-		{
-//		    if (status && wave_type(hs) == 13)
-//			printf("233: target boundary found.\n");
-		    vst->dens[n+nrad+i-1] = m_vst->dens[index];
-		    vst->engy[n+nrad+i-1] = m_vst->engy[index];
-		    vst->pres[n+nrad+i-1] = m_vst->pres[index];
-		    
-		    for (j = 0; j < 3; j++)
-			vst->momn[j][n+nrad+i-1] = 0.0;
-		    if (dim == 1)
-			vst->momn[0][n+nrad+i-1] = 
-			         	m_vst->momn[0][index];
-		    else if (dim == 2)
-			for(j = 0; j < 2; j++)
-			    	vst->momn[j][n+nrad+i-1] = 
-			         	m_vst->momn[ind2[idir][j]][index];
-		    else if (dim == 3)
-			for (j = 0; j < 3; j++)
-			    vst->momn[j][n+nrad+i-1] = 
-			         	m_vst->momn[ind3[idir][j]][index];
-		}
-		else
-		{
+		    if (!needBufferFromIntfc(comp,cell_center[index].comp) && !status )
+            {
+                //if (status && wave_type(hs) == 13)
+                //		printf("233: target boundary found.\n");
+                
+                vst->dens[n+nrad+i-1] = m_vst->dens[index];
+                vst->engy[n+nrad+i-1] = m_vst->engy[index];
+                vst->pres[n+nrad+i-1] = m_vst->pres[index];
+                
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+i-1] = 0.0;
+                
+                if (dim == 1)
+                {
+                    vst->momn[0][n+nrad+i-1] = m_vst->momn[0][index];
+                }
+                else if (dim == 2)
+                {
+                    for(j = 0; j < 2; j++)
+                    {
+                        vst->momn[j][n+nrad+i-1] = m_vst->momn[ind2[idir][j]][index];
+                    }
+                }
+                else if (dim == 3)
+                {
+                    for (j = 0; j < 3; j++)
+                    {
+                        vst->momn[j][n+nrad+i-1] = m_vst->momn[ind3[idir][j]][index];
+                    }
+                }
+            }
+		    else
+            {
+                if (!status) /* extreme cases */
+                {
+                    double coords[MAXD], wtol[MAXD], tol[MAXD];
+                    int ic_tmp[MAXD];
+                    for (k = 0; k < dim; ++k)
+                        tol[k] = 2.0 * IG_TOL * top_h[k];
+                    
+                    /* check neighbor in the opposite direction */
+                    for (k = 0; k < dim; ++k)
+                        ic_tmp[k] = ic[k];
 
+                    ic_tmp[idir]++;
 
-		    if (!status) /* extreme cases */
-		    {
-			double coords[MAXD], wtol[MAXD], tol[MAXD];
-			int ic_tmp[MAXD];
-			for (k = 0; k < dim; ++k)
-                            tol[k] = 2.0 * IG_TOL * top_h[k];
-			/* check neighbor in the opposite direction */
-			for (k = 0; k < dim; ++k)
+                    status = FT_StateStructAtGridCrossing(front,grid_intfc,
+                            ic_tmp,ldir[idir],comp,(POINTER*)&state,
+                            &hs,crx_coords);
+
+                    if(!status)
+                    {
+                        /* check second neighbor in the same direction */
+                        for (k = 0; k < dim; ++k)
                             ic_tmp[k] = ic[k];
-                        ic_tmp[idir]++;
-			status = FT_StateStructAtGridCrossing(front,grid_intfc,
-					ic_tmp,ldir[idir],comp,(POINTER*)&state,
-					&hs,crx_coords);
-			if(!status)
-			{
-			    /* check second neighbor in the same direction */
-			    for (k = 0; k < dim; ++k)
-                                ic_tmp[k] = ic[k];
-                            ic_tmp[idir] -= 2;
-                            status = FT_StateStructAtGridCrossing(front,
-                                        grid_intfc,ic_tmp,rdir[idir],comp,
-                                        (POINTER*)&state,&hs,crx_coords);
-			    if (!status)
-			    {
-				/* must be something wrong */
-		    	    	printf("In appendGhostBuffer() Case 1\n");
-		    	    	printf("ERROR: No crossing found!\n");
-		    	    	print_int_vector("ic=",ic,dim,"\n");
-		    	    	printf("direction: %s side %d\n",
-		           		grid_direction_name(ldir[idir]), nb);
-				clean_up(ERROR);
-			    }
-			    else
-			    {
-				/* check if crossing is close enough */
-			        boolean close_enough = YES;
-                                for (k = 0; k < dim; ++k)
-                                {
-                                    coords[k] = top_L[k] + ic_next[k]*top_h[k];
-                                    wtol[k] = crx_coords[k] - coords[k];
-                                    if (fabs(wtol[k]) > tol[k])
-                                        close_enough = NO;
-                                }
-                                if (!close_enough)
-                                {
-                                    (void) printf("ERROR: Not close enough!\n");
-                                    clean_up(ERROR);
-                                }
-			    }
-			}
-			else
-			{
-			    /* check if crossing is close enough */
-			    boolean close_enough = YES;
-			    for (k = 0; k < dim; ++k)
+
+                        ic_tmp[idir] -= 2;
+                        
+                        status = FT_StateStructAtGridCrossing(front,grid_intfc,
+                                ic_tmp,rdir[idir],comp,(POINTER*)&state,
+                                &hs,crx_coords);
+                        
+                        if (!status)
+                        {
+                            /* must be something wrong */
+                            printf("In appendGhostBuffer() Case 1\n");
+                            printf("ERROR: No crossing found!\n");
+                            print_int_vector("ic=",ic,dim,"\n");
+                            printf("direction: %s side %d\n",
+                            grid_direction_name(ldir[idir]), nb);
+                            clean_up(ERROR);
+                        }
+                        else
+                        {
+                            /* check if crossing is close enough */
+                            boolean close_enough = YES;
+                            for (k = 0; k < dim; ++k)
                             {
-                                coords[k] = top_L[k] + ic[k] * top_h[k];
+                                coords[k] = top_L[k] + ic_next[k]*top_h[k];
                                 wtol[k] = crx_coords[k] - coords[k];
-			        if (fabs(wtol[k]) > tol[k])
-				    close_enough = NO;
-			    }
-			    if (!close_enough)
-			    {
-			        (void) printf("ERROR: Not close enough!\n");
-			        clean_up(ERROR);
-			    }
-			}
-		    }
 
-		    switch (wave_type(hs))
-		    {
-		    case NEUMANN_BOUNDARY:
-		    case MOVABLE_BODY_BOUNDARY:
-		    	setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
-						nb,n,i,comp);
-		    	break;
-		    case ELASTIC_BOUNDARY:
-		    	setElasticStates(vst,m_vst,hs,state,ic_next,idir,
-						nb,n,i,comp);
-		    	break;
-		    case DIRICHLET_BOUNDARY:
-		    	setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,
-						n,i);
-		    	break;
-		    case FIRST_PHYSICS_WAVE_TYPE:
-		    	GFMGhostState(ic,comp,&ghost_st);
+                                if (fabs(wtol[k]) > tol[k])
+                                    close_enough = NO;
+                            }
 
-		    	for (k = i; k <= nrad; ++k)
-		    	{
-		    	    vst->dens[n+nrad+k-1] = ghost_st.dens;
-		    	    vst->engy[n+nrad+k-1] = ghost_st.engy;
-		    	    vst->pres[n+nrad+k-1] = ghost_st.pres;
-			
-			    for(j=0; j<3; j++)
-			    	vst->momn[j][n+nrad+k-1] = 0.0;
-			    if (dim == 1)
-				vst->momn[0][n+nrad+k-1] = ghost_st.momn[0];
-			    else if (dim == 2)
-			    	for(j = 0; j < 2; j++)
-				    vst->momn[j][n+nrad+k-1] = 
-				     	    ghost_st.momn[ind2[idir][j]];
-			    else if (dim == 3)
-			    	for(j = 0; j < 3; j++)
-				    vst->momn[j][n+nrad+k-1] = 
-				     	    ghost_st.momn[ind3[idir][j]];
-		    	}
-		    	break;
-		    default:
-		    	(void) printf("In appendGhostBuffer(): ");
-		    	(void) print_wave_type("Unknown wave type ",
-				wave_type(hs),"\n",front->interf);
-		    	(void) print_int_vector("icoords=",icoords,3,"\n");
-		    	(void) printf("nb = %d\n",nb);
-		    	clean_up(ERROR);
-		    }
-		    break;
-		}
-	    }
+                            if (!close_enough)
+                            {
+                                (void) printf("ERROR: Not close enough!\n");
+                                clean_up(ERROR);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        /* check if crossing is close enough */
+                        boolean close_enough = YES;
+                        for (k = 0; k < dim; ++k)
+                        {
+                            coords[k] = top_L[k] + ic[k] * top_h[k];
+                            wtol[k] = crx_coords[k] - coords[k];
+            
+                            if (fabs(wtol[k]) > tol[k])
+                                close_enough = NO;
+                        }
+                        
+                        if (!close_enough)
+                        {
+                            (void) printf("ERROR: Not close enough!\n");
+                            clean_up(ERROR);
+                        }
+                    }
+                }
+
+                switch (wave_type(hs))
+                {
+                case NEUMANN_BOUNDARY:
+                case MOVABLE_BODY_BOUNDARY:
+                    setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
+                            nb,n,i,comp);
+                    break;
+                case ELASTIC_BOUNDARY:
+                    setElasticStates(vst,m_vst,hs,state,ic_next,idir,
+                            nb,n,i,comp);
+                    break;
+                case DIRICHLET_BOUNDARY:
+                    setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,
+                            n,i);
+                    break;
+                case FIRST_PHYSICS_WAVE_TYPE:
+                    GFMGhostState(ic,comp,&ghost_st);
+
+                    for (k = i; k <= nrad; ++k)
+                    {
+                        vst->dens[n+nrad+k-1] = ghost_st.dens;
+                        vst->engy[n+nrad+k-1] = ghost_st.engy;
+                        vst->pres[n+nrad+k-1] = ghost_st.pres;
+                
+                        for(j=0; j<3; j++)
+                            vst->momn[j][n+nrad+k-1] = 0.0;
+
+                        if (dim == 1)
+                        {
+                            vst->momn[0][n+nrad+k-1] = ghost_st.momn[0];
+                        }
+                        else if (dim == 2)
+                        {
+                            for(j = 0; j < 2; j++)
+                                vst->momn[j][n+nrad+k-1] = ghost_st.momn[ind2[idir][j]];
+                        }
+                        else if (dim == 3)
+                        {
+                            for(j = 0; j < 3; j++)
+                                vst->momn[j][n+nrad+k-1] = ghost_st.momn[ind3[idir][j]];
+                        }
+                    }
+                    break;
+                default:
+                    (void) printf("In appendGhostBuffer(): ");
+                    (void) print_wave_type("Unknown wave type ",
+                    wave_type(hs),"\n",front->interf);
+                    (void) print_int_vector("icoords=",icoords,3,"\n");
+                    (void) printf("nb = %d\n",nb);
+                    clean_up(ERROR);
+                }
+                break;
+            }
+        }
 	}
 }	/* end appendGhostBuffer */
 
@@ -1799,6 +1850,7 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
         */
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
                 getStateMom[j],&mom_reflect[j],&m_vst->momn[j][index]);
+        
         vel_reflect[j] = mom_reflect[j]/dens_reflect;
     }
 
@@ -1832,6 +1884,15 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
     //TODO: Try computing a tangential velocity with a
     //      modified wall model for porous wall.
 
+    /*
+    //Interpolate Temperature
+    double temp_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
+            getStateTemp,&temp_reflect,&m_vst->temp[index]);
+
+    double temp_ghost = temp_reflect;
+    */
+
 
     //get the actual/real velocity on other side of the elastic boundary
     //that is collocated with the ghost point
@@ -1849,14 +1910,36 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
     }
     
     //Take porosity weighted average of vel_ghost and vel_real
-    double vel_poro[MAXD];
 	double poro = eqn_params->porosity;
 
+    double vel_poro[MAXD];
     for (int j = 0; j < dim; ++j)
     {
         vel_poro[j] = (1.0 - poro)*vel_ghost[j] + poro*vel_real[j];
         vs->vel[j] = vel_poro[j];
     }
+
+    double pres_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->pres,
+            getStatePres,&pres_reflect,&m_vst->pres[index]);
+
+    double pres_real = m_vst->pres[ghost_index];
+
+    double pres_poro = (1.0 - poro)*pres_reflect + poro*pres_real;
+    double dens_poro = (1.0 - poro)*dens_reflect + poro*dens_real;
+    
+    EOS_PARAMS eos = eqn_params->eos[comp];
+    double R_specific = eos.R_specific;
+
+    double temp_poro = pres_poro/dens_poro/R_specific;
+
+    //TODO: How does the porosity effect the temperature across canopy?
+    //      For now just use the reflected temperature (temp_reflect).
+    
+        //double temp_poro = temp_ghost;
+
+    vs->temp = temp_poro;
+
 
     //TODO: Debugging info
 }
