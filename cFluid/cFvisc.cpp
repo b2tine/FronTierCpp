@@ -26,9 +26,7 @@ void G_CARTESIAN::computeDynamicViscosity()
             computeDynamicViscosity2d();
             break;
         case 3:
-            //computeDynamicViscosity3d();
-            printf("\nERROR computeDynamicViscosity3d() not implemented yet\n");
-            LOC(); clean_up(EXIT_FAILURE);
+            computeDynamicViscosity3d();
             break;
         default:
             printf("\nERROR computeDynamicViscosity(): invalid dim\n");
@@ -137,8 +135,8 @@ void G_CARTESIAN::addViscousFlux(
 
                 /*
                 //TODO: Need to deal with stencil at domain boundary for this to work.
-                //      Can we just use the i+-1 state for the i+-2 state beyond the domain,
-                //      or just use a 3pt stencil near the domain boundary ???
+                //      Can we just use the i+-1 state for the i+-2 state beyond the domain?
+                //      Or can use a 3pt stencil near the domain boundary ???
 
                 VStencil2d_5pt vsten;
                 fillViscousFluxStencil2d_5pt(icoords,m_vst,&vsten);
@@ -198,8 +196,6 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         VStencil2d* vsten)
 {
     COMPONENT comp = vsten->comp;
-    //int index = d_index(icoords,top_gmax,dim);
-    //COMPONENT comp = top_comp[index];
 
     for (int j = 0; j < 3; ++j)
     for (int i = 0; i < 3; ++i)
@@ -235,8 +231,6 @@ void G_CARTESIAN::fillViscousFluxStencil2d_5pt(
         VStencil2d_5pt* vsten)
 {
     COMPONENT comp = vsten->comp;
-    //int index = d_index(icoords,top_gmax,dim);
-    //COMPONENT comp = top_comp[index];
 
     //TODO: buffer not wide enough near boundary
     //
@@ -278,8 +272,6 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         VStencil3d* vsten)
 {
     COMPONENT comp = vsten->comp;
-    //int index = d_index(icoords,top_gmax,dim);
-    //COMPONENT comp = top_comp[index];
 
     for (int k = 0; k < 3; ++k)
     for (int j = 0; j < 3; ++j)
@@ -822,11 +814,12 @@ void G_CARTESIAN::computeViscousFlux2d(
 
 
     if (debugging("no_heatflux")) return;
-
     /////////////////////////////////////////////////////////////////////////////////////
     
+    /*
     double T_x = 0.5*(sten[1][2].temp - sten[1][0].temp)/top_h[0];
     double T_y = 0.5*(sten[2][1].temp - sten[0][1].temp)/top_h[1];
+    */
 
     double T_xx = (sten[1][2].temp - 2.0*sten[1][1].temp
             + sten[1][0].temp)/sqr(top_h[0]);
@@ -907,10 +900,6 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
     */
     
     
-    //TODO: PICK BACK UP HERE -- compute 4th order approx to mixed partials
-    //
-    //      FILL IN THE ARRAY INDEX VALUES
-    
     double u_xy = 
           (sten[0][3].vel[0] + sten[1][4].vel[0] + sten[3][0].vel[0] + sten[4][1].vel[0])/18.0/top_h[0]/top_h[1]
         - (sten[0][1].vel[0] + sten[1][0].vel[0] + sten[4][3].vel[0] + sten[3][4].vel[0])/18.0/top_h[0]/top_h[1]
@@ -949,25 +938,33 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
     v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
             + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
 
+    
+    if (debugging("no_heatflux")) return;
+    /////////////////////////////////////////////////////////////////////////////////////
+    
     /*
     double T_x = 0.5*(sten[1][2].temp - sten[1][0].temp)/top_h[0];
     double T_y = 0.5*(sten[2][1].temp - sten[0][1].temp)/top_h[1];
+    */
 
     double T_xx = (sten[1][2].temp - 2.0*sten[1][1].temp
             + sten[1][0].temp)/sqr(top_h[0]);
     double T_yy = (sten[2][1].temp - 2.0*sten[1][1].temp 
             + sten[0][1].temp)/sqr(top_h[1]);
-    */
     
-    /*
-    //Heat Flux: lambda is thermal conductivity (\lambda = C_{p}{\mu}/{Pr})
-    
+    EOS_PARAMS eos = eqn_params->eos[vsten->comp];
+    double gamma = eos.gamma;
+    double R_specific = eos.R_specific;
+    double Pr = eos.Pr;
+
+    double Cp = gamma/(gamma - 1.0)*R_specific;
+    double lambda = Cp*mu[index]/Pr; //thermal conductivity
 
     v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy);
-    */
+
+    /////////////////////////////////////////////////////////////////////////////////////
 }
 
-//TODO: Heat Flux
 void G_CARTESIAN::computeViscousFlux3d(
         int* icoords,
         SWEEP* m_vst,
@@ -975,8 +972,6 @@ void G_CARTESIAN::computeViscousFlux3d(
         double delta_t,
         VStencil3d* vsten)
 {
-    //TODO: For 4th order approximation to viscous flux need
-    //      to add points points i-2 and i+2 to stencil in each direction.
     auto sten = vsten->st;
 
     double u = sten[1][1][1].vel[0];
@@ -1068,10 +1063,15 @@ void G_CARTESIAN::computeViscousFlux3d(
             + v_y*tauyy + v*tauyy_y + w_y*tauyz + w*tauyz_y + u_z*tauxz
             + u*tauxz_z + v_z*tauyz + v*tauyz_z + w_z*tauzz + w*tauzz_z);
 
+
+    if (debugging("no_heatflux")) return;
+    /////////////////////////////////////////////////////////////////////////////////////
+    
     /*
     double T_x = 0.5*(sten[1][1][2].temp - sten[1][1][0].temp)/top_h[0];
     double T_y = 0.5*(sten[1][2][1].temp - sten[1][0][1].temp)/top_h[1];
     double T_z = 0.5*(sten[2][1][1].temp - sten[0][1][1].temp)/top_h[2];
+    */
 
     double T_xx = (sten[1][1][2].temp - 2.0*sten[1][1][1].temp
             + sten[1][1][0].temp)/sqr(top_h[0]);
@@ -1079,13 +1079,18 @@ void G_CARTESIAN::computeViscousFlux3d(
             + sten[1][0][1].temp)/sqr(top_h[1]);
     double T_zz = (sten[2][1][1].temp - 2.0*sten[1][1][1].temp
             + sten[0][1][1].temp)/sqr(top_h[2]);
-    */
     
-    /*
-    //Heat Flux: lambda is thermal conductivity (\lambda = C_{p}{\mu}/{Pr})
-    
+    EOS_PARAMS eos = eqn_params->eos[vsten->comp];
+    double gamma = eos.gamma;
+    double R_specific = eos.R_specific;
+    double Pr = eos.Pr;
+
+    double Cp = gamma/(gamma - 1.0)*R_specific;
+    double lambda = Cp*mu[index]/Pr; //thermal conductivity
+
     v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy + T_zz);
-    */
+    
+    /////////////////////////////////////////////////////////////////////////////////////
 }
 
 

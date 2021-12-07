@@ -62,10 +62,7 @@ Enter yes for heat flux: yes
 Enter the specific gas constant: 287.058
 Enter the Prandtl number: 0.71
 
-
 Enter gravity: 0 0 
-
-
 
 Type yes to track the interface: no
 
@@ -80,10 +77,10 @@ Enter model constant: 0.025
 Type y to make movie of density: y
 Type y to make movie of pressure: y
 Type y to make movie of temperature: y
+Type y to make movie of viscosity: y
 Type y to make movie of velocity: y
 Type y to make movie of vorticity: y
 
-Type y to make movie of viscosity: n
 Type y to make movie of turb kinetic energy: n
 
 Type y to make vector velocity field movie: n
@@ -98,9 +95,9 @@ Type y to make scalar turb kinetic energy field movie: n
 Enter yes for debugging: yes
 Enter the debugging string: cfluid_dt
 
-Enter the debugging stringX: no_heatflux
-Enter the debugging stringX: no_viscflux
+Enter the debugging stringXXX: no_heatflux
+Enter the debugging stringXXX: no_viscflux
 
-Enter the debugging stringX: trace
-Enter the debugging stringX: CLOCK
-Enter the debugging stringX: step_size
+Enter the debugging stringXXX: trace
+Enter the debugging stringXXX: CLOCK
+Enter the debugging stringXXX: step_size
