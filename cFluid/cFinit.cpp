@@ -542,44 +542,6 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 	(eqn_params->eos[GAS_COMP2]).pinf = pinf;
 	(eqn_params->eos[GAS_COMP2]).einf = einf;
 	
-    /*
-    //TODO: TO BE REMOVED
-	
-    CursorAfterString(infile,"Enter density and pressure of ambient air:");
-	fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->p2);
-	(void) printf("%f %f\n",eqn_params->rho2,eqn_params->p2);
-
-    eqn_params->p1 = eqn_params->p2;
-    eqn_params->rho1 = eqn_params->rho2;
-
-    //
-    CursorAfterString(infile,"Enter viscosity of the fluid:");
-    fscanf(infile,"%lf",&eqn_params->mu2);
-    (void) printf("%f\n",eqn_params->mu2);
-    
-    eqn_params->mu1 = eqn_params->mu2;
-    */
-
-    ///////////////////////////////////////////////////////////////////////////
-    
-    /*
-    //TODO: make non optional user input once working
-    double R_specific = 287.058; //R_specific of air
-    if (CursorAfterStringOpt(infile,"Enter the specific gas constant:"))
-    {
-	    fscanf(infile,"%lf",&R_specific);
-    }
-    (void) printf("%f\n",R_specific);
-	
-    (eqn_params->eos[GAS_COMP1]).R_specific = R_specific;
-    (eqn_params->eos[GAS_COMP2]).R_specific = R_specific;
-
-    eqn_params->T2 = eqn_params->p2/eqn_params->rho2/R_specific; //TODO: Write function for this computation
-    eqn_params->T1 = eqn_params->T2;
-
-    printf("Initial Ambient Fluid Temperature: %f\n",eqn_params->T2);
-    */
-
     double R_specific = 287.058;
     CursorAfterString(infile,"Enter the specific gas constant:");
     fscanf(infile,"%lf",&R_specific);
@@ -640,27 +602,8 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     eqn_params->mu2 = state.mu;
     eqn_params->mu1 = eqn_params->mu2;
 
-    //TODO: Write function for this computation
-    //eqn_params->T2 = eqn_params->p2/eqn_params->rho2/R_specific;
-    //TODO: Write function for Sutherland's Law
-    //eqn_params->mu2 = mu_ref*std::pow(eqn_params->T2/T_ref,1.5)*(T_ref + S)/(eqn_params->T2 + S);
-    //eqn_params->mu1 = eqn_params->mu2;
-    
-    printf("Initial Ambient Gas Temperature: %f\n",eqn_params->T2);
-    printf("Initial Ambient Gas Viscosity: %f\n",eqn_params->mu2);
-    
-
-    /*
-    eqn_params->T2 = 293.15;
-    if (CursorAfterStringOpt(infile,"Enter temperature of the fluid:"))
-    {
-	    fscanf(infile,"%lf",&eqn_params->T2);
-    }
-    (void) printf("%f\n",eqn_params->T2);
-    */
-
-    ///////////////////////////////////////////////////////////////////////////
-
+    printf("Initial Ambient Gas Temperature: %g\n",eqn_params->T2);
+    printf("Initial Ambient Gas Viscosity: %g\n",eqn_params->mu2);
     
 	
     CursorAfterString(infile,"Enter gravity:");
@@ -677,7 +620,8 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 
     /*
     //TODO: Should just remove this option?
-    //      This is used for two-phase flow?
+    //      Only used for two-phase flow, or is it possible 
+    //      to use with a single component flow also?
     //
     eqn_params->tracked = NO;
     CursorAfterString(infile,"Type yes to track the interface:");

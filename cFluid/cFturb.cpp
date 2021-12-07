@@ -8,7 +8,6 @@ static double (*getStateMom[MAXD])(Locstate) =
                {getStateXmom,getStateYmom,getStateZmom};
 
     
-//TODO: Add other SGS terms.
 void G_CARTESIAN::computeSGSTerms()
 {
     computeEddyViscosity();
@@ -18,8 +17,6 @@ void G_CARTESIAN::computeSGSTerms()
 void G_CARTESIAN::computeEddyViscosity()
 {
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-        //mu_max = std::max(eqn_params->mu1,eqn_params->mu2);
-
     if (!eqn_params->use_eddy_viscosity) return;
 
     switch (dim)
@@ -472,14 +469,11 @@ void G_CARTESIAN::setSlipBoundary(
         double* v_slip)
 {
     setSlipBoundaryNIP(icoords,idir,nb,comp,hs,state,vel,v_slip);
-
-    //TODO: Write GNOR implementation and compare results.
-    //
-    //      setSlipBoundaryGNOR(icoords,idir,nb,comp,hs,state,vel,v_slip);
 }
 
-//TODO: Make function return the computed slip velocity,
-//      v_slip, as a std::vector<double>
+//TODO: Make function return the computed slip velocity, v_slip, as a std::vector<double>
+
+//TODO: Do we need to consider the near wall temperature in this boundary condition?
 void G_CARTESIAN::setSlipBoundaryNIP(
 	int *icoords,
 	int idir,
@@ -528,6 +522,9 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     //
     //      nearest_intfc_point_in_range() etc. doesn't find NEUMANN_BOUNDARY
     //      when it is domain (rect) boundary, but nearest_intfc_point() does.
+    //
+    //TODO: Is the above todo stil valid? Or did I just not understand what was happening?
+    //
     
     /*
     FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
@@ -766,7 +763,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
     }
 
-    //TODO: Need to use mu_reflect and dens_reflect for wall shear stress computation
+    //TODO: Need to use mu_reflect and dens_reflect for wall shear stress computation?
     //
     //      See cFvisc.cpp setNeumannViscousGhostState()
     

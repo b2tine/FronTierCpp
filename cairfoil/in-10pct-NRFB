@@ -24,17 +24,19 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
 Enter velocity: 0 0 75
-Enter pressure: 2250
-Enter density: 3.675
+Enter pressure: 175000
+Enter density: 2.675
 For upper boundary in 2-th dimension
+
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
 Start test time control parameters
 Max time: 2.0
 Max step: 5000
 Print interval: 0.001
-Movie frame interval: 0.0005
-CFL factor: 0.5
+Movie frame interval: 0.00015
+CFL factor: 0.75
+    XXXCFL factorXXX: 0.5
 
 //////////////////////////////////////////////////////////
 ///////////  Start parameters for cFluid  ////////////////
@@ -45,7 +47,7 @@ Enter numerical scheme for interior solver: WENO_4th_ORDER
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.29 750
+Enter density and pressure of ambient air: 1.29 110000
 
 Enter the specific gas constant: 287.058
 Enter the Prandtl number: 0.71
@@ -127,7 +129,7 @@ Enter yes to use porosity: yes
 Enter fabric porosity: 0.1
 Enter porosity ghost fluid method: NORMAL_REFLECTION
 
-Enter area density of canopy: 5.0
+Enter area density of canopy: 2.5
 
 Enter fabric spring constant: 1000
 Enter fabric damping constant: 0.01
@@ -158,10 +160,13 @@ Available velocity functions are:
         Fixed area velocity (FA)
         Fixed point velocity (FP)
         Free fall velocity (FF)
+
 Enter velocity function: Z
 Enter gravity: 0 0 -9.8
 
+*************************************************
 Enter yes for debugging: yes
+
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting

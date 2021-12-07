@@ -805,7 +805,7 @@ int G_CARTESIAN::getComponent(
 void G_CARTESIAN::save(char *filename)
 {
 	
-	INTERFACE *intfc    = front->interf;
+	INTERFACE *intfc = front->interf;
 		
 	FILE *hfile = fopen(filename, "w");
 	if(hfile==NULL)
@@ -1095,6 +1095,14 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
                 WID,DEC,getStateMom[i](sr));
         }
     }
+
+    //TODO: WHY ARE WE NOT PRINTING THE PRESSURE?
+    //      IS THERE A GOOD REASON NOT TO DO SO, WAS IT JUST AN ATTEMPT TO
+    //      SPEED UP THIS FUNCTION AND PASS THE EXTRA WORK TO THE READ FUNCTION
+    //      THAT ONLY GETS CALLED ONCE WHEN THE RUN IS STARTED BACK UP?
+    //      NOT INTUITIVE FROM A DEBUGGING/MAINTENANCE PERSPECTIVE; IF THE FUNCTION
+    //      SAYS IT READS IN STATES IT SHOULD NOT BE DOING CALCULATIONS WHICH
+    //      COULD CORRUPT THE RESTART STATE AND CAUSE UNEXPECTED AND HARD TO FIND BUGS.
 	
 	fprintf(outfile,"\nInterior gas states:\n");
 	switch (dim)
@@ -1210,6 +1218,9 @@ extern void readFrontStates(
 	fclose(infile);
 }
 
+//TODO: Why are we computing the pressure from the other read variables?
+//      Why not just read it in directly?
+//      (Assuming it is written when the states are printed)
 void G_CARTESIAN::readInteriorStates(char *restart_name)
 {
 	FILE *infile;

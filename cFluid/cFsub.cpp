@@ -193,26 +193,11 @@ static void promptForDirichletBdryState(
             state->momn[k] = state->dens*state->vel[k];
         }
         state->engy = EosEnergy(state);
-
-        
-        //////////////////////////////////////////////////////////////////
-        
         state->temp = EosTemperature(state);
+        state->mu = EosViscosity(state);
 
-        printf("Inlet Temperature: %f\n",state->temp);
-
-
-        /*
-        state->temp = 293.15;
-        //Optional for now
-	    if (CursorAfterStringOpt(infile,"Enter Temperature:"))
-        {
-	        fscanf(infile,"%lf",&state->temp);
-	        (void) printf("%f\n",state->temp);
-        }
-        */
-        
-        //////////////////////////////////////////////////////////////////
+        printf("Constant State Inlet Temperature: %f\n",state->temp);
+        printf("Constant State Inlet Viscosity: %f\n",state->mu);
 
 
         ////////////////////////////////////
@@ -761,6 +746,7 @@ extern void cF_flowThroughBoundaryState2d(
     else
         oldst = (STATE*)sr;
 
+    newst->eos = &eqn_params->eos[comp]; 
     for (i = 0; i < dim; ++i)
     {
         newst->vel[i] = oldst->vel[i];
@@ -768,8 +754,6 @@ extern void cF_flowThroughBoundaryState2d(
     newst->vort = oldst->vort;
     newst->pres = oldst->pres;
     newst->dens = oldst->dens;
-
-    newst->eos = &eqn_params->eos[comp]; 
 
     //Normal
 	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
@@ -924,17 +908,6 @@ extern void cF_flowThroughBoundaryState2d(
     newst->temp = EosTemperature(newst);
     newst->mu = EosViscosity(newst);
     
-    /*
-    //Sutherland's Law Viscosity
-    //TODO: get from input file
-    double T_ref = 273.0;
-    double mu_ref = 1.716e-05;
-    double S = 111.0;
-
-    //TODO: Write function to compute
-    newst->mu = mu_ref*std::pow(newst->temp/T_ref,1.5)*(T_ref + S)/(newst->temp + S);
-    */
-    
     set_state_max_speed(front,newst,p0);
 	
     if (debugging("flow_through"))
@@ -995,14 +968,13 @@ extern void cF_flowThroughBoundaryState3d(
     else
         oldst = (STATE*)sr;
 
+    newst->eos = &eqn_params->eos[comp]; 
     for (i = 0; i < dim; ++i)
     {
         newst->vel[i] = oldst->vel[i];
     }
     newst->pres = oldst->pres;
     newst->dens = oldst->dens;
-
-    newst->eos = &eqn_params->eos[comp]; 
 
     //Normal
 	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
@@ -1149,18 +1121,6 @@ extern void cF_flowThroughBoundaryState3d(
     newst->temp = EosTemperature(newst);
     newst->mu = EosViscosity(newst);
 	
-    //Sutherland's Law Viscosity
-    
-    /*
-    //TODO: get from input file
-    double T_ref = 273.0;
-    double mu_ref = 1.716e-05;
-    double S = 111.0;
-
-    //TODO: Write function to compute
-    newst->mu = mu_ref*std::pow(newst->temp/T_ref,1.5)*(T_ref + S)/(newst->temp + S);
-    */
-    
     set_state_max_speed(front,newst,p0);
 	
     if (debugging("flow_through"))
@@ -1296,16 +1256,14 @@ static  void neumann_point_propagate(
     FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
 			getStateDens,&newst->dens,&oldst->dens);
 
-
     /*
-    //TODO: compute temperature with equation of state instead?
+    //TODO: should a wall model/relation be used for temperature here?
+    //      e.g. coco-brusemann etc.
+    //
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
 			getStateTemp,&newst->temp,&oldst->temp);
-
-    //TODO set the viscosity with Sutherland's Law instead?
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
-			getStateMu,&newst->mu,&oldst->mu);
     */
+
 	
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
 			getStateKTurb,&newst->k_turb,&oldst->k_turb);
@@ -1321,17 +1279,6 @@ static  void neumann_point_propagate(
     newst->temp = EosTemperature(newst);
     newst->mu = EosViscosity(newst);
 
-    /*
-    //Sutherland's Law Viscosity
-    //TODO: get from input file
-    double T_ref = 273.0;
-    double mu_ref = 1.716e-05;
-    double S = 111.0;
-
-    //TODO: Write function to compute
-    newst->mu = mu_ref*std::pow(newst->temp/T_ref,1.5)*(T_ref + S)/(newst->temp + S);
-    */
-	
     s = mag_vector(vel,dim);
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 	set_state_max_speed(front,newst,Coords(newp));
@@ -1385,7 +1332,7 @@ static void dirichlet_point_propagate(
 	    (*boundary_state_function(oldhs))(Coords(oldp),oldhs,front,
 			(POINTER)&ft_params,(POINTER)newst);	
 	}
-    else if (boundary_state(oldhs) != NULL)  // if (boundary_state(oldhs) != NULL)
+    else if (boundary_state(oldhs) != NULL)
 	{
 	    bstate = (STATE*)boundary_state(oldhs);
 
@@ -1406,7 +1353,13 @@ static void dirichlet_point_propagate(
 	    newst->engy = bstate->engy;
 	    
         //TODO: Should vort/vorticity be non-zero for turbulent inlet bdry?
+        //      Needs to depend on the velocity of the boundary state,
+        //      which in general we do not want to restrict to being
+        //      a uniform/irrotational quantity.
+        
+        //////////////////////////////////////////////////////////////////
         newst->vort = 0.0;
+        //////////////////////////////////////////////////////////////////
 
         set_state_max_speed(front,newst,Coords(oldp));
 
@@ -1426,7 +1379,6 @@ static void dirichlet_point_propagate(
 
 	if (debugging("dirichlet_bdry"))
 	    printf("Leaving dirichlet_point_propagate()\n");
-        return;
 }	/* end dirichlet_point_propagate */
 
 static  void contact_point_propagate(
@@ -1620,11 +1572,6 @@ static void rgbody_point_propagate_in_fluid(
 	    newst = (STATE*)right_state(newp);
 	}
 
-    //TODO: need cFluid version of setStateViscosity()?
-    //      Or is interpolation performed below sufficient/better? 
-    //
-	    //setStateViscosity(Fparams,newst,comp);
-
     FT_NormalAtPoint(oldp,front,nor,comp);
 	dn = grid_size_in_direction(nor,h,dim);
 
@@ -1745,15 +1692,10 @@ static void rgbody_point_propagate_in_fluid(
     
 
     /*
-    //TODO: Need to use wall model for temp? And then set the viscosity with Sutherland's Law?
-    if (m_temp != NULL)
-    {
-        FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
-            getStateTemp,&newst->temp,&oldst->temp);
-    }
-
-	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
-			getStateMu,&newst->mu,&oldst->mu);
+    //TODO: Need to use wall model for temp?
+    //
+    FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
+        getStateTemp,&newst->temp,&oldst->temp);
     */
     
 
@@ -1770,22 +1712,11 @@ static void rgbody_point_propagate_in_fluid(
 	}
 
     newst->eos = oldst->eos; //TODO: Will this have valid memory?
-	
     newst->engy = EosEnergy(newst);
     newst->temp = EosTemperature(newst);
     newst->mu = EosViscosity(newst);
 	
-    /*
-    //Sutherland's Law Viscosity
-    //TODO: get from input file
-    double T_ref = 273.0;
-    double mu_ref = 1.716e-05;
-    double S = 111.0;
-
-    //TODO: Write function to compute
-    newst->mu = mu_ref*std::pow(newst->temp/T_ref,1.5)*(T_ref + S)/(newst->temp + S);
-    */
-
+    
     double s = mag_vector(vel,dim);
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 	set_state_max_speed(front,newst,Coords(newp));
@@ -2379,8 +2310,12 @@ static boolean force_on_hse3d(
 	    area[i] = pos_side ? -Tri_normal(t)[i] : Tri_normal(t)[i];
 	    posn[i] /= 3.0;
 	}
-	/* Need to treat subdomain boundary */
-	return YES;
+	
+    //TODO: Investigate this comment
+    //
+    /* Need to treat subdomain boundary */
+	
+    return YES;
 }	/* end force_on_hse3d */
 
 static double intrp_between(

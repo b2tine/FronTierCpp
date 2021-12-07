@@ -9,17 +9,13 @@ static double (*getStateMom[MAXD])(Locstate) =
 
 
 
+//TODO: Does this need to be done at the beginning of every time step?
+//      Can we just initialize the viscosity field once at start up, and
+//      then update it when the temperature gets updated after advancing
+//      the solution?
 void G_CARTESIAN::computeDynamicViscosity()
 {
-    //EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-    //mu_max = std::max(eqn_params->mu1,eqn_params->mu2);
     mu_max = 0.0;
-
-    //TODO: add input file option for this
-    //
-    //  if (!eqn_params->temp_dependent_viscosity) return;
-
-
     switch (dim)
     {
         case 2:
@@ -64,18 +60,6 @@ void G_CARTESIAN::computeDynamicViscosity2d()
             //state.temp = EosTemperature(&state);
         state.mu = EosViscosity(&state);
 
-        /*
-        //TODO: get from input file
-        double T_ref = 273.0;
-        double mu_ref = 1.716e-05;
-        double S = 111.0;
-
-        //TODO: Write function to compute
-        //
-        //Sutherland's Law Viscosity
-        mu[index] = mu_ref*std::pow(temp[index]/T_ref,1.5)*(T_ref + S)/(temp[index] + S);
-        */
-
         if (mu[index] > mu_max)
         {
             mu_max = mu[index];
@@ -110,18 +94,6 @@ void G_CARTESIAN::computeDynamicViscosity3d()
         state.pres = pres[index];
             //state.temp = EosTemperature(&state);
         state.mu = EosViscosity(&state);
-
-        /*
-        //TODO: get from input file
-        double T_ref = 273.0;
-        double mu_ref = 1.716e-05;
-        double S = 111.0;
-
-        //TODO: Write function to compute
-        //
-        //Sutherland's Law Viscosity
-        mu[index] = mu_ref*std::pow(temp[index]/T_ref,1.5)*(T_ref + S)/(temp[index] + S);
-        */
 
         if (mu[index] > mu_max)
         {
@@ -338,11 +310,10 @@ void G_CARTESIAN::setViscousGhostState(
     auto ghost_coords = cell_center[ghost_index].getCoords();
     COMPONENT ghost_comp = vs->comp;
 
-    //Why can we use nearest_intfc_point_in_range()???
+    //TODO: Why can't we use nearest_intfc_point_in_range()???
     int range = 2;
     //int range = 3;
     
-    //TODO: Figure out which is the correct boundary enum
 
     /*
     bool nip_found =
@@ -357,32 +328,27 @@ void G_CARTESIAN::setViscousGhostState(
                 nip_coords,intrp_coeffs,&hse,&hs,3);
     */
 
-//bool nip_found = nearest_interface_point(&ghost_coords[0],
-//          comp,front->interf,NO_SUBDOMAIN,nullptr,
-//        nip_coords,intrp_coeffs,&hse,&hs);
-
-        /*bool nip_found = nearest_interface_point(&ghost_coords[0],
-                    comp,front->interf,NO_BOUNDARIES,nullptr,
-                    nip_coords,intrp_coeffs,&hse,&hs);*/
+    /*
+    bool nip_found = nearest_interface_point_within_range(&ghost_coords[0],
+                comp,front->interf,NO_SUBDOMAIN,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs,3);
+    */
+    
+    /*
+    bool nip_found = nearest_interface_point(&ghost_coords[0],
+                comp,front->interf,NO_BOUNDARIES,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs);
+    */
+    
     /*
     bool nip_found = nearest_interface_point(&ghost_coords[0],
                 comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);*/
-    
-    /*bool nip_found = nearest_interface_point(&ghost_coords[0],
-                ghost_comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);*/
+                nip_coords,intrp_coeffs,&hse,&hs);
+    */
     
     bool nip_found = nearest_interface_point(&ghost_coords[0],
                 comp,front->interf,NO_SUBDOMAIN,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);
-
-
-    /*
-    bool nip_found = nearest_interface_point(&ghost_coords[0],
-                ghost_comp,front->interf,NO_SUBDOMAIN,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);
-    */
 
 
     if (!nip_found)
@@ -424,6 +390,9 @@ void G_CARTESIAN::setDirichletViscousGhostState(
     STATE* state;
     FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
 
+    //TODO: Need to deal with the case when these conditions are both true.
+    //      e.g. Nodes/Curves of domain boundary interface where where a
+    //       constant inlet boundary meets a flowthru/outlet boundary.
     if (boundary_state_function(hs) != nullptr)
     {
         state_along_hypersurface_element(comp,intrp_coeffs,hse,hs,(POINTER)state);
@@ -816,9 +785,7 @@ void G_CARTESIAN::computeViscousFlux2d(
     double v_xy = 0.25*(sten[2][2].vel[1] - sten[2][0].vel[1]
             - sten[0][2].vel[1] + sten[0][0].vel[1])/top_h[0]/top_h[1];
     
-    //TODO: TRY USING m_vst->mu AFTER UPDATING TEMP AND VISC IN addMeshFluxToVst()
-    //
-    //      Can also try using nonlinearized viscosity for the stencil
+    //TODO: Can also try using nonlinearized viscosity for the stencil
     //      i.e. every point of the stencil records its viscosity and
     //      use in the discretization (half indices most likely)
     
@@ -842,7 +809,7 @@ void G_CARTESIAN::computeViscousFlux2d(
             + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
 
 
-    if (debugging("no_heatflux")) return;
+    //if (debugging("no_heatflux")) return;
     /////////////////////////////////////////////////////////////////////////////////////
     
     /*
@@ -968,7 +935,7 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
             + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
 
     
-    if (debugging("no_heatflux")) return;
+    //if (debugging("no_heatflux")) return;
     /////////////////////////////////////////////////////////////////////////////////////
     
     /*

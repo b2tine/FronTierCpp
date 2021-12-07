@@ -16,7 +16,7 @@ struct FABRIC_STATE
                                     turb model + wall functions (IS ACTUALLY FORCE)*/
 
     
-    /* Fabric Congiguration */
+    /* Fabric Configuration */
     double bendforce[MAXD];       /* bending force */
     
     /* Collision Handling */
