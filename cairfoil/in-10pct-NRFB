@@ -26,7 +26,6 @@ Enter type of Dirichlet boundary: CONSTANT_STATE
 Enter velocity: 0 0 75
 Enter pressure: 2250
 Enter density: 3.675
-
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 

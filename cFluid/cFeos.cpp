@@ -25,6 +25,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
 
+extern double EosViscosity(
+	STATE *state)
+{
+    double T = state->temp;
+
+    EOS_PARAMS* eos = state->eos;
+	double T_ref = eos->T_ref;
+	double mu_ref = eos->mu_ref;
+    double S = eos->S;
+
+    double mu = mu_ref*std::pow(T/T_ref,1.5)*(T_ref + S)/(T + S);
+	return mu;
+}	/* end EosViscosity */
+
 extern double EosTemperature(
 	STATE *state)
 {
@@ -34,7 +48,6 @@ extern double EosTemperature(
 	double R_specific = eos->R_specific;
 
     double temp = state->pres/state->dens/R_specific;
-
 	return temp;
 }	/* end EosTemperature */
 
@@ -148,7 +161,12 @@ extern void ConvertVstToState(
     }
    
     state->pres = EosPressure(state);
-    state->temp = EosTemperature(state);
+
+    //NOTE: Don't call these since they will get called again in
+    //      checkCorrectForTolerance() as soon as this function returns.
+
+    //state->temp = EosTemperature(state);
+    //state->mu = EosViscosity(state);
 }
 
 extern void EosSetTVDParams(

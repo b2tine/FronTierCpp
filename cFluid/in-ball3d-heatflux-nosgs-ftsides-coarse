@@ -66,6 +66,10 @@ Enter yes for heat flux: yes
 Enter the specific gas constant: 287.058
 Enter the Prandtl number: 0.71
 
+Enter the reference molecular viscosity: 1.716e-05
+Enter the reference temperature: 273.0
+Enter the effective temperature: 111.0
+
 
 Enter gravity: 0 0 0
 

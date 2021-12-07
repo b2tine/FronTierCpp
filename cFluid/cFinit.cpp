@@ -533,32 +533,36 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 	CursorAfterString(infile,str);
 	fscanf(infile,"%lf %lf %lf",&gamma,&pinf,&einf);
 	(void) printf("%f %f %f\n",gamma,pinf,einf);
-	(eqn_params->eos[GAS_COMP1]).gamma = gamma;
+	
+    (eqn_params->eos[GAS_COMP1]).gamma = gamma;
 	(eqn_params->eos[GAS_COMP1]).pinf = pinf;
 	(eqn_params->eos[GAS_COMP1]).einf = einf;
-	(eqn_params->eos[GAS_COMP2]).gamma = gamma;
+	
+    (eqn_params->eos[GAS_COMP2]).gamma = gamma;
 	(eqn_params->eos[GAS_COMP2]).pinf = pinf;
 	(eqn_params->eos[GAS_COMP2]).einf = einf;
 	
-	CursorAfterString(infile,"Enter density and pressure of ambient air:");
+    /*
+    //TODO: TO BE REMOVED
+	
+    CursorAfterString(infile,"Enter density and pressure of ambient air:");
 	fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->p2);
 	(void) printf("%f %f\n",eqn_params->rho2,eqn_params->p2);
 
     eqn_params->p1 = eqn_params->p2;
     eqn_params->rho1 = eqn_params->rho2;
 
-    /*
-    //TODO: remove viscosity user input when temperature working correctly
-
-    CursorAfterString(infile,"Enter density and viscosity of the fluid:");
-    fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->mu2);
-    (void) printf("%f %f\n",eqn_params->rho2,eqn_params->mu2);
+    //
+    CursorAfterString(infile,"Enter viscosity of the fluid:");
+    fscanf(infile,"%lf",&eqn_params->mu2);
+    (void) printf("%f\n",eqn_params->mu2);
     
     eqn_params->mu1 = eqn_params->mu2;
     */
 
     ///////////////////////////////////////////////////////////////////////////
     
+    /*
     //TODO: make non optional user input once working
     double R_specific = 287.058; //R_specific of air
     if (CursorAfterStringOpt(infile,"Enter the specific gas constant:"))
@@ -574,29 +578,77 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     eqn_params->T1 = eqn_params->T2;
 
     printf("Initial Ambient Fluid Temperature: %f\n",eqn_params->T2);
+    */
 
-    //TODO: get from input file
-    double T_ref = 273.0;
-    double mu_ref = 1.716e-05;
-    double S = 111.0;
+    double R_specific = 287.058;
+    CursorAfterString(infile,"Enter the specific gas constant:");
+    fscanf(infile,"%lf",&R_specific);
+    (void) printf("%f\n",R_specific);
 
-    //TODO: Write function for Sutherland's Law
-    eqn_params->mu2 = mu_ref*std::pow(eqn_params->T2/T_ref,1.5)*(T_ref + S)/(eqn_params->T2 + S);
+    (eqn_params->eos[GAS_COMP1]).R_specific = R_specific;
+    (eqn_params->eos[GAS_COMP2]).R_specific = R_specific;
 
-    eqn_params->mu1 = eqn_params->mu2;
-    
-    printf("Initial Ambient Fluid Viscosity: %f\n",eqn_params->mu2);
-    
     double Pr = 0.71;
-    if (CursorAfterStringOpt(infile,"Enter the Prandtl number:"))
-    {
-	    fscanf(infile,"%lf",&Pr);
-    }
+    CursorAfterStringOpt(infile,"Enter the Prandtl number:");
+    fscanf(infile,"%lf",&Pr);
     (void) printf("%f\n",Pr);
 	
     (eqn_params->eos[GAS_COMP1]).Pr = Pr;
     (eqn_params->eos[GAS_COMP2]).Pr = Pr;
 
+    double mu_ref = 1.716e-05;
+    CursorAfterString(infile,"Enter the reference molecular viscosity:");
+    fscanf(infile,"%lf",&mu_ref);
+    (void) printf("%f\n",mu_ref);
+    
+    (eqn_params->eos[GAS_COMP1]).mu_ref = mu_ref;
+    (eqn_params->eos[GAS_COMP2]).mu_ref = mu_ref;
+
+    double T_ref = 273.0;
+    CursorAfterString(infile,"Enter the reference temperature:");
+    fscanf(infile,"%lf",&T_ref);
+    (void) printf("%f\n",T_ref);
+
+    (eqn_params->eos[GAS_COMP1]).T_ref = T_ref;
+    (eqn_params->eos[GAS_COMP2]).T_ref = T_ref;
+
+    double S = 111.0;
+    CursorAfterString(infile,"Enter the effective temperature:");
+    fscanf(infile,"%lf",&S);
+    (void) printf("%f\n",S);
+
+    (eqn_params->eos[GAS_COMP1]).S = S;
+    (eqn_params->eos[GAS_COMP2]).S = S;
+
+    CursorAfterString(infile,"Enter density and pressure of ambient air:");
+	fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->p2);
+	(void) printf("%f %f\n",eqn_params->rho2,eqn_params->p2);
+
+    eqn_params->p1 = eqn_params->p2;
+    eqn_params->rho1 = eqn_params->rho2;
+
+    STATE state;
+    state.eos = &eqn_params->eos[GAS_COMP2];
+    state.dens = eqn_params->rho2;
+    state.pres = eqn_params->p2;
+
+    state.temp = EosTemperature(&state);
+    eqn_params->T2 = state.temp;
+    eqn_params->T1 = eqn_params->T2;
+
+    state.mu = EosViscosity(&state);
+    eqn_params->mu2 = state.mu;
+    eqn_params->mu1 = eqn_params->mu2;
+
+    //TODO: Write function for this computation
+    //eqn_params->T2 = eqn_params->p2/eqn_params->rho2/R_specific;
+    //TODO: Write function for Sutherland's Law
+    //eqn_params->mu2 = mu_ref*std::pow(eqn_params->T2/T_ref,1.5)*(T_ref + S)/(eqn_params->T2 + S);
+    //eqn_params->mu1 = eqn_params->mu2;
+    
+    printf("Initial Ambient Gas Temperature: %f\n",eqn_params->T2);
+    printf("Initial Ambient Gas Viscosity: %f\n",eqn_params->mu2);
+    
 
     /*
     eqn_params->T2 = 293.15;

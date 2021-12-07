@@ -4019,7 +4019,7 @@ void G_CARTESIAN::addMeshFluxToVst(
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
         m_vst->temp[index] = st.temp;
-            //m_vst->temp[index] = EosTemperature(&st);
+        m_vst->mu[index] = st.mu;
 		
         u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
@@ -4056,13 +4056,13 @@ void G_CARTESIAN::addMeshFluxToVst(
 		}
 		
 		ConvertVstToState(&st, m_vst, eos, index, dim);
-		
         checkCorrectForTolerance(&st);
 
 		m_vst->dens[index] = st.dens;
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
         m_vst->temp[index] = st.temp;
+        m_vst->mu[index] = st.mu;
 		
         u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
@@ -4100,13 +4100,13 @@ void G_CARTESIAN::addMeshFluxToVst(
 		}
 		
 		ConvertVstToState(&st, m_vst, eos, index, dim);
-		
         checkCorrectForTolerance(&st);
 		
         m_vst->dens[index] = st.dens;
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
         m_vst->temp[index] = st.temp;
+        m_vst->mu[index] = st.mu;
 
 		u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
@@ -5915,16 +5915,6 @@ void G_CARTESIAN::initSampleVelocity(char *in_name)
 
 void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
 {
-    /*
-	if (state->mu < min_mu)
-    {
-        printf("\n\nWARNING checkCorrectForTolerance(): \
-                state->mu = %g < min_mu = %g\n",state->mu, min_mu);
-        printf("setting to min_mu\n\n");
-	    state->mu = min_mu;
-    }
-    */
-    
     if (state->dens < min_dens)
     {
         printf("\n\nWARNING checkCorrectForTolerance(): \
@@ -5943,6 +5933,7 @@ void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
 
     state->engy = EosEnergy(state);
     state->temp = EosTemperature(state);
+    state->mu = EosViscosity(state);
 }	/* end checkCorrectForTolerance */
 
 boolean G_CARTESIAN::needBufferFromIntfc(

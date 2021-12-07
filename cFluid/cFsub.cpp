@@ -922,6 +922,18 @@ extern void cF_flowThroughBoundaryState2d(
 
     newst->engy = EosEnergy(newst);
     newst->temp = EosTemperature(newst);
+    newst->mu = EosViscosity(newst);
+    
+    /*
+    //Sutherland's Law Viscosity
+    //TODO: get from input file
+    double T_ref = 273.0;
+    double mu_ref = 1.716e-05;
+    double S = 111.0;
+
+    //TODO: Write function to compute
+    newst->mu = mu_ref*std::pow(newst->temp/T_ref,1.5)*(T_ref + S)/(newst->temp + S);
+    */
     
     set_state_max_speed(front,newst,p0);
 	
@@ -934,6 +946,7 @@ extern void cF_flowThroughBoundaryState2d(
 	    printf("Density: %f\n",newst->dens);
 	    printf("Energy: %f\n",newst->engy);
 	    printf("Temperature: %f\n",newst->temp);
+	    printf("Viscosity: %f\n",newst->mu);
 	}
 }       /* end cF_flowThroughBoundaryState2d */
 
@@ -1134,7 +1147,20 @@ extern void cF_flowThroughBoundaryState3d(
     
     newst->engy = EosEnergy(newst);
     newst->temp = EosTemperature(newst);
+    newst->mu = EosViscosity(newst);
 	
+    //Sutherland's Law Viscosity
+    
+    /*
+    //TODO: get from input file
+    double T_ref = 273.0;
+    double mu_ref = 1.716e-05;
+    double S = 111.0;
+
+    //TODO: Write function to compute
+    newst->mu = mu_ref*std::pow(newst->temp/T_ref,1.5)*(T_ref + S)/(newst->temp + S);
+    */
+    
     set_state_max_speed(front,newst,p0);
 	
     if (debugging("flow_through"))
@@ -1143,6 +1169,9 @@ extern void cF_flowThroughBoundaryState3d(
 	    print_general_vector("Velocity: ",newst->vel,dim,"\n");
 	    printf("Pressure: %f\n",newst->pres);
 	    printf("Density: %f\n",newst->dens);
+	    printf("Energy: %f\n",newst->engy);
+	    printf("Temperature: %f\n",newst->temp);
+	    printf("Viscosity: %f\n",newst->mu);
 	}
 }       /* end cF_flowThroughBoundaryState3d */
 
@@ -1239,8 +1268,7 @@ static  void neumann_point_propagate(
         for (i = 0; i < dim; ++i)
         {
             vel[i] = center_of_mass_velo(oldhs)[i];
-            crds_com[i] = Coords(oldp)[i] + dt*vel[i]
-                            - center_of_mass(oldhs)[i];
+            crds_com[i] = Coords(oldp)[i] + dt*vel[i] - center_of_mass(oldhs)[i];
         }
     
         //if (dim == 2) //This is only for rotations in xy plane
@@ -1269,6 +1297,7 @@ static  void neumann_point_propagate(
 			getStateDens,&newst->dens,&oldst->dens);
 
 
+    /*
     //TODO: compute temperature with equation of state instead?
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
 			getStateTemp,&newst->temp,&oldst->temp);
@@ -1276,6 +1305,7 @@ static  void neumann_point_propagate(
     //TODO set the viscosity with Sutherland's Law instead?
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
 			getStateMu,&newst->mu,&oldst->mu);
+    */
 	
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
 			getStateKTurb,&newst->k_turb,&oldst->k_turb);
@@ -1286,7 +1316,21 @@ static  void neumann_point_propagate(
 	    newst->momn[i] = newst->dens*vel[i];
 	}
     newst->eos = &(eqn_params->eos[comp]);
-	newst->engy = EosEnergy(newst);
+	
+    newst->engy = EosEnergy(newst);
+    newst->temp = EosTemperature(newst);
+    newst->mu = EosViscosity(newst);
+
+    /*
+    //Sutherland's Law Viscosity
+    //TODO: get from input file
+    double T_ref = 273.0;
+    double mu_ref = 1.716e-05;
+    double S = 111.0;
+
+    //TODO: Write function to compute
+    newst->mu = mu_ref*std::pow(newst->temp/T_ref,1.5)*(T_ref + S)/(newst->temp + S);
+    */
 	
     s = mag_vector(vel,dim);
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
@@ -1701,17 +1745,16 @@ static void rgbody_point_propagate_in_fluid(
     
 
     /*
+    //TODO: Need to use wall model for temp? And then set the viscosity with Sutherland's Law?
     if (m_temp != NULL)
     {
         FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
             getStateTemp,&newst->temp,&oldst->temp);
     }
-    */
-    
-    //TODO: Need to use wall model for temp? And then set the viscosity with Sutherland's Law?
 
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
 			getStateMu,&newst->mu,&oldst->mu);
+    */
     
 
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
@@ -1726,9 +1769,23 @@ static void rgbody_point_propagate_in_fluid(
 	    newst->momn[i] = newst->dens*vel[i];
 	}
 
-    newst->eos = oldst->eos;
-	newst->engy = EosEnergy(newst);
+    newst->eos = oldst->eos; //TODO: Will this have valid memory?
 	
+    newst->engy = EosEnergy(newst);
+    newst->temp = EosTemperature(newst);
+    newst->mu = EosViscosity(newst);
+	
+    /*
+    //Sutherland's Law Viscosity
+    //TODO: get from input file
+    double T_ref = 273.0;
+    double mu_ref = 1.716e-05;
+    double S = 111.0;
+
+    //TODO: Write function to compute
+    newst->mu = mu_ref*std::pow(newst->temp/T_ref,1.5)*(T_ref + S)/(newst->temp + S);
+    */
+
     double s = mag_vector(vel,dim);
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
 	set_state_max_speed(front,newst,Coords(newp));

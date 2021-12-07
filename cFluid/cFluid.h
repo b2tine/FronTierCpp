@@ -678,6 +678,7 @@ extern void reflectVectorThroughPlane(double*,double*,double*,int);
 extern void findGhostState(STATE,STATE,STATE*);
 
 // cFeos.cpp
+extern double EosViscosity(STATE*);
 extern double EosTemperature(STATE*);
 extern double EosPressure(STATE*);
 extern double EosInternalEnergy(STATE*);

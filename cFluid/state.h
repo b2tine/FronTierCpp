@@ -58,12 +58,16 @@ struct FABRIC_STATE
 struct EOS_PARAMS
 {
     double gamma;
-    double R_specific;
-    
-    double Pr; //prandtl number
-
     double pinf;
     double einf;
+
+    double R_specific;
+    double Pr;          //prandtl number
+
+    //Sutherland's Law Constants
+    double mu_ref;
+    double T_ref;
+    double S;
 };
 
 

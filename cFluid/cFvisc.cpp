@@ -39,8 +39,10 @@ void G_CARTESIAN::computeDynamicViscosity()
 
 void G_CARTESIAN::computeDynamicViscosity2d()
 {
-    double* mu = field.mu;
+    double* dens = field.dens;
+    double* pres = field.pres;
     double* temp = field.temp;
+    double* mu = field.mu;
 
     for (int j = imin[1]; j <= imax[1]; ++j)
     for (int i = imin[0]; i <= imax[0]; ++i)
@@ -55,6 +57,14 @@ void G_CARTESIAN::computeDynamicViscosity2d()
             continue;
         }
 
+        STATE state;
+        state.eos = &eqn_params->eos[comp];
+        state.dens = dens[index];
+        state.pres = pres[index];
+            //state.temp = EosTemperature(&state);
+        state.mu = EosViscosity(&state);
+
+        /*
         //TODO: get from input file
         double T_ref = 273.0;
         double mu_ref = 1.716e-05;
@@ -64,6 +74,7 @@ void G_CARTESIAN::computeDynamicViscosity2d()
         //
         //Sutherland's Law Viscosity
         mu[index] = mu_ref*std::pow(temp[index]/T_ref,1.5)*(T_ref + S)/(temp[index] + S);
+        */
 
         if (mu[index] > mu_max)
         {
@@ -74,8 +85,10 @@ void G_CARTESIAN::computeDynamicViscosity2d()
 
 void G_CARTESIAN::computeDynamicViscosity3d()
 {
-    double* mu = field.mu;
+    double* dens = field.dens;
+    double* pres = field.pres;
     double* temp = field.temp;
+    double* mu = field.mu;
 
     for (int k = imin[2]; k <= imax[2]; ++k)
     for (int j = imin[1]; j <= imax[1]; ++j)
@@ -91,6 +104,14 @@ void G_CARTESIAN::computeDynamicViscosity3d()
             continue;
         }
 
+        STATE state;
+        state.eos = &eqn_params->eos[comp];
+        state.dens = dens[index];
+        state.pres = pres[index];
+            //state.temp = EosTemperature(&state);
+        state.mu = EosViscosity(&state);
+
+        /*
         //TODO: get from input file
         double T_ref = 273.0;
         double mu_ref = 1.716e-05;
@@ -100,6 +121,7 @@ void G_CARTESIAN::computeDynamicViscosity3d()
         //
         //Sutherland's Law Viscosity
         mu[index] = mu_ref*std::pow(temp[index]/T_ref,1.5)*(T_ref + S)/(temp[index] + S);
+        */
 
         if (mu[index] > mu_max)
         {
@@ -794,7 +816,14 @@ void G_CARTESIAN::computeViscousFlux2d(
     double v_xy = 0.25*(sten[2][2].vel[1] - sten[2][0].vel[1]
             - sten[0][2].vel[1] + sten[0][0].vel[1])/top_h[0]/top_h[1];
     
-    double* mu = field.mu;
+    //TODO: TRY USING m_vst->mu AFTER UPDATING TEMP AND VISC IN addMeshFluxToVst()
+    //
+    //      Can also try using nonlinearized viscosity for the stencil
+    //      i.e. every point of the stencil records its viscosity and
+    //      use in the discretization (half indices most likely)
+    
+    double* mu = m_vst->mu;
+        //double* mu = field.mu;
     int index = d_index(icoords,top_gmax,dim);
     
     double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y);
@@ -1032,7 +1061,8 @@ void G_CARTESIAN::computeViscousFlux3d(
     double w_yz = 0.25*(sten[2][2][1].vel[2] - sten[2][0][1].vel[2]
             - sten[0][2][1].vel[2] + sten[0][0][1].vel[2])/top_h[1]/top_h[2];
 
-    double* mu = field.mu;
+    double* mu = m_vst->mu;
+        //double* mu = field.mu;
     int index = d_index(icoords,top_gmax,dim);
     
     double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y - w_z);
@@ -1064,7 +1094,7 @@ void G_CARTESIAN::computeViscousFlux3d(
             + u*tauxz_z + v_z*tauyz + v*tauyz_z + w_z*tauzz + w*tauzz_z);
 
 
-    if (debugging("no_heatflux")) return;
+    //if (debugging("no_heatflux")) return;
     /////////////////////////////////////////////////////////////////////////////////////
     
     /*
