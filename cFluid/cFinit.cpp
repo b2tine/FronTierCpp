@@ -135,7 +135,9 @@ extern void read_cFluid_params(
         LOC(); clean_up(ERROR);
     }
 
+
     set_cFluid_params(infile,eqn_params);
+
 
     printf("Available numerical schemes are:\n");
     printf("\tTVD_1st_order\n");
@@ -454,6 +456,8 @@ static void getAmbientState(
 	double rho2 = eqn_params->rho2;
 	double p1 = eqn_params->p1;
 	double p2 = eqn_params->p2;
+	double T1 = eqn_params->T1;
+	double T2 = eqn_params->T2;
 	double *v1 = eqn_params->v1;
 	double *v2 = eqn_params->v2;
 	int i,dim;
@@ -475,6 +479,7 @@ static void getAmbientState(
 	{
 	case GAS_COMP1:
         state->mu = mu1;
+	    state->temp = T1;
 	    state->dens = rho1;
 	    state->pres = p1;
 	    for (i = 0; i < dim; ++i)
@@ -486,6 +491,7 @@ static void getAmbientState(
 	    break;
 	case GAS_COMP2:
         state->mu = mu2;
+	    state->temp = T2;
 	    state->dens = rho2;
 	    state->pres = p2;
 	    for (i = 0; i < dim; ++i)
@@ -497,6 +503,7 @@ static void getAmbientState(
 	    break;
 	case SOLID_COMP:
         state->mu = 0.0;
+        state->temp = 0.0;
 	    state->dens = 0.0;
 	    state->pres = 0.0;
 	    for (i = 0; i < dim; ++i)
@@ -537,15 +544,74 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 	fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->p2);
 	(void) printf("%f %f\n",eqn_params->rho2,eqn_params->p2);
 
+    eqn_params->p1 = eqn_params->p2;
+    eqn_params->rho1 = eqn_params->rho2;
+
+    /*
+    //TODO: remove viscosity user input when temperature working correctly
+
     CursorAfterString(infile,"Enter density and viscosity of the fluid:");
     fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->mu2);
     (void) printf("%f %f\n",eqn_params->rho2,eqn_params->mu2);
-
-    eqn_params->rho1 = eqn_params->rho2;
+    
     eqn_params->mu1 = eqn_params->mu2;
-    eqn_params->p1 = eqn_params->p2;
+    */
 
-	CursorAfterString(infile,"Enter gravity:");
+    ///////////////////////////////////////////////////////////////////////////
+    
+    //TODO: make non optional user input once working
+    double R_specific = 287.058; //R_specific of air
+    if (CursorAfterStringOpt(infile,"Enter the specific gas constant:"))
+    {
+	    fscanf(infile,"%lf",&R_specific);
+    }
+    (void) printf("%f\n",R_specific);
+	
+    (eqn_params->eos[GAS_COMP1]).R_specific = R_specific;
+    (eqn_params->eos[GAS_COMP2]).R_specific = R_specific;
+
+    eqn_params->T2 = eqn_params->p2/eqn_params->rho2/R_specific; //TODO: Write function for this computation
+    eqn_params->T1 = eqn_params->T2;
+
+    printf("Initial Ambient Fluid Temperature: %f\n",eqn_params->T2);
+
+    //TODO: get from input file
+    double T_ref = 273.0;
+    double mu_ref = 1.716e-05;
+    double S = 111.0;
+
+    //TODO: Write function for Sutherland's Law
+    eqn_params->mu2 = mu_ref*std::pow(eqn_params->T2/T_ref,1.5)*(T_ref + S)/(eqn_params->T2 + S);
+
+    eqn_params->mu1 = eqn_params->mu2;
+    
+    printf("Initial Ambient Fluid Viscosity: %f\n",eqn_params->mu2);
+    
+    double Pr = 0.71;
+    if (CursorAfterStringOpt(infile,"Enter the Prandtl number:"))
+    {
+	    fscanf(infile,"%lf",&Pr);
+    }
+    (void) printf("%f\n",Pr);
+	
+    (eqn_params->eos[GAS_COMP1]).Pr = Pr;
+    (eqn_params->eos[GAS_COMP2]).Pr = Pr;
+
+
+    /*
+    eqn_params->T2 = 293.15;
+    if (CursorAfterStringOpt(infile,"Enter temperature of the fluid:"))
+    {
+	    fscanf(infile,"%lf",&eqn_params->T2);
+    }
+    (void) printf("%f\n",eqn_params->T2);
+    */
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    
+	
+    CursorAfterString(infile,"Enter gravity:");
 	for (int i = 0; i < dim; ++i)
 	{
 	    fscanf(infile,"%lf",&eqn_params->gravity[i]);
@@ -553,7 +619,14 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 	}
 	(void) printf("\n");
 
+
+    eqn_params->tracked = NO;
+
+
+    /*
     //TODO: Should just remove this option?
+    //      This is used for two-phase flow?
+    //
     eqn_params->tracked = NO;
     CursorAfterString(infile,"Type yes to track the interface:");
     fscanf(infile,"%s",str);
@@ -566,6 +639,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     {
         eqn_params->tracked = NO;
     }
+    */
 }	/* end setChannelFlowParams */
 
 void G_CARTESIAN::initChannelFlowStates()
@@ -581,6 +655,7 @@ void G_CARTESIAN::initChannelFlowStates()
 	INTERFACE *intfc = front->interf;
 	
     double *mu = field.mu;
+    double *temp = field.temp;
 	double *dens = field.dens;
 	double *engy = field.engy;
 	double *pres = field.pres;
@@ -621,6 +696,7 @@ void G_CARTESIAN::initChannelFlowStates()
             getAmbientState(&state,eqn_params,coords,comp);
 
             mu[index] = state.mu;
+            temp[index] = state.temp;
             dens[index] = state.dens;
             pres[index] = state.pres;
             engy[index] = state.engy;
@@ -644,6 +720,7 @@ void G_CARTESIAN::initChannelFlowStates()
             getAmbientState(&state,eqn_params,coords,comp);
 
             mu[index] = state.mu;
+            temp[index] = state.temp;
             dens[index] = state.dens;
             pres[index] = state.pres;
             engy[index] = state.engy;

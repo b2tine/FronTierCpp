@@ -185,6 +185,7 @@ void G_CARTESIAN::setComponent(void)
             dens[i] = state->dens;
             pres[i] = state->pres;
             engy[i] = state->engy;
+
             for (j = 0; j < dim; ++j)
             {
                 momn[j][i] = state->momn[j];
@@ -336,6 +337,7 @@ void G_CARTESIAN::computeMeshFlux(
         addViscousFlux(&m_vst,m_flux,delta_t);
     }
 	
+    //TODO: Add Ergun Equation source terms for porous interface
     addSourceTerm(m_vst,m_flux,delta_t);
 }	/* end computeMeshFlux */
 
@@ -663,6 +665,8 @@ void G_CARTESIAN::solve(double dt)
 	
     ///////////////////////////////////////////////////////////////////////////
     
+    computeDynamicViscosity();
+
     computeSGSTerms();
     
     ///////////////////////////////////////////////////////////////////////////
@@ -921,7 +925,6 @@ void G_CARTESIAN::setDomain()
 	for (i = 0; i < size; ++i)
 	for (j = 0; j < 2; ++j)
 	{
-        //TODO: Need mu here?
 	    eqn_params->Gdens[j][i] = 0.0;
 	    eqn_params->Gpres[j][i] = 0.0;
 	    for (k = 0; k < dim; ++k)
@@ -2074,8 +2077,9 @@ void G_CARTESIAN::copyMeshStates()
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
+	    
+        FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
 	    
         symmetry[0] = ODD;
 	    FT_ParallelExchGridArrayBuffer(mom[0],front,symmetry);
@@ -2095,8 +2099,9 @@ void G_CARTESIAN::copyMeshStates()
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
+
+	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
 
 	    symmetry[0] = symmetry[1] = ODD;
 	    FT_ParallelExchGridArrayBuffer(vort,front,symmetry);
@@ -2124,8 +2129,9 @@ void G_CARTESIAN::copyMeshStates()
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
-	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
+
+	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
 	    
 	    symmetry[0] = symmetry[1] = symmetry[2] = ODD;
         for (l = 0; l < dim; ++l)
@@ -3377,8 +3383,9 @@ void G_CARTESIAN::copyFromMeshVst(
 	double *engy = field.engy;
 	double *pres = field.pres;
 	double *mu = field.mu;
-	double *k_turb = field.k_turb;
 	double *temp = field.temp;
+	
+    double *k_turb = field.k_turb;
 	
 	//GFM
 	if(eqn_params->tracked)
@@ -3403,8 +3410,8 @@ void G_CARTESIAN::copyFromMeshVst(
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
             state.mu = m_vst.mu[index];
-            state.k_turb = m_vst.k_turb[index];
             state.temp = m_vst.temp[index];
+            state.k_turb = m_vst.k_turb[index];
         
             for (l = 0; l < dim; ++l)
                 state.momn[l] = m_vst.momn[l][index];
@@ -3419,8 +3426,8 @@ void G_CARTESIAN::copyFromMeshVst(
             engy[index] = state.engy;
             pres[index] = state.pres;
             mu[index] = state.mu;
-            k_turb[index] = state.k_turb;
             temp[index] = state.temp;
+            k_turb[index] = state.k_turb;
         
             for (l = 0; l < dim; ++l)
                 momn[l][index] = state.momn[l];
@@ -3438,8 +3445,8 @@ void G_CARTESIAN::copyFromMeshVst(
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
             state.mu = m_vst.mu[index];
-            state.k_turb = m_vst.k_turb[index];
             state.temp = m_vst.temp[index];
+            state.k_turb = m_vst.k_turb[index];
         
             for (l = 0; l < dim; ++l)
                 state.momn[l] = m_vst.momn[l][index];
@@ -3454,8 +3461,8 @@ void G_CARTESIAN::copyFromMeshVst(
             engy[index] = state.engy;
             pres[index] = state.pres;
             mu[index] = state.mu;
-            k_turb[index] = state.k_turb;
             temp[index] = state.temp;
+            k_turb[index] = state.k_turb;
         
             for (l = 0; l < dim; ++l)
                 momn[l][index] = state.momn[l];
@@ -3474,8 +3481,8 @@ void G_CARTESIAN::copyFromMeshVst(
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
             state.mu = m_vst.mu[index];
-            state.k_turb = m_vst.k_turb[index];
             state.temp = m_vst.temp[index];
+            state.k_turb = m_vst.k_turb[index];
         
             for (l = 0; l < dim; ++l)
                 state.momn[l] = m_vst.momn[l][index];
@@ -3490,8 +3497,8 @@ void G_CARTESIAN::copyFromMeshVst(
             engy[index] = state.engy;
             pres[index] = state.pres;
             mu[index] = state.mu;
-            k_turb[index] = state.k_turb;
             temp[index] = state.temp;
+            k_turb[index] = state.k_turb;
         
             for (l = 0; l < dim; ++l)
                 momn[l][index] = state.momn[l];
@@ -3977,7 +3984,7 @@ void G_CARTESIAN::addMeshFluxToVst(
 	EOS_PARAMS	*eos;
 	STATE		st;
 	int		comp;
-	double		temp;
+	double	maxeig;	
 
 	switch (dim)
 	{
@@ -4001,22 +4008,25 @@ void G_CARTESIAN::addMeshFluxToVst(
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
-		    m_vst->momn[l][index] += 
-			chi*m_flux.momn_flux[l][index];
+		    m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
 		
 		ConvertVstToState(&st, m_vst, eos, index, dim);
 		checkCorrectForTolerance(&st);
-		m_vst->dens[index] = st.dens;
+		
+        m_vst->dens[index] = st.dens;
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
-		u = sqrt(u)/m_vst->dens[index];
+        m_vst->temp[index] = st.temp;
+            //m_vst->temp[index] = EosTemperature(&st);
+		
+        u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
-		temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
-                if (max_speed < temp)
-                    max_speed = temp;
+		maxeig = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
+                if (max_speed < maxeig)
+                    max_speed = maxeig;
 	    }
 	    scatMeshVst(m_vst);
 	    break;
@@ -4041,22 +4051,26 @@ void G_CARTESIAN::addMeshFluxToVst(
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
-		    m_vst->momn[l][index] += 
-			chi*m_flux.momn_flux[l][index];
+		    m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
 		
 		ConvertVstToState(&st, m_vst, eos, index, dim);
-		checkCorrectForTolerance(&st);
+		
+        checkCorrectForTolerance(&st);
+
 		m_vst->dens[index] = st.dens;
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
-		u = sqrt(u)/m_vst->dens[index];
+        m_vst->temp[index] = st.temp;
+            //m_vst->temp[index] = EosTemperature(&st);
+		
+        u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
-		temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
-                if (max_speed < temp)
-                    max_speed = temp;
+		maxeig = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
+                if (max_speed < maxeig)
+                    max_speed = maxeig;
 	    }
 	    scatMeshVst(m_vst);
 	    break;
@@ -4074,22 +4088,26 @@ void G_CARTESIAN::addMeshFluxToVst(
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
-		    m_vst->momn[l][index] += 
-				chi*m_flux.momn_flux[l][index];
+		    m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
 		
 		ConvertVstToState(&st, m_vst, eos, index, dim);
-		checkCorrectForTolerance(&st);
-		m_vst->dens[index] = st.dens;
+		
+        checkCorrectForTolerance(&st);
+		
+        m_vst->dens[index] = st.dens;
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
+        m_vst->temp[index] = st.temp;
+            //m_vst->temp[index] = EosTemperature(&st);
+
 		u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
-		temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
-                if (max_speed < temp)
-                    max_speed = temp;
+		maxeig = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
+                if (max_speed < maxeig)
+                    max_speed = maxeig;
 	    }
 	    scatMeshVst(m_vst);
 	}
@@ -5919,6 +5937,7 @@ void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
     }
 
     state->engy = EosEnergy(state);
+    state->temp = EosTemperature(state);
 }	/* end checkCorrectForTolerance */
 
 boolean G_CARTESIAN::needBufferFromIntfc(

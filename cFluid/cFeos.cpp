@@ -24,7 +24,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "cFluid.h"
 
 
-//TODO: Do we need to use a different equation of state?
+
+extern double EosTemperature(
+	STATE *state)
+{
+	if (state->dens <= 0.0) return 0.0;
+
+    EOS_PARAMS* eos = state->eos;
+	double R_specific = eos->R_specific;
+
+    double temp = state->pres/state->dens/R_specific;
+
+	return temp;
+}	/* end EosTemperature */
 
 extern double EosPressure(
 	STATE *state)
@@ -129,13 +141,14 @@ extern void ConvertVstToState(
 	state->eos = eos;
 	state->dens = vst->dens[ind];
 	state->engy = vst->engy[ind];
-	    //state->k_turb = vst->k_turb[ind];
 
 	for (int i = 0; i < dim; ++i)
     {
         state->momn[i] = vst->momn[i][ind];
     }
+   
     state->pres = EosPressure(state);
+    state->temp = EosTemperature(state);
 }
 
 extern void EosSetTVDParams(

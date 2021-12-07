@@ -8,7 +8,108 @@ static double (*getStateMom[MAXD])(Locstate) =
                {getStateXmom,getStateYmom,getStateZmom};
 
 
-//TODO: Add viscous heat flux
+
+void G_CARTESIAN::computeDynamicViscosity()
+{
+    //EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+    //mu_max = std::max(eqn_params->mu1,eqn_params->mu2);
+    mu_max = 0.0;
+
+    //TODO: add input file option for this
+    //
+    //  if (!eqn_params->temp_dependent_viscosity) return;
+
+
+    switch (dim)
+    {
+        case 2:
+            computeDynamicViscosity2d();
+            break;
+        case 3:
+            //computeDynamicViscosity3d();
+            printf("\nERROR computeDynamicViscosity3d() not implemented yet\n");
+            LOC(); clean_up(EXIT_FAILURE);
+            break;
+        default:
+            printf("\nERROR computeDynamicViscosity(): invalid dim\n");
+            printf("\t\t dim = %d\n\n",dim);
+            LOC(); clean_up(EXIT_FAILURE);
+    }
+
+    FT_ParallelExchGridArrayBuffer(field.mu,front,NULL);
+}
+
+void G_CARTESIAN::computeDynamicViscosity2d()
+{
+    double* mu = field.mu;
+    double* temp = field.temp;
+
+    for (int j = imin[1]; j <= imax[1]; ++j)
+    for (int i = imin[0]; i <= imax[0]; ++i)
+    {
+        int icoords[MAXD] = {i, j, 0};
+        int index = d_index(icoords,top_gmax,dim);
+        
+        COMPONENT comp = top_comp[index];
+        if (!gas_comp(comp))
+        {
+            mu[index] = 0.0;
+            continue;
+        }
+
+        //TODO: get from input file
+        double T_ref = 273.0;
+        double mu_ref = 1.716e-05;
+        double S = 111.0;
+
+        //TODO: Write function to compute
+        //
+        //Sutherland's Law Viscosity
+        mu[index] = mu_ref*std::pow(temp[index]/T_ref,1.5)*(T_ref + S)/(temp[index] + S);
+
+        if (mu[index] > mu_max)
+        {
+            mu_max = mu[index];
+        }
+    }
+}
+
+void G_CARTESIAN::computeDynamicViscosity3d()
+{
+    double* mu = field.mu;
+    double* temp = field.temp;
+
+    for (int k = imin[2]; k <= imax[2]; ++k)
+    for (int j = imin[1]; j <= imax[1]; ++j)
+    for (int i = imin[0]; i <= imax[0]; ++i)
+    {
+        int icoords[MAXD] = {i, j, k};
+        int index = d_index(icoords,top_gmax,dim);
+        
+        COMPONENT comp = top_comp[index];
+        if (!gas_comp(comp))
+        {
+            mu[index] = 0.0;
+            continue;
+        }
+
+        //TODO: get from input file
+        double T_ref = 273.0;
+        double mu_ref = 1.716e-05;
+        double S = 111.0;
+
+        //TODO: Write function to compute
+        //
+        //Sutherland's Law Viscosity
+        mu[index] = mu_ref*std::pow(temp[index]/T_ref,1.5)*(T_ref + S)/(temp[index] + S);
+
+        if (mu[index] > mu_max)
+        {
+            mu_max = mu[index];
+        }
+    }
+}
+
 void G_CARTESIAN::addViscousFlux(
         SWEEP* m_vst,
         FSWEEP *m_flux,
@@ -23,19 +124,34 @@ void G_CARTESIAN::addViscousFlux(
             {   
                 int icoords[MAXD] = {i,j,0};
                 int index = d_index(icoords,top_gmax,dim);
-                if (!gas_comp(top_comp[index])) continue;
                 
-                //VStencil2d vsten;
-                //fillViscousFluxStencil2d(icoords,m_vst,&vsten);
+                COMPONENT comp = top_comp[index];
+                if (!gas_comp(comp)) continue;
+                
+                VStencil2d vsten;
+                vsten.comp = comp;
+                fillViscousFluxStencil2d(icoords,m_vst,&vsten);
+                
+                VFLUX v_flux;
+                computeViscousFlux2d(icoords,m_vst,&v_flux,delta_t,&vsten);
+
+                /*
+                //TODO: Need to deal with stencil at domain boundary for this to work.
+                //      Can we just use the i+-1 state for the i+-2 state beyond the domain,
+                //      or just use a 3pt stencil near the domain boundary ???
+
                 VStencil2d_5pt vsten;
                 fillViscousFluxStencil2d_5pt(icoords,m_vst,&vsten);
                 
                 VFLUX v_flux;
-                //computeViscousFlux2d(icoords,m_vst,&v_flux,delta_t,&vsten);
                 computeViscousFlux2d_5pt(icoords,m_vst,&v_flux,delta_t,&vsten);
+                */
 
                 for (int k = 0; k < dim; ++k)
+                {
                     m_flux->momn_flux[k][index] += v_flux.momn_flux[k];
+                }
+                
                 m_flux->engy_flux[index] += v_flux.engy_flux;
             }
             break;
@@ -48,16 +164,22 @@ void G_CARTESIAN::addViscousFlux(
             {   
                 int icoords[MAXD] = {i,j,k};
                 int index = d_index(icoords,top_gmax,dim);
-                if (!gas_comp(top_comp[index])) continue;
+                
+                COMPONENT comp = top_comp[index];
+                if (!gas_comp(comp)) continue;
                 
                 VStencil3d vsten;
+                vsten.comp = comp;
                 fillViscousFluxStencil3d(icoords,m_vst,&vsten);
 
                 VFLUX v_flux;
                 computeViscousFlux3d(icoords,m_vst,&v_flux,delta_t,&vsten);
 
                 for (int k = 0; k < dim; ++k)
+                {
                     m_flux->momn_flux[k][index] += v_flux.momn_flux[k];
+                }
+
                 m_flux->engy_flux[index] += v_flux.engy_flux;
             }
             break;
@@ -75,8 +197,9 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         SWEEP* m_vst,
         VStencil2d* vsten)
 {
-    int index = d_index(icoords,top_gmax,dim);
-    COMPONENT comp = top_comp[index];
+    COMPONENT comp = vsten->comp;
+    //int index = d_index(icoords,top_gmax,dim);
+    //COMPONENT comp = top_comp[index];
 
     for (int j = 0; j < 3; ++j)
     for (int i = 0; i < 3; ++i)
@@ -94,11 +217,12 @@ void G_CARTESIAN::fillViscousFluxStencil2d(
         }
         else
         {
-            vs->temp = m_vst->temp[idx_nb];
             for (int l = 0; l < dim; ++l)
             {
                 vs->vel[l] = m_vst->momn[l][idx_nb]/m_vst->dens[idx_nb];
             }
+            
+            vs->temp = m_vst->temp[idx_nb];
         }
     }
 }
@@ -110,13 +234,17 @@ void G_CARTESIAN::fillViscousFluxStencil2d_5pt(
         SWEEP* m_vst,
         VStencil2d_5pt* vsten)
 {
-    int index = d_index(icoords,top_gmax,dim);
-    COMPONENT comp = top_comp[index];
+    COMPONENT comp = vsten->comp;
+    //int index = d_index(icoords,top_gmax,dim);
+    //COMPONENT comp = top_comp[index];
 
     //TODO: buffer not wide enough near boundary
     //
     //      need to copy the i+1 state to the i+2 state
     //      if i+1 point is on rect domain boundary
+    //
+    //      Or can we just revert to a 3pt stencil near boundary?
+    //      Can add a flag indicating that the 3 pt stencil is in use.
     
     for (int j = 0; j < 5; ++j)
     for (int i = 0; i < 5; ++i)
@@ -134,24 +262,24 @@ void G_CARTESIAN::fillViscousFluxStencil2d_5pt(
         }
         else
         {
-            vs->temp = m_vst->temp[idx_nb];
             for (int l = 0; l < dim; ++l)
             {
                 vs->vel[l] = m_vst->momn[l][idx_nb]/m_vst->dens[idx_nb];
             }
+
+            vs->temp = m_vst->temp[idx_nb];
         }
     }
 }
 
-//TODO: For 4th order approximation to viscous flux need
-//      to add points points i-2 and i+2 to stencil in each direction.
 void G_CARTESIAN::fillViscousFluxStencil3d(
         int* icoords,
         SWEEP* m_vst,
         VStencil3d* vsten)
 {
-    int index = d_index(icoords,top_gmax,dim);
-    COMPONENT comp = top_comp[index];
+    COMPONENT comp = vsten->comp;
+    //int index = d_index(icoords,top_gmax,dim);
+    //COMPONENT comp = top_comp[index];
 
     for (int k = 0; k < 3; ++k)
     for (int j = 0; j < 3; ++j)
@@ -171,11 +299,12 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         }
         else
         {
-            vs->temp = m_vst->temp[idx_nb];
             for (int l = 0; l < dim; ++l)
             {
                 vs->vel[l] = m_vst->momn[l][idx_nb]/m_vst->dens[idx_nb];
             }
+
+            vs->temp = m_vst->temp[idx_nb];
         }
     }
 }
@@ -229,10 +358,17 @@ void G_CARTESIAN::setViscousGhostState(
     /*bool nip_found = nearest_interface_point(&ghost_coords[0],
                 ghost_comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);*/
+    
+    bool nip_found = nearest_interface_point(&ghost_coords[0],
+                comp,front->interf,NO_SUBDOMAIN,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs);
+
+
+    /*
     bool nip_found = nearest_interface_point(&ghost_coords[0],
                 ghost_comp,front->interf,NO_SUBDOMAIN,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);
-
+    */
 
 
     if (!nip_found)
@@ -274,12 +410,20 @@ void G_CARTESIAN::setDirichletViscousGhostState(
     STATE* state;
     FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
 
-    //TODO: Switch order?
-    if (boundary_state(hs) != nullptr)
-        ft_assign((POINTER)state,boundary_state(hs),front->sizest);
-    else
+    if (boundary_state_function(hs) != nullptr)
+    {
         state_along_hypersurface_element(comp,intrp_coeffs,hse,hs,(POINTER)state);
-
+    }
+    else if (boundary_state(hs) != nullptr)
+    {
+        ft_assign((POINTER)state,boundary_state(hs),front->sizest);
+    }
+    else
+    {
+        printf("\n\nERROR setDirichletViscousGhostState(): unrecognized DIRICHLET_BOUNDARY\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+    
     for (int i = 0; i < dim; ++i)
         vs->vel[i] = state->vel[i];
 
@@ -401,13 +545,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     int index = d_index(icoords,top_gmax,dim);
     //TODO: ADD DEBUG BLOCK HERE -- LIKE setSlipBoundaryNIP()
 
-    //Interpolate Temperature
-    double temp_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
-            getStateTemp,&temp_reflect,&m_vst->temp[index]);
-
     //Interpolate Density and Momentum at the reflected point
-    //and compute the velocity.
     double dens_reflect;
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
             getStateDens,&dens_reflect,&m_vst->dens[index]);
@@ -429,6 +567,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         */
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
                 getStateMom[j],&mom_reflect[j],&m_vst->momn[j][index]);
+        
         vel_reflect[j] = mom_reflect[j]/dens_reflect;
     }
 
@@ -490,6 +629,52 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
     }
 
+    //Interpolate the temperature at the reflected point
+    double temp_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
+            getStateTemp,&temp_reflect,&m_vst->temp[index]);
+
+    EOS_PARAMS eos = eqn_params->eos[comp];
+    double R_specific = eos.R_specific;
+    double gamma = eos.gamma;
+    double Pr = eos.Pr;
+    
+    double Cp = gamma/(gamma - 1.0)*R_specific;
+    double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
+
+    //TODO: Need to use law of the wall for temperature?
+    //      Or can we just interpolate and set equal to temp_reflect?
+
+    /*
+    //Compute Wall Temperature 
+    double temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
+
+    //Interpolate the pressure at the reflected point
+    double pres_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->pres,
+            getStatePres,&pres_reflect,&m_vst->pres[index]);
+
+    //Compute density near wall using the wall temperature and the pressure at the reflected point
+    double dens_wall = pres_reflect/temp_wall/R_specific;
+    */
+
+    //Interpolate the viscosity at the reflected point
+    double mu_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+            getStateMu,&mu_reflect,&field.mu[index]);
+    
+    /*
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+                    getStateMu,&mu_reflect,nullptr);
+        if (mu_reflect < MACH_EPS) mu_reflect = field.mu[index]; //TODO: Need this?
+    */
+    
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //TODO: Need to use mu_reflect and dens_wall for wall shear stress computation?
+    //
+    //      However, using the initial ambient state values does not appear to give unreasonable results.
+    
     double mu_l;
     double rho_l;
 
@@ -508,37 +693,46 @@ void G_CARTESIAN::setNeumannViscousGhostState(
             LOC(); clean_up(EXIT_FAILURE);
             break;
     }
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
     
-    //NOTE: In all numerical experiments, Newton's method converged
-    //      when the initial guess for the dimensionless wall velocity
-    //      was in the range of 40-50.
+    //NOTE: In all numerical experiments, when computing the wall shear stress
+    //      Newton's method converged when the initial guess for the dimensionless
+    //      wall velocity was inside the interval [40.0, 50.0].
+    
     double tau_wall[MAXD] = {0.0};
-    double mag_tau_wall = computeWallShearStress(mag_vtan,
-                    dist_reflect,mu_l,rho_l,45.0);
+    
+    double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l,45.0);
+        //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,45.0);
+        //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_reflect,45.0);
+    
     if (mag_vtan > MACH_EPS)
     {
         for (int j = 0; j < dim; ++j)
             tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
     }
 
-    // Interpolate the effective viscosity at the reflected point
-    double mu_reflect;
-    /*
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-                getStateMu,&mu_reflect,nullptr);
-    if (mu_reflect < MACH_EPS) mu_reflect = field.mu[index]; //TODO: Need this?
-    */
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-            getStateMu,&mu_reflect,&field.mu[index]);
-    
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
     double v_slip[MAXD] = {0.0};
     
     for (int j = 0; j < dim; ++j)
     {
+        //TODO: What is correct delta_n?
+        //
+        //      delta_n = dist_reflect - dist_ghost
+        //      
+        //      OR
+        //      
+        //      delta_n = dist_reflect + dist_ghost
+        
+        vel_ghost_tan[j] = vel_rel_tan[j]
+            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+
+        /*
         vel_ghost_tan[j] = vel_rel_tan[j]
             - (dist_reflect + dist_ghost)/mu_reflect*tau_wall[j];
+        */
 
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         
@@ -548,11 +742,18 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         //vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
     
+    
     //////////////////////////////////////////////////////////////////////////////////////
-    double Pr = 0.71;
-    double Cp = 1004.7;
-    double temp_ghost = temp_reflect;
-        + 0.5*pow(Pr,1.0/3.0)*(Dotd(vel_ghost_tan,vel_ghost_tan,dim) - Dotd(vel_ghost_rel,vel_ghost_rel,dim)) / Cp;
+    /*
+    double temp_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
+            getStateTemp,&temp_reflect,&m_vst->temp[index]);
+    */
+
+    //double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
+    double sqrmag_vel_ghost_tan = Dotd(vel_ghost_tan, vel_ghost_tan, dim);
+    
+    double temp_ghost = temp_reflect + 0.5*pow(Pr,1.0/3.0)*(sqrmag_vel_tan - sqrmag_vel_ghost_tan)/Cp;
 
     vs->temp = temp_ghost;
     //////////////////////////////////////////////////////////////////////////////////////
@@ -566,10 +767,10 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_rel",vel_ghost_rel,dim,"\n");
         fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+        printf("temp_ghost = %g\n",temp_ghost);
     }
 }
 
-//TODO: Heat Flux
 void G_CARTESIAN::computeViscousFlux2d(
         int* icoords,
         SWEEP* m_vst,
@@ -613,7 +814,17 @@ void G_CARTESIAN::computeViscousFlux2d(
     double tauxy_y = mu[index]*(u_yy + v_xy);
     double tauxy_x = mu[index]*(u_xy + v_xx);
     
-    /*
+    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
+    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
+    
+    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
+            + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
+
+
+    if (debugging("no_heatflux")) return;
+
+    /////////////////////////////////////////////////////////////////////////////////////
+    
     double T_x = 0.5*(sten[1][2].temp - sten[1][0].temp)/top_h[0];
     double T_y = 0.5*(sten[2][1].temp - sten[0][1].temp)/top_h[1];
 
@@ -621,19 +832,18 @@ void G_CARTESIAN::computeViscousFlux2d(
             + sten[1][0].temp)/sqr(top_h[0]);
     double T_yy = (sten[2][1].temp - 2.0*sten[1][1].temp 
             + sten[0][1].temp)/sqr(top_h[1]);
-    */
     
-    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
-    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
-    
-    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
-            + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
+    EOS_PARAMS eos = eqn_params->eos[vsten->comp];
+    double gamma = eos.gamma;
+    double R_specific = eos.R_specific;
+    double Pr = eos.Pr;
 
-    /*
-    //Heat Flux: lambda is thermal conductivity (\lambda = C_{p}{\mu}/{Pr})
-    
+    double Cp = gamma/(gamma - 1.0)*R_specific;
+    double lambda = Cp*mu[index]/Pr; //thermal conductivity
+
     v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy);
-    */
+
+    /////////////////////////////////////////////////////////////////////////////////////
 }
 
 //4th order centered difference
@@ -733,6 +943,12 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
     double tauxy_y = mu[index]*(u_yy + v_xy);
     double tauxy_x = mu[index]*(u_xy + v_xx);
     
+    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
+    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
+    
+    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
+            + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
+
     /*
     double T_x = 0.5*(sten[1][2].temp - sten[1][0].temp)/top_h[0];
     double T_y = 0.5*(sten[2][1].temp - sten[0][1].temp)/top_h[1];
@@ -743,15 +959,10 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
             + sten[0][1].temp)/sqr(top_h[1]);
     */
     
-    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
-    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
-    
-    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
-            + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
-
     /*
     //Heat Flux: lambda is thermal conductivity (\lambda = C_{p}{\mu}/{Pr})
     
+
     v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy);
     */
 }
@@ -848,6 +1059,15 @@ void G_CARTESIAN::computeViscousFlux3d(
     double tauxz_z = mu[index]*(u_zz + w_xz);
     double tauyz_z = mu[index]*(v_zz + w_yz);
     
+    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y + tauxz_z);
+    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y + tauyz_z);
+    v_flux->momn_flux[2] = delta_t*(tauxz_x + tauyz_y + tauzz_z);
+    
+    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
+            + v*tauxy_y + w_x*tauxz + w*tauxz_x + u_y*tauxy + u*tauxy_y
+            + v_y*tauyy + v*tauyy_y + w_y*tauyz + w*tauyz_y + u_z*tauxz
+            + u*tauxz_z + v_z*tauyz + v*tauyz_z + w_z*tauzz + w*tauzz_z);
+
     /*
     double T_x = 0.5*(sten[1][1][2].temp - sten[1][1][0].temp)/top_h[0];
     double T_y = 0.5*(sten[1][2][1].temp - sten[1][0][1].temp)/top_h[1];
@@ -861,15 +1081,6 @@ void G_CARTESIAN::computeViscousFlux3d(
             + sten[0][1][1].temp)/sqr(top_h[2]);
     */
     
-    v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y + tauxz_z);
-    v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y + tauyz_z);
-    v_flux->momn_flux[2] = delta_t*(tauxz_x + tauyz_y + tauzz_z);
-    
-    v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
-            + v*tauxy_y + w_x*tauxz + w*tauxz_x + u_y*tauxy + u*tauxy_y
-            + v_y*tauyy + v*tauyy_y + w_y*tauyz + w*tauyz_y + u_z*tauxz
-            + u*tauxz_z + v_z*tauyz + v*tauyz_z + w_z*tauzz + w*tauzz_z);
-
     /*
     //Heat Flux: lambda is thermal conductivity (\lambda = C_{p}{\mu}/{Pr})
     

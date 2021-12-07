@@ -57,9 +57,13 @@ struct FABRIC_STATE
 //TODO: make EOS_PARAMS non pointer in structs?
 struct EOS_PARAMS
 {
-    double  gamma;
-    double  pinf;
-    double  einf;
+    double gamma;
+    double R_specific;
+    
+    double Pr; //prandtl number
+
+    double pinf;
+    double einf;
 };
 
 
@@ -87,8 +91,9 @@ struct STATE : public FABRIC_STATE
 extern double getStateDens(POINTER);
 extern double getStatePres(POINTER);
 extern double getStateEngy(POINTER);
-extern double getStateMu(POINTER);
 extern double getStateTemp(POINTER);
+extern double getStateMu(POINTER);
+
 extern double getStateKTurb(POINTER);
 
 extern double getStateXmom(POINTER);

@@ -21,16 +21,19 @@ struct VSWEEP
 
 struct VStencil2d
 {
+    COMPONENT comp;
     VSWEEP st[3][3]; //[1][1] is center of stencil (i,j)
 };
 
 struct VStencil2d_5pt
 {
+    COMPONENT comp;
     VSWEEP st[5][5]; //[1][1] is center of stencil (i,j)
 };
 
 struct VStencil3d
 {
+    COMPONENT comp;
     VSWEEP st[3][3][3]; //[1][1][1] is center of stencil (i,j,k)
 };
 

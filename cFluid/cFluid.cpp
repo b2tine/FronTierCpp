@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 	FT_InitDebug(in_name);
 
 	if (debugging("sample_velocity"))
-            g_cartesian.initSampleVelocity(in_name);
+        g_cartesian.initSampleVelocity(in_name);
 
 	if (debugging("trace")) printf("Passed FT_StartUp()\n");
 
@@ -131,24 +131,27 @@ int main(int argc, char **argv)
         FT_RedistMesh(&front);
 	    
         if (debugging("trace"))
-                (void) printf("Passed FT_InitIntfc()\n");
-	    if (debugging("init_intfc"))
+            (void) printf("Passed FT_InitIntfc()\n");
+	    
+        if (debugging("init_intfc"))
 	    {
-                switch (f_basic.dim)
-                {
-                case 2:
-                    sprintf(test_name,"init_intfc-%d.xg",pp_mynode());
-                    xgraph_2d_intfc(test_name,front.interf);
-                    break;
-                case 3:
-                    sprintf(test_name,"%s/gv-init",OutName(&front));
-                    gview_plot_interface(test_name,front.interf);
-                    break;
-                }
+            switch (f_basic.dim)
+            {
+            case 2:
+                sprintf(test_name,"init_intfc-%d.xg",pp_mynode());
+                xgraph_2d_intfc(test_name,front.interf);
+                break;
+            case 3:
+                sprintf(test_name,"%s/gv-init",OutName(&front));
+                gview_plot_interface(test_name,front.interf);
+                break;
+            }
 	    }
 	}
 	else
+    {
 	    restart_set_dirichlet_bdry_function(&front);
+    }
 
 	/* Initialize velocity field function */
 
@@ -180,6 +183,7 @@ int main(int argc, char **argv)
 	{
 	    g_cartesian.setInitialStates();
 	}
+
 	if (debugging("trace"))
 	    printf("Passed state initialization()\n");
 

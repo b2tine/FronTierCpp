@@ -18,7 +18,7 @@ void G_CARTESIAN::computeSGSTerms()
 void G_CARTESIAN::computeEddyViscosity()
 {
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-    mu_max = std::max(eqn_params->mu1,eqn_params->mu2);
+        //mu_max = std::max(eqn_params->mu1,eqn_params->mu2);
 
     if (!eqn_params->use_eddy_viscosity) return;
 
@@ -766,6 +766,10 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
     }
 
+    //TODO: Need to use mu_reflect and dens_reflect for wall shear stress computation
+    //
+    //      See cFvisc.cpp setNeumannViscousGhostState()
+    
     double mu_l;
     double rho_l;
 
@@ -813,7 +817,12 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     for (int j = 0; j < dim; ++j)
     {
         vel_ghost_tan[j] = vel_rel_tan[j]
+            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+
+        /*
+        vel_ghost_tan[j] = vel_rel_tan[j]
             - (dist_reflect + dist_ghost)/mu_reflect*tau_wall[j];
+        */
 
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];

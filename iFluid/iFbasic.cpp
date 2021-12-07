@@ -5444,7 +5444,12 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     for (int j = 0; j < dim; ++j)
     {
         vel_ghost_tan[j] = vel_rel_tan[j]
+            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+
+        /*
+        vel_ghost_tan[j] = vel_rel_tan[j]
             - (dist_reflect + dist_ghost)/mu_reflect*tau_wall[j];
+        */
 
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];

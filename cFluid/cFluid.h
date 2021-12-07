@@ -118,6 +118,11 @@ struct EQN_PARAMS
     int idir;
 	int shock_side;
 	
+    double T0;
+    double T1;
+    double T2;
+    double T3;
+
     double p0;
     double p1;
     double p2;
@@ -133,14 +138,19 @@ struct EQN_PARAMS
     double v2[MAXD];
     double v3[MAXD];
 	
-    double min_dens;
-    double min_pres;
-	
     double mu1;
 	double mu2;
-	double gamma;
-	double gravity[MAXD];
+	
+    double gamma;
+        //double R_specific;
+
 	double Mach_number;
+	
+    double gravity[MAXD];
+    
+    double min_dens;
+    double min_pres;
+
 	double shock_position;
 	double contact_vel;
     
@@ -165,7 +175,7 @@ struct EQN_PARAMS
 	//LES Turbulence
     bool use_eddy_viscosity {false};
     EDDY_VISC_MODEL eddy_viscosity_model;
-    double C_v;
+    double C_v; //Vreman model coefficient
 
     bool perturb_const_inlet_bdry {false};
     
@@ -528,6 +538,11 @@ protected:
             double delta_t, VStencil3d* vsten);
     
 
+    //Sutherland's Law
+    void computeDynamicViscosity();
+    void computeDynamicViscosity2d();
+    void computeDynamicViscosity3d();
+
     //For LES turbulence
     void computeSGSTerms();
 
@@ -660,7 +675,10 @@ extern void cFluid_point_propagate(Front*,POINTER,POINT*,POINT*,
 extern boolean reflectNeumannState(Front*,HYPER_SURF*,double*,COMPONENT,SWEEP*,STATE*);
 extern void reflectVectorThroughPlane(double*,double*,double*,int);
 
+extern void findGhostState(STATE,STATE,STATE*);
+
 // cFeos.cpp
+extern double EosTemperature(STATE*);
 extern double EosPressure(STATE*);
 extern double EosInternalEnergy(STATE*);
 extern double EosEnergy(STATE*);
@@ -669,7 +687,6 @@ extern double EosSoundSpeedSqr(STATE*);
 extern double EosMaxBehindShockPres(double,STATE*);
 extern void EosSetTVDParams(SCHEME_PARAMS*,EOS_PARAMS*);
 extern void ConvertVstToState(STATE*,SWEEP*,EOS_PARAMS*,int,int);
-extern void findGhostState(STATE,STATE,STATE*);
 
 /* Riemann solution functions */
 // cFriem.cpp
