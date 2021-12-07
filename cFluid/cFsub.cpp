@@ -1131,6 +1131,9 @@ extern void cF_flowThroughBoundaryState3d(
             newst->dens -= dt/dn*f_dens;
         }
 	}
+    
+    newst->engy = EosEnergy(newst);
+    newst->temp = EosTemperature(newst);
 	
     set_state_max_speed(front,newst,p0);
 	
