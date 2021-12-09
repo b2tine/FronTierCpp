@@ -186,7 +186,7 @@ int af_find_state_at_crossing(
     return NEUMANN_PDE_BOUNDARY;
 }       /* end af_find_state_at_crossing */
 
-
+//TODO: UPDATE THIS FUNCTION
 static void compute_center_of_mass_velo(
 	ELASTIC_SET *geom_set)
 {
@@ -1012,13 +1012,15 @@ static int elastic_set_propagate3d_serial(
         total_size = total_owner_size;
     }
 
-    
+
     //TODO: FabricManager should be passed into this function, or the function
     //      should be a member function of FabricManager.
     FabricManager fabric_manager(*newfront);
     FABRIC_COLLISION_PARAMS collsn_params = getFabricCollisionParams(*newfront);
     fabric_manager.setCollisionParams(collsn_params);
     fabric_manager.setCollisionTimeStep(collsn_dt);
+
+    //fabric_manager.initializeSystem();
 
     if (myid == owner_id)
 	{
@@ -1052,12 +1054,10 @@ static int elastic_set_propagate3d_serial(
                     client_size_new[i],client_L,client_U);
 	    }
     
-        
         //compute candidate positions and velocities with spring solver
         double ss_dt = geom_set->dt;
         spring_solver_RK4(sv,dim,size,collsn_nsub,ss_dt);
 
-        
         // Owner send and patch point_set_store from other processors
 	    for (int i = 0; i < pp_numnodes(); i++)
         {
@@ -1067,13 +1067,12 @@ static int elastic_set_propagate3d_serial(
         }
 	}//owner_id
 
-
     if (myid != owner_id)
     {
         pp_recv(3,owner_id,point_set_store,total_client_size*sizeof(GLOBAL_POINT));
     }
 	
-    //  write from point_set to geom_set
+    //write from point_set to geom_set
     put_point_set_to(geom_set,point_set);
 	
     
@@ -1085,7 +1084,7 @@ static int elastic_set_propagate3d_serial(
 	set_vertex_impulse(geom_set,point_set);
 	set_geomset_velocity(geom_set,point_set);
 	
-        //compute_center_of_mass_velo(geom_set);
+    //compute_center_of_mass_velo(geom_set);
 
     if (myid == owner_id)
     {
@@ -1100,6 +1099,10 @@ static int elastic_set_propagate3d_serial(
             }
             catch (...)
             {
+                FT_Save(*newfront);
+                FT_Draw(*newfront);
+
+
                 free_front(*newfront);
                 *newfront = nullptr;
                 
@@ -1124,7 +1127,7 @@ static int elastic_set_propagate3d_serial(
     }
     
     setSpecialNodeForce(elastic_intfc,geom_set->kl);
-        //compute_center_of_mass_velo(geom_set);
+    compute_center_of_mass_velo(geom_set);
 
 
     //TODO: Sync interfaces after collision handling?

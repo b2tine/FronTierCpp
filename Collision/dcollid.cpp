@@ -525,6 +525,7 @@ void CollisionSolver3d::resolveCollisionSubstep()
 	//update position using final midstep velocity
 	updateFinalPosition();
 
+    /*
     //TODO: is this helping or hurting us?
     // Zero out the relative velocity between adjacent mesh vertices
     // with excess edge strain directed along their connecting edge.
@@ -537,6 +538,7 @@ void CollisionSolver3d::resolveCollisionSubstep()
                     //computeMaxSpeed(); //debug
         }
     }
+    */
 
 
 	updateFinalVelocity();

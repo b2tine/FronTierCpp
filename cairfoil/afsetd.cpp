@@ -302,9 +302,18 @@ printf("nb %d:  len = %g   sv->len0[%d] = %g\n", j, len, j, sv->len0[j]);
 
         double dL = len - sv->len0[j];
         
+        /*
         //zero compressive stress
         if (dL <= 0.0) continue;
-        
+        */
+
+        if (dL <= 0.0)
+        {
+            if (!debugging("allow_compressive_stress"))
+            {
+                continue;
+            }
+        }
 
         /*
         double CTOL = 0.5;
@@ -1457,6 +1466,29 @@ static void put_point_value_to(
 	    sr->impulse[i] = point_set[gindex]->impuls[i];
         */
 	}
+
+    /*
+    //TODO: WAS HAVING PROBLEMS WITH A RESTART RUN AND GETTING CRASH HERE.
+    //      SEEMS TO BE WORKING NOW BUT KEEP FOR NOW IN CASE IT HAPPENS AGAIN
+	for (int j = 0; j < 3; ++j)
+    {
+        printf("\nput_point_value_to(): GOOD\n");
+        if (std::isnan(Coords(p)[j]) || std::isinf(Coords(p)[j]))
+        {
+            printf("Coords(p) = %f %f %f\n",
+                    Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+            printf("Gindex(p) = %ld\n",Gindex(p));
+
+            printf("\npoint_set[gindex] = %f %f %f\n",
+                    point_set[gindex]->x[0],
+                    point_set[gindex]->x[1],
+                    point_set[gindex]->x[2]);
+
+            LOC(); clean_up(EXIT_FAILURE);
+        }
+    }
+    */
+
 }	/* end put_point_value_to */
 	
 extern void get_point_set_from(
@@ -1498,9 +1530,11 @@ extern void put_point_set_to(
 
 	for (int i = 0; i < ns; ++i)
 	    surf_put_point_set_to(geom_set->surfs[i],point_set);
-	for (int i = 0; i < nc; ++i)
+	
+    for (int i = 0; i < nc; ++i)
 	    curve_put_point_set_to(geom_set->curves[i],point_set);
-	for (int i = 0; i < nn; ++i)
+	
+    for (int i = 0; i < nn; ++i)
 	    node_put_point_set_to(geom_set->nodes[i],point_set);
 
     int nrgbs = geom_set->num_rgb_surfs;

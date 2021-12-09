@@ -54,7 +54,8 @@ int CollisionSolver3d::pt_to_tri = 0;
 ///////////////////////////////////////////////////
 
 
-Front* CollisionSolver3d::front;
+//Front* CollisionSolver3d::front;
+
 int CollisionSolver3d::tstep;
 double CollisionSolver3d::frame_dt;
 std::string CollisionSolver3d::outdir;
@@ -386,9 +387,9 @@ void CollisionSolver3d::recordOriginalPosition()
                 //TODO: Don't want to update this every sub step.
                 sl->x_old[j] = Coords(pt)[j];
             
-                if (std::isnan(sl->x_old[j]))
+                if (std::isnan(sl->x_old[j]) || std::isinf(sl->x_old[j]))
                 {
-                    std::cout << "nan_x_old" << std::endl;
+                    std::cout << "nan/inf x_old" << std::endl;
                     LOC(); clean_up(ERROR);
                 }
             }
@@ -525,6 +526,7 @@ void CollisionSolver3d::resolveCollisionSubstep()
 	//update position using final midstep velocity
 	updateFinalPosition();
 
+    /*
     //TODO: is this helping or hurting us?
     // Zero out the relative velocity between adjacent mesh vertices
     // with excess edge strain directed along their connecting edge.
@@ -534,6 +536,7 @@ void CollisionSolver3d::resolveCollisionSubstep()
             //limitStrainVelGS();
                 //computeMaxSpeed(); //debug
     }
+    */
 
 	updateFinalVelocity();
 
@@ -638,8 +641,9 @@ void CollisionSolver3d::computeAverageVelocity()
                 if (std::isnan(sl->avgVel[j]) || std::isinf(sl->avgVel[j]))
                 {
                     std::cout << "nan avgVel" << std::endl;
-                    printf("dt = %e, x_old = %f, x_new = %f\n",
-                            dt,sl->x_old[j],Coords(p)[j]);
+                    printf("dt = %e, x_old = %f %f %f, x_new = %f %f %f\n",
+                            dt,sl->x_old[0],sl->x_old[1],sl->x_old[2],
+                            Coords(p)[0], Coords(p)[1], Coords(p)[2]);
                     LOC(); clean_up(ERROR);
                 }
 		

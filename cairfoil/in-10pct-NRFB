@@ -30,7 +30,11 @@ For upper boundary in 2-th dimension
 
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
-Start test time control parameters
+
+//////////////////////////////////////////////////////////
+////////  Start test time control parameters  ////////////
+//////////////////////////////////////////////////////////
+
 Max time: 2.0
 Max step: 5000
 Print interval: 0.001

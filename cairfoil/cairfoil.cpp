@@ -178,6 +178,7 @@ int main(int argc, char **argv)
 	    }
 	    else
 	    {
+            readFrontStates(&front,restart_state_name);
             g_cartesian->readInteriorStates(restart_state_name);
                 //g_cartesian->readFrontInteriorStates(restart_state_name);
 	    	readAfExtraData(&front,restart_state_name);
@@ -199,7 +200,6 @@ int main(int argc, char **argv)
         (void) printf("Passed state initialization()\n");
 
 	/* Propagate the front */
-
 	airfoil_driver(&front,g_cartesian);
 
 	clean_up(0);

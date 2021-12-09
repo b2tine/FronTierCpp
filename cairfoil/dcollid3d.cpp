@@ -1114,6 +1114,8 @@ static bool EdgeToEdge(
         std::vector<POINT*> edge_pts(pts,pts+4);
         vtk_write_pointset(edge_pts,fname,ERROR);
 
+        //TODO: THROW EXCEPTION HERE INSTEAD
+
         LOC(); clean_up(EXIT_FAILURE);
     }
 
@@ -1559,9 +1561,14 @@ static bool PointToTri(
         
         PointToTri_DebugInfo(pts);
         
+        /*
         CollisionSolver3d::saveFront();
         CollisionSolver3d::drawFront();
         LOC(); clean_up(EXIT_FAILURE);
+        */
+        
+        LOC();
+        throw std::runtime_error("\nPointToTri() ERROR: degenerate TRI detected\n");
     }
     else
     {
@@ -1587,9 +1594,14 @@ static bool PointToTri(
         
         PointToTri_DebugInfo(pts);
         
+        /*
         CollisionSolver3d::saveFront();
         CollisionSolver3d::drawFront();
         LOC(); clean_up(EXIT_FAILURE);
+        */
+
+        LOC();
+        throw std::runtime_error("\nPointToTri() ERROR: degenerate TRI detected\n");
 	}
 	else
     {

@@ -63,7 +63,8 @@ class CollisionSolver3d
 {
 private:
 
-    static Front* front; //static so we can call FT_Save() and FT_Draw() for debugging 
+    Front* front;
+    //static Front* front; //static so we can call FT_Save() and FT_Draw() for debugging 
     
     static bool collision_off;
 
@@ -145,7 +146,8 @@ public:
 	void clearHseList();
     const std::vector<CD_HSE*>& getHseList() const;
 
-    void initFront(Front*fr);
+    void initFront(Front* fr);
+    
     void initializeSystem(std::vector<CD_HSE*>& list);
 
     void initializeSystem(Front* fr);
@@ -195,8 +197,9 @@ public:
     static std::string outdir;
     static std::string getOutputDirectory() {return outdir;}
     static void setOutputDirectory(std::string dir) {outdir = dir;}
-    static void saveFront() {FT_Save(front);}
-    static void drawFront() {FT_Draw(front);}
+
+    //static void saveFront() {FT_Save(front);}
+    //static void drawFront() {FT_Draw(front);}
 
 private:
     

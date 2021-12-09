@@ -616,6 +616,7 @@ EXPORT	POINT *f_copy_point(
 	    newp->force[i] = p->force[i];
 	    newp->pshift[i] = p->pshift[i];
 	}
+
 	return newp;
 }		/*end f_copy_point*/
 

@@ -7,8 +7,9 @@ void FabricManager::setCollisionTimeStep(double collsn_dt)
     //CollisionSolver3d::setTimeStepSize(collsn_dt);
 }
     
-void FabricManager::setCollisionParams(FABRIC_COLLISION_PARAMS params)
+void FabricManager::setCollisionParams(const FABRIC_COLLISION_PARAMS& params)
 {
+    //TODO: DO WE EVEN NEED A COPY?
     std::copy(&params, &params + 1, &collsn_params);
 
     collision_solver->setFabricRoundingTolerance(collsn_params.fabric_eps);

@@ -412,9 +412,13 @@ static void CgalCircle(
     //      higher level function and passed along in a cgal triangulation
     //      parameters structure CGAL_PARAM_PACK for example.
 
+    double* h =computational_grid(front->interf)->h;
+    double hmin = std::min(std::min(h[0],h[1]),h[2]);
+
     //B = r/l when r is the triangle circumradius, and l is the min triangle edge length
     double B = 0.125;
-    double min_edge_length = 0.6*computational_grid(front->interf)->h[0];
+    double min_edge_length = 0.6*hmin;
+        //double min_edge_length = 0.6*computational_grid(front->interf)->h[0];
 
 	if (CursorAfterStringOpt(infile,"Enter yes to adjust cgal triangulation criteria:"))
     {
