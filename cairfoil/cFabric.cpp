@@ -362,6 +362,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
 	int idir,
 	int nb)
 {
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)(front->extra1);
 	int		i,j,k,index,ic[MAXD];
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
 	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
@@ -536,8 +537,39 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                             nb,0,i,comp);
                     break;
                 case ELASTIC_BOUNDARY:
-                    setElasticStates(vst,m_vst,hs,state,ic_next,idir,
-                            nb,0,i,comp);
+                    if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
+                    {
+                        vst->dens[nrad-i] = m_vst->dens[index];
+                        vst->engy[nrad-i] = m_vst->engy[index];
+                        vst->pres[nrad-i] = m_vst->pres[index];
+
+                        for (j = 0; j < 3; j++)
+                            vst->momn[j][nrad-i] = 0.0;
+                        
+                        if (dim == 1)
+                        {
+                            vst->momn[0][nrad-i] = m_vst->momn[0][index];
+                        }
+                        else if (dim == 2)
+                        {
+                            for(j = 0; j < 2; j++)
+                            {
+                                vst->momn[j][nrad-i] = m_vst->momn[ind2[idir][j]][index];
+                            }
+                        }
+                        else if (dim == 3)
+                        {
+                            for (j = 0; j < 3; j++)
+                            {
+                                vst->momn[j][nrad-i] = m_vst->momn[ind3[idir][j]][index];
+                            }
+                        }
+                    }
+                    else
+                    {
+                        setElasticStates(vst,m_vst,hs,state,ic_next,
+                                idir,nb,0,i,comp);
+                    }
                 break;
                 case DIRICHLET_BOUNDARY:
                     setDirichletStates(state,vst,m_vst,hs,ic_next,
@@ -730,8 +762,39 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                             nb,n,i,comp);
                     break;
                 case ELASTIC_BOUNDARY:
-                    setElasticStates(vst,m_vst,hs,state,ic_next,idir,
-                            nb,n,i,comp);
+                    if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
+                    {
+                        vst->dens[n+nrad+i-1] = m_vst->dens[index];
+                        vst->engy[n+nrad+i-1] = m_vst->engy[index];
+                        vst->pres[n+nrad+i-1] = m_vst->pres[index];
+                        
+                        for (j = 0; j < 3; j++)
+                            vst->momn[j][n+nrad+i-1] = 0.0;
+                        
+                        if (dim == 1)
+                        {
+                            vst->momn[0][n+nrad+i-1] = m_vst->momn[0][index];
+                        }
+                        else if (dim == 2)
+                        {
+                            for(j = 0; j < 2; j++)
+                            {
+                                vst->momn[j][n+nrad+i-1] = m_vst->momn[ind2[idir][j]][index];
+                            }
+                        }
+                        else if (dim == 3)
+                        {
+                            for (j = 0; j < 3; j++)
+                            {
+                                vst->momn[j][n+nrad+i-1] = m_vst->momn[ind3[idir][j]][index];
+                            }
+                        }
+                    }
+                    else
+                    {
+                        setElasticStates(vst,m_vst,hs,state,ic_next,
+                                idir,nb,n,i,comp);
+                    }
                     break;
                 case DIRICHLET_BOUNDARY:
                     setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,
@@ -1702,6 +1765,8 @@ void CFABRIC_CARTESIAN::setViscousGhostState(
         }
         case ELASTIC_BOUNDARY:
         {
+            /*setNeumannViscousGhostState(icoords,m_vst,vs,&ghost_coords[0],
+                    nip_coords,comp,intrp_coeffs,hse,hs);*/
             setElasticViscousGhostState(icoords,m_vst,vs,&ghost_coords[0],
                     nip_coords,comp,intrp_coeffs,hse,hs);
             break;
@@ -1943,4 +2008,3 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
 
     //TODO: Debugging info
 }
-

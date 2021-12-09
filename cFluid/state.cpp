@@ -25,6 +25,12 @@ extern double getStateMu(POINTER state)
 	return fstate->mu;
 }	/* end getStateMu */
 
+extern double getStateMuTurb(POINTER state)
+{
+	STATE *fstate = (STATE*)state;
+	return fstate->mu_turb;
+}	/* end getStateMuTurb */
+
 extern double getStateKTurb(POINTER state)
 {
 	STATE *fstate = (STATE*)state;

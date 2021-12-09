@@ -1,7 +1,7 @@
 Max time: 2.0
 Max step: 15000
 Print interval: 0.05
-Movie frame interval: 0.00025
+Movie frame interval: 0.0025
 CFL factor: 0.5
 Redistribution interval: 1000000000
 
@@ -21,8 +21,8 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 50.0
-Enter pressure: 101000.0
-Enter density: 1.2
+Enter pressure: 80.0
+Enter density: 2.0
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -54,7 +54,7 @@ Enter order of point propagator: 4
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
     XXXEnter gamma, pinf, einf of ambient airXXX: 1.67 0 0
 
-Enter density and pressure of ambient air: 1.0 100000.0
+Enter density and pressure of ambient air: 1.0 1.0
 
 
 Enter yes for heat flux: yes
@@ -72,7 +72,7 @@ Type yes to track the interface: no
 
 *******************************************************
 
-Enter yes to use eddy viscosity: no
+Enter yes to use eddy viscosity: yes
 Enter eddy viscosity model: Vreman
 Enter model constant: 0.025
 

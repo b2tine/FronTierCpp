@@ -82,7 +82,8 @@ enum class PORO_SCHEME
 {
     NORMAL_REFLECTION,
     REFLECTION,
-    RIEMANN
+    RIEMANN,
+    ERGUN
 };
 
 //TODO:Add function addImmersedForce() for drag on parachute strings
@@ -163,6 +164,7 @@ struct EQN_PARAMS
 	double *engy;
 	double *pres;
     double *mu;
+    double *mu_turb;
     double *k_turb;
     double *temp;   //temperature
 
@@ -185,6 +187,7 @@ struct EQN_PARAMS
     boolean with_porosity;
     double porosity;
     PORO_SCHEME poro_scheme;
+    double porous_coeff[2];
 
     int fsi_startstep;
 
@@ -310,6 +313,7 @@ struct FIELD
     double *vort;
     double **vorticity;
     double *mu;
+    double *mu_turb;
     double *k_turb;
     double *temp;
 };
@@ -321,6 +325,7 @@ struct SWEEP
     double *engy;           /* internal energy vector */
     double *pres;           /* used for EOS */
     double *mu;
+    double *mu_turb;
     double *k_turb;
     double *temp;
 };
@@ -488,11 +493,17 @@ protected:
 	/* Mesh operations */
 	void solveRungeKutta(int);
 	void addMeshFluxToVst(SWEEP*,const FSWEEP&,double);
+    
     void computeMeshFlux(SWEEP&,FSWEEP*,double); //void computeMeshFlux(SWEEP,FSWEEP*,double);
+
 	void copyMeshVst(const SWEEP&,SWEEP*);
 	void copyFromMeshVst(const SWEEP&);
 	void copyToMeshVst(SWEEP*);
-	void addSourceTerm(const SWEEP&,FSWEEP*,double);
+
+	void addSourceTerm(SWEEP*,FSWEEP*,double); //void addSourceTerm(const SWEEP&,FSWEEP*,double);
+	
+    void addErgunEquationSourceTerms(SWEEP* m_vst, FSWEEP *m_flux, double delta_t);
+    std::vector<double> computeErgunEquationPressureJump(SWEEP* m_vst, int* icoords, double alpha, double beta);
 
 	/* Directional flux solver */
 	void resetFlux(FSWEEP*);
@@ -551,8 +562,9 @@ protected:
     void computeEddyViscosity3d();
     
     double computeEddyViscosityVremanModel(int *icoords);
-    
     double computeEddyViscosityVremanModel_BdryAware(int *icoords);
+
+    double computeEddyViscosityWALE(int *icoords);
     
     std::vector<std::vector<double>> computeVelocityGradient(int *icoords);
     

@@ -241,8 +241,11 @@ extern void read_cFluid_params(
             else if (string[0] == 'w' || string[0] == 'W')
             {
                 eqn_params->eddy_viscosity_model = EDDY_VISC_MODEL::WALE;
-                printf("\nERROR: WALE Eddy Viscosity Model Not Implemented Yet\n");
-                LOC(); clean_up(EXIT_FAILURE);
+                CursorAfterString(infile,"Enter model constant:");
+                fscanf(infile,"%lf",&eqn_params->C_v);
+                (void) printf("%f\n",eqn_params->C_v);
+                //printf("\nERROR: WALE Eddy Viscosity Model Not Implemented Yet\n");
+                //LOC(); clean_up(EXIT_FAILURE);
             }
 
             if (eqn_params->eddy_viscosity_model == EDDY_VISC_MODEL::NONE)
@@ -479,6 +482,7 @@ static void getAmbientState(
 	{
 	case GAS_COMP1:
         state->mu = mu1;
+        state->mu_turb = 0.0;
 	    state->temp = T1;
 	    state->dens = rho1;
 	    state->pres = p1;
@@ -491,6 +495,7 @@ static void getAmbientState(
 	    break;
 	case GAS_COMP2:
         state->mu = mu2;
+        state->mu_turb = 0.0;
 	    state->temp = T2;
 	    state->dens = rho2;
 	    state->pres = p2;
@@ -503,6 +508,7 @@ static void getAmbientState(
 	    break;
 	case SOLID_COMP:
         state->mu = 0.0;
+        state->mu_turb = 0.0;
         state->temp = 0.0;
 	    state->dens = 0.0;
 	    state->pres = 0.0;
@@ -591,8 +597,18 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 
     STATE state;
     state.eos = &eqn_params->eos[GAS_COMP2];
+    state.dim = dim;
+
     state.dens = eqn_params->rho2;
     state.pres = eqn_params->p2;
+
+    for (int i = 0; i < dim; ++i)
+    {
+        state.vel[i] = 0.0;
+        state.momn[i] = 0.0;
+    }
+
+    state.engy = EosEnergy(&state);
 
     state.temp = EosTemperature(&state);
     eqn_params->T2 = state.temp;
@@ -651,6 +667,7 @@ void G_CARTESIAN::initChannelFlowStates()
 	INTERFACE *intfc = front->interf;
 	
     double *mu = field.mu;
+    double *mu_turb = field.mu_turb;
     double *temp = field.temp;
 	double *dens = field.dens;
 	double *engy = field.engy;
@@ -692,6 +709,7 @@ void G_CARTESIAN::initChannelFlowStates()
             getAmbientState(&state,eqn_params,coords,comp);
 
             mu[index] = state.mu;
+            mu_turb[index] = state.mu_turb;
             temp[index] = state.temp;
             dens[index] = state.dens;
             pres[index] = state.pres;
@@ -716,6 +734,7 @@ void G_CARTESIAN::initChannelFlowStates()
             getAmbientState(&state,eqn_params,coords,comp);
 
             mu[index] = state.mu;
+            mu_turb[index] = state.mu_turb;
             temp[index] = state.temp;
             dens[index] = state.dens;
             pres[index] = state.pres;

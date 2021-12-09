@@ -63,6 +63,7 @@ struct EOS_PARAMS
 
     double R_specific;
     double Pr;          //prandtl number
+    //double Pr_turb {0.9};
 
     //Sutherland's Law Constants
     double mu_ref;
@@ -86,6 +87,7 @@ struct STATE : public FABRIC_STATE
     int dim;//TODO: can get rid of this?
     
     double mu;
+    double mu_turb;
     double temp;
     double k_turb;
 };  
@@ -97,6 +99,7 @@ extern double getStatePres(POINTER);
 extern double getStateEngy(POINTER);
 extern double getStateTemp(POINTER);
 extern double getStateMu(POINTER);
+extern double getStateMuTurb(POINTER);
 
 extern double getStateKTurb(POINTER);
 

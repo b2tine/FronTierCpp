@@ -301,29 +301,35 @@ void setFabricParams(Front* front)
                 }
                 eqn_params->porosity = af_params->porosity;
 
-                /*
-                //TODO: ERGUN EQUATION
-                //
-                CursorAfterString(infile,"Enter viscous parameter:");
-                fscanf(infile,"%lf",&af_params->porous_coeff[0]);
-                (void) printf("%f\n",af_params->porous_coeff[0]);
-                CursorAfterString(infile,"Enter inertial parameter:");
-                fscanf(infile,"%lf",&af_params->porous_coeff[1]);
-                (void) printf("%f\n",af_params->porous_coeff[1]);
-                eqn_params->porosity = af_params->porosity;
-                eqn_params->porous_coeff[0] = af_params->porous_coeff[0];
-                eqn_params->porous_coeff[1] = af_params->porous_coeff[1];
-                */
-            
                 af_params->poro_scheme = PORO_SCHEME::NORMAL_REFLECTION;
                 if (CursorAfterStringOpt(infile,"Enter porosity ghost fluid method:"))
                 {
                     fscanf(infile,"%s",string);
                     (void) printf("%s\n",string);
-                    if (string[1] == 'e' || string[1] == 'E')
-                        af_params->poro_scheme = PORO_SCHEME::REFLECTION;
-                    else if (string[1] == 'i' || string[1] == 'I')
-                        af_params->poro_scheme = PORO_SCHEME::RIEMANN;
+                    if (string[0] == 'n' || string[0] == 'N')
+                    {
+                        af_params->poro_scheme = PORO_SCHEME::NORMAL_REFLECTION;
+                    }
+                    else if (string[0] == 'r' || string[0] == 'R')
+                    {
+                        if (string[1] == 'e' || string[1] == 'E')
+                            af_params->poro_scheme = PORO_SCHEME::REFLECTION;
+                        else if (string[1] == 'i' || string[1] == 'I')
+                            af_params->poro_scheme = PORO_SCHEME::RIEMANN;
+                    }
+                    else if (string[0] == 'e' || string[0] == 'E')
+                    {
+                        af_params->poro_scheme = PORO_SCHEME::ERGUN;
+                        CursorAfterString(infile,"Enter viscous parameter:");
+                        fscanf(infile,"%lf",&af_params->porous_coeff[0]);
+                        (void) printf("%f\n",af_params->porous_coeff[0]);
+                        CursorAfterString(infile,"Enter inertial parameter:");
+                        fscanf(infile,"%lf",&af_params->porous_coeff[1]);
+                        (void) printf("%f\n",af_params->porous_coeff[1]);
+                        eqn_params->porosity = af_params->porosity;
+                        eqn_params->porous_coeff[0] = af_params->porous_coeff[0];
+                        eqn_params->porous_coeff[1] = af_params->porous_coeff[1];
+                    }
                 }
             }
             

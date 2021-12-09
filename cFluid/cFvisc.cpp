@@ -50,6 +50,7 @@ void G_CARTESIAN::computeDynamicViscosity2d()
         if (!gas_comp(comp))
         {
             mu[index] = 0.0;
+            temp[index] = 0.0;
             continue;
         }
 
@@ -57,8 +58,10 @@ void G_CARTESIAN::computeDynamicViscosity2d()
         state.eos = &eqn_params->eos[comp];
         state.dens = dens[index];
         state.pres = pres[index];
-            //state.temp = EosTemperature(&state);
-        state.mu = EosViscosity(&state);
+        
+        state.temp = EosTemperature(&state);
+        mu[index] = EosViscosity(&state);
+        temp[index] = state.temp;
 
         if (mu[index] > mu_max)
         {
@@ -85,6 +88,7 @@ void G_CARTESIAN::computeDynamicViscosity3d()
         if (!gas_comp(comp))
         {
             mu[index] = 0.0;
+            temp[index] = 0.0;
             continue;
         }
 
@@ -92,8 +96,10 @@ void G_CARTESIAN::computeDynamicViscosity3d()
         state.eos = &eqn_params->eos[comp];
         state.dens = dens[index];
         state.pres = pres[index];
-            //state.temp = EosTemperature(&state);
-        state.mu = EosViscosity(&state);
+
+        state.temp = EosTemperature(&state);
+        mu[index] = EosViscosity(&state);
+        temp[index] = state.temp;
 
         if (mu[index] > mu_max)
         {
@@ -628,7 +634,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     //TODO: Need to use law of the wall for temperature?
     //      Or can we just interpolate and set equal to temp_reflect?
 
-    /*
     //Compute Wall Temperature 
     double temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
 
@@ -639,12 +644,20 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
     //Compute density near wall using the wall temperature and the pressure at the reflected point
     double dens_wall = pres_reflect/temp_wall/R_specific;
-    */
 
     //Interpolate the viscosity at the reflected point
     double mu_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-            getStateMu,&mu_reflect,&field.mu[index]);
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu,
+            getStateMu,&mu_reflect,&m_vst->mu[index]);
+    //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+      //      getStateMu,&mu_reflect,&field.mu[index]);
+    
+    if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
+    {
+       printf("\nsetSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
+       printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,m_vst->mu[index]);
+       LOC(); //clean_up(EXIT_FAILURE);
+    }
     
     /*
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
@@ -652,12 +665,21 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         if (mu_reflect < MACH_EPS) mu_reflect = field.mu[index]; //TODO: Need this?
     */
     
-
+    double mu_turb_reflect = 0.0;
+    if (eqn_params->use_eddy_viscosity)
+    {
+        /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
+                getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);*/
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu_turb,
+                getStateMuTurb,&mu_turb_reflect,&m_vst->mu_turb[index]);
+        mu_reflect += mu_turb_reflect;
+    }
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //TODO: Need to use mu_reflect and dens_wall for wall shear stress computation?
     //
     //      However, using the initial ambient state values does not appear to give unreasonable results.
     
+    /*
     double mu_l;
     double rho_l;
 
@@ -677,7 +699,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
             break;
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////
-
+    */
     
     //NOTE: In all numerical experiments, when computing the wall shear stress
     //      Newton's method converged when the initial guess for the dimensionless
@@ -685,8 +707,8 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     
     double tau_wall[MAXD] = {0.0};
     
-    double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l,45.0);
-        //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,45.0);
+    //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l,45.0);
+    double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,100.0);
         //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_reflect,45.0);
     
     if (mag_vtan > MACH_EPS)
@@ -699,18 +721,12 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double vel_ghost_rel[MAXD] = {0.0};
     double v_slip[MAXD] = {0.0};
     
+    double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
+
     for (int j = 0; j < dim; ++j)
     {
-        //TODO: What is correct delta_n?
-        //
-        //      delta_n = dist_reflect - dist_ghost
-        //      
-        //      OR
-        //      
-        //      delta_n = dist_reflect + dist_ghost
-        
-        vel_ghost_tan[j] = vel_rel_tan[j]
-            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+        vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
+        //vel_ghost_tan[j] = vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
 
         /*
         vel_ghost_tan[j] = vel_rel_tan[j]
@@ -741,9 +757,23 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     vs->temp = temp_ghost;
     //////////////////////////////////////////////////////////////////////////////////////
 
+    if (std::isnan(v_slip[0]) || std::isinf(v_slip[0]) ||
+        std::isnan(v_slip[1]) || std::isinf(v_slip[1]) ||
+        std::isnan(v_slip[2]) || std::isinf(v_slip[2]))
+    {
+        printf("\nsetSlipBoundaryNIP() ERROR: nan/inf v_slip\n");
+        fprint_int_vector(stdout,"icoords",icoords,dim,"\n");
+        fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,m_vst->mu[index]);
+        printf("mu_turb_reflect = %g , mu_turb[%d] = %g\n",mu_turb_reflect,index,m_vst->mu_turb[index]);
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
     if (debugging("slip_boundary"))
     {
-        printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);
+        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,m_vst->mu[index]);
         printf("mag_tau_wall = %g\n",mag_tau_wall);
         fprint_general_vector(stdout,"tau_wall",tau_wall,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
@@ -789,8 +819,21 @@ void G_CARTESIAN::computeViscousFlux2d(
     //      i.e. every point of the stencil records its viscosity and
     //      use in the discretization (half indices most likely)
     
-    double* mu = m_vst->mu;
-        //double* mu = field.mu;
+    int index = d_index(icoords,top_gmax,dim);
+    double mu = m_vst->mu[index] + m_vst->mu_turb[index];
+    //double mu = m_vst->mu[index] + field.mu_turb[index];
+    
+    double tauxx = 2.0/3.0*mu*(2.0*u_x - v_y);
+    double tauyy = 2.0/3.0*mu*(2.0*v_y - u_x);
+    double tauxy = mu*(u_y + v_x);
+
+    double tauxx_x = 2.0/3.0*mu*(2.0*u_xx - v_xy);
+    double tauyy_y = 2.0/3.0*mu*(2.0*v_yy - u_xy);
+    double tauxy_y = mu*(u_yy + v_xy);
+    double tauxy_x = mu*(u_xy + v_xx);
+    /*
+    double* mu = m_vst->mu; //double* mu = field.mu;
+    double* mu_turb = m_vst->mu_turb;
     int index = d_index(icoords,top_gmax,dim);
     
     double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y);
@@ -801,7 +844,8 @@ void G_CARTESIAN::computeViscousFlux2d(
     double tauyy_y = 2.0/3.0*mu[index]*(2.0*v_yy - u_xy);
     double tauxy_y = mu[index]*(u_yy + v_xy);
     double tauxy_x = mu[index]*(u_xy + v_xx);
-    
+    */
+
     v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
     v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
     
@@ -810,12 +854,9 @@ void G_CARTESIAN::computeViscousFlux2d(
 
 
     //if (debugging("no_heatflux")) return;
-    /////////////////////////////////////////////////////////////////////////////////////
     
-    /*
-    double T_x = 0.5*(sten[1][2].temp - sten[1][0].temp)/top_h[0];
-    double T_y = 0.5*(sten[2][1].temp - sten[0][1].temp)/top_h[1];
-    */
+    //double T_x = 0.5*(sten[1][2].temp - sten[1][0].temp)/top_h[0];
+    //double T_y = 0.5*(sten[2][1].temp - sten[0][1].temp)/top_h[1];
 
     double T_xx = (sten[1][2].temp - 2.0*sten[1][1].temp
             + sten[1][0].temp)/sqr(top_h[0]);
@@ -826,11 +867,15 @@ void G_CARTESIAN::computeViscousFlux2d(
     double gamma = eos.gamma;
     double R_specific = eos.R_specific;
     double Pr = eos.Pr;
+    double Pr_turb = 0.9;
 
     double Cp = gamma/(gamma - 1.0)*R_specific;
-    double lambda = Cp*mu[index]/Pr; //thermal conductivity
 
-    v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy);
+    double lambda = Cp*m_vst->mu[index]/Pr; //thermal conductivity
+    double lambda_turb = Cp*m_vst->mu_turb[index]/Pr_turb; //thermal conductivity
+
+    v_flux->engy_flux += delta_t*(lambda + lambda_turb)*(T_xx + T_yy);
+    //v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy);
 
     /////////////////////////////////////////////////////////////////////////////////////
 }
@@ -916,7 +961,21 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
             - sten[0][2].vel[1] + sten[0][0].vel[1])/top_h[0]/top_h[1];
     */
 
-    double* mu = field.mu;
+    int index = d_index(icoords,top_gmax,dim);
+    double mu = m_vst->mu[index] + m_vst->mu_turb[index];
+    //double mu = m_vst->mu[index] + field.mu_turb[index];
+    
+    double tauxx = 2.0/3.0*mu*(2.0*u_x - v_y);
+    double tauyy = 2.0/3.0*mu*(2.0*v_y - u_x);
+    double tauxy = mu*(u_y + v_x);
+
+    double tauxx_x = 2.0/3.0*mu*(2.0*u_xx - v_xy);
+    double tauyy_y = 2.0/3.0*mu*(2.0*v_yy - u_xy);
+    double tauxy_y = mu*(u_yy + v_xy);
+    double tauxy_x = mu*(u_xy + v_xx);
+    /*
+    double* mu = m_vst->mu;
+    double* mu_turb = m_vst->mu_turb;
     int index = d_index(icoords,top_gmax,dim);
     
     double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y);
@@ -927,7 +986,8 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
     double tauyy_y = 2.0/3.0*mu[index]*(2.0*v_yy - u_xy);
     double tauxy_y = mu[index]*(u_yy + v_xy);
     double tauxy_x = mu[index]*(u_xy + v_xx);
-    
+    */
+
     v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
     v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
     
@@ -952,11 +1012,15 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
     double gamma = eos.gamma;
     double R_specific = eos.R_specific;
     double Pr = eos.Pr;
+    double Pr_turb = 0.9;
 
     double Cp = gamma/(gamma - 1.0)*R_specific;
-    double lambda = Cp*mu[index]/Pr; //thermal conductivity
+    
+    double lambda = Cp*m_vst->mu[index]/Pr; //thermal conductivity
+    double lambda_turb = Cp*m_vst->mu_turb[index]/Pr_turb; //thermal conductivity
 
-    v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy);
+    v_flux->engy_flux += delta_t*(lambda + lambda_turb)*(T_xx + T_yy);
+    //v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy);
 
     /////////////////////////////////////////////////////////////////////////////////////
 }
@@ -1028,8 +1092,32 @@ void G_CARTESIAN::computeViscousFlux3d(
     double w_yz = 0.25*(sten[2][2][1].vel[2] - sten[2][0][1].vel[2]
             - sten[0][2][1].vel[2] + sten[0][0][1].vel[2])/top_h[1]/top_h[2];
 
-    double* mu = m_vst->mu;
-        //double* mu = field.mu;
+    
+    int index = d_index(icoords,top_gmax,dim);
+    double mu = m_vst->mu[index] + m_vst->mu_turb[index];
+    //double mu = m_vst->mu[index] + field.mu_turb[index];
+    
+    double tauxx = 2.0/3.0*mu*(2.0*u_x - v_y - w_z);
+    double tauyy = 2.0/3.0*mu*(2.0*v_y - u_x - w_z);
+    double tauzz = 2.0/3.0*mu*(2.0*w_z - u_x - v_y);
+    
+    double tauxy = mu*(u_y + v_x);
+    double tauxz = mu*(u_z + w_x);
+    double tauyz = mu*(v_z + w_y);
+
+    double tauxx_x = 2.0/3.0*mu*(2.0*u_xx - v_xy - w_xz);
+    double tauyy_y = 2.0/3.0*mu*(2.0*v_yy - u_xy - w_yz);
+    double tauzz_z = 2.0/3.0*mu*(2.0*w_zz - u_xz - v_yz);
+
+    double tauxy_x = mu*(u_xy + v_xx);
+    double tauxz_x = mu*(u_xz + w_xx);
+    double tauxy_y = mu*(u_yy + v_xy);
+    double tauyz_y = mu*(v_yz + w_yy);
+    double tauxz_z = mu*(u_zz + w_xz);
+    double tauyz_z = mu*(v_zz + w_yz);
+    /*
+    double* mu = m_vst->mu; //double* mu = field.mu;
+    double* mu_turb = m_vst->mu_turb;
     int index = d_index(icoords,top_gmax,dim);
     
     double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y - w_z);
@@ -1050,7 +1138,8 @@ void G_CARTESIAN::computeViscousFlux3d(
     double tauyz_y = mu[index]*(v_yz + w_yy);
     double tauxz_z = mu[index]*(u_zz + w_xz);
     double tauyz_z = mu[index]*(v_zz + w_yz);
-    
+    */
+
     v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y + tauxz_z);
     v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y + tauyz_z);
     v_flux->momn_flux[2] = delta_t*(tauxz_x + tauyz_y + tauzz_z);
@@ -1081,11 +1170,15 @@ void G_CARTESIAN::computeViscousFlux3d(
     double gamma = eos.gamma;
     double R_specific = eos.R_specific;
     double Pr = eos.Pr;
+    double Pr_turb = 0.9;
 
     double Cp = gamma/(gamma - 1.0)*R_specific;
-    double lambda = Cp*mu[index]/Pr; //thermal conductivity
+    
+    double lambda = Cp*m_vst->mu[index]/Pr; //thermal conductivity
+    double lambda_turb = Cp*m_vst->mu_turb[index]/Pr_turb; //thermal conductivity
 
-    v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy + T_zz);
+    v_flux->engy_flux += delta_t*(lambda + lambda_turb)*(T_xx + T_yy + T_zz);
+    //v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy + T_zz);
     
     /////////////////////////////////////////////////////////////////////////////////////
 }

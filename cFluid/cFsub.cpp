@@ -1256,14 +1256,14 @@ static  void neumann_point_propagate(
     FT_IntrpStateVarAtCoords(front,comp,p1,m_dens,
 			getStateDens,&newst->dens,&oldst->dens);
 
-    /*
     //TODO: should a wall model/relation be used for temperature here?
     //      e.g. coco-brusemann etc.
     //
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
 			getStateTemp,&newst->temp,&oldst->temp);
-    */
 
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,&oldst->mu);
 	
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_kturb,
 			getStateKTurb,&newst->k_turb,&oldst->k_turb);
@@ -1276,8 +1276,8 @@ static  void neumann_point_propagate(
     newst->eos = &(eqn_params->eos[comp]);
 	
     newst->engy = EosEnergy(newst);
-    newst->temp = EosTemperature(newst);
-    newst->mu = EosViscosity(newst);
+    //newst->temp = EosTemperature(newst);
+    //newst->mu = EosViscosity(newst);
 
     s = mag_vector(vel,dim);
 	FT_RecordMaxFrontSpeed(dim,s,NULL,Coords(newp),front);
@@ -1549,6 +1549,7 @@ static void rgbody_point_propagate_in_fluid(
 	double *m_pres = eqn_params->pres;
 	double *m_dens = eqn_params->dens;
 	double *m_engy = eqn_params->engy;
+    double *m_temp = eqn_params->temp;
     double *m_mu = eqn_params->mu;
     double *m_kturb = eqn_params->k_turb;
 	
@@ -1691,13 +1692,14 @@ static void rgbody_point_propagate_in_fluid(
 			getStateKTurb,&newst->k_turb,&oldst->k_turb);
     
 
-    /*
     //TODO: Need to use wall model for temp?
     //
     FT_IntrpStateVarAtCoords(front,comp,p1,m_temp,
         getStateTemp,&newst->temp,&oldst->temp);
-    */
     
+	FT_IntrpStateVarAtCoords(front,comp,p1,m_mu,
+			getStateMu,&newst->mu,&oldst->mu);
+	
 
 	FT_IntrpStateVarAtCoords(front,comp,p1,m_pres,
 			getStatePres,&newst->pres,&oldst->pres);
@@ -1713,8 +1715,8 @@ static void rgbody_point_propagate_in_fluid(
 
     newst->eos = oldst->eos; //TODO: Will this have valid memory?
     newst->engy = EosEnergy(newst);
-    newst->temp = EosTemperature(newst);
-    newst->mu = EosViscosity(newst);
+    //newst->temp = EosTemperature(newst);
+    //newst->mu = EosViscosity(newst);
 	
     
     double s = mag_vector(vel,dim);

@@ -653,24 +653,6 @@ static FABRIC_COLLISION_PARAMS getFabricCollisionParams(Front* front)
     return collsn_params;
 }
 
-void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
-{
-    Front* newfront;
-
-    if (pp_numnodes() > 1 && !debugging("collision_off"))
-    {
-        new_fourth_order_elastic_set_propagate3d_parallel_1(fr,&newfront,fr_dt);
-            //fourth_order_elastic_set_propagate_parallel(fr,fr_dt);
-    }
-    else
-    {
-        fourth_order_elastic_set_propagate3d_serial(fr,&newfront,fr_dt);
-            //fourth_order_elastic_set_propagate_serial(fr,fr_dt);
-    }
-
-    assign_interface_and_free_front(fr,newfront);
-}
-
 //NEW
 void elastic_set_propagate(Front* fr, double fr_dt)
 {
@@ -1150,6 +1132,24 @@ static int elastic_set_propagate3d_serial(
         //return return_advance_front(fr,newfront,status,fname);
 
 }	/* end elastic_set_propagate3d_serial() */
+
+void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
+{
+    Front* newfront;
+
+    if (pp_numnodes() > 1 && !debugging("collision_off"))
+    {
+        new_fourth_order_elastic_set_propagate3d_parallel_1(fr,&newfront,fr_dt);
+            //fourth_order_elastic_set_propagate_parallel(fr,fr_dt);
+    }
+    else
+    {
+        fourth_order_elastic_set_propagate3d_serial(fr,&newfront,fr_dt);
+            //fourth_order_elastic_set_propagate_serial(fr,fr_dt);
+    }
+
+    assign_interface_and_free_front(fr,newfront);
+}
 
 static void fourth_order_elastic_set_propagate3d_serial(
         Front* fr,

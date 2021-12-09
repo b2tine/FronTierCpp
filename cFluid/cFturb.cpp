@@ -37,8 +37,11 @@ void G_CARTESIAN::computeEddyViscosity()
 void G_CARTESIAN::computeEddyViscosity2d()
 {
     double* mu = field.mu;
+    double* mu_turb = field.mu_turb;
     double* k_turb = field.k_turb;
-
+    
+    EDDY_VISC_MODEL model = eqn_params->eddy_viscosity_model;
+    
     for (int j = imin[1]; j <= imax[1]; ++j)
     for (int i = imin[0]; i <= imax[0]; ++i)
     {
@@ -48,11 +51,12 @@ void G_CARTESIAN::computeEddyViscosity2d()
         COMPONENT comp = top_comp[index];
         if (!gas_comp(comp))
         {
-            mu[index] = 0.0;
+            mu_turb[index] = 0.0;
             k_turb[index] = 0.0;
             continue;
         }
 
+        /*
         double mu_molecular;
         switch (comp)
         {
@@ -68,13 +72,37 @@ void G_CARTESIAN::computeEddyViscosity2d()
                 LOC(); clean_up(EXIT_FAILURE);
         }
 
-        //TODO: Use model specified by eqn_params->eddy_viscosity_model
         mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
-
-        if (mu[index] > mu_max)
+        */
+        
+        //TODO: Use model specified by eqn_params->eddy_viscosity_model
+        switch (model)
         {
-            mu_max = mu[index];
+            case EDDY_VISC_MODEL::VREMAN:
+            {
+                //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
+                mu_turb[index] = computeEddyViscosityVremanModel_BdryAware(icoords);
+                break;
+            }
+            case EDDY_VISC_MODEL::WALE:
+            {
+                //mu[index] = computeEddyViscosityWALE(icoords);
+                mu_turb[index] = computeEddyViscosityWALE(icoords);
+                break;
+            }
+            default:
+            {
+                printf("\nERROR: unrecognized eddy viscosity model\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+        }
+        
+        //if (mu[index] > mu_max)
+        if (mu[index] + mu_turb[index] > mu_max)
+        {
+            //mu_max = mu[index];
+            mu_max = mu[index] + mu_turb[index];
         }
     }
 }
@@ -82,7 +110,10 @@ void G_CARTESIAN::computeEddyViscosity2d()
 void G_CARTESIAN::computeEddyViscosity3d()
 {
     double* mu = field.mu;
+    double* mu_turb = field.mu_turb;
     double* k_turb = field.k_turb;
+
+    EDDY_VISC_MODEL model = eqn_params->eddy_viscosity_model;
 
     for (int k = imin[2]; k <= imax[2]; ++k)
     for (int j = imin[1]; j <= imax[1]; ++j)
@@ -94,11 +125,12 @@ void G_CARTESIAN::computeEddyViscosity3d()
         COMPONENT comp = top_comp[index];
         if (!gas_comp(comp))
         {
-            mu[index] = 0.0;
+            mu_turb[index] = 0.0;
             k_turb[index] = 0.0;
             continue;
         }
 
+        /*
         double mu_molecular;
         switch (comp)
         {
@@ -114,13 +146,36 @@ void G_CARTESIAN::computeEddyViscosity3d()
                 LOC(); clean_up(EXIT_FAILURE);
         }
 
-        //TODO: Use model specified by eqn_params->eddy_viscosity_model
         mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
             //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
-    
-        if (mu[index] > mu_max)
+        */
+
+        switch (model)
         {
-            mu_max = mu[index];
+            case EDDY_VISC_MODEL::VREMAN:
+            {
+                //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
+                mu_turb[index] = computeEddyViscosityVremanModel_BdryAware(icoords);
+                break;
+            }
+            case EDDY_VISC_MODEL::WALE:
+            {
+                //mu[index] += computeEddyViscosityWALE(icoords);
+                mu_turb[index] = computeEddyViscosityWALE(icoords);
+                break;
+            }
+            default:
+            {
+                printf("\nERROR: unrecognized eddy viscosity model\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+        }
+    
+        //if (mu[index] > mu_max)
+        if (mu[index] + mu_turb[index] > mu_max)
+        {
+            //mu_max = mu[index];
+            mu_max = mu[index] + mu_turb[index];
         }
     }
 }
@@ -331,7 +386,6 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
     {
         //TODO: For compressible flow S may be different ...
         S[i][j] = 0.5*(alpha[i][j] + alpha[j][i]);
-
     }
 
     /////////////////////////////////////////////////////////////////////
@@ -374,6 +428,86 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
     
     return mu_t;
 }   /* end computeEddyViscosityVremanModel_BdryAware */
+
+double G_CARTESIAN::computeEddyViscosityWALE(int* icoords)
+{
+    /*
+    auto alpha = computeVelocityGradient(icoords);
+
+    std::vector<std::vector<double>> S(dim,std::vector<double>(dim,0.0));
+    std::vector<std::vector<double>> g2(dim,std::vector<double>(dim,0.0));
+
+    for (int i = 0; i < dim; ++i)
+    for (int j = 0; j < dim; ++j)
+    {
+        S[i][j] = 0.5*(alpha[i][j] + alpha[j][i]);
+        
+        for (int k = 0; k < dim; ++j)
+        {
+            g2[i][j] += alpha[i][k]*alpha[k][j];
+        }
+    }
+
+    std::vector<std::vector<double>> Sd(dim,std::vector<double>(dim,0.0));
+
+    for (int i = 0; i < dim; ++i)
+    for (int j = 0; j < dim; ++j)
+    {
+        Sd[i][j] = 0.5*(g2[i][j] + g2[j][i]);
+    }
+
+    for (int k = 0; k < dim; ++k)
+    {
+        Sd[k][k] -= g2[k][k]/3.0;
+    }
+
+    for (int i = 0; i < dim; ++i)
+    for (int j = 0; j < dim; ++j)
+    {
+        sum_S = S[i][j]*S[i][j];
+        sum_Sd = Sd[i][j]*Sd[i][j];
+    }
+    */
+
+    auto alpha = computeVelocityGradient(icoords);
+
+    double sum_S = 0.0;
+    for (int i = 0; i < dim; ++i)
+    for (int j = 0; j < dim; ++j)
+    {
+        sum_S += 0.5*(alpha[i][j] + alpha[j][i]); 
+    }
+
+    double sum_Sd = 0.0;
+    for (int i = 0; i < dim; ++i)
+    for (int j = 0; j < dim; ++j)
+    {
+        for (int k = 0; k < dim; ++k)
+        {
+            sum_Sd += 0.5*alpha[i][k]*alpha[k][j];
+        }
+    }
+
+    for (int k = 0; k < dim; ++k)
+    {
+        sum_Sd -= alpha[k][k]*alpha[k][k]/3.0;
+    }
+
+    double C_v = eqn_params->C_v; //double Cv = 0.35;
+    double Delta = 1.0;
+    for (int k = 0; k < dim; ++k)
+    {
+        Delta *= top_h[k];
+    }
+    
+    double nu_t = sqr(C_v*Delta)*std::pow(sum_Sd,3.0/2.0) /
+        (std::pow(sum_S,5.0/2.0) + std::pow(sum_Sd,5.0/4.0)); 
+
+    int index = d_index(icoords,top_gmax,dim);
+    double mu_t = nu_t*field.dens[index];
+
+    return mu_t;
+}
 
 std::vector<std::vector<double>> 
 G_CARTESIAN::computeVelocityGradient(int *icoords)
@@ -453,6 +587,16 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
         }
 
         J[l][m] = (vel_nb[1] - vel_nb[0])/(d_h[1] + d_h[0]);
+
+        if (std::isnan(vel_nb[0]) || std::isinf(vel_nb[0]) ||
+            std::isnan(vel_nb[1]) || std::isinf(vel_nb[1]))
+        {
+            printf("\ncomputeVelocityGradient() ERROR: nan/inf vel\n");
+            printf("\nicoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
+            printf("vel component: %d , derivative direction: %d\n", l, m);
+            printf("vel_nb[0] = %f , vel_nb[1] =%f\n",vel_nb[0],vel_nb[1]);
+            LOC(); clean_up(EXIT_FAILURE);
+        }
     }
 
     return J;
@@ -541,7 +685,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
     */
     bool nip_found = 
-        FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
+        FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_SUBDOMAIN,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
     /*
     bool nip_found = 
@@ -763,10 +907,50 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
     }
 
+    //Interpolate the temperature at the reflected point
+    double temp_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.temp,
+            getStateTemp,&temp_reflect,&field.temp[index]);
+
+    EOS_PARAMS eos = eqn_params->eos[comp];
+    double R_specific = eos.R_specific;
+    double gamma = eos.gamma;
+    double Pr = eos.Pr;
+
+    double Cp = gamma/(gamma - 1.0)*R_specific;
+    double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
+
+    //TODO: Need to use law of the wall for temperature?
+    //      Or can we just interpolate and set equal to temp_reflect?
+
+    //Compute Wall Temperature
+    double temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
+
+    //Interpolate the pressure at the reflected point
+    double pres_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.pres,
+            getStatePres,&pres_reflect,&field.pres[index]);
+
+    //Compute density near wall using the wall temperature and the pressure at the reflected point
+    double dens_wall = pres_reflect/temp_wall/R_specific;
+
+    //Interpolate the viscosity at the reflected point
+    double mu_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+            getStateMu,&mu_reflect,&field.mu[index]);
+
+     if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
+     {
+        printf("\nsetSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
+        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,field.mu[index]);
+        LOC(); //clean_up(EXIT_FAILURE);
+     }
+
     //TODO: Need to use mu_reflect and dens_reflect for wall shear stress computation?
     //
     //      See cFvisc.cpp setNeumannViscousGhostState()
     
+    /*
     double mu_l;
     double rho_l;
 
@@ -785,10 +969,11 @@ void G_CARTESIAN::setSlipBoundaryNIP(
             LOC(); clean_up(EXIT_FAILURE);
             break;
     }
+    */
     
     double tau_wall[MAXD] = {0.0};
-    double mag_tau_wall = computeWallShearStress(mag_vtan,
-                    dist_reflect,mu_l,rho_l,45.0);
+    //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l,45.0);
+    double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,100.0);
     //NOTE: In all numerical experiments, Newton's method converged
     //      when the initial guess for the dimensionless wall velocity
     //      was in the range of 40-50.
@@ -800,21 +985,24 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     }
 
     // Interpolate the effective viscosity at the reflected point
-    double mu_reflect;
+    //double mu_reflect;
     /*
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
                 getStateMu,&mu_reflect,nullptr);
     if (mu_reflect < MACH_EPS) mu_reflect = field.mu[index]; //TODO: Need this?
     */
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-                getStateMu,&mu_reflect,&field.mu[index]);
+    //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+      //          getStateMu,&mu_reflect,&field.mu[index]);
     
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
+
+    double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
+    
     for (int j = 0; j < dim; ++j)
     {
-        vel_ghost_tan[j] = vel_rel_tan[j]
-            - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+        vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
+        //vel_ghost_tan[j] = vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
 
         /*
         vel_ghost_tan[j] = vel_rel_tan[j]
@@ -825,6 +1013,20 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
 
+
+    if (std::isnan(v_slip[0]) || std::isinf(v_slip[0]) ||
+        std::isnan(v_slip[1]) || std::isinf(v_slip[1]) ||
+        std::isnan(v_slip[2]) || std::isinf(v_slip[2]))
+    {
+        printf("\nsetSlipBoundaryNIP() ERROR: nan/inf v_slip\n");
+        printf("\nidir = %d nb = %d\n",idir,nb);
+        fprint_int_vector(stdout,"icoords",icoords,dim,"\n");
+        fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+        printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);
+        LOC(); //clean_up(EXIT_FAILURE);
+    }
 
     if (debugging("slip_boundary"))
     {
@@ -855,7 +1057,7 @@ double computeWallShearStress(
         double rho,
         double u_wall_initial_guess)
 {
-    if (u_tan < MACH_EPS) return 0.0;
+    if (u_tan < MACH_EPS || mu < MACH_EPS) return 0.0;
     double u_friction = computeFrictionVelocity(u_tan,walldist,mu/rho,
             u_wall_initial_guess);
     double tau_wall = u_friction*u_friction*rho;
