@@ -1336,7 +1336,6 @@ static void dirichlet_point_propagate(
 	{
 	    bstate = (STATE*)boundary_state(oldhs);
 
-	    newst->temp = bstate->temp;
 	    newst->dens = bstate->dens;
         newst->pres = bstate->pres;
         
@@ -1351,6 +1350,8 @@ static void dirichlet_point_propagate(
         }
 
 	    newst->engy = bstate->engy;
+	    newst->temp = bstate->temp;
+	    newst->mu = bstate->mu;
 	    
         //TODO: Should vort/vorticity be non-zero for turbulent inlet bdry?
         //      Needs to depend on the velocity of the boundary state,

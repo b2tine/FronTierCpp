@@ -39,8 +39,7 @@ Problem type can be
 	FLUID_SOLID_CIRCLE
 Enter problem type: FLUID_SOLID_CIRCLE
 
-Enter the center of the circle: 0.725 1.25
-    Enter the center of the circleXXX: 0.425 1.25
+Enter the center of the circle: 0.725 1.375
 Enter radius of the circle: 0.075
 Enter yes if the object is fixed: yes
 
@@ -52,8 +51,6 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-    XXXEnter gamma, pinf, einf of ambient airXXX: 1.67 0 0
-
 Enter density and pressure of ambient air: 1.0 100000.0
 
 
