@@ -1120,7 +1120,7 @@ EXPORT INTERFACE *collect_hyper_surfaces(
 	    (void) printf("Passed consistent_interface()\n");
 	}
 	
-	set_copy_intfc_states(sav_copy);
+	//set_copy_intfc_states(sav_copy);
 
     if (myid == owner_id)
 	{

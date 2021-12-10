@@ -54,7 +54,7 @@ int CollisionSolver3d::pt_to_tri = 0;
 ///////////////////////////////////////////////////
 
 
-//Front* CollisionSolver3d::front;
+Front* CollisionSolver3d::front;
 
 int CollisionSolver3d::tstep;
 double CollisionSolver3d::frame_dt;

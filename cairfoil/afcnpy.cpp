@@ -686,6 +686,7 @@ static void elastic_set_propagate_serial(
     static boolean first = YES;
 	if (first)
     {
+        first = NO;
         set_elastic_params(&geom_set,af_params,fr_dt);
         if (debugging("step_size"))
             print_elastic_params(geom_set);
@@ -770,6 +771,9 @@ static void elastic_set_propagate_serial(
                 cd_nsub,
                 collsn_dt);
     
+        //TODO: Do we need to keep copying the fron during this loop?
+        //      We're using a lot of memory ...
+        
         assign_interface_and_free_front(*newfront,sub_newfront);
     }
 
@@ -1078,9 +1082,11 @@ static int elastic_set_propagate3d_serial(
             }
             catch (...)
             {
+                //TODO: Can use different exceptions to handle
+                //      different scenarios ...
+                
                 FT_Save(*newfront);
                 FT_Draw(*newfront);
-
 
                 free_front(*newfront);
                 *newfront = nullptr;

@@ -8,8 +8,8 @@ class CFABRIC_CARTESIAN : public G_CARTESIAN
 {
 public:
 
-    CFABRIC_CARTESIAN(Front* ft)
-        : G_CARTESIAN(ft)
+    explicit CFABRIC_CARTESIAN(Front* ft)
+        : G_CARTESIAN{ft}
     {}
 
     ~CFABRIC_CARTESIAN() = default;

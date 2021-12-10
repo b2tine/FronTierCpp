@@ -56,7 +56,8 @@ int main(int argc, char **argv)
         LOC(); clean_up(EXIT_FAILURE);
     }
 
-	CFABRIC_CARTESIAN* g_cartesian = new CFABRIC_CARTESIAN(&front);
+	CFABRIC_CARTESIAN g_cartesian(&front);
+
 
 	/* Initialize basic computational data */
 
@@ -151,19 +152,19 @@ int main(int argc, char **argv)
     front._scatter_front_extra = scatterAirfoilExtra;
 	front._compute_force_and_torque = cfluid_compute_force_and_torque;
 	
-    g_cartesian->findStateAtCrossing = af_find_state_at_crossing;
-	g_cartesian->initMesh();
+    g_cartesian.findStateAtCrossing = af_find_state_at_crossing;
+	g_cartesian.initMesh();
     
     if (pp_numnodes() == 1)
     {
-        g_cartesian->writeMeshFileVTK();
-        g_cartesian->writeCompGridMeshFileVTK();
+        g_cartesian.writeMeshFileVTK();
+        g_cartesian.writeCompGridMeshFileVTK();
     }
         
-	    //g_cartesian->getInitialState = zero_state;
+	    //g_cartesian.getInitialState = zero_state;
 
     if (debugging("sample_velocity"))
-        g_cartesian->initSampleVelocity(in_name);
+        g_cartesian.initSampleVelocity(in_name);
 
     if (RestartRun)
 	{
@@ -173,14 +174,14 @@ int main(int argc, char **argv)
 	    	readAfExtraData(&front,restart_state_name);
 	    	modifyInitialization(&front);
 	    	read_dirichlet_bdry_data(in_name,&front);
-		    g_cartesian->initMesh();
-            g_cartesian->setInitialStates();
+		    g_cartesian.initMesh();
+            g_cartesian.setInitialStates();
 	    }
 	    else
 	    {
             readFrontStates(&front,restart_state_name);
-            g_cartesian->readInteriorStates(restart_state_name);
-                //g_cartesian->readFrontInteriorStates(restart_state_name);
+            g_cartesian.readInteriorStates(restart_state_name);
+                //g_cartesian.readFrontInteriorStates(restart_state_name);
 	    	readAfExtraData(&front,restart_state_name);
 	    }
 
@@ -188,10 +189,10 @@ int main(int argc, char **argv)
 	}
     else
     {
-        g_cartesian->setInitialStates();
+        g_cartesian.setInitialStates();
     }
 
-    g_cartesian->initMovieVariables();
+    g_cartesian.initMovieVariables();
     initMovieStress(in_name,&front);
 
     //TODO: NEED TO ZERO OUT OTHER FIELDS IN resetFronVelocity()?
@@ -202,7 +203,7 @@ int main(int argc, char **argv)
         (void) printf("Passed state initialization()\n");
 
 	/* Propagate the front */
-	airfoil_driver(&front,g_cartesian);
+	airfoil_driver(&front,&g_cartesian);
 
 	clean_up(0);
 }
