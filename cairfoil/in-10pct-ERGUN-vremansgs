@@ -1,8 +1,8 @@
 Domain limit in 0-th dimension: 0 1
 Domain limit in 1-th dimension: 0 1
-Domain limit in 2-th dimension: 0 3
+Domain limit in 2-th dimension: 0 1
 
-Computational grid: 50 50 50
+Computational grid: 60 60 60
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -36,10 +36,10 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 //////////////////////////////////////////////////////////
 
 Max time: 2.0
-Max step: 5000
-Print interval: 0.001
-Movie frame interval: 0.0001
-CFL factor: 0.5
+Max step: 2500
+Print interval: 0.00005
+Movie frame interval: 0.00005
+CFL factor: 0.75
 
 //////////////////////////////////////////////////////////
 ///////////  Start parameters for cFluid  ////////////////
@@ -66,7 +66,9 @@ Type yes to track the interface: no
 
 Entering yes to turn off fluid solver: no
 
-Enter yes to use eddy viscosity: no
+/////////////////////////////////////////////////////
+
+Enter yes to use eddy viscosity: yes
 Enter eddy viscosity model: Vreman
 Enter model constant: 0.025
 
@@ -144,7 +146,7 @@ Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.05
-Enter fabric total mass: 2.00
+Enter fabric total mass: 2.50
     XXXEnter fabric point massXXX: 0.0001
 Enter fabric thickness: 0.001
 Enter fabric rounding tolerance: 0.00001
@@ -179,9 +181,10 @@ Enter yes for debugging: yes
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
+Enter the debugging string: max_speed
 Enter the debugging string: cfluid_dt
 
-Enter the debugging stringXXX: skip_strainvel
+Enter the debugging string: skip_strainvel
 
 Enter the debugging stringXXX: no_viscflux
 

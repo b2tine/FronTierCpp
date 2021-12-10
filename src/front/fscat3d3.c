@@ -981,7 +981,7 @@ EXPORT INTERFACE *collect_hyper_surfaces(
 
 	    /* prepare interface to send */
 	sav_copy = copy_intfc_states();
-        set_copy_intfc_states(YES);
+    set_copy_intfc_states(YES);
 
 	cut_intfc = cut_intfc_to_wave_types(intfc,w_type,ntypes);
 	gr = computational_grid(cut_intfc);
@@ -1120,6 +1120,8 @@ EXPORT INTERFACE *collect_hyper_surfaces(
 	    (void) printf("Passed consistent_interface()\n");
 	}
 	
+	set_copy_intfc_states(sav_copy);
+
     if (myid == owner_id)
 	{
 	    install_subdomain_bdry_curves(cut_intfc);    

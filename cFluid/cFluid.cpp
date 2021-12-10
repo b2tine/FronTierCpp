@@ -174,6 +174,7 @@ int main(int argc, char **argv)
     
     if (RestartRun)
 	{
+        //TODO: have a single function call these inside it
 	    readFrontStates(&front,restart_state_name);
 	    g_cartesian.readInteriorStates(restart_state_name);
 	}

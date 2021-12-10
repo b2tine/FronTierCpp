@@ -51,7 +51,6 @@ static void set_curve_impulse(ELASTIC_SET*,CURVE*,GLOBAL_POINT**);
 static void set_surf_impulse(ELASTIC_SET*,SURFACE*,GLOBAL_POINT**);
 
 static void reorder_string_curves(NODE*);
-static void assembleParachuteSet2d(INTERFACE*,ELASTIC_SET*);
 static void assembleParachuteSet3d(INTERFACE*,ELASTIC_SET*);
 
 static void set_equilibrium_mesh2d(Front*);
@@ -1679,8 +1678,6 @@ extern void set_elastic_params(
     AF_PARAMS* af_params,
 	double fr_dt)
 {
-	double dt_tol;
-
 	/* Set elastic set kinetic parameters */
     geom_set->ks = af_params->ks;
     geom_set->lambda_s = af_params->lambda_s;
@@ -1693,7 +1690,7 @@ extern void set_elastic_params(
     geom_set->m_g = af_params->m_g;
 
 	/* Set elastic set time step */
-    dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
+	double dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
     
     if (af_params->strings_present &&
         dt_tol > sqrt((af_params->m_l)/(af_params->kl))/10.0)
@@ -1728,99 +1725,8 @@ extern void assembleParachuteSet(
 	INTERFACE *intfc,
 	ELASTIC_SET *geom_set)
 {
-	int dim = Dimension(intfc);
-	switch(dim)
-	{
-	case 2:
-	    assembleParachuteSet2d(intfc,geom_set);
-	    return;
-	case 3:
-	    assembleParachuteSet3d(intfc,geom_set);
-	    return;
-	}
+    assembleParachuteSet3d(intfc,geom_set);
 }	/* end assembleParachuteSet */
-
-static void assembleParachuteSet2d(
-	INTERFACE *intfc,
-	ELASTIC_SET *geom_set)
-{
-	CURVE **c = NULL;
-	NODE **n = NULL;
-	int i,l,nc,nn;
-	CURVE **curves = geom_set->curves;
-	NODE **nodes = geom_set->nodes;
-	int num_layers = 3;
-
-	nc = nn = 0;
-	/* Assemble elastic curves */
-	intfc_curve_loop(intfc,c)
-	{
-	    if (wave_type(*c) == ELASTIC_STRING ||
-		wave_type(*c) == ELASTIC_BOUNDARY)
-	    {
-		curves[nc++] = *c;
-		if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
-                    nodes[nn++] = (*c)->start;
-                if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
-                    nodes[nn++] = (*c)->end;
-	    }
-	}	
-
-	/* Assemble curves and nodes */
-	for (l = 0; l < num_layers; ++l)
-	{
-	    for (i = 0; i < nn; ++i)
-	    {
-	    	node_in_curve_loop(nodes[i],c)
-	    	{
-	    	    if (wave_type(*c) != ELASTIC_STRING &&
-			wave_type(*c) != ELASTIC_BOUNDARY)
-			continue;
-		    if (!pointer_in_list(*c,nc,(POINTER*)curves))
-		    {
-		    	curves[nc++] = *c;
-		    	if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
-		    	    nodes[nn++] = (*c)->start;
-		    	if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
-		    	    nodes[nn++] = (*c)->end;
-		    }
-	    	}
-	    	node_out_curve_loop(nodes[i],c)
-	    	{
-	    	    if (wave_type(*c) != ELASTIC_STRING &&
-			wave_type(*c) != ELASTIC_BOUNDARY)
-			continue;
-		    if (!pointer_in_list(*c,nc,(POINTER*)curves))
-		    {
-		    	curves[nc++] = *c;
-		    	if (!pointer_in_list((*c)->start,nn,(POINTER*)nodes))
-		    	    nodes[nn++] = (*c)->start;
-		    	if (!pointer_in_list((*c)->end,nn,(POINTER*)nodes))
-		    	    nodes[nn++] = (*c)->end;
-		    }
-	    	}
-	    }
-	}
-	
-    geom_set->num_surfs = 0;
-	geom_set->num_curves = nc;
-	geom_set->num_nodes = nn;
-	geom_set->elastic_num_verts = 0;
-	
-    for (i = 0; i < nc; ++i)
-	    geom_set->elastic_num_verts += I_NumOfCurveInteriorPoints(curves[i]);
-	geom_set->elastic_num_verts += nn;
-	
-    geom_set->load_node = NULL;
-	for (i = 0; i < nn; ++i)
-	    if (is_load_node(nodes[i]))
-	    {
-            geom_set->load_node = nodes[i];
-            reorder_string_curves(nodes[i]);
-	    }
-	printf("ns = %d, nc = %d, nn = %d, elastic_num_verts = %d\n", 0, nc, nn, 
-		geom_set->elastic_num_verts);
-}	/* end assembleParachuteSet2d */
 
 static void assembleParachuteSet3d(
 	INTERFACE *intfc,

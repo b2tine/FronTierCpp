@@ -50,9 +50,10 @@ static FABRIC_COLLISION_PARAMS getFabricCollisionParams(Front* front);
 static void print_elastic_params(const ELASTIC_SET& geom_set);
 
 static void fourth_order_elastic_set_propagate3d_serial(Front*,Front**,double);
+static void new_fourth_order_elastic_set_propagate3d_parallel_1(Front*,Front**,double);
+
 static void elastic_set_propagate_serial(Front* fr, Front** newfront, double fr_dt);
 static int elastic_set_propagate3d_serial(ELASTIC_SET*, Front*, Front**, int, double);
-static void new_fourth_order_elastic_set_propagate3d_parallel_1(Front*,Front**,double);
 
 static void print_max_fabric_speed(Front* fr);
 static void print_max_string_speed(Front* fr);
@@ -685,8 +686,7 @@ static void elastic_set_propagate_serial(
     static boolean first = YES;
 	if (first)
     {
-        geom_set.front = fr;
-        set_elastic_params(&geom_set,fr_dt);
+        set_elastic_params(&geom_set,af_params,fr_dt);
         if (debugging("step_size"))
             print_elastic_params(geom_set);
     }
@@ -865,7 +865,6 @@ static int elastic_set_propagate3d_serial(
     static boolean first = YES;
 	if (first)
 	{
-
 	    int owner[MAXD];
         owner[0] = 0;
         owner[1] = 0;
@@ -1002,8 +1001,6 @@ static int elastic_set_propagate3d_serial(
     fabric_manager.setCollisionParams(collsn_params);
     fabric_manager.setCollisionTimeStep(collsn_dt);
 
-    //fabric_manager.initializeSystem();
-
     if (myid == owner_id)
 	{
         fabric_manager.initializeSystem();
@@ -1109,7 +1106,7 @@ static int elastic_set_propagate3d_serial(
     }
     
     setSpecialNodeForce(elastic_intfc,geom_set->kl);
-    compute_center_of_mass_velo(geom_set);
+    //compute_center_of_mass_velo(geom_set);
 
 
     //TODO: Sync interfaces after collision handling?

@@ -183,6 +183,8 @@ int main(int argc, char **argv)
                 //g_cartesian->readFrontInteriorStates(restart_state_name);
 	    	readAfExtraData(&front,restart_state_name);
 	    }
+
+        FT_Draw(&front);
 	}
     else
     {

@@ -381,6 +381,7 @@ void printAfExtraData(
 				p->pshift[1],p->pshift[2]);
 	}
 
+    FT_WriteFrontState(outfile,front);
 	fclose(outfile);
 }	/* end printAfExtraData */
 
@@ -880,6 +881,7 @@ void readAfExtraData(
             fscanf(infile,"%lf %lf %lf",p->pshift,p->pshift+1,p->pshift+2);
 	}
 
+    FT_ReadFrontState(infile,front);
     fclose(infile);
 }	/* end readAfExtraData */
 

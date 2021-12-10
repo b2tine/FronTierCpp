@@ -641,7 +641,7 @@ void CollisionSolver3d::computeAverageVelocity()
                 if (std::isnan(sl->avgVel[j]) || std::isinf(sl->avgVel[j]))
                 {
                     std::cout << "nan avgVel" << std::endl;
-                    printf("dt = %e, x_old = %f %f %f, x_new = %f %f %f\n",
+                    printf("dt = %e, x_old = %f %f %f, Coords(p) = %f %f %f\n",
                             dt,sl->x_old[0],sl->x_old[1],sl->x_old[2],
                             Coords(p)[0], Coords(p)[1], Coords(p)[2]);
                     LOC(); clean_up(ERROR);
