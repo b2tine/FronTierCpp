@@ -532,9 +532,12 @@ void CollisionSolver3d::resolveCollisionSubstep()
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainVelJAC();
-            //limitStrainVelGS();
-                //computeMaxSpeed(); //debug
+        if (!debugging("skip_strainvel"))
+        {
+            limitStrainVelJAC();
+                //limitStrainVelGS();
+                    //computeMaxSpeed(); //debug
+        }
     }
     */
 

@@ -51,153 +51,17 @@ void printAfExtraData(
 	BOND *b;
     TRI *t;
 
-	sprintf(filename,"%s/state.ts%s",out_name,
-                        right_flush(front->step,7));
+	sprintf(filename,"%s/state.ts%s",out_name,right_flush(front->step,7));
 #if defined(HAVE_MPI)
-        if (pp_numnodes() > 1)
-            sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
+    if (pp_numnodes() > 1)
+        sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
 #endif /* defined(HAVE_MPI) */
-        sprintf(filename,"%s-afdata",filename);
-        outfile = fopen(filename,"w");
-
-    fprintf(outfile,"\nAirfoil extra front state data:\n");
-
-    //TODO: When done debugging can package up the functionality in here.
-    //      FT_WriteFrontState(outfile,front);
-
-	next_point(intfc,NULL,NULL,NULL);
-    while (next_point(intfc,&p,&hse,&hs))
-    {
-        /*
-        if (wave_type(hs) != ELASTIC_BOUNDARY &&
-            wave_type(hs) != ELASTIC_STRING) continue;
-        */
-
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",p->vel[i]);
-	    fprintf(outfile,"\n");
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",p->force[i]);
-	    fprintf(outfile,"\n");
-
-        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-        fwrite(sl,1,front->sizest,outfile);
-        fwrite(sr,1,front->sizest,outfile);
-        fprintf(outfile,"\n");
-        
-        /*
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g %24.18g\n",sl->impulse[i],sr->impulse[i]);
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g %24.18g\n",sl->vel[i],sr->vel[i]);
-        */
-    }
-
-	for (c = intfc->curves; c && *c; ++c)
-	{
-	    b = (*c)->first;
-        p = b->start;
-        
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",p->vel[i]);
-	    fprintf(outfile,"\n");
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",p->force[i]);
-	    fprintf(outfile,"\n");
-        
-	    sl = (STATE*)left_state(p);
-	    sr = (STATE*)right_state(p);
-        fwrite(sl,1,front->sizest,outfile);
-        fwrite(sr,1,front->sizest,outfile);
-	    fprintf(outfile,"\n");
-
-        /*
-        fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",sl->impulse[i]);
-	    fprintf(outfile,"\n");
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",sr->impulse[i]);
-	    fprintf(outfile,"\n");
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",sl->vel[i]);
-	    fprintf(outfile,"\n");
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",sr->vel[i]);
-	    fprintf(outfile,"\n");
-        */
-	    
-        for (b = (*c)->first; b != NULL; b = b->next)
-	    {
-		    p = b->end;
-	    	
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",p->vel[i]);
-	    	fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",p->force[i]);
-	    	fprintf(outfile,"\n");
-            
-            sl = (STATE*)left_state(p);
-	    	sr = (STATE*)right_state(p);
-            fwrite(sl,1,front->sizest,outfile);
-            fwrite(sr,1,front->sizest,outfile);
-            fprintf(outfile,"\n");
-            
-            /*
-            fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sl->impulse[i]);
-	    	fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sr->impulse[i]);
-	    	fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sl->vel[i]);
-	    	fprintf(outfile,"\n");
-            for (i = 0; i < dim; ++i)
-                fprintf(outfile,"%24.18g ",sr->vel[i]);
-	    	fprintf(outfile,"\n");
-            */
-	    }
-	}
-	
-    for (n = intfc->nodes; n && *n; ++n)
-	{
-	    p = (*n)->posn;
-        
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",p->vel[i]);
-	    fprintf(outfile,"\n");
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",p->force[i]);
-	    fprintf(outfile,"\n");
-	    
-        sl = (STATE*)left_state(p);
-	    sr = (STATE*)right_state(p);
-        fwrite(sl,1,front->sizest,outfile);
-        fwrite(sr,1,front->sizest,outfile);
-	    fprintf(outfile,"\n");
-        
-        /*
-        fprintf(outfile,"%24.18g %24.18g\n",sl->pres,sr->pres);
-	    fprintf(outfile,"\n");
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",sl->impulse[i]);
-	    fprintf(outfile,"\n");
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",sr->impulse[i]);
-	    fprintf(outfile,"\n");
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",sl->vel[i]);
-	    fprintf(outfile,"\n");
-        for (i = 0; i < dim; ++i)
-            fprintf(outfile,"%24.18g ",sr->vel[i]);
-	    fprintf(outfile,"\n");
-        */
-	}
-
+    
+    sprintf(filename,"%s-afdata",filename);
+    outfile = fopen(filename,"w");
+    
     fprintf(outfile,"\nSurface extra data:\n");
+    
     intfc_surface_loop(intfc,s) 
     {
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
@@ -207,46 +71,18 @@ void printAfExtraData(
         REGISTERED_PTS *registered_pts;
 
         if ((*s)->extra == nullptr)
+        {
             num_pts = 0;
+        }
         else
         {
             registered_pts = (REGISTERED_PTS*)(*s)->extra;
             num_pts = registered_pts->num_pts;
         }
+
         fprintf(outfile,"number of registered points = %d\n",num_pts);
         for (i = 0; i < num_pts; ++i)
             fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
-
-        /*
-        //TODO: This all gets handled in one of the user_fprint_surface
-        //      functions and can be removed -- keep for now as reference.
-        //
-        else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-        {
-            HYPER_SURF* hs = Hyper_surf(*s);
-            fprintf(outfile,"body_index = %d\n",body_index(hs));
-            fprintf(outfile,"total_mass = %g\n",total_mass(hs));
-            fprintf(outfile,"moment_of_inertial = %g\n",mom_inertial(hs));
-            fprintf(outfile,"angular_velo = %g\n",angular_velo(hs));
-            fprintf(outfile,"motion_type = %d\n",motion_type(hs));
-            fprintf(outfile,"xcom = %g %g %g\n", center_of_mass(hs)[0],
-                    center_of_mass(hs)[1],center_of_mass(hs)[2]);
-            fprintf(outfile,"vcom = %g %g %g\n",center_of_mass_velo(hs)[0],
-                    center_of_mass_velo(hs)[1],center_of_mass_velo(hs)[2]);
-            fprintf(outfile,"crot = %g %g %g\n",rotation_center(hs)[0],
-                    rotation_center(hs)[1],rotation_center(hs)[2]);
-            fprintf(outfile,"tdir = %g %g %g\n",translation_dir(hs)[0],
-                    translation_dir(hs)[1],translation_dir(hs)[2]);
-            fprintf(outfile,"rotdir = %g %g %g\n",rotation_direction(hs)[0],
-                    rotation_direction(hs)[1],rotation_direction(hs)[2]);
-            fprintf(outfile,"pmomi = %g %g %g\n",p_mom_inertial(hs)[0],
-                    p_mom_inertial(hs)[1],p_mom_inertial(hs)[1]);
-            fprintf(outfile,"pangv = %g %g %g\n",p_angular_velo(hs)[0],
-                    p_angular_velo(hs)[1],p_angular_velo(hs)[2]);
-            fprintf(outfile,"eulerp = %g %g %g %g\n",euler_params(hs)[0],
-                    euler_params(hs)[1],euler_params(hs)[2],euler_params(hs)[3]);
-        }
-        */
     }
 
     //TODO: need FINITE_STRING also ... do we still even us these below? or is this all in node extra?
@@ -307,27 +143,31 @@ void printAfExtraData(
 	{
 	    AF_NODE_EXTRA *n_params = (AF_NODE_EXTRA*)(*n)->extra;
 	    if (n_params == NULL)
-                fprintf(outfile,"node extra: no\n");
+        {
+            fprintf(outfile,"node extra: no\n");
+        }
 	    else
 	    {
-                fprintf(outfile,"node extra: yes\n");
-                fprintf(outfile,"af_node_type = %d\n",n_params->af_node_type);
+            fprintf(outfile,"node extra: yes\n");
+            fprintf(outfile,"af_node_type = %d\n",n_params->af_node_type);
 	    }
 	}
 	
     fprintf(outfile,"\nGlobal index of points\n");
 	next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
+    {
         fprintf(outfile,"%ld\n",Gindex(p));
+    }
 
     for (c = intfc->curves; c && *c; ++c)
 	{
 	    b = (*c)->first;	p = b->start;
-            fprintf(outfile,"%ld\n",Gindex(p));
+        fprintf(outfile,"%ld\n",Gindex(p));
 	    for (b = (*c)->first; b != NULL; b = b->next)
 	    {
-		p = b->end;
-            	fprintf(outfile,"%ld\n",Gindex(p));
+    		p = b->end;
+            fprintf(outfile,"%ld\n",Gindex(p));
 	    }
 	}
 
@@ -356,29 +196,32 @@ void printAfExtraData(
 
 	fprintf(outfile,"\nPoint periodic shift\n");
 	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
+    while (next_point(intfc,&p,&hse,&hs))
 	{
-            fprintf(outfile,"%24.18g %24.18g %24.18g",p->pshift[0],
-				p->pshift[1],p->pshift[2]);
+        fprintf(outfile,"%24.18g %24.18g %24.18g",
+                p->pshift[0],p->pshift[1],p->pshift[2]);
 	}
+
 	for (c = intfc->curves; c && *c; ++c)
 	{
-	    b = (*c)->first;	p = b->start;
-            fprintf(outfile,"%24.18g %24.18g %24.18g",p->pshift[0],
-				p->pshift[1],p->pshift[2]);
-	    for (b = (*c)->first; b != NULL; b = b->next)
+	    b = (*c)->first;	
+        p = b->start;
+        fprintf(outfile,"%24.18g %24.18g %24.18g",
+                p->pshift[0],p->pshift[1],p->pshift[2]);
+	
+        for (b = (*c)->first; b != NULL; b = b->next)
 	    {
-		p = b->end;
-            	fprintf(outfile,"%24.18g %24.18g %24.18g",p->pshift[0],
-				p->pshift[1],p->pshift[2]);
+            p = b->end;
+            fprintf(outfile,"%24.18g %24.18g %24.18g",
+                    p->pshift[0],p->pshift[1],p->pshift[2]);
 	    }
 	}
 	
     intfc_node_loop(intfc,n)
 	{
 	    p = (*n)->posn;
-            fprintf(outfile,"%24.18g %24.18g %24.18g",p->pshift[0],
-				p->pshift[1],p->pshift[2]);
+        fprintf(outfile,"%24.18g %24.18g %24.18g",
+                p->pshift[0],p->pshift[1],p->pshift[2]);
 	}
 
     FT_WriteFrontState(outfile,front);
@@ -411,244 +254,6 @@ void readAfExtraData(
 	printf("filename = %s\n",filename);
     infile = fopen(filename,"r");
 
-	next_output_line_containing_string(infile,
-		"Airfoil extra front state data:");
-
-    //TODO: When done debugging can package up the functionality in here.
-    //      FT_ReadFrontState(infile,front);
-
-	next_point(intfc,NULL,NULL,NULL);
-    while (next_point(intfc,&p,&hse,&hs))
-    {
-        /*
-        if (wave_type(hs) != ELASTIC_BOUNDARY &&
-            wave_type(hs) != ELASTIC_STRING) continue;
-        */
-
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&p->vel[i]);
-        fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&p->force[i]);
-        fscanf(infile,"\n");
-
-        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-        fread(sl,1,front->sizest,infile);
-        fread(sr,1,front->sizest,infile);
-        fscanf(infile,"\n");
-
-        /*
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf %lf\n",&sl->impulse[i],&sr->impulse[i]);
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf %lf\n",&sl->vel[i],&sr->vel[i]);
-        */
-    }
-
-	for (c = intfc->curves; c && *c; ++c)
-	{
-	    b = (*c)->first;
-        p = b->start;
-	    
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&p->vel[i]);
-        fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&p->force[i]);
-        fscanf(infile,"\n");
-        
-        sl = (STATE*)left_state(p);
-	    sr = (STATE*)right_state(p);
-        fread(sl,1,front->sizest,infile);
-        fread(sr,1,front->sizest,infile);
-        fscanf(infile,"\n");
-       
-        /*
-        fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
-	    fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&sl->impulse[i]);
-	    fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&sr->impulse[i]);
-	    fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&sl->vel[i]);
-	    fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&sr->vel[i]);
-	    fscanf(infile,"\n");
-        */
-	    
-        for (b = (*c)->first; b != NULL; b = b->next)
-	    {
-		    p = b->end;
-
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&p->vel[i]);
-	    	fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&p->force[i]);
-	    	fscanf(infile,"\n");
-
-	    	sl = (STATE*)left_state(p);
-	    	sr = (STATE*)right_state(p);
-            fread(sl,1,front->sizest,infile);
-            fread(sr,1,front->sizest,infile);
-            fscanf(infile,"\n");
-            
-            /*
-            fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
-	    	fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sl->impulse[i]);
-	    	fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sr->impulse[i]);
-	    	fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sl->vel[i]);
-	    	fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sr->vel[i]);
-	    	fscanf(infile,"\n");
-            */
-	    }
-	}
-
-	for (n = intfc->nodes; n && *n; ++n)
-	{
-	    p = (*n)->posn;
-
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&p->vel[i]);
-	    fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&p->force[i]);
-	    fscanf(infile,"\n");
-	    
-        sl = (STATE*)left_state(p);
-	    sr = (STATE*)right_state(p);
-        fread(sl,1,front->sizest,infile);
-        fread(sr,1,front->sizest,infile);
-        fscanf(infile,"\n");
-
-        /*
-        fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
-	    fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&sl->impulse[i]);
-	    fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&sr->impulse[i]);
-	    fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&sl->vel[i]);
-	    fscanf(infile,"\n");
-        for (i = 0; i < dim; ++i)
-            fscanf(infile,"%lf ",&sr->vel[i]);
-	    fscanf(infile,"\n");
-        */
-	}
-
-
-    //////////////////////////////////////////////////////////
-    /*
-	next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
-        {
-            if (wave_type(hs) != ELASTIC_BOUNDARY &&
-		wave_type(hs) != ELASTIC_STRING) 
-		continue;
-            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            
-            //TODO: Replace below with this
-            //
-            //      fread(sl,1,front->sizest,outfile);
-            //      fread(sr,1,front->sizest,outfile);
-            //
-            
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf %lf\n",&sl->impulse[i],&sr->impulse[i]);
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf %lf\n",&sl->vel[i],&sr->vel[i]);
-
-            //TODO:Keep this though
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&p->vel[i]);
-                
-            fscanf(infile,"\n");
-        }
-	
-    for (c = intfc->curves; c && *c; ++c)
-	{
-	    b = (*c)->first;	p = b->start;
-	    sl = (STATE*)left_state(p);
-	    sr = (STATE*)right_state(p);
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&p->vel[i]);
-            fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sl->impulse[i]);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sr->impulse[i]);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sl->vel[i]);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sr->vel[i]);
-	    fscanf(infile,"\n");
-	    for (b = (*c)->first; b != NULL; b = b->next)
-	    {
-		p = b->end;
-	    	sl = (STATE*)left_state(p);
-	    	sr = (STATE*)right_state(p);
-            	for (i = 0; i < dim; ++i)
-                    fscanf(infile,"%lf ",&p->vel[i]);
-            	fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
-	    	fscanf(infile,"\n");
-            	for (i = 0; i < dim; ++i)
-               	    fscanf(infile,"%lf ",&sl->impulse[i]);
-	    	fscanf(infile,"\n");
-            	for (i = 0; i < dim; ++i)
-                    fscanf(infile,"%lf ",&sr->impulse[i]);
-	    	fscanf(infile,"\n");
-            	for (i = 0; i < dim; ++i)
-               	    fscanf(infile,"%lf ",&sl->vel[i]);
-	    	fscanf(infile,"\n");
-            	for (i = 0; i < dim; ++i)
-                    fscanf(infile,"%lf ",&sr->vel[i]);
-	    	fscanf(infile,"\n");
-	    }
-	}
-	for (n = intfc->nodes; n && *n; ++n)
-	{
-	    p = (*n)->posn;
-	    sl = (STATE*)left_state(p);
-	    sr = (STATE*)right_state(p);
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&p->vel[i]);
-            fscanf(infile,"%lf %lf",&sl->pres,&sr->pres);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sl->impulse[i]);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sr->impulse[i]);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sl->vel[i]);
-	    fscanf(infile,"\n");
-            for (i = 0; i < dim; ++i)
-                fscanf(infile,"%lf ",&sr->vel[i]);
-	    fscanf(infile,"\n");
-	}
-    */
-    ////////////////////////////////////////////////////////////
-	
     next_output_line_containing_string(infile,"Surface extra data:");
     intfc_surface_loop(intfc,s)
     {
@@ -661,47 +266,17 @@ void readAfExtraData(
         if (num_pts != 0)
         {
             static REGISTERED_PTS *registered_pts;
-            FT_ScalarMemoryAlloc((POINTER*)&registered_pts,
-                        sizeof(REGISTERED_PTS));
-            FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,
-                        num_pts,sizeof(int));
+            FT_ScalarMemoryAlloc((POINTER*)&registered_pts,sizeof(REGISTERED_PTS));
+            FT_VectorMemoryAlloc((POINTER*)&registered_pts->global_ids,num_pts,sizeof(int));
+            
             (*s)->extra = (REGISTERED_PTS*)registered_pts;
             registered_pts->num_pts = num_pts;
-            for (i = 0; i < num_pts; ++i)
-                fscanf(infile,"%d",registered_pts->global_ids+i);
-        }
-        
-        /*
-        //TODO: This gets handled by the user_read_print_surface()
-        //      function somewhere and can be removed -- keep for
-        //      now as reference.
 
-        else if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-        {
-            HYPER_SURF* hs = Hyper_surf(*s);
-	        fgetstring(infile,"body_index = "); fscanf(infile,"%d",&body_index(hs));
-	        fgetstring(infile,"total_mass = "); fscanf(infile,"%g",&total_mass(hs));
-	        fgetstring(infile,"moment_of_inertial = "); fscanf(infile,"%g",&mom_inertial(hs));
-	        fgetstring(infile,"angular_velo = "); fscanf(infile,"%g",&angular_velo(hs));
-	        fgetstring(infile,"motion_type = "); fscanf(infile,"%d",&motion_type(hs));
-	        fgetstring(infile,"xcom = "); fscanf(infile,"%g %g %g",&center_of_mass(hs)[0],
-                    &center_of_mass(hs)[1],&center_of_mass(hs)[2]);
-	        fgetstring(infile,"vcom = "); fscanf(infile,"%g %g %g",&center_of_mass_velo(hs)[0],
-                    &center_of_mass_velo(hs)[1],&center_of_mass_velo(hs)[2]);
-	        fgetstring(infile,"crot = "); fscanf(infile,"%g %g %g",&rotation_center(hs)[0],
-                    &rotation_center(hs)[1],&rotation_center(hs)[2]);
-	        fgetstring(infile,"tdir = "); fscanf(infile,"%g %g %g",&translation_dir(hs)[0],
-                    &translation_dir(hs)[1],&translation_dir(hs)[2]);
-	        fgetstring(infile,"rotdir = "); fscanf(infile,"%g %g %g",&rotation_direction(hs)[0],
-                    &rotation_direction(hs)[1],&rotation_direction(hs)[2]);
-	        fgetstring(infile,"pmomi = "); fscanf(infile,"%g %g %g",&p_mom_inertial(hs)[0],
-                    &p_mom_inertial(hs)[1],&p_mom_inertial(hs)[1]);
-            fgetstring(infile,"pangv = "); fscanf(infile,"%g %g %g",&p_angular_velo(hs)[0],
-                    &p_angular_velo(hs)[1],&p_angular_velo(hs)[2]);
-            fgetstring(infile,"eulerp = "); fscanf(infile,"%g %g %g %g",&euler_params(hs)[0],
-                    &euler_params(hs)[1],&euler_params(hs)[2],&euler_params(hs)[3]);
+            for (i = 0; i < num_pts; ++i)
+            {
+                 fscanf(infile,"%d",registered_pts->global_ids+i);
+            }
         }
-        */
     }
     
     //TODO: C_PARAMS no longer in use, should be removed.
