@@ -13,6 +13,8 @@ static double (*getStateMom[MAXD])(Locstate) =
 //      Can we just initialize the viscosity field once at start up, and
 //      then update it when the temperature gets updated after advancing
 //      the solution?
+//
+//      DO NEED TO FIND MU_MAX THOUGH.
 void G_CARTESIAN::computeDynamicViscosity()
 {
     mu_max = 0.0;

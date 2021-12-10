@@ -834,6 +834,13 @@ void G_CARTESIAN::solve(double dt)
 	
     ///////////////////////////////////////////////////////////////////////////
     
+    //TODO: WE CAN PROBABLY JUST CALL THIS ONCE ON START UP,
+    //      TEMPERATURE AND VISCOSITY SHOULD BE GETTING UPDATED
+    //      BY THE SOLVER. 
+    //
+    //      DO NEED TO GET THE MU_MAX IT FINDS FOR TIME STEP RESTRICTION THOUGH.
+    //      
+    //NOTE: ALSO COMPUTES THE TEMPERATURE -- SHOULD CHANGE NAME TO REFLECT THIS.
     computeDynamicViscosity();
 
     computeSGSTerms();
@@ -3590,8 +3597,8 @@ void G_CARTESIAN::copyFromMeshVst(
 	double **momn = field.momn;
 	double *engy = field.engy;
 	double *pres = field.pres;
-	//double *mu = field.mu;
-	//double *temp = field.temp;
+	double *mu = field.mu;
+	double *temp = field.temp;
 	
     double *k_turb = field.k_turb;
 	
@@ -3617,8 +3624,8 @@ void G_CARTESIAN::copyFromMeshVst(
             state.dens = m_vst.dens[index];
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
-            //state.mu = m_vst.mu[index];
-            //state.temp = m_vst.temp[index];
+            state.mu = m_vst.mu[index];
+            state.temp = m_vst.temp[index];
             state.k_turb = m_vst.k_turb[index];
         
             for (l = 0; l < dim; ++l)
@@ -3633,8 +3640,8 @@ void G_CARTESIAN::copyFromMeshVst(
             dens[index] = state.dens;
             engy[index] = state.engy;
             pres[index] = state.pres;
-            //mu[index] = state.mu;
-            //temp[index] = state.temp;
+            mu[index] = state.mu;
+            temp[index] = state.temp;
             k_turb[index] = state.k_turb;
         
             for (l = 0; l < dim; ++l)
@@ -3652,8 +3659,8 @@ void G_CARTESIAN::copyFromMeshVst(
             state.dens = m_vst.dens[index];
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
-            //state.mu = m_vst.mu[index];
-            //state.temp = m_vst.temp[index];
+            state.mu = m_vst.mu[index];
+            state.temp = m_vst.temp[index];
             state.k_turb = m_vst.k_turb[index];
         
             for (l = 0; l < dim; ++l)
@@ -3668,8 +3675,8 @@ void G_CARTESIAN::copyFromMeshVst(
             dens[index] = state.dens;
             engy[index] = state.engy;
             pres[index] = state.pres;
-            //mu[index] = state.mu;
-            //temp[index] = state.temp;
+            mu[index] = state.mu;
+            temp[index] = state.temp;
             k_turb[index] = state.k_turb;
         
             for (l = 0; l < dim; ++l)
@@ -3688,8 +3695,8 @@ void G_CARTESIAN::copyFromMeshVst(
             state.dens = m_vst.dens[index];
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
-            //state.mu = m_vst.mu[index];
-            //state.temp = m_vst.temp[index];
+            state.mu = m_vst.mu[index];
+            state.temp = m_vst.temp[index];
             state.k_turb = m_vst.k_turb[index];
         
             for (l = 0; l < dim; ++l)
@@ -3704,8 +3711,8 @@ void G_CARTESIAN::copyFromMeshVst(
             dens[index] = state.dens;
             engy[index] = state.engy;
             pres[index] = state.pres;
-            //mu[index] = state.mu;
-            //temp[index] = state.temp;
+            mu[index] = state.mu;
+            temp[index] = state.temp;
             k_turb[index] = state.k_turb;
         
             for (l = 0; l < dim; ++l)
