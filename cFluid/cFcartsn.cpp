@@ -573,6 +573,10 @@ void G_CARTESIAN::scatMeshFlux(FSWEEP *m_flux)
 //      Eg. Compressible Ergun equation source term for enforcing pressure
 //      jump boundary condition at porous interface.
 
+//TODO: WHY DID I CHANGE THIS TO A POINT INSTEAD OF USING CONST REFERENCE?
+//      I THINK I USED IT FOR SOMETHING THAT ENDED UP NOT WORKING OUT ...
+//      IT SHOULD BE PROBABLY BE CHANGED BACK.
+//
 /*void G_CARTESIAN::addSourceTerm(
 	const SWEEP& m_vst,
 	FSWEEP *m_flux,
@@ -1168,7 +1172,7 @@ void G_CARTESIAN::freeDirVstFlux(
         SWEEP* vst,
         FSWEEP* flux)
 {
-    FT_FreeThese(7,vst->dens,vst->engy,vst->pres,vst->momn,
+    FT_FreeThese(8,vst->dens,vst->engy,vst->pres,vst->momn,
             vst->mu,vst->mu_turb,vst->temp,vst->k_turb);
     FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }	/* end allocDirMeshVstFlux */
@@ -3262,10 +3266,10 @@ void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 	FT_ParallelExchGridVectorArrayBuffer(m_vst->momn,front);
 	FT_ParallelExchGridArrayBuffer(m_vst->engy,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->pres,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->mu,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->mu_turb,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->temp,front,nullptr);
 	FT_ParallelExchGridArrayBuffer(m_vst->k_turb,front,nullptr);
-	//FT_ParallelExchGridArrayBuffer(m_vst->mu,front,nullptr);
-	//FT_ParallelExchGridArrayBuffer(m_vst->mu_turb,front,nullptr);
-	//FT_ParallelExchGridArrayBuffer(m_vst->temp,front,nullptr);
 	
     /*
 	int i,j,k,l,index;
@@ -3573,6 +3577,9 @@ void G_CARTESIAN::copyToMeshVst(
 	}
 }	/* end copyToMeshVst */
 
+//TODO: COPY MU AND TEMPERATURE?
+//
+//NOTE: DO NOT COPY MU_TURB!
 void G_CARTESIAN::copyFromMeshVst(
 	const SWEEP& m_vst)
 {
@@ -3584,7 +3591,6 @@ void G_CARTESIAN::copyFromMeshVst(
 	double *engy = field.engy;
 	double *pres = field.pres;
 	//double *mu = field.mu;
-	//double *mu_turb = field.mu_turb;
 	//double *temp = field.temp;
 	
     double *k_turb = field.k_turb;
@@ -3612,7 +3618,6 @@ void G_CARTESIAN::copyFromMeshVst(
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
             //state.mu = m_vst.mu[index];
-            //state.mu_turb = m_vst.mu_turb[index];
             //state.temp = m_vst.temp[index];
             state.k_turb = m_vst.k_turb[index];
         
@@ -3629,7 +3634,6 @@ void G_CARTESIAN::copyFromMeshVst(
             engy[index] = state.engy;
             pres[index] = state.pres;
             //mu[index] = state.mu;
-            //mu_turb[index] = state.mu_turb;
             //temp[index] = state.temp;
             k_turb[index] = state.k_turb;
         
@@ -3649,7 +3653,6 @@ void G_CARTESIAN::copyFromMeshVst(
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
             //state.mu = m_vst.mu[index];
-            //state.mu_turb = m_vst.mu_turb[index];
             //state.temp = m_vst.temp[index];
             state.k_turb = m_vst.k_turb[index];
         
@@ -3666,7 +3669,6 @@ void G_CARTESIAN::copyFromMeshVst(
             engy[index] = state.engy;
             pres[index] = state.pres;
             //mu[index] = state.mu;
-            //mu_turb[index] = state.mu_turb;
             //temp[index] = state.temp;
             k_turb[index] = state.k_turb;
         
@@ -3687,7 +3689,6 @@ void G_CARTESIAN::copyFromMeshVst(
             state.engy = m_vst.engy[index];
             state.pres = m_vst.pres[index];
             //state.mu = m_vst.mu[index];
-            //state.mu_turb = m_vst.mu_turb[index];
             //state.temp = m_vst.temp[index];
             state.k_turb = m_vst.k_turb[index];
         
@@ -3704,7 +3705,6 @@ void G_CARTESIAN::copyFromMeshVst(
             engy[index] = state.engy;
             pres[index] = state.pres;
             //mu[index] = state.mu;
-            //mu_turb[index] = state.mu_turb;
             //temp[index] = state.temp;
             k_turb[index] = state.k_turb;
         
@@ -4173,7 +4173,7 @@ void G_CARTESIAN::scatMeshStates()
 void G_CARTESIAN::freeVst(
 	SWEEP *vst)
 {
-	FT_FreeThese(7,vst->dens,vst->momn,vst->engy,vst->pres,
+	FT_FreeThese(8,vst->dens,vst->momn,vst->engy,vst->pres,
             vst->mu,vst->mu_turb,vst->k_turb,vst->temp);
 }	/* end freeVst */
 
@@ -4183,6 +4183,7 @@ void G_CARTESIAN::freeFlux(
 	FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }
 
+//NOTE: DO NOT COPY MU_TURB
 void G_CARTESIAN::addMeshFluxToVst(
 	SWEEP *m_vst,
 	const FSWEEP& m_flux,
@@ -4230,7 +4231,6 @@ void G_CARTESIAN::addMeshFluxToVst(
 		m_vst->engy[index] = st.engy;
         m_vst->temp[index] = st.temp;
         m_vst->mu[index] = st.mu;
-        //m_vst->mu_turb[index] = st.mu_turb;
 		
         u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
@@ -4274,7 +4274,6 @@ void G_CARTESIAN::addMeshFluxToVst(
 		m_vst->engy[index] = st.engy;
         m_vst->temp[index] = st.temp;
         m_vst->mu[index] = st.mu;
-        //m_vst->mu_turb[index] = st.mu_turb;
 		
         u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
@@ -4319,7 +4318,6 @@ void G_CARTESIAN::addMeshFluxToVst(
 		m_vst->engy[index] = st.engy;
         m_vst->temp[index] = st.temp;
         m_vst->mu[index] = st.mu;
-        //m_vst->mu_turb[index] = st.mu_turb;
 
 		u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
