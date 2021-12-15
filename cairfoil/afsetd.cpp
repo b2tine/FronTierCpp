@@ -963,8 +963,13 @@ extern void set_node_spring_vertex(
 
 	if (mass == 0.0)
 	{
-	    printf("ERROR: mass is not set for some node\n");
-	    clean_up(ERROR);
+	    printf("\n\nERROR: mass is not set for some node\n\n");
+        //////////////////
+        AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
+        printf("node->extra = %s\n",(extra == nullptr) ? "nullptr": "non-nullptr");
+        print_node(node);
+        //////////////////
+	    LOC(); clean_up(ERROR);
 	}
 
 	nn = 0;
@@ -1465,29 +1470,6 @@ static void put_point_value_to(
 	    sr->impulse[i] = point_set[gindex]->impuls[i];
         */
 	}
-
-    /*
-    //TODO: WAS HAVING PROBLEMS WITH A RESTART RUN AND GETTING CRASH HERE.
-    //      SEEMS TO BE WORKING NOW BUT KEEP FOR NOW IN CASE IT HAPPENS AGAIN
-	for (int j = 0; j < 3; ++j)
-    {
-        printf("\nput_point_value_to(): GOOD\n");
-        if (std::isnan(Coords(p)[j]) || std::isinf(Coords(p)[j]))
-        {
-            printf("Coords(p) = %f %f %f\n",
-                    Coords(p)[0],Coords(p)[1],Coords(p)[2]);
-            printf("Gindex(p) = %ld\n",Gindex(p));
-
-            printf("\npoint_set[gindex] = %f %f %f\n",
-                    point_set[gindex]->x[0],
-                    point_set[gindex]->x[1],
-                    point_set[gindex]->x[2]);
-
-            LOC(); clean_up(EXIT_FAILURE);
-        }
-    }
-    */
-
 }	/* end put_point_value_to */
 	
 extern void get_point_set_from(

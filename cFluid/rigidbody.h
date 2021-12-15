@@ -3,6 +3,16 @@
 
 #include <FronTier.h>
 
+/*
+enum class RIGID_BODY_SHAPE
+{
+    SPHERE,
+    BOX,
+    CYLINDER,
+    HUMAN
+};
+*/
+
 struct RG_PARAMS
 {
     int dim;
@@ -24,6 +34,8 @@ struct RG_PARAMS
 	POINTER vparams;
     MOTION_TYPE motion_type;
     bool is_fixed {false};
+        //RIGID_BODY_SHAPE;
+
     boolean no_slip {NO};
 };
 

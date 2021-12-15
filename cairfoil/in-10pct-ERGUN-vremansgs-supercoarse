@@ -42,6 +42,7 @@ Print interval: 0.001
 Movie frame interval: 0.0001
 CFL factor: 1.0
     XXXCFL factorXXX: 0.75
+type yes to turn off auto-redistribution: y
 
 //////////////////////////////////////////////////////////
 ///////////  Start parameters for cFluid  ////////////////
@@ -61,7 +62,7 @@ Enter the reference molecular viscosity: 1.716e-05
 Enter the reference temperature: 273.0
 Enter the effective temperature: 111.0
 
-Enter gravity: 0 0 -9.8
+Enter gravity: 0 0 0
 
 Type yes to track the interface: no
 
@@ -74,22 +75,6 @@ Enter eddy viscosity model: Vreman
 Enter model constant: 0.025
 
 Enter the turbulent Prandtl number: 0.9
-
-//////////////////////////////////////////////////////////
-/////////            Movie Options            ////////////
-//////////////////////////////////////////////////////////
-
-Type y to make yz cross section movie: n
-Type y to make xz cross section movie: n
-Type y to make xy cross section movie: n
-
-Type y to make scalar density field movie: y
-Type y to make scalar pressure field movie: y
-Type y to make scalar viscosity field movie: y
-Type y to make scalar temperature field movie: y
-
-Type y to make vector velocity field movie: y
-Type y to make vector vorticity field movie: y
 
 
 //////////////////////////////////////////////////////////
@@ -174,7 +159,23 @@ Available velocity functions are:
         Free fall velocity (FF)
 
 Enter velocity function: Z
-Enter gravity: 0 0 -9.8
+Enter gravity: 0 0 0
+
+//////////////////////////////////////////////////////////
+/////////            Movie Options            ////////////
+//////////////////////////////////////////////////////////
+
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+Type y to make xy cross section movie: n
+
+Type y to make scalar density field movie: y
+Type y to make scalar pressure field movie: y
+Type y to make scalar viscosity field movie: y
+Type y to make scalar temperature field movie: y
+
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
 
 *************************************************
 Enter yes for debugging: yes

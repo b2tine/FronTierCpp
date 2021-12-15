@@ -1,10 +1,9 @@
-Domain limit in 0-th dimension: 0 1.2
-Domain limit in 1-th dimension: 0 1.2
-Domain limit in 2-th dimension: 0 1.2
+Domain limit in 0-th dimension: 0 12
+Domain limit in 1-th dimension: 0 12
+Domain limit in 2-th dimension: 5 29
+Computational grid: 60 60 120
 
-Computational grid: 30 30 30
-
-Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY 
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
@@ -23,25 +22,19 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 25
-    XXXEnter velocityXXX: 0 0 125
+Enter velocity: 0 0 75
 Enter pressure: 175000
 Enter density: 2.675
 For upper boundary in 2-th dimension
-
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
-
-//////////////////////////////////////////////////////////
-////////  Start test time control parameters  ////////////
-//////////////////////////////////////////////////////////
-
-Max time: 2.0
-Max step: 5000
-Print interval: 0.001
-Movie frame interval: 0.0001
-CFL factor: 1.0
-    XXXCFL factorXXX: 0.75
+Start test time control parameters
+Max time: 1.0
+Max step: 25000
+Print interval: 0.01
+Movie frame interval: 0.005
+CFL factor: 0.5
+Redistribution interval: 10000000
 type yes to turn off auto-redistribution: y
 
 //////////////////////////////////////////////////////////
@@ -81,11 +74,31 @@ Enter the turbulent Prandtl number: 0.9
 /////////     Start parameters for modules    ////////////
 //////////////////////////////////////////////////////////
 
-Enter yes to add rigid body: n
-Enter the number of rigid bodies: 0
-
-Enter yes for parachute system: no
+Enter yes for parachute system: yes
 Enter the number of fabric optimization rounds: 0
+
+Enter yes to add rigid body: y
+Enter the number of rigid bodies: 1
+Available type of rigid body include:
+        Sphere (S)
+        Box (B)
+        Human (H)
+        Cylinder (C)
+Enter type of rigid body: S
+Enter center of the sphere: 6 6 11.951
+Enter radius of the sphere: 0.6
+Rigid body can be fixed (F) or Movable (M)
+The default is Movable (M)
+Type yes if the rigid body is fixed: yes
+Type yes to use CGAL for rigid body: yes
+
+For rigid body 1
+Type yes if motion is preset: yes
+Enter type of dynamic motion: COM_MOTION
+Enter the direction of motion: 0 0 1
+Enter the total mass for rigid body: 300
+Enter the initial center of mass for rigid body: 6 6 11.951
+Enter the initial center of mass velocity: 0 0 0
 
 Enter number of canopy surfaces: 1
 Enter yes for complex connection: n
@@ -94,33 +107,45 @@ Available canopy surface types are:
         FLAT (F)
         PARABOLIC (P)
 Enter canopy surface type: F
-
 Available types of canopy boundaries are:
         Circular (C)
         Rectangular (R)
         Elliptic (E)
         Cross (X)
         Circular with belt (S)
-Enter type of canopy boundary: R
-Enter the height of the plane: 0.51
-Enter lower bounds of the rectangle: 0.39 0.39
-Enter upper bounds of the rectangle: 0.81 0.81
-Enter yes for fixed boundary: yes
-Enter yes to install boundary on each side: no
+Enter type of canopy boundary: c
+Enter the height of the plane: 18
+Enter circle center: 6 6
+Enter circle radius: 4.2672
+Enter yes to attach gores to canopy: no
+Enter yes to cut a vent on canopy: yes
+Enter radius of the vent: 0.42672
+Enter yes to attach strings to canopy: yes
+Enter number of chords: 28
+
+Enter initial position of load: 6 6 12.451
+Enter yes to install the strings to RGB: yes
+Enter the body index of the target RGB: 1
+Enter yes to fix the load node: no
+
+Enter type of plane edge: c
+Enter start angle of chord: 6.263185
+Enter rotation angles: 0.0
+
 
 //////////////////////////////////////////////////////////
 //////  Start parameters for spring-mass system   ////////
 //////////////////////////////////////////////////////////
+
+Enter yes to use porosity: yes
+Enter fabric porosity: 0.03
+Enter porosity ghost fluid method: NORMAL_REFLECTION
 
 Enter interior propagator: p
 Enter interior sub step number: 1
 
 Enter yes for collision substepping: yes
 Enter nsub per collision step: 25
-
-Enter yes to use porosity: yes
-Enter fabric porosity: 0.1
-Enter porosity ghost fluid method: NORMAL_REFLECTION
 
 Enter area density of canopy: 0.5
 Enter yes to use total mass: yes
@@ -130,34 +155,24 @@ Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.05
-Enter fabric total mass: 0.0882
-    XXXEnter fabric point massXXX: 0.0001
-Enter fabric thickness: 0.001
+Enter fabric total mass: 28.6026
+Enter fabric thickness: 0.0001
 Enter fabric rounding tolerance: 0.00001
+
+Enter string spring constant: 50000
+Enter string damping constant: 0.01
+Enter string bending stiffness constant: 0.0001
+Enter string friction constant: 0.05
+Enter string total mass: 12.264
+Enter string thickness: 0.004
+Enter string rounding tolerance: 0.000004
 
 Enter strain limit: 0.03
 Enter compressive strain limit: 0.01
 Enter strain rate limit: 0.075
 Enter strain velocity constraint tolerance: 0.25
 
-
 Type yes to perturb the surface: n
-
-Start test velocity function set
-Available velocity functions are:
-        Vortex velocity (R)
-        Double vortex velocity (D)
-        Vertical velocity (V)
-        Toroidal velocity (T)
-        Parabolic velocity (P)
-        Singular velocity (S)
-        Zero velocity (Z)
-        Fixed area velocity (FA)
-        Fixed point velocity (FP)
-        Free fall velocity (FF)
-
-Enter velocity function: Z
-Enter gravity: 0 0 0
 
 //////////////////////////////////////////////////////////
 /////////            Movie Options            ////////////
@@ -175,20 +190,19 @@ Type y to make scalar temperature field movie: y
 Type y to make vector velocity field movie: y
 Type y to make vector vorticity field movie: y
 
-*************************************************
-Enter yes for debugging: yes
+/////////////////////////////
+//////  Debugging   ////////
+///////////////////////////
 
+Enter yes for debugging: yes
+Enter the debugging string: skip_strainvel
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
 Enter the debugging string: cfluid_dt
 
-Enter the debugging string: skip_strainvel
-
+Enter the debugging stringXXX: bendforce_off
 Enter the debugging stringXXX: no_viscflux
 
-Enter the debugging stringXXX: elastic_buffer
-Enter the debugging stringXXX: collision_off
-Enter the debugging stringXXX: trace
-
+Enter the debugging string: Xtrace

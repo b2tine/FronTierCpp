@@ -18,7 +18,7 @@ static void surf_enlargement(SURFACE*,double);
 static void prompt_for_rigid_body_params(int,char*,RG_PARAMS*); 
 static void set_rgbody_params(RG_PARAMS*,HYPER_SURF*);
 static void prompt_for_velocity_func(int,char*,RG_PARAMS*);
-//static void sine_vel_func(Front*,POINTER,double*,double*);
+static void sine_vel_func(Front*,POINTER,double*,double*);
 static void const_vel_translation_func(Front*,POINTER,double*,double*);
 
 
@@ -104,7 +104,10 @@ static void initMultiRigidBodies(
 {
 	int i;
 	char string[100];
-	INTERFACE *cur_intfc = current_interface();
+	
+    INTERFACE *intfc = front->interf;
+    INTERFACE *cur_intfc = current_interface();
+    set_current_interface(intfc);
 
 	for (i = 0; i < num_rgb; ++i)
 	{
@@ -169,8 +172,12 @@ static void init_rigid_sphere(
         }
         else
         {
-            FT_MakeEllipticSurf(front,cen,radii,neg_comp,pos_comp,w_type,2,&surf);
+            FT_MakeEllipticSurf(front,cen,radii,neg_comp,pos_comp,w_type,2,
+                                        &surf);
         }
+
+        //HYPER_SURF* hs = Hyper_surf(surf);
+        //rgb_shape(hs) = SPHERE;
 }	/* end init_rigid_sphere */
 
 static void init_rigid_box(
@@ -221,6 +228,9 @@ static void init_rigid_box(
         {
             FT_MakeCuboidSurf(front,cen,edge,neg_comp,pos_comp,w_type,2,&surf);
         }
+
+        //HYPER_SURF* hs = Hyper_surf(surf);
+        //rgb_shape(hs) = BOX;
 }	/* end init_rigid_box */
 
 static void init_rigid_cylinder(
@@ -280,6 +290,9 @@ static void init_rigid_cylinder(
 	        FT_MakeCylinderSurf(front,cen,radius,height/2,
                     idir,neg_comp,pos_comp,w_type,&surf);
         }
+
+        //HYPER_SURF* hs = Hyper_surf(surf);
+        //rgb_shape(hs) = CYLINDER;
 }	/* end init_rigid_cylinder */
 
 static void init_rigid_human(
@@ -322,6 +335,9 @@ static void init_rigid_human(
 	    if (string[0] == 'y' || string[0] == 'Y')
 	        wave_type(surf) = NEUMANN_BOUNDARY;
 	}
+
+    //HYPER_SURF* hs = Hyper_surf(surf);
+    //rgb_shape(hs) = HUMAN;
 }	/* end init_rigid_human */
 
 static void surf_com_translation(
@@ -427,9 +443,11 @@ void setRigidBodyMotionParams(
             if (wave_type(*s) == MOVABLE_BODY_BOUNDARY ||
                 wave_type(*s) == NEUMANN_BOUNDARY)
             {
+                rgb_params->is_fixed = false;
                 if (wave_type(*s) == NEUMANN_BOUNDARY)
                 {
                     rgb_params->is_fixed = true;
+                    rgb_params->total_mass = HUGE;
                 }
                 prompt_for_rigid_body_params(dim,inname,rgb_params);
                 set_rgbody_params(rgb_params,Hyper_surf(*s));
@@ -454,7 +472,11 @@ static void prompt_for_rigid_body_params(
         if (debugging("rgbody"))
             (void) printf("Enter prompt_for_rigid_body_params()\n");
 
-        if( count == 1 )
+        rgb_params->body_index = count;
+
+        //TODO: Does rgb_params need to know if fluid solver is on or not?
+        //      i.e. is it reguired for FrontPreAdvance()???
+        if (count == 1)
         {
             rgb_params->dim = dim;
             rgb_params->no_fluid = NO;
@@ -468,8 +490,8 @@ static void prompt_for_rigid_body_params(
                     rgb_params->no_fluid = YES;
             }
         }
-
-        rgb_params->body_index = count++;
+        count++;
+        
         if (rgb_params->is_fixed) return;
 
         sprintf(s, "For rigid body %d", rgb_params->body_index);
@@ -695,7 +717,7 @@ static void prompt_for_rigid_body_params(
             (void) fseek(infile,idpos,SEEK_SET);
         }
 
-        //TODO: FREE_MOTION requires inpute val moment_of_inertial?
+        //TODO: FREE_MOTION requires input val moment_of_inertial?
         if (rgb_params->motion_type == FREE_MOTION ||
             rgb_params->motion_type == ROTATION)
         {
@@ -757,21 +779,15 @@ static void prompt_for_rigid_body_params(
             (void) fseek(infile,idpos,SEEK_SET);
         }
 
-        //TODO: 
-        //      NOTE: currently not being used. Still prototyping
-        //
-        //      "Enter yes to use slip wall boundary condition:"
-        rgb_params->no_slip = YES;
+        rgb_params->no_slip = NO;
         if (CursorAfterStringOpt(infile,
             "Type yes to use no-slip boundary condition:"))
         {
                 fscanf(infile,"%s",s);
                 (void) printf("%s\n",s);
-                //if (s[0] == 'y' || s[0] == 'Y')
-                if (s[0] == 'n' || s[0] == 'N')
+                if (s[0] == 'y' || s[0] == 'y')
                 {
-                    rgb_params->no_slip = NO;
-                    //rgb_params->no_slip = YES;
+                    rgb_params->no_slip = YES;
                 }
                 (void) fseek(infile,idpos,SEEK_SET);
         }
@@ -786,37 +802,40 @@ static void set_rgbody_params(
         RG_PARAMS* rg_params,
         HYPER_SURF* hs)
 {
-        int i,dim = rg_params->dim;
-	    body_index(hs) = rg_params->body_index;
-        total_mass(hs) = rg_params->total_mass;
-        mom_inertial(hs) = rg_params->moment_of_inertial;
-        angular_velo(hs) = rg_params->angular_velo;
-        motion_type(hs) = rg_params->motion_type;
-        vparams(hs) = rg_params->vparams;
-        vel_func(hs) = rg_params->vel_func;
-        surface_tension(hs) = 0.0;
-        
-        for (i = 0; i < dim; ++i)
-        {
-            center_of_mass(hs)[i] = rg_params->center_of_mass[i];
-            center_of_mass_velo(hs)[i] = rg_params->cen_of_mass_velo[i];
-            rotation_center(hs)[i] = rg_params->rotation_cen[i];
-            translation_dir(hs)[i] = rg_params->translation_dir[i];
-            if (dim == 3)
-            {
-                rotation_direction(hs)[i] = rg_params->rotation_dir[i];
-                p_mom_inertial(hs)[i] = rg_params->p_moment_of_inertial[i];
-                p_angular_velo(hs)[i] = rg_params->p_angular_velo[i];
-            }
-        }
-        
+    body_index(hs) = rg_params->body_index;
+    total_mass(hs) = rg_params->total_mass;
+    
+    if (rg_params->is_fixed) return;
+
+    mom_inertial(hs) = rg_params->moment_of_inertial;
+    angular_velo(hs) = rg_params->angular_velo;
+    motion_type(hs) = rg_params->motion_type;
+    vparams(hs) = rg_params->vparams;
+    vel_func(hs) = rg_params->vel_func;
+    surface_tension(hs) = 0.0;
+    
+    int dim = rg_params->dim;
+    for (int i = 0; i < dim; ++i)
+    {
+        center_of_mass(hs)[i] = rg_params->center_of_mass[i];
+        center_of_mass_velo(hs)[i] = rg_params->cen_of_mass_velo[i];
+        rotation_center(hs)[i] = rg_params->rotation_cen[i];
+        translation_dir(hs)[i] = rg_params->translation_dir[i];
         if (dim == 3)
         {
-            for (i = 0; i < 4; i++)
-                euler_params(hs)[i] = rg_params->euler_params[i];
+            rotation_direction(hs)[i] = rg_params->rotation_dir[i];
+            p_mom_inertial(hs)[i] = rg_params->p_moment_of_inertial[i];
+            p_angular_velo(hs)[i] = rg_params->p_angular_velo[i];
         }
+    }
+    
+    if (dim == 3)
+    {
+        for (int i = 0; i < 4; i++)
+            euler_params(hs)[i] = rg_params->euler_params[i];
+    }
 
-        no_slip(hs) = rg_params->no_slip;
+    no_slip(hs) = rg_params->no_slip;
 }       /* end set_rgbody_params */
 
 /*
@@ -853,17 +872,15 @@ extern void resetRigidBodyVelocity(Front *front)
     FILE *infile = fopen(InName(front),"r");
     char string[100];
 
-    if (CursorAfterStringOpt(infile,"Enter yes to reset rigid body velocity: "))
+    if (CursorAfterStringOpt(infile,"Enter yes to reset rigid body velocity:"))
     {
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
-        if (string[0] == 'n' || string[0] == 'n')
-        {
-            fclose(infile);
-            return;
-        }
     }
     fclose(infile);
+    
+    if (string[0] != 'Y' || string[0] != 'y') return;
+
 
     SURFACE **s;
     for (s = front->interf->surfaces; s && *s; ++s)
@@ -875,6 +892,8 @@ extern void resetRigidBodyVelocity(Front *front)
             {
                 center_of_mass_velo(hs)[i] = 0.0;
             }
+            //TODO: Do we need to loop over the surface tris and
+            //      zero out the points too? See resetFrontVelocity().
         }
     }
 }
@@ -1024,5 +1043,4 @@ static void const_vel_translation_func(
 
 }
 */
-
 

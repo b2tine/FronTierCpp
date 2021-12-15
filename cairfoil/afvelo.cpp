@@ -532,7 +532,7 @@ void setFabricParams(Front* front)
 
 	if (dim == 3 && af_params->is_parachute_system == YES)
 	{
-	    af_params->m_g = 0.0;
+	    af_params->m_g = af_params->m_s;
         if (af_params->attach_gores == YES)
 	    {
             af_params->gores_present = true;
