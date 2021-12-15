@@ -330,6 +330,8 @@ void setFabricParams(Front* front)
                         eqn_params->porous_coeff[0] = af_params->porous_coeff[0];
                         eqn_params->porous_coeff[1] = af_params->porous_coeff[1];
                     }
+                
+                    eqn_params->poro_scheme = af_params->poro_scheme;
                 }
             }
             

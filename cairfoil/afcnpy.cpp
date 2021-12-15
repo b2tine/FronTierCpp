@@ -3164,6 +3164,11 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
         if (hsbdry_type(*c) != FIXED_HSBDRY &&
             hsbdry_type(*c) != STRING_HSBDRY) continue;
 
+        b = (*c)->first;
+        STATE* sl = (STATE*)left_state(b->start);
+        if (hsbdry_type(*c) == FIXED_HSBDRY)
+            sl->is_fixed = true;
+        
         for (b = (*c)->first; b != (*c)->last; b = b->next)
         {
             STATE* sl = (STATE*)left_state(b->end);

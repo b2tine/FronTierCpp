@@ -1,0 +1,193 @@
+Domain limit in 0-th dimension: 0 1.2
+Domain limit in 1-th dimension: 0 1.2
+Domain limit in 2-th dimension: 0 1.2
+
+Computational grid: 30 30 30
+
+Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+For lower boundary in 0-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+For upper boundary in 0-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+For lower boundary in 1-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+For upper boundary in 1-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 25
+    XXXEnter velocityXXX: 0 0 125
+Enter pressure: 175000
+Enter density: 2.675
+For upper boundary in 2-th dimension
+
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+
+//////////////////////////////////////////////////////////
+////////  Start test time control parameters  ////////////
+//////////////////////////////////////////////////////////
+
+Max time: 2.0
+Max step: 5000
+Print interval: 0.001
+Movie frame interval: 0.0001
+CFL factor: 1.0
+    XXXCFL factorXXX: 0.75
+
+//////////////////////////////////////////////////////////
+///////////  Start parameters for cFluid  ////////////////
+//////////////////////////////////////////////////////////
+
+Enter problem type: CHANNEL_FLOW
+Enter numerical scheme for interior solver: WENO_4th_ORDER
+Enter order of point propagator: 4
+
+Enter gamma, pinf, einf of ambient air: 1.4 0 0
+Enter density and pressure of ambient air: 1.29 110000
+
+Enter the specific gas constant: 287.058
+Enter the Prandtl number: 0.71
+
+Enter the reference molecular viscosity: 1.716e-05
+Enter the reference temperature: 273.0
+Enter the effective temperature: 111.0
+
+Enter gravity: 0 0 -9.8
+
+Type yes to track the interface: no
+
+Entering yes to turn off fluid solver: no
+
+/////////////////////////////////////////////////////
+
+Enter yes to use eddy viscosity: yes
+Enter eddy viscosity model: Vreman
+Enter model constant: 0.025
+
+Enter the turbulent Prandtl number: 0.9
+
+//////////////////////////////////////////////////////////
+/////////            Movie Options            ////////////
+//////////////////////////////////////////////////////////
+
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+Type y to make xy cross section movie: n
+
+Type y to make scalar density field movie: y
+Type y to make scalar pressure field movie: y
+Type y to make scalar viscosity field movie: y
+Type y to make scalar temperature field movie: y
+
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
+
+
+//////////////////////////////////////////////////////////
+/////////     Start parameters for modules    ////////////
+//////////////////////////////////////////////////////////
+
+Enter yes to add rigid body: n
+Enter the number of rigid bodies: 0
+
+Enter yes for parachute system: no
+Enter the number of fabric optimization rounds: 0
+
+Enter number of canopy surfaces: 1
+Enter yes for complex connection: n
+
+Available canopy surface types are:
+        FLAT (F)
+        PARABOLIC (P)
+Enter canopy surface type: F
+
+Available types of canopy boundaries are:
+        Circular (C)
+        Rectangular (R)
+        Elliptic (E)
+        Cross (X)
+        Circular with belt (S)
+Enter type of canopy boundary: R
+Enter the height of the plane: 0.51
+Enter lower bounds of the rectangle: 0.39 0.39
+Enter upper bounds of the rectangle: 0.81 0.81
+Enter yes for fixed boundary: yes
+Enter yes to install boundary on each side: no
+
+//////////////////////////////////////////////////////////
+//////  Start parameters for spring-mass system   ////////
+//////////////////////////////////////////////////////////
+
+Enter interior propagator: p
+Enter interior sub step number: 1
+
+Enter yes for collision substepping: yes
+Enter nsub per collision step: 25
+
+Enter yes to use porosity: yes
+Enter fabric porosity: 0.1
+Enter porosity ghost fluid method: NORMAL_REFLECTION
+
+Enter area density of canopy: 0.5
+Enter yes to use total mass: yes
+
+Enter fabric spring constant: 5000
+Enter fabric damping constant: 0.01
+Enter fabric bending stiffness constant: 0.0001
+Enter fabric bending damping constant: 0.0000001
+Enter fabric friction constant: 0.05
+Enter fabric total mass: 0.0882
+    XXXEnter fabric point massXXX: 0.0001
+Enter fabric thickness: 0.001
+Enter fabric rounding tolerance: 0.00001
+
+Enter strain limit: 0.03
+Enter compressive strain limit: 0.01
+Enter strain rate limit: 0.075
+Enter strain velocity constraint tolerance: 0.25
+
+
+Type yes to perturb the surface: n
+
+Start test velocity function set
+Available velocity functions are:
+        Vortex velocity (R)
+        Double vortex velocity (D)
+        Vertical velocity (V)
+        Toroidal velocity (T)
+        Parabolic velocity (P)
+        Singular velocity (S)
+        Zero velocity (Z)
+        Fixed area velocity (FA)
+        Fixed point velocity (FP)
+        Free fall velocity (FF)
+
+Enter velocity function: Z
+Enter gravity: 0 0 -9.8
+
+*************************************************
+Enter yes for debugging: yes
+
+Enter the debugging string: proximity
+Enter the debugging string: collision
+Enter the debugging string: strain_limiting
+Enter the debugging string: max_speed
+Enter the debugging string: cfluid_dt
+
+Enter the debugging string: skip_strainvel
+
+Enter the debugging stringXXX: no_viscflux
+
+Enter the debugging stringXXX: elastic_buffer
+Enter the debugging stringXXX: collision_off
+Enter the debugging stringXXX: trace
+

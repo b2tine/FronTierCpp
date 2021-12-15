@@ -686,22 +686,23 @@ void G_CARTESIAN::addErgunEquationSourceTerms(
         int index = d_index(icoords,top_gmax,dim);
         if (!gas_comp(top_comp[index])) continue;
         
-
-        //auto gradP = computeErgunEquationPressureJump(m_vst,icoords,alpha,beta);
         double alpha = eqn_params->porous_coeff[0];
         double beta = eqn_params->porous_coeff[1];
         std::vector<double> gradP = computeErgunEquationPressureJump(m_vst,icoords,alpha,beta);
         
         for (int l = 0; l < dim; ++l)
         {
-            m_flux->momn_flux[l][index] += delta_t*m_vst->dens[index]*gradP[l];
-            m_flux->engy_flux[index] += delta_t*m_vst->momn[l][index]*gradP[l];
+            m_flux->momn_flux[l][index] += delta_t*gradP[l];
+            m_flux->engy_flux[index] += 
+                delta_t*m_vst->momn[l][index]/m_vst->dens[index]*gradP[l];
+            //m_flux->engy_flux[index] += delta_t*m_vst->vel[l][index]*gradP[l];
         }
     }
 }
 
-//TODO: THE DELTA_P TERM NEEDS TO BE MODIFIED FOR COMPRESSIBLE ERGUN EQN,
-//      AND THE SOURCE TERM IS LIKELY NOT BEING APPLIED CORRECTLY RIGHT NOW
+//TODO: PUT THIS LOGIC INSIDE A FUNCTION IN CFABRIC_CARTESIAN::setElasticStates()
+//
+//      ALSO FIGURE OUT CORRECT WAY TO ADD AS SOURCE TERM
 std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
         SWEEP* m_vst,
         int* icoords,
@@ -711,32 +712,36 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
     int index_nb;
     int top_gmin[MAXD], ipn[MAXD];
     double crx_coords[MAXD], coords[MAXD], grad_phi[MAXD];
-    double vel_intfc[MAXD], vel_rel[MAXD], nor[MAXD],vec[MAXD];
+    double vel_intfc[MAXD], vel_rel[MAXD], nor[MAXD], vec[MAXD];
     double Un = 0.0, ans = 0.0, side = 0.0, d_p = 0.0;
 
     GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
     POINTER intfc_state;
-    HYPER_SURF *hs;
-    INTERFACE *grid_intfc = front->grid_intfc;
-    RECT_GRID *rgr = computational_grid(front->interf);
-    POINTER state;
+    HYPER_SURF* hs;
+    HYPER_SURF_ELEMENT* hse;
+    INTERFACE* grid_intfc = front->grid_intfc;
+    RECT_GRID* rgr = computational_grid(front->interf);
     bool is_intfc = false;
+
+    POINTER sl, sr;
+    //POINTER state;
+
+    std::vector<double> gradP = {0,0,0};
 
     top_gmin[0] = top_gmin[1] = top_gmin[2] = 0;
     for (int i = 0; i < dim; i++)
         coords[i] = top_L[i] + icoords[i]*top_h[i];
-
-    int index = d_index(icoords,top_gmax,dim);
     
-    double dens_fluid = m_vst->dens[index];
+    int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
 
-    std::vector<double> gradP = {0,0,0};
+    double dens_fluid = m_vst->dens[index];
 
     int max_nb = 6;
     for (int nb = 0; nb < max_nb; nb++)
     {
         is_intfc = FT_NormalAtGridCrossing(front,icoords,dir[nb],
-                top_comp[index],nor,&hs,crx_coords);
+                comp,nor,&hs,crx_coords);
 
         if (is_intfc && is_bdry(Surface_of_hs(hs))) continue;
         if (is_intfc && (wave_type(hs) == ELASTIC_BOUNDARY))
@@ -744,31 +749,38 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
             next_ip_in_dir(icoords,dir[nb],ipn,top_gmin,top_gmax);
             index_nb = d_index(ipn,top_gmax,dim);
 
-            /*get relative velocity*/
+            /*
+            //get relative velocity
             FT_StateStructAtGridCrossing(front,grid_intfc,icoords,dir[nb],
-                            top_comp[index],&state,&hs,crx_coords);
+                            comp,&state,&hs,crx_coords);
+            */
 
+            //get relative velocity
+            is_intfc = FT_StateStructsAtGridCrossing(front,grid_intfc,icoords,
+                    dir[nb],&sl,&sr,&hs,&hse,crx_coords);
+
+            if (!is_intfc) continue;
+            
             double vel_fluid[MAXD] = {0.0};
             double momn_fluid[MAXD] = {0.0};
+            
             for (int k = 0; k < dim; k++)
             {
+                /*
                 if (state)
                     vel_intfc[k] = (*getStateVel[k])(state);
                 else
                     vel_intfc[k] = 0.0;
-
-                /*
-                FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,
-                                         m_vst->vel[k],getStateVel[k],
-                                         &vel_fluid[k],NULL);
                 */
+
+                vel_intfc[k] = (*getStateVel[k])(sl);
 
                 FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,
                                          m_vst->momn[k],getStateMom[k],
-                                         &momn_fluid[k],NULL);
+                                         &momn_fluid[k],nullptr);
                 
                 vel_fluid[k] = momn_fluid[k]/dens_fluid;
-
+                
                 vel_rel[k] = vel_fluid[k] - vel_intfc[k];
             }
 
@@ -783,24 +795,32 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
             //NOTE: alpha and beta include thickness factor
             d_p = (alpha + fabs(Un)*beta)*Un;
 
-            //TODO: compressible ergun: 2*p_out/(p_out + p_in)*d_p
-
+            
             for (int i = 0; i < dim; i++)
                 vec[i] = coords[i] - crx_coords[i];
 
             side = Dotd(nor,vec,dim);
+            
+            //TODO: What is correct way to add as source term?
 
             // modify pressure gradient
-            if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1))
+            //if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1))
+            if (side <= 0)
             {
-                gradP[nb/2] -= 0.5*d_p/top_h[nb/2];
+                double Pin = getStatePres(sl);
+                double Pout = getStatePres(sr);
+                gradP[nb/2] -= 2.0*d_p*Pout/(Pin + Pout);
+                //gradP[nb/2] -= 0.5*d_p/top_h[nb/2];
             }
-            else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0))
+            //else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0))
+            else if (side  > 0)
             {
-                gradP[nb/2] += 0.5*d_p/top_h[nb/2];
+                double Pin = getStatePres(sr);
+                double Pout = getStatePres(sl);
+                gradP[nb/2] += 2.0*d_p*Pout/(Pin + Pout);
+                //gradP[nb/2] += 0.5*d_p/top_h[nb/2];
             }
-
-
+            
             if (debugging("pressure_drop"))
             {
                 printf("\ncomputeFieldPointPressureJump()\n");
@@ -815,9 +835,6 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
 
     return gradP;
 }
-
-
-
 
 void G_CARTESIAN::solve(double dt)
 {

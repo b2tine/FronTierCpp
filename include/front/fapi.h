@@ -528,14 +528,35 @@ extern "C" {
     \param crx_coords @b out	Crossing coordinates.
  */
 
-   IMPORT  boolean FT_StateStructAtGridCrossing(Front *front ,
+   IMPORT  boolean FT_StateStructAtGridCrossing(Front *front,
 				INTERFACE *grid_intfc,
    				int *icoords,
-   				GRID_DIRECTION  dir,
+   				GRID_DIRECTION dir,
    				int  comp,
    				POINTER *state,
    				HYPER_SURF **hs,
    				double *crx_coords);
+
+/*TMP will move when mature*/
+IMPORT  boolean FT_StateStructAtGridCrossing2(Front *front,
+                int *icoords,
+                GRID_DIRECTION dir,
+                int  comp,
+                POINTER *state,
+                HYPER_SURF **hs,
+                HYPER_SURF_ELEMENT **hse,
+                double *crx_coords);
+
+/*TMP will move when mature*/
+IMPORT  boolean FT_StateStructsAtGridCrossing(Front *front,
+				INTERFACE *grid_intfc,
+                int *icoords,
+                GRID_DIRECTION dir,
+                POINTER *sl,
+                POINTER *sr,
+                HYPER_SURF **hs,
+                HYPER_SURF_ELEMENT **hse,
+                double *crx_coords);
 
 /*! \fn boolean FT_StateVarAtGridCrossing(Front *front, INTERFACE *grid_intfc, int *icoords, GRID_DIRECTION dir, int comp, double (*state_func)(Locstate), double *ans, double *crx_coords)
  *  \ingroup GRIDINTFC
@@ -1322,16 +1343,6 @@ extern "C" {
     \param ... @b Pointers to the addresses of these items.
  */
    IMPORT  void FT_FreeThese(int n,...);
-
-/*TMP will move when mature*/
-IMPORT  boolean FT_StateStructAtGridCrossing2(Front *front ,
-                                int *icoords ,
-                                GRID_DIRECTION  dir ,
-                                int  comp ,
-                                POINTER *state ,
-                                HYPER_SURF **hs ,
-                                HYPER_SURF_ELEMENT **hse ,
-                                double *crx_coords );
 
 /*! \fn double FT_ComputeTotalVolumeFraction(Front *front, COMPONENT comp_of_vol)
  *  \ingroup GRIDINTFC

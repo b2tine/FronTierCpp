@@ -830,12 +830,14 @@ EXPORT	boolean FT_NormalAtGridCrossing(
 		len = sqr_norm(t);
 		len = sqrt(len);
 		tnor = Tri_normal(t);
-	    	for (i = 0; i < dim; ++i)
+	    	
+        for (i = 0; i < dim; ++i)
 		    nor[i] = tnor[i]/len;
-		if (comp == negative_component(*hs))
+		
+        if (comp == negative_component(*hs))
 		{
-	    	    for (i = 0; i < dim; ++i)
-			nor[i] *= -1.0;
+            for (i = 0; i < dim; ++i)
+			    nor[i] *= -1.0;
 		}
 		break;
 	    default: 
@@ -858,13 +860,10 @@ EXPORT	boolean FT_StateStructAtGridCrossing(
 	HYPER_SURF **hs,
 	double *crx_coords)
 {
-        int j;
-	int crx_index;
-	CRXING *crxs[MAX_NUM_CRX];
-	int i,nc,dim = grid_intfc->dim;
+	static CRXING *crxs[MAX_NUM_CRX];
 
-	crx_index = 0;
-	nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
+	int crx_index = 0;
+	int nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
 	if (nc == 0) return NO;
 
 	*hs = crxs[crx_index]->hs;
@@ -879,9 +878,13 @@ EXPORT	boolean FT_StateStructAtGridCrossing(
 			"component does not match\n");
 	    return NO;
 	}
-	for (i = 0; i < dim; ++i)
+	
+	int dim = grid_intfc->dim;
+
+    for (int i = 0; i < dim; ++i)
 	    crx_coords[i] = Coords(crxs[crx_index]->pt)[i];
-	return YES;
+	
+    return YES;
 }	/* end FT_StateStructAtGridCrossing */
 
 EXPORT	boolean FT_StateStructAtGridCrossing2(
@@ -894,14 +897,11 @@ EXPORT	boolean FT_StateStructAtGridCrossing2(
 	HYPER_SURF_ELEMENT **hse,
 	double *crx_coords)
 {
-        int j;
-	int crx_index;
 	INTERFACE *grid_intfc = front->grid_intfc;
 	static CRXING *crxs[MAX_NUM_CRX];
-	int i,nc,dim = grid_intfc->dim;
 
-	crx_index = 0;
-	nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
+	int crx_index = 0;
+	int nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
 	if (nc == 0) return NO;
 
 	*hs = crxs[crx_index]->hs;
@@ -916,9 +916,13 @@ EXPORT	boolean FT_StateStructAtGridCrossing2(
 			"component does not match\n");
 	    return NO;
 	}
-	for (i = 0; i < dim; ++i)
+	
+	int dim = grid_intfc->dim;
+
+    for (int i = 0; i < dim; ++i)
 	    crx_coords[i] = Coords(crxs[crx_index]->pt)[i];
-	if (dim == 2)
+	
+    if (dim == 2)
 	{
 	    *hse = Hyper_surf_element(crxs[crx_index]->bond);
 	}
@@ -926,6 +930,60 @@ EXPORT	boolean FT_StateStructAtGridCrossing2(
 	{
 	    *hse = Hyper_surf_element(crxs[crx_index]->tri);
 	}
+
+	return YES;
+}	/* end FT_StateStructAtGridCrossing2 */
+
+EXPORT	boolean FT_StateStructsAtGridCrossing(
+	Front *front,
+	INTERFACE *grid_intfc,
+	int *icoords,
+	GRID_DIRECTION dir,
+	Locstate *sl,
+	Locstate *sr,
+	HYPER_SURF **hs,
+	HYPER_SURF_ELEMENT **hse,
+	double *crx_coords)
+{
+	static CRXING *crxs[MAX_NUM_CRX];
+
+	int crx_index = 0;
+	int nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
+	if (nc == 0) return NO;
+
+	*hs = crxs[crx_index]->hs;
+
+    *sl = left_state(crxs[crx_index]->pt);
+    *sr = right_state(crxs[crx_index]->pt);
+    
+    /*
+	if (comp == negative_component(*hs))
+	    *state = left_state(crxs[crx_index]->pt);
+	else if (comp == positive_component(*hs))
+	    *state = right_state(crxs[crx_index]->pt);
+	else
+	{
+	    *state = NULL;
+	    screen("ERROR: In FT_StateVarAtGridCrossing(),"
+			"component does not match\n");
+	    return NO;
+	}
+    */
+	
+	int dim = grid_intfc->dim;
+
+    for (int i = 0; i < dim; ++i)
+	    crx_coords[i] = Coords(crxs[crx_index]->pt)[i];
+	
+    if (dim == 2)
+	{
+	    *hse = Hyper_surf_element(crxs[crx_index]->bond);
+	}
+	else if (dim == 3)
+	{
+	    *hse = Hyper_surf_element(crxs[crx_index]->tri);
+	}
+
 	return YES;
 }	/* end FT_StateStructAtGridCrossing2 */
 

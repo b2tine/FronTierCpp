@@ -211,6 +211,20 @@ static void promptForDirichletBdryState(
             bstate_index(hs[i]) = bstate_index(hs[0]);
         }
         break;
+    
+    /*
+    //TODO:
+    case 't':			// Turbulent Inlet state
+	case 'T':
+	    get_turbulent_inlet_bdry_params(dim,infile,&func_params);
+	    FT_InsertDirichletBoundary(front,cF_turbulentInletBoundaryState,
+			"cF_turbulentInletBoundaryState",func_params,NULL,hs[0],i_hs);
+	    for (i = 1; i < nhs; ++i)
+        {
+            bstate_index(hs[i]) = bstate_index(hs[0]);
+        }
+	    break;
+    */
 
     case 'f':			// Flow through state
 	case 'F':
@@ -228,7 +242,9 @@ static void promptForDirichletBdryState(
 	    FT_InsertDirichletBoundary(front,cF_variableBoundaryState,
 			"cF_variableBoundaryState",func_params,NULL,hs[0],i_hs);
 	    for (i = 1; i < nhs; ++i)
-		bstate_index(hs[i]) = bstate_index(hs[0]);
+        {
+            bstate_index(hs[i]) = bstate_index(hs[0]);
+        }
 	    break;
 	}
 } 	/* end  promptForDirichletBdryState */
@@ -1366,14 +1382,14 @@ static void dirichlet_point_propagate(
 
 	    if (debugging("dirichlet_bdry"))
 	    {
-            printf("Preset boundary state %s:\n", 
-                eqn_params->perturb_const_inlet_bdry == false ?
-                    "\b" : "(With Velocity Perturbation)");
+            printf("Dirichlet boundary state:\n");
             
             print_general_vector("Velocity: ",newst->vel,dim,"\n");
             printf("Density: %f\n",newst->dens);
             printf("Energy: %f\n",newst->engy);
             printf("Pressure: %f\n",newst->pres);
+            printf("Temperature: %f\n",newst->temp);
+            printf("Viscosity: %f\n",newst->mu);
             printf("Vorticity: %f\n",newst->vort);
 	    }
 	}
@@ -1478,6 +1494,8 @@ static  void contact_point_propagate(
 	newst->dim = dim;
 	newst->eos = &eos[positive_component(oldhs)];
 	
+    //TODO: Temperature, Viscosity
+
     FT_NearestRectGridVarInRange(front,positive_component(oldhs),p0,
 			m_dens,2,&default_var);
 	FT_IntrpStateVarAtCoords(front,positive_component(oldhs),p0,

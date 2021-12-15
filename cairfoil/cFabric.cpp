@@ -539,29 +539,34 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                 case ELASTIC_BOUNDARY:
                     if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
                     {
-                        vst->dens[nrad-i] = m_vst->dens[index];
-                        vst->engy[nrad-i] = m_vst->engy[index];
-                        vst->pres[nrad-i] = m_vst->pres[index];
+                        //TODO: Implement in setElasticStates and use the
+                        //      logic of addErgunEquationSourceTerms()
+                        for (k = i; k <= nrad; ++k)
+                        {
+                            vst->dens[nrad-k] = m_vst->dens[index];
+                            vst->engy[nrad-k] = m_vst->engy[index];
+                            vst->pres[nrad-k] = m_vst->pres[index];
 
-                        for (j = 0; j < 3; j++)
-                            vst->momn[j][nrad-i] = 0.0;
-                        
-                        if (dim == 1)
-                        {
-                            vst->momn[0][nrad-i] = m_vst->momn[0][index];
-                        }
-                        else if (dim == 2)
-                        {
-                            for(j = 0; j < 2; j++)
-                            {
-                                vst->momn[j][nrad-i] = m_vst->momn[ind2[idir][j]][index];
-                            }
-                        }
-                        else if (dim == 3)
-                        {
                             for (j = 0; j < 3; j++)
+                                vst->momn[j][nrad-k] = 0.0;
+                            
+                            if (dim == 1)
                             {
-                                vst->momn[j][nrad-i] = m_vst->momn[ind3[idir][j]][index];
+                                vst->momn[0][nrad-k] = m_vst->momn[0][index];
+                            }
+                            else if (dim == 2)
+                            {
+                                for(j = 0; j < 2; j++)
+                                {
+                                    vst->momn[j][nrad-k] = m_vst->momn[ind2[idir][j]][index];
+                                }
+                            }
+                            else if (dim == 3)
+                            {
+                                for (j = 0; j < 3; j++)
+                                {
+                                    vst->momn[j][nrad-k] = m_vst->momn[ind3[idir][j]][index];
+                                }
                             }
                         }
                     }
@@ -764,29 +769,34 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                 case ELASTIC_BOUNDARY:
                     if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
                     {
-                        vst->dens[n+nrad+i-1] = m_vst->dens[index];
-                        vst->engy[n+nrad+i-1] = m_vst->engy[index];
-                        vst->pres[n+nrad+i-1] = m_vst->pres[index];
-                        
-                        for (j = 0; j < 3; j++)
-                            vst->momn[j][n+nrad+i-1] = 0.0;
-                        
-                        if (dim == 1)
+                        //TODO: Implement in setElasticStates and use the
+                        //      logic of addErgunEquationSourceTerms()
+                        for (k = i; k <= nrad; ++k)
                         {
-                            vst->momn[0][n+nrad+i-1] = m_vst->momn[0][index];
-                        }
-                        else if (dim == 2)
-                        {
-                            for(j = 0; j < 2; j++)
-                            {
-                                vst->momn[j][n+nrad+i-1] = m_vst->momn[ind2[idir][j]][index];
-                            }
-                        }
-                        else if (dim == 3)
-                        {
+                            vst->dens[n+nrad+k-1] = m_vst->dens[index];
+                            vst->engy[n+nrad+k-1] = m_vst->engy[index];
+                            vst->pres[n+nrad+k-1] = m_vst->pres[index];
+                            
                             for (j = 0; j < 3; j++)
+                                vst->momn[j][n+nrad+k-1] = 0.0;
+                            
+                            if (dim == 1)
                             {
-                                vst->momn[j][n+nrad+i-1] = m_vst->momn[ind3[idir][j]][index];
+                                vst->momn[0][n+nrad+k-1] = m_vst->momn[0][index];
+                            }
+                            else if (dim == 2)
+                            {
+                                for(j = 0; j < 2; j++)
+                                {
+                                    vst->momn[j][n+nrad+k-1] = m_vst->momn[ind2[idir][j]][index];
+                                }
+                            }
+                            else if (dim == 3)
+                            {
+                                for (j = 0; j < 3; j++)
+                                {
+                                    vst->momn[j][n+nrad+k-1] = m_vst->momn[ind3[idir][j]][index];
+                                }
                             }
                         }
                     }
