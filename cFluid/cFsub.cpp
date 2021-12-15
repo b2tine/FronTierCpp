@@ -154,7 +154,7 @@ static void promptForDirichletBdryState(
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	char s[100];
 	COMPONENT comp;
-	int i,k,dim = front->rect_grid->dim;
+	int dim = front->rect_grid->dim;
 	POINTER func_params;
 
 	FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
@@ -164,89 +164,148 @@ static void promptForDirichletBdryState(
 	fscanf(infile,"%s",s);
 	(void) printf("%s\n",s);
 	switch (s[0])
-	{
-	case 'c':			// Constant state
-	case 'C':
-	    comp = gas_comp(positive_component(hs[0])) ? 
-				positive_component(hs[0]) : negative_component(hs[0]);
-	    
-        state->eos = &(eqn_params->eos[comp]);
-
-	    CursorAfterString(infile,"Enter velocity:");
-	    for (k = 0; k < dim; ++k)
-	    {
-            fscanf(infile,"%lf",&state->vel[k]);
-            (void) printf("%f ",state->vel[k]);
-	    }
-	    (void) printf("\n");
-
-	    CursorAfterString(infile,"Enter pressure:");
-	    fscanf(infile,"%lf",&state->pres);
-	    (void) printf("%f\n",state->pres);
-
-	    CursorAfterString(infile,"Enter density:");
-	    fscanf(infile,"%lf",&state->dens);
-	    (void) printf("%f\n",state->dens);
-
-	    for (k = 0; k < dim; ++k)
+    {
+        case 'c':			// Constant state
+        case 'C':
         {
-            state->momn[k] = state->dens*state->vel[k];
-        }
-        state->engy = EosEnergy(state);
-        state->temp = EosTemperature(state);
-        state->mu = EosViscosity(state);
+            
+            comp = gas_comp(positive_component(hs[0])) ? 
+                    positive_component(hs[0]) : negative_component(hs[0]);
+            
+            bool set_inlet_mach_number = false;
+            if (CursorAfterStringOpt(infile,"Enter yes to set mach number at inlet:"))
+            {
+                char string[25];
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                {
+                    set_inlet_mach_number = true;
+                }
+            }
 
-        printf("Constant State Inlet Temperature: %f\n",state->temp);
-        printf("Constant State Inlet Viscosity: %f\n",state->mu);
+            if (set_inlet_mach_number)
+            {
+                /*
+                CursorAfterString(infile,"Enter pressure:");
+                fscanf(infile,"%lf",&state->pres);
+                (void) printf("%f\n",state->pres);
+                */
 
+                CursorAfterString(infile,"Enter Mach number of shock:");
+                fscanf(infile,"%lf",&eqn_params->Mach_number);
+                (void) printf("%f\n",eqn_params->Mach_number);
 
-        ////////////////////////////////////
+                CursorAfterString(infile,"Enter idir of shock:");
+                fscanf(infile,"%d",&eqn_params->idir);
+                (void) printf("%d\n",eqn_params->idir);
+
+                CursorAfterString(infile,"Enter direction of shock:");
+                fscanf(infile,"%d",&eqn_params->shock_side);
+                (void) printf("%d\n",eqn_params->shock_side);
+
+                getChannelInletState(state,eqn_params,comp);
+
+                printf("\nShock Speed: %f\n\n",eqn_params->shock_speed);
+                
+                printf("Inlet Density: %f\n",state->dens);
+                printf("Inlet Velocity:");
+                for (int i = 0; i < dim; ++i)
+                {
+                    printf(" %f", state->vel[i]);
+                }
+                printf("\n");
+                printf("Inlet Pressure: %f\n",state->pres);
+                printf("Inlet Temperature: %f\n",state->temp);
+                printf("Inlet Viscosity: %g\n",state->mu);
+                printf("Inlet Energy: %f\n",state->engy);
+            }
+            else
+            {
+                state->eos = &(eqn_params->eos[comp]);
+
+                CursorAfterString(infile,"Enter velocity:");
+                for (int k = 0; k < dim; ++k)
+                {
+                    fscanf(infile,"%lf",&state->vel[k]);
+                    (void) printf("%f ",state->vel[k]);
+                }
+                (void) printf("\n");
+
+                CursorAfterString(infile,"Enter pressure:");
+                fscanf(infile,"%lf",&state->pres);
+                (void) printf("%f\n",state->pres);
+
+                CursorAfterString(infile,"Enter density:");
+                fscanf(infile,"%lf",&state->dens);
+                (void) printf("%f\n",state->dens);
+
+                for (int k = 0; k < dim; ++k)
+                {
+                    state->momn[k] = state->dens*state->vel[k];
+                }
+                state->engy = EosEnergy(state);
+                state->temp = EosTemperature(state);
+                state->mu = EosViscosity(state);
+                
+                printf("Constant State Inlet Temperature: %f\n",state->temp);
+                printf("Constant State Inlet Viscosity: %f\n",state->mu);
+            }
+            printf("\n");
+            
+            ////////////////////////////////////
             state->k_turb = 0.0;
-        ////////////////////////////////////
+            ////////////////////////////////////
 
-        FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,*hs,i_hs);
 
-	    for (i = 1; i < nhs; ++i)
-        {
-            bstate_index(hs[i]) = bstate_index(hs[0]);
+            FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,*hs,i_hs);
+
+            for (int i = 1; i < nhs; ++i)
+            {
+                bstate_index(hs[i]) = bstate_index(hs[0]);
+            }
         }
         break;
-    
-    /*
-    //TODO:
-    case 't':			// Turbulent Inlet state
-	case 'T':
-	    get_turbulent_inlet_bdry_params(dim,infile,&func_params);
-	    FT_InsertDirichletBoundary(front,cF_turbulentInletBoundaryState,
-			"cF_turbulentInletBoundaryState",func_params,NULL,hs[0],i_hs);
-	    for (i = 1; i < nhs; ++i)
-        {
-            bstate_index(hs[i]) = bstate_index(hs[0]);
-        }
-	    break;
-    */
+        
+        /*
+        //TODO:
+        case 't':			// Turbulent Inlet state
+        case 'T':
+            get_turbulent_inlet_bdry_params(dim,infile,&func_params);
+            FT_InsertDirichletBoundary(front,cF_turbulentInletBoundaryState,
+                "cF_turbulentInletBoundaryState",func_params,NULL,hs[0],i_hs);
+            for (int i = 1; i < nhs; ++i)
+            {
+                bstate_index(hs[i]) = bstate_index(hs[0]);
+            }
+            break;
+        */
 
-    case 'f':			// Flow through state
-	case 'F':
-	    FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
-                "cF_flowThroughBoundaryState",NULL,NULL,*hs,i_hs);
-	    for (i = 1; i < nhs; ++i)
+        case 'f':			// Flow through state
+        case 'F':
         {
-            bstate_index(hs[i]) = bstate_index(hs[0]);
+            FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
+                    "cF_flowThroughBoundaryState",NULL,NULL,*hs,i_hs);
+            for (int i = 1; i < nhs; ++i)
+            {
+                bstate_index(hs[i]) = bstate_index(hs[0]);
+            }
         }
         break;
-	
-    case 'v':			// Variable state
-	case 'V':
-	    get_variable_bdry_params(dim,infile,&func_params);
-	    FT_InsertDirichletBoundary(front,cF_variableBoundaryState,
-			"cF_variableBoundaryState",func_params,NULL,hs[0],i_hs);
-	    for (i = 1; i < nhs; ++i)
+        
+        case 'v':			// Variable state
+        case 'V':
         {
-            bstate_index(hs[i]) = bstate_index(hs[0]);
+            get_variable_bdry_params(dim,infile,&func_params);
+            FT_InsertDirichletBoundary(front,cF_variableBoundaryState,
+                "cF_variableBoundaryState",func_params,NULL,hs[0],i_hs);
+            for (int i = 1; i < nhs; ++i)
+            {
+                bstate_index(hs[i]) = bstate_index(hs[0]);
+            }
         }
-	    break;
-	}
+        break;
+    }
 } 	/* end  promptForDirichletBdryState */
 
 /*

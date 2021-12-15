@@ -118,6 +118,7 @@ struct EQN_PARAMS
 	
     int idir;
 	int shock_side;
+    double shock_speed;
 	
     double T0;
     double T1;
@@ -663,6 +664,7 @@ protected:
 // cFinit.cpp
 extern void read_cFluid_params(char*,EQN_PARAMS*);
 extern void insert_objects(Front*);
+extern void getChannelInletState(STATE* state, EQN_PARAMS *eqn_params, COMPONENT comp);
 
 // cFcartsn.cpp
 extern void readFrontStates(Front*,char*);

@@ -452,7 +452,6 @@ static void getAmbientState(
 	double *coords,
 	COMPONENT comp)
 {
-	EOS_PARAMS	*eos;
 	double mu1 = eqn_params->mu1;
 	double mu2 = eqn_params->mu2;
 	double rho1 = eqn_params->rho1;
@@ -465,18 +464,19 @@ static void getAmbientState(
 	double *v2 = eqn_params->v2;
 	int i,dim;
  
+    /*
 	if (debugging("ambient"))
-	    printf("Entering getAmbientState(), coords = %f %f\n",
-				coords[0],coords[1]);
-	
+	    printf("Entering getAmbientState(), coords = %f %f %f\n",
+				coords[0],coords[1],coords[2]);
+	*/
+
     dim = eqn_params->dim;
 	state->dim = dim;
 	
     for (i = 0; i < dim; ++i)
 	    state->vel[i] = state->momn[i] = 0.0;
 	
-    eos = &(eqn_params->eos[comp]);
-	state->eos = eos;
+	state->eos = &(eqn_params->eos[comp]);
 	
 	switch (comp)
 	{
@@ -557,7 +557,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     (eqn_params->eos[GAS_COMP2]).R_specific = R_specific;
 
     double Pr = 0.71;
-    CursorAfterStringOpt(infile,"Enter the Prandtl number:");
+    CursorAfterString(infile,"Enter the Prandtl number:");
     fscanf(infile,"%lf",&Pr);
     (void) printf("%f\n",Pr);
 	
@@ -592,8 +592,10 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 	fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->p2);
 	(void) printf("%f %f\n",eqn_params->rho2,eqn_params->p2);
 
-    eqn_params->p1 = eqn_params->p2;
     eqn_params->rho1 = eqn_params->rho2;
+    eqn_params->p1 = eqn_params->p2;
+    
+    //eqn_params->p0 = eqn_params->p2; //p0 used when specifying mach number at inlet
 
     STATE state;
     state.eos = &eqn_params->eos[GAS_COMP2];
@@ -633,7 +635,6 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 
     eqn_params->tracked = NO;
 
-
     /*
     //TODO: Should just remove this option?
     //      Only used for two-phase flow, or is it possible 
@@ -660,7 +661,7 @@ void G_CARTESIAN::initChannelFlowStates()
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double coords[MAXD];
 	COMPONENT comp;
-	STATE *sl,*sr,state;
+	STATE *sl,*sr, state;
     POINT *p;
     HYPER_SURF *hs;
     HYPER_SURF_ELEMENT *hse;
@@ -751,6 +752,23 @@ void G_CARTESIAN::initChannelFlowStates()
 	scatMeshStates();
 }	/* end initChannelFlowStates */
 
+extern void getChannelInletState(
+    STATE* state,
+    EQN_PARAMS *eqn_params, 
+    COMPONENT comp)
+{
+    getAmbientState(state,eqn_params,nullptr,comp);
+
+    behind_state(SHOCK_MACH_NUMBER,eqn_params->Mach_number,
+            &eqn_params->shock_speed,eqn_params->idir,eqn_params->shock_side,
+            state,state);
+
+    state->engy = EosEnergy(state);
+    state->temp = EosTemperature(state);
+    state->mu = EosViscosity(state);
+}
+
+//initChannelFlowIntfc()
 void G_CARTESIAN::initChannelFlow(
 	LEVEL_FUNC_PACK *level_func_pack,
 	char *inname)
@@ -1058,7 +1076,7 @@ void G_CARTESIAN::initRichtmyerMeshkovStates()
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
 	double coords[MAXD];
 	COMPONENT comp;
-	STATE *sl,*sr,state;
+	STATE *sl,*sr, state;
         POINT *p;
         HYPER_SURF *hs;
         HYPER_SURF_ELEMENT *hse;
