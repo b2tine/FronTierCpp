@@ -29,6 +29,7 @@ MAYBE_FABRIC = fabric
 MAYBE_CFABRIC = cfabric
 MAYBE_CAIRFOIL = cAirfoil
 MAYBE_CAIRFOIL_NEW = cairfoil
+MAYBE_ANGSTIFF_DEV = AngStiff_sprModel
 endif
 
 if CGAL_INTFC_OPT
@@ -66,6 +67,7 @@ SUBDIRS = lib \
 		  $(MAYBE_PARACHUTE) \
 		  $(MAYBE_FABRIC) \
 		  $(MAYBE_CFABRIC) \
+		  $(MAYBE_ANGSTIFF_DEV) \
 		  $(MAYBE_EX2D) \
 		  $(MAYBE_EX3D) \
 		  $(MAYBE_FRONTWRAPPER)

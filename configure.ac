@@ -407,7 +407,9 @@ AM_COND_IF([CGAL_ARMA_OPT],
                              cairfoil/Makefile
                              cairfoil/objs/Makefile
                              cAirfoil/Makefile
-                             cAirfoil/objs/Makefile])])
+                             cAirfoil/objs/Makefile
+                             AngStiff_sprModel/Makefile
+                             AngStiff_sprModel/objs/Makefile])])
 
 AM_COND_IF([CGAL_ARMA_OPT],
            [AM_COND_IF([PETSC_OPT],

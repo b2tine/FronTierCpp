@@ -84,6 +84,7 @@ cfabric/fabric_Fortn
 cfabric/fabric_Cplus
 cAirfoil/cfabric_Cplus
 cairfoil/cairfoil
+AngStiff_sprModel/spring
 FrontWrapper/example00
 CGAL_Interface/cgal_intfc_test
 *Tests
