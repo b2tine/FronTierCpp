@@ -684,9 +684,11 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
     */
+    /*
     bool nip_found = 
         FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_SUBDOMAIN,
             crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
     /*
     bool nip_found = 
         FT_FindNearestIntfcPointInRange(front, comp, coords_ghost,INCLUDE_BOUNDARIES,
@@ -699,8 +701,8 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     //bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
       //      INCLUDE_BOUNDARIES,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
 
-    //bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
-      //      NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+    bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
+            NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
 
     if (!nip_found)
     {

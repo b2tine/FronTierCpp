@@ -32,7 +32,8 @@ void G_CARTESIAN::computeDynamicViscosity()
             LOC(); clean_up(EXIT_FAILURE);
     }
 
-    FT_ParallelExchGridArrayBuffer(field.mu,front,NULL);
+    //FT_ParallelExchGridArrayBuffer(field.mu,front,NULL);
+    //FT_ParallelExchGridArrayBuffer(field.temp,front,NULL);
 }
 
 void G_CARTESIAN::computeDynamicViscosity2d()

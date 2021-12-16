@@ -1,17 +1,16 @@
 Max time: 2.0
 Max step: 15000
 Print interval: 0.05
-Movie frame interval: 0.0025
+Movie frame interval: 0.00025
 CFL factor: 0.5
 Redistribution interval: 1000000000
 
 *******************************************************
 
-Domain limit in 0-th dimension: 0 3.3
-Domain limit in 1-th dimension: 0 2.5
+Domain limit in 0-th dimension: 0 3.75
+Domain limit in 1-th dimension: 0 2.75
 
 Computational grid: 350 270
-    XXXComputational gridXXX: 250 190
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -20,9 +19,10 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 467.707173 0.0
-Enter pressure: 450000
-Enter density: 2.666667
+Enter yes to set mach number at inlet: yes
+Enter Mach number of shock: 2.0
+Enter idir of shock: 0
+Enter direction of shock: 1
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
@@ -39,8 +39,7 @@ Problem type can be
 	FLUID_SOLID_CIRCLE
 Enter problem type: FLUID_SOLID_CIRCLE
 
-Enter the center of the circle: 0.575 1.25
-    Enter the center of the circleXXX: 0.425 1.25
+Enter the center of the circle: 0.725 1.375
 Enter radius of the circle: 0.075
 Enter yes if the object is fixed: yes
 
@@ -52,7 +51,6 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-
 Enter density and pressure of ambient air: 1.0 100000.0
 
 
@@ -74,6 +72,8 @@ Type yes to track the interface: no
 Enter yes to use eddy viscosity: yes
 Enter eddy viscosity model: Vreman
 Enter model constant: 0.025
+
+Enter the turbulent Prandtl number: 0.9
 
 *******************************************************
 
@@ -98,6 +98,7 @@ Type y to make scalar turb kinetic energy field movie: n
 ************Debugging options*****************
 Enter yes for debugging: yes
 Enter the debugging string: cfluid_dt
+Enter the debugging string: rm_state
 
 Enter the debugging stringXXX: no_heatflux
 Enter the debugging stringXXX: no_viscflux
