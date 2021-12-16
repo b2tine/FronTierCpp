@@ -24,11 +24,6 @@ Enter yes to set mach number at inlet: yes
 Enter Mach number of shock: 2.0
 Enter idir of shock: 0
 Enter direction of shock: 1
-
-    XXXEnter velocityXXX: 250.0
-    XXXEnter pressureXXX: 200000.0
-    XXXEnter densityXXX: 2.5
-
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 

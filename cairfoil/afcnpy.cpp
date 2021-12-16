@@ -659,13 +659,20 @@ void elastic_set_propagate(Front* fr, double fr_dt)
 {
     Front* newfront;
    
-    if (pp_numnodes() > 1 && !debugging("collision_off"))
+    if (pp_numnodes() > 1)
     {
-        printf("\nERROR elastic_set_propagate(): \
-                parallel code not yet implemented!\n");
-        LOC(); clean_up(EXIT_FAILURE);
-        //new_fourth_order_elastic_set_propagate3d_parallel_1(fr,&newfront,fr_dt);
-            //fourth_order_elastic_set_propagate_parallel(fr,fr_dt);
+        if (debugging("collision_off"))
+        {
+            fourth_order_elastic_set_propagate3d_serial(fr,&newfront,fr_dt);
+        }
+        else
+        {
+            printf("\nERROR elastic_set_propagate(): \
+                    parallel collision handling not yet implemented!\n");
+            LOC(); clean_up(EXIT_FAILURE);
+            //new_fourth_order_elastic_set_propagate3d_parallel_1(fr,&newfront,fr_dt);
+                //fourth_order_elastic_set_propagate_parallel(fr,fr_dt);
+        }
     }
     else
     {

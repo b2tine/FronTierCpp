@@ -768,7 +768,7 @@ extern void cF_flowThroughBoundaryState(
     case 3:
         return cF_flowThroughBoundaryState3d(p0,hs,front,params,state);
     default:
-        printf("\nERROR iF_flowThroughBoundaryState() : \
+        printf("\nERROR cF_flowThroughBoundaryState() : \
                 unsupported spatial dimension! \n\tdim = %d\n",
                 front->rect_grid->dim);
         LOC(); clean_up(EXIT_FAILURE);
@@ -829,6 +829,8 @@ extern void cF_flowThroughBoundaryState2d(
     newst->vort = oldst->vort;
     newst->pres = oldst->pres;
     newst->dens = oldst->dens;
+
+    //double c = EosSoundSpeed(newst); //sound speed
 
     //Normal
 	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
