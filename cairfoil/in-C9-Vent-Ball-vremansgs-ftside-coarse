@@ -1,7 +1,7 @@
-Domain limit in 0-th dimension: -4 16
-Domain limit in 1-th dimension: -4 16
-Domain limit in 2-th dimension: 5 45
-Computational grid: 105 105 210
+Domain limit in 0-th dimension: 0 12
+Domain limit in 1-th dimension: 0 12
+Domain limit in 2-th dimension: 5 29
+Computational grid: 60 60 120
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY 
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -22,18 +22,17 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter yes to set mach number at inlet: yes
-Enter Mach number of shock: 2.3
-Enter idir of shock: 2
-Enter direction of shock: 1
+Enter velocity: 0 0 75
+Enter pressure: 175000
+Enter density: 2.675
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 
 Start test time control parameters
-Max time: 1.5
-Max step: 35000
-Print interval: 0.0125
-Movie frame interval: 0.0025
+Max time: 1.0
+Max step: 25000
+Print interval: 0.01
+Movie frame interval: 0.005
 CFL factor: 0.5
 Redistribution interval: 10000000
 type yes to turn off auto-redistribution: y
@@ -196,15 +195,12 @@ Type y to make vector vorticity field movie: y
 ///////////////////////////
 
 Enter yes for debugging: yes
-
-Enter the debugging string: max_speed
-Enter the debugging string: cfluid_dt
-Enter the debugging string: collision_off
-
 Enter the debugging string: skip_strainvel
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
+Enter the debugging string: max_speed
+Enter the debugging string: cfluid_dt
 
 Enter the debugging stringXXX: bendforce_off
 Enter the debugging stringXXX: no_viscflux
