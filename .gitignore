@@ -66,6 +66,7 @@ melting/melting
 crystal/crystal
 subsurf/subsurf
 airfoil/airfoil
+angstiff_airfoil/airfoil
 Collision/test
 Collision/init
 BVH/OFF2FTsurf

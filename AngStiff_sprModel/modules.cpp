@@ -257,35 +257,35 @@ static void cutToRectangle(
 	
 	char string[200];
 	if (CursorAfterStringOpt(infile,"Enter yes to use cgal:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] != 'y' || string[0] != 'Y')
         {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] != 'y' || string[0] != 'Y')
-            {
-		for (i = 0; i < 3; ++i)
-	    	    P[i] = N[i] = 0.0;
-		P[0] = L[0]; 	N[0] = 1.0;
-		FT_CutSurfBdry(surf,plane_constr_func,(POINTER)&plane_params,
-					NULL,0,2);
+            for (i = 0; i < 3; ++i)
+                    P[i] = N[i] = 0.0;
+            P[0] = L[0]; 	N[0] = 1.0;
+            FT_CutSurfBdry(surf,plane_constr_func,(POINTER)&plane_params,
+                        NULL,0,2);
 
-		for (i = 0; i < 3; ++i)
-	    	    P[i] = N[i] = 0.0;
-		P[1] = L[1]; 	N[1] = 1.0;
-		FT_CutSurfBdry(surf,plane_constr_func,(POINTER)&plane_params,
-					NULL,0,2);
+            for (i = 0; i < 3; ++i)
+                    P[i] = N[i] = 0.0;
+            P[1] = L[1]; 	N[1] = 1.0;
+            FT_CutSurfBdry(surf,plane_constr_func,(POINTER)&plane_params,
+                        NULL,0,2);
 
-		for (i = 0; i < 3; ++i)
-	    	    P[i] = N[i] = 0.0;
-		P[0] = U[0]; 	N[0] = -1.0;
-		FT_CutSurfBdry(surf,plane_constr_func,(POINTER)&plane_params,
-					NULL,0,2);
+            for (i = 0; i < 3; ++i)
+                    P[i] = N[i] = 0.0;
+            P[0] = U[0]; 	N[0] = -1.0;
+            FT_CutSurfBdry(surf,plane_constr_func,(POINTER)&plane_params,
+                        NULL,0,2);
 
-		for (i = 0; i < 3; ++i)
-	    	    P[i] = N[i] = 0.0;
-		P[1] = U[1]; 	N[1] = -1.0;
-		FT_CutSurfBdry(surf,plane_constr_func,(POINTER)&plane_params,
-					NULL,0,2);
-	    }
+            for (i = 0; i < 3; ++i)
+                    P[i] = N[i] = 0.0;
+            P[1] = U[1]; 	N[1] = -1.0;
+            FT_CutSurfBdry(surf,plane_constr_func,(POINTER)&plane_params,
+                        NULL,0,2);
+        }
 	}
 	else
 	{

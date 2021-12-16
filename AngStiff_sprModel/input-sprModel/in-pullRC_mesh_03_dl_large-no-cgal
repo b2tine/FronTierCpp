@@ -56,13 +56,12 @@ Enter fabric point mass: 0.01
 Enter string spring constant: 1000
 Enter string friction constant: 0.01
 Enter string point mass: 0.01
-Enter Young's modules: 1000
+Enter Young's modules: 5000
 Enter Poisson ratio: 0.14
 Enter yes to use uni_stiffness: no
 Enter stiffness cut limit percent: 1.00
-
-Enter yes to use cgal: yes
-Enter cgal vtk file name: input-vtk/in-pullRC.vtk
+Enter yes to use cgal: no
+Enter cgal vtk file name: input-vtk/in-pullRC_03.vtk
 
 Max time: 20.000000
 Max step: 1000
@@ -76,14 +75,14 @@ Enter yes to set curve motion: yes
 For curve from (3.000000 9.000000 0.000800) to (3.000000 7.000000 0.000800)
 Type yes to set the curve motion: yes
 Enter velocity direction: -1.000000 0.000000 0.000000
-Enter speed: 0.010000
-Enter stop time: 3.000000
+Enter speed: 1.000000
+Enter stop time: 1.000000
 For curve from (13.000000 9.000000 0.000800) to (3.000000 9.000000 0.000800)
 Type yes to set the curve motion: no
 For curve from (13.000000 7.000000 0.000800) to (13.000000 9.000000 0.000800)
 Type yes to set the curve motion: yes
 Enter velocity direction: 1.000000 0.000000 0.000000
-Enter speed: 0.010000
-Enter stop time: 3.000000
+Enter speed: 1.000000
+Enter stop time: 1.000000
 For curve from (3.000000 7.000000 0.000800) to (13.000000 7.000000 0.000800)
 Type yes to set the curve motion: no

@@ -1,0 +1,34 @@
+*****************************************************
+Functions that need modification for angular springs
+*****************************************************
+
+afsetd.cpp:
+
+    set_spring_vertex_memory()
+    set_node_spring_vertex_memory()
+    set_curve_spring_vertex_memory()
+    set_surf_spring_vertex_memory()
+    compute_spring_accel1()
+
+
+
+
+
+*****************************************************
+Functions that need to be added for angular springs
+*****************************************************
+
+
+afsetd.cpp:
+    
+    getTriSideK()
+    setAngularParams()
+
+
+aftest.cpp:
+
+    ang2K()
+    ang2Gamma()
+    sides2angle()
+    setTriSpringConstant()
+    setSpringConstantToLimit()

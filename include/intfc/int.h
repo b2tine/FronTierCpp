@@ -257,10 +257,11 @@ struct _TRI
 	double side_length0[3];	  /* equilibrium length of each side */
 	double side_dir0[3][3];	  /* equilibrium length of each side */
 
-    //TODO: WHAT IS DIFFERENT BTW gamma and gam?
     double k[3];            /* tensile stiffness of side */
-    double gamma[3][4];     /* angular stiffness of adj-sides */
     double gam[3];          /* angular stiffness of adj-sides */
+    
+    //TODO: gamma is deprecated and replaced by gam it seems
+    //double gamma[3][4];     /* angular stiffness of adj-sides */
 	
     double color;			  /* to plot color scale of triangle */
 	

@@ -20,6 +20,7 @@ MAYBE_FOLDING = folding
 endif
 MAYBE_AIRFOIL = airfoil
 MAYBE_PARACHUTE = parachute
+MAYBE_ANGSTIFF_AIRFOIL = angstiff_airfoil
 endif
 endif
 
@@ -65,6 +66,7 @@ SUBDIRS = lib \
 		  $(MAYBE_FOLDING) \
 		  $(MAYBE_AIRFOIL) \
 		  $(MAYBE_PARACHUTE) \
+		  $(MAYBE_ANGSTIFF_AIRFOIL) \
 		  $(MAYBE_FABRIC) \
 		  $(MAYBE_CFABRIC) \
 		  $(MAYBE_ANGSTIFF_DEV) \

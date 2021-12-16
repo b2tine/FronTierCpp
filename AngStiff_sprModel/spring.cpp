@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "airfoil.h"
 
+#include <algorithm>
+
 /*  Local Function Declarations */
 static void spring_driver(Front*);
 static void initSpringPropagation(Front*);
@@ -149,10 +151,14 @@ static  void spring_driver(
 	    vtkPlotSurfaceStress(front);
 
 	    FT_Propagate(front);
+        FT_RelinkGlobalIndex(front);
+
 	    print_airfoil_stat(front,out_name);
 
-            FT_SetOutputCounter(front);
+        FT_SetOutputCounter(front);
 	    FT_SetTimeStep(front);
+
+        //front->dt = std::min(front->dt, 0.001);
 	}
 	else
 	{
@@ -167,6 +173,8 @@ static  void spring_driver(
 	    /* Propagating interface for time step dt */
 
             FT_Propagate(front);
+            FT_RelinkGlobalIndex(front);
+            FT_InteriorPropagate(front);
 
 	    if (debugging("trace"))
             {
@@ -182,6 +190,9 @@ static  void spring_driver(
 	    //the interface such as curvature, and etc.
 
 	    FT_SetTimeStep(front);
+        
+        //front->dt = std::min(front->dt, 0.001);
+            
             if (debugging("step_size"))
                 (void) printf("Time step from FrontHypTimeStep(): %f\n",
 					front->dt);
@@ -227,7 +238,9 @@ static void initSpringPropagation(
 	Front *front)
 {
 	Tracking_algorithm(front) = SIMPLE_TRACKING;
-	front->_surface_propagate = spring_surface_propagate;
+	//Tracking_algorithm(front) = STRUCTURE_TRACKING;
+	
+    front->_surface_propagate = spring_surface_propagate;
 	front->_curve_propagate = spring_curve_propagate;
 	
     initCurvePropagation(front);

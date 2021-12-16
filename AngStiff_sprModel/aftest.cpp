@@ -2707,7 +2707,6 @@ extern void setSpringConstant(Front *front)
 	/* statistics & limit setting of tensile stiffness*/
 	double limit_percent = af_params->cut_limit;
 	setSpringConstantToLimit(front,limit_percent);
-	//clean_up(0);
 }	/* end setSpringConstant */
 
 static void setSpringConstantToLimit(
@@ -2929,22 +2928,23 @@ static void setTriSpringConstant(
 	sidesToAngles(tri->side_length0,angle);
 	for (i = 0; i < 3; i++)
 	{
-	    if (tri->k[i] != -1)
-		continue;
+	    if (tri->k[i] != -1) continue;
 	    k_1 = ang2K(angle[i],angle[(i+1)%3],lambda,mu);
 	    tri->gam[i] = ang2Gamma(angle[(i+1)%3],angle[(i+2)%3],lambda,mu);
 
+        //TODO: INVESTIGATE THIS COMMENT AND ASSIGNMENT
 	    /* if side is boundary, double or not the stiffness and return */
 	    if (is_side_bdry(tri,i))
 	    {
-		tri->k[i] = k_1;
-		//tri->k[i] = 2*k_1;
-	    	if (af_params->uni_k == YES)
-		{
-		    tri->k[i] = af_params->ks;
-		    tri->gam[i] = 0;
-		}
-		continue;
+            tri->k[i] = k_1;
+            //tri->k[i] = 2*k_1;
+	    	
+            if (af_params->uni_k == YES)
+            {
+                tri->k[i] = af_params->ks;
+                tri->gam[i] = 0;
+            }
+            continue;
 	    }
 	
 	    /* find neighbor tri and side num */
@@ -2996,6 +2996,7 @@ static double ang2Gamma(
 	double cot_2 = cos(ang_2)/sin(ang_2);
 	double sin_3 = sin(ang_1+ang_2);	
 	double gamma = (2*(lambda+mu)*cot_1*cot_2-mu)/4.0/sin_3;
+	//return 0.0;
 	return gamma;
 }	/* end ang2Gamma */
 

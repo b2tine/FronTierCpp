@@ -1,7 +1,8 @@
 Domain limit in 0-th dimension: 0.000000 16.000000
 Domain limit in 1-th dimension: 0.000000 16.000000
 Domain limit in 2-th dimension: -2.000000 2.000000
-Computational grid: 80 80 20 
+Computational grid: 90 90 30 
+    XXXComputational gridXXX: 80 80 20 
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY
 Lower boundary in 1-th dimension: PERIODIC_BOUNDARY
@@ -24,15 +25,16 @@ Available types of canopy boundaries are:
 	Cross (X)
 	Wing (W)
 Enter type of canopy boundary: R
-Enter lower bounds of the rectangle: 3.000000 7.000000
-Enter upper bounds of the rectangle: 13.000000 9.000000
-Curve from (3.000000 9.000000) to (3.000000 7.000000)
+Enter lower bounds of the rectangle: 4.000000 7.100000
+Enter upper bounds of the rectangle: 12.000000 8.9000000
+
+Curve from (4.000000 8.900000) to (4.000000 7.100000)
 For this curve, type yes if it is fixed: n
-Curve from (13.000000 9.500000) to (3.000000 9.000000)
+Curve from (12.000000 8.900000) to (4.000000 8.900000)
 For this curve, type yes if it is fixed: n
-Curve from (13.000000 7.000000) to (13.000000 9.000000)
+Curve from (12.000000 7.100000) to (12.000000 8.900000)
 For this curve, type yes if it is fixed: n
-Curve from (3.000000 7.000000) to (13.000000 7.000000)
+Curve from (4.000000 7.100000) to (12.000000 7.100000)
 For this curve, type yes if it is fixed: n
 
 Entering yes to turn off fluid solver: y
@@ -46,6 +48,7 @@ Entering yes to turn off fluid solver: y
         Fixed area velocity (FA)
         Fixed point velocity (FP)
 Enter velocity function: Z
+    XXXEnter interior propagatorXXX: p
 Enter interior propagator: e4
 Enter gravity: 0.0 0.0 0.0
 Enter payload: 0.0
@@ -56,11 +59,13 @@ Enter fabric point mass: 0.01
 Enter string spring constant: 1000
 Enter string friction constant: 0.01
 Enter string point mass: 0.01
-Enter Young's modules: 1000
-Enter Poisson ratio: 0.14
+Enter Young's modules: 150000
+    Enter Young's modulesXXX: 5000
+Enter Poisson ratio: 0.499
+    Enter Poisson ratioXXX: 0.22
 Enter yes to use uni_stiffness: no
-Enter stiffness cut limit percent: 1.00
-
+Enter stiffness cut limit percent: 0.90
+    XXXEnter stiffness cut limit percentXXX: 1.00
 Enter yes to use cgal: yes
 Enter cgal vtk file name: input-vtk/in-pullRC.vtk
 
@@ -72,18 +77,23 @@ CFL factor: 0.500000
 Redistribution interval: 10000000
 Type yes to turn off auto-redistribution: y
 
+
 Enter yes to set curve motion: yes
-For curve from (3.000000 9.000000 0.000800) to (3.000000 7.000000 0.000800)
+
+For curve from (3.000000 8.900000 0.000000) to (4.000000 7.100000 0.000000)
 Type yes to set the curve motion: yes
 Enter velocity direction: -1.000000 0.000000 0.000000
-Enter speed: 0.010000
-Enter stop time: 3.000000
-For curve from (13.000000 9.000000 0.000800) to (3.000000 9.000000 0.000800)
+Enter speed: 0.0250000
+Enter stop time: 5.000000
+
+For curve from (12.000000 8.900000 0.000000) to (4.000000 8.900000 0.000000)
 Type yes to set the curve motion: no
-For curve from (13.000000 7.000000 0.000800) to (13.000000 9.000000 0.000800)
+
+For curve from (12.000000 7.100000 0.000000) to (12.000000 8.900000 0.000000)
 Type yes to set the curve motion: yes
 Enter velocity direction: 1.000000 0.000000 0.000000
-Enter speed: 0.010000
-Enter stop time: 3.000000
-For curve from (3.000000 7.000000 0.000800) to (13.000000 7.000000 0.000800)
+Enter speed: 0.0250000
+Enter stop time: 5.000000
+
+For curve from (4.000000 7.100000 0.000000) to (12.000000 7.100000 0.000000)
 Type yes to set the curve motion: no

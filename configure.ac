@@ -416,7 +416,9 @@ AM_COND_IF([CGAL_ARMA_OPT],
                        [AC_CONFIG_FILES([airfoil/Makefile
                                          airfoil/objs/Makefile
                                          airfoil/tests/Makefile
-                                         parachute/Makefile])])])
+                                         parachute/Makefile
+                                         angstiff_airfoil/Makefile
+                                         angstiff_airfoil/objs/Makefile])])])
 
 
 #check if BVH directory should be built
