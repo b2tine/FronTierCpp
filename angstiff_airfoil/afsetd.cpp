@@ -263,76 +263,103 @@ extern void compute_spring_accel1(
 	    accel[k] = 0.0;
 
 	//acceleration due to elastic stretching force
-    for (int j = 0; j < sv->num_nb; ++j)
+    for (int i = 0; i < sv->num_nb; ++i)
 	{
-	    double v_rel[MAXD];
+        //tensile stiffness contribution
 	    double vec[MAXD];
-	    
         double len = 0.0;
 	    for (int k = 0; k < dim; ++k)
 	    {
-            v_rel[k] = sv->v_nb[j][k] - sv->v[k];
-            vec[k] = sv->x_nb[j][k] - sv->x[k];
+            vec[k] = sv->x_nb[i][k] - sv->x[k];
             len += vec[k]*vec[k];
 	    }
 	    len = sqrt(len);
 
-        /*
-        //TODO: Can not do this for springs connecting string to triangle
-        //      at the parachute canopy skirt
-        //additional damping
-        double comp_vrel = 0.0;
-        for (int k = 0; k < dim; ++k)
-        {
-            comp_vrel += v_rel[k]*vec[k]/len;
-        }
-
-        for (int k = 0; k < dim; ++k)
-        {
-            accel[k] -= sv->lambda*comp_vrel*vec[k]/len;
-        }
-        */
-
-        /*
-//TEMP DEBUG
-///////////////////////////////////////////
-printf("nb %d:  len = %g   sv->len0[%d] = %g\n", j, len, j, sv->len0[j]);
-///////////////////////////////////////////
-        */
-
-        double dL = len - sv->len0[j];
+        double dL = len - sv->len0[i];
         
-        /*
         //zero compressive stress
-        if (dL <= 0.0) continue;
-        */
-
-        if (dL <= 0.0)
+        if (dL > 0.0)
         {
-            if (!debugging("allow_compressive_stress"))
-            {
-                continue;
-            }
+            for (int k = 0; k < dim; ++k)
+                accel[k] += sv->k[i]*dL*vec[k]/len/sv->m;
         }
 
-	    for (int k = 0; k < dim; ++k)
-	    {
-            accel[k] += sv->k[j]*dL*vec[k]/len/sv->m;
-	    }
+        //angular stiffness contribution if left side neighbor exists
+        if (sv->x_ajl[i] != NULL)
+        {
+            len = 0.0;
+            for (int k = 0; k < dim; ++k)
+            {
+                len += sqr(sv->x[k] - sv->x_ajl[i][k]);
+            }
+            len = sqrt(len);
+            
+            dl = len - sv->len0_adj00[i];
+            
+            for (int k = 0; k < dim; ++k)
+                accel[k] += sv->gam_adj00[i]*dl*vec[k]/sv.m;
+
+            len = 0.0;
+            for (int k = 0; k < dim; ++k)
+            {
+                len += sqr(sv->x_nb[i][k] - sv->x_ajl[i][k]);
+            }
+            len = sqrt(len);
+            
+            dl = len - sv->len0_adj01[i];
+            
+            for (int k = 0; k < dim; ++k)
+                accel[k] += sv->gam_adj01[i]*dl*vec[k]/sv.m;
+        }
+
+        //angular stiffness contribution if right side neighbor exists
+        if (sv->x_ajr[i] != NULL)
+        {
+            len = 0.0;
+            for (int k = 0; k < dim; ++k)
+            {
+                len += sqr(sv->x[k] - sv->x_ajr[i][k]);
+            }
+            len = sqrt(len);
+            
+            dl = len - sv->len0_adj10[i];
+            
+            for (int k = 0; k < dim; ++k)
+                accel[k] += sv->gam_adj10[i]*dl*vec[k]/sv.m;
+
+            len = 0.0;
+            for (int k = 0; k < dim; ++k)
+            {
+                len += sqr(sv->x_nb[i][k] - sv->x_ajr[i][k]);
+            }
+            len = sqrt(len);
+            
+            dl = len - sv->len0_adj11[i];
+            for (int k = 0; k < dim; ++k)
+                accel[k] += sv->gam_adj11[i]*dl*vec[k]/sv.m;
+        }
+
 	}
 
-    //acceleration due to elastic bending and damping forces
+    //acceleration due to elastic bending forces
     for (int k = 0; k < dim; ++k)
     {
         accel[k] += sv->bendforce[k]/sv->m;
+    }
+
+    //acceleration due to internal damping force
+    for (int k = 0; k < dim; ++k)
+    {
         accel[k] -= sv->lambda*(sv->v[k] - sv->ext_impul[k])/sv->m;
     }
 
+    //force on spring vertex
     for (int k = 0; k < dim; ++k)
     {
         sv->f[k] = accel[k]*sv->m;
     }
 
+    //acceleration of spring vertex
     for (int k = 0; k < dim; ++k)
     {
         accel[k] += sv->ext_accel[k] + sv->fluid_accel[k] + sv->other_accel[k];
