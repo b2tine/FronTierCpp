@@ -61,7 +61,7 @@ Enter Young's modules: 5000
 Enter Poisson ratio: 0.22
 Enter yes to use uni_stiffness: no
 Enter stiffness cut limit percent: 1.00
-Enter yes to use cgal: yes
+Enter yes to use cgal: no
 Enter cgal vtk file name: input-vtk/in-pullRC.vtk
 
 Max time: 20.000000

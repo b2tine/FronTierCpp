@@ -108,8 +108,9 @@ int main(int argc, char **argv)
         //optimizeElasticMesh(&front);
 	    set_equilibrium_mesh(&front);
 	    setSpringConstant(&front);
+	    FT_SetGlobalIndex(&front);
+        static_mesh(front.interf) = YES;
 	}
-	FT_SetGlobalIndex(&front);
 	initSpringPropagation(&front);
 	    
     if (RestartRun)
@@ -240,8 +241,11 @@ static void initSpringPropagation(
 	Tracking_algorithm(front) = SIMPLE_TRACKING;
 	//Tracking_algorithm(front) = STRUCTURE_TRACKING;
 	
-    front->_surface_propagate = spring_surface_propagate;
+    front->vfunc = nullptr;
+    front->_surface_propagate = nullptr;
+    //front->_surface_propagate = spring_surface_propagate;
 	front->_curve_propagate = spring_curve_propagate;
+	front->_node_propagate = spring_node_propagate;
 	
     initCurvePropagation(front);
 	initNodePropagation(front);
@@ -544,7 +548,7 @@ static void spring_node_propagate(
 
     VELO_FUNC_PACK* vfunc_pack = (VELO_FUNC_PACK*)oldn->vel_pack;
     
-    if (vfunc_pack->func == NULL) return;
+    if (vfunc_pack == NULL || vfunc_pack->func == NULL) return;
 
 	POINTER vparams = (POINTER)vfunc_pack->func_params; 
     (*vfunc_pack->func)(vparams,front,NULL,NULL,NULL,vel);

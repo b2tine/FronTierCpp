@@ -2677,8 +2677,8 @@ extern void setSpringConstant(Front *front)
 	int i,j;
 	double E = af_params->E;
 	double nu = af_params->nu;
-	double lambda = E*nu/(1 - sqr(nu));
-	double mu = E*(1.0 - nu)/(1 - sqr(nu));
+	double lambda = E*nu/(1.0 - sqr(nu));
+	double mu = E*(1.0 - nu)/(1.0 - sqr(nu));
 
 	printf("Young's Modulus = %f  Poisson Ratio = %f\n",E,nu);
 	printf("lambda = %f  mu = %f\n\n",lambda,mu);
@@ -2689,20 +2689,21 @@ extern void setSpringConstant(Front *front)
 	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
 	    surf_tri_loop(*s,tri)
 	    {
-		for (i = 0; i < 3; ++i)
-		    tri->k[i] = -1.0;
+            tri->area0 = tri_area(tri); //TODO: do this in set_equilibrium_mesh3d()
+            for (i = 0; i < 3; ++i)
+                tri->k[i] = -1.0;
 	    }
 	}
 
 	/* assign tensile and angular stiffness to every side */
 	intfc_surface_loop(intfc,s)
+    {
+    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+        surf_tri_loop(*s,tri)
         {
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
-            surf_tri_loop(*s,tri)
-            {
-		setTriSpringConstant(front,tri,lambda,mu);
-            }
+            setTriSpringConstant(front,tri,lambda,mu);
         }
+    }
 
 	/* statistics & limit setting of tensile stiffness*/
 	double limit_percent = af_params->cut_limit;
@@ -2929,7 +2930,8 @@ static void setTriSpringConstant(
 	for (i = 0; i < 3; i++)
 	{
 	    if (tri->k[i] != -1) continue;
-	    k_1 = ang2K(angle[i],angle[(i+1)%3],lambda,mu);
+	    
+        k_1 = ang2K(angle[i],angle[(i+1)%3],lambda,mu);
 	    tri->gam[i] = ang2Gamma(angle[(i+1)%3],angle[(i+2)%3],lambda,mu);
 
         //TODO: INVESTIGATE THIS COMMENT AND ASSIGNMENT
@@ -2995,7 +2997,7 @@ static double ang2Gamma(
 	double cot_1 = cos(ang_1)/sin(ang_1);
 	double cot_2 = cos(ang_2)/sin(ang_2);
 	double sin_3 = sin(ang_1+ang_2);	
-	double gamma = (2*(lambda+mu)*cot_1*cot_2-mu)/4.0/sin_3;
+	double gamma = (2.0*(lambda+mu)*cot_1*cot_2-mu)/4.0/sin_3;
 	//return 0.0;
 	return gamma;
 }	/* end ang2Gamma */
@@ -3004,11 +3006,21 @@ static void sidesToAngles(
 	double 	*side,
 	double 	*ang)
 {
-	ang[0] = acos((side[0]*side[0] + side[2]*side[2] - side[1]*side[1])/ 
-			(2*side[0]*side[2]));
+	ang[0] = acos((side[1]*side[1] + side[2]*side[2] - side[0]*side[0])/ 
+			(2.0*side[1]*side[2]));
+	ang[1] = acos((side[2]*side[2] + side[0]*side[0] - side[1]*side[1])/ 
+			(2.0*side[2]*side[0]));
+	ang[2] = acos((side[0]*side[0] + side[1]*side[1] - side[2]*side[2])/ 
+			(2.0*side[0]*side[1]));
+	
+    /*
+    //TODO: WRONG
+    ang[0] = acos((side[0]*side[0] + side[2]*side[2] - side[1]*side[1])/ 
+			(2.0*side[0]*side[2]));
 	ang[1] = acos((side[1]*side[1] + side[0]*side[0] - side[2]*side[2])/ 
-			(2*side[1]*side[0]));
+			(2.0*side[1]*side[0]));
 	ang[2] = acos((side[2]*side[2] + side[1]*side[1] - side[0]*side[0])/ 
-			(2*side[2]*side[1]));
+			(2.0*side[2]*side[1]));
+    */
 }	/* end sidesToAngles */
 

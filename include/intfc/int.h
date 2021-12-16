@@ -254,15 +254,14 @@ struct _TRI
 {
 	POINT* __pts[3];
 	TRI_NEIGHBOR neighbor[3]; /* object adj to edge ij */
-	double side_length0[3];	  /* equilibrium length of each side */
-	double side_dir0[3][3];	  /* equilibrium length of each side */
+	
+    double side_length0[3];	  /* equilibrium length of each side */
+	double side_dir0[3][3];	  /* equilibrium direction vector of each side */
+    double area0;             /* equilibrium area of triangle */
 
     double k[3];            /* tensile stiffness of side */
     double gam[3];          /* angular stiffness of adj-sides */
     
-    //TODO: gamma is deprecated and replaced by gam it seems
-    //double gamma[3][4];     /* angular stiffness of adj-sides */
-	
     double color;			  /* to plot color scale of triangle */
 	
     struct _SURFACE	*surf;	  /* surface in which the triangle lies */

@@ -628,7 +628,7 @@ extern void set_surf_spring_vertex(
 
 extern void compute_spring_accel1(
 	SPRING_VERTEX sv,
-	double *f,
+	double *accel,
 	int dim)
 {
 	int i,k;
@@ -636,7 +636,7 @@ extern void compute_spring_accel1(
 	double dl = 0;
 
 	for (k = 0; k < dim; ++k)
-	    f[k] = 0.0;
+	    accel[k] = 0.0;
 	for (i = 0; i < sv.num_nb; ++i)
 	{
 	    /* tensile stiffness part */
@@ -651,7 +651,7 @@ extern void compute_spring_accel1(
 	    {
 		vec[k] /= len;
 		dl = len - sv.len0[i];
-		f[k] += sv.k[i]*dl*vec[k]/sv.m;
+		accel[k] += sv.k[i]*dl*vec[k]/sv.m;
 	    }
 
 	    /*angular stiffness are included if its left side nieghbor exsit*/
@@ -663,7 +663,7 @@ extern void compute_spring_accel1(
 		len = sqrt(len);
 		dl = len - sv.len0_adj00[i];
 		for (k = 0; k < dim; ++k)
-		    f[k] += sv.gam_adj00[i]*dl*vec[k]/sv.m;
+		    accel[k] += sv.gam_adj00[i]*dl*vec[k]/sv.m;
 
 		len = 0.0;
 		for (k = 0; k < dim; ++k)
@@ -671,7 +671,7 @@ extern void compute_spring_accel1(
 		len = sqrt(len);
 		dl = len - sv.len0_adj01[i];
 		for (k = 0; k < dim; ++k)
-		    f[k] +=sv.gam_adj01[i]*dl*vec[k]/sv.m;
+		    accel[k] +=sv.gam_adj01[i]*dl*vec[k]/sv.m;
 	    }
 
 	    /*angular stiffness are included if its right side nieghbor exsit*/
@@ -683,7 +683,7 @@ extern void compute_spring_accel1(
 		len = sqrt(len);
 		dl = len - sv.len0_adj10[i];
 		for (k = 0; k < dim; ++k)
-		    f[k] += sv.gam_adj10[i]*dl*vec[k]/sv.m;
+		    accel[k] += sv.gam_adj10[i]*dl*vec[k]/sv.m;
 
 		len = 0.0;
 		for (k = 0; k < dim; ++k)
@@ -691,18 +691,18 @@ extern void compute_spring_accel1(
 		len = sqrt(len);
 		dl = len - sv.len0_adj11[i];
 		for (k = 0; k < dim; ++k)
-		    f[k] += sv.gam_adj11[i]*dl*vec[k]/sv.m;
+		    accel[k] += sv.gam_adj11[i]*dl*vec[k]/sv.m;
 	    }
 	}
 
 	/* computed vectex force */
 	for (k = 0; k < dim; ++k)
-	    sv.f[k] = f[k]*sv.m;
+	    sv.f[k] = accel[k]*sv.m;
 
 	/* computed acceleration */
 	for (k = 0; k < dim; ++k)
 	{
-	    f[k] += -sv.lambda*sv.v[k]/sv.m + sv.ext_accel[k];
+	    accel[k] += -sv.lambda*sv.v[k]/sv.m + sv.ext_accel[k];
 	}
 }	/* end compute_spring_accel */
 
