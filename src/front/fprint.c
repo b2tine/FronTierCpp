@@ -3876,7 +3876,6 @@ LOCAL	void FrontGDMovie2d(
 }	/* end FrontGDMovie2d */
 #endif /* defined(HAVE_GD) */
 
-/*
 LOCAL void vtk_plot_vector_field(
 	const char *dname,
 	Front *front,
@@ -3937,9 +3936,10 @@ LOCAL void vtk_plot_vector_field(
 	    fprintf(vfile,"%f %f %f\n",vec[0],vec[1],vec[2]);
 	}
 	fclose(vfile);
-}*/	/* end vtk_plot_vector_field */
+}	/* end vtk_plot_vector_field */
 
 
+/*
 //TODO: Once working in serial correctly,
 //      need to modify to work for parallel visualization.
 //      (Missing bands in the buffer zones between processors)
@@ -3992,11 +3992,11 @@ LOCAL void vtk_plot_vector_field(
         //double          *top_h = top_grid->h;
         //double          *top_L = top_grid->L;
 
-            /*
+            //
             //TODO: Needed for parallel buffer zones?
             //use local grid for plotting, buffer is not plotted out
-            double          *top_L = front->pp_grid->Zoom_grid.L;
-            */
+            //double          *top_L = front->pp_grid->Zoom_grid.L;
+            //
         
         double Origin[MAXD];
         for (l = 0; l < MAXD; ++l)
@@ -4078,7 +4078,7 @@ LOCAL void vtk_plot_vector_field(
     }
 	
     fclose(vfile);
-}	/* end vtk_plot_vector_field */
+}*/	/* end vtk_plot_vector_field */
 
 LOCAL void vtk_plot_scalar_field(
         const char *dname,
@@ -4307,7 +4307,6 @@ LOCAL void vtk_plot_scalar_field2d(
         return;
 }*/      /* end vtk_plot_scalar_field 2d*/
 
-/*
 LOCAL void vtk_plot_scalar_field3d(
         const char *dname,
         Front *front,
@@ -4401,8 +4400,9 @@ LOCAL void vtk_plot_scalar_field3d(
             fprintf(outfile,"%f\n",top_var[index]);
         }
         fclose(outfile);
-}*/       /* end vtk_plot_scalar_field */
+}       /* end vtk_plot_scalar_field */
 
+/*
 //uses top_grid->L and plots buffers
 LOCAL void vtk_plot_scalar_field3d(
         const char *dname,
@@ -4515,7 +4515,7 @@ LOCAL void vtk_plot_scalar_field3d(
             fprintf(outfile,"%f\n",top_var[index]);
         }
         fclose(outfile);
-}       /* end vtk_plot_scalar_field3d */
+}*/       /* end vtk_plot_scalar_field3d */
 
 LOCAL	void	gv_plot_var2d( 
 	Front	*front, 
