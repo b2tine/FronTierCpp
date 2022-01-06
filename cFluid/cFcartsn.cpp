@@ -348,9 +348,9 @@ void G_CARTESIAN::computeMeshFlux(
 }	/* end computeMeshFlux */
 
 /*
-//TODO: Save temporarily while code is tested.
-//      Preliminary tests suggest that the new implementation (above)
-//      works correctly.
+//TODO: Save temporarily while above code is tested.
+//          Does not appear to work correctly right now.
+//
 void G_CARTESIAN::computeMeshFlux(
 	SWEEP m_vst,
 	FSWEEP *m_flux,
@@ -2287,11 +2287,16 @@ void G_CARTESIAN::copyMeshStates()
 	{
 	case 1:
 	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index1d(i,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    vel[l][index] = mom[l][index]/dens[index];	
-	    }
+        {
+            index = d_index1d(i,top_gmax);
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = 0.0;
+
+            if (!gas_comp(top_comp[index])) continue;
+            
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = mom[l][index]/dens[index];	
+        }
 	    FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
@@ -2310,6 +2315,12 @@ void G_CARTESIAN::copyMeshStates()
 	    for (j = imin[1]; j <= imax[1]; ++j)
 	    {
             index = d_index2d(i,j,top_gmax);
+
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = 0.0;
+
+            if (!gas_comp(top_comp[index])) continue;
+
             for (l = 0; l < dim; ++l)
                 vel[l][index] = mom[l][index]/dens[index];	
 	    }
@@ -2341,6 +2352,12 @@ void G_CARTESIAN::copyMeshStates()
 	    for (k = imin[2]; k <= imax[2]; ++k)
 	    {
             index = d_index3d(i,j,k,top_gmax);
+            
+            for (l = 0; l < dim; ++l) 
+                vel[l][index] = 0.0;
+
+            if (!gas_comp(top_comp[index])) continue;
+            
             for (l = 0; l < dim; ++l)
                 vel[l][index] = mom[l][index]/dens[index];	
 	    }
@@ -3646,8 +3663,10 @@ void G_CARTESIAN::copyFromMeshVst(
             state.k_turb = m_vst.k_turb[index];
         
             for (l = 0; l < dim; ++l)
+            {
                 state.momn[l] = m_vst.momn[l][index];
-        
+            }
+
             if (gas_comp(top_comp[index]))
             {
                 state.eos = &(eqn_params->eos[comp]);
@@ -3662,7 +3681,9 @@ void G_CARTESIAN::copyFromMeshVst(
             k_turb[index] = state.k_turb;
         
             for (l = 0; l < dim; ++l)
+            {
                 momn[l][index] = state.momn[l];
+            }
         }
         break;
 	
@@ -3681,8 +3702,10 @@ void G_CARTESIAN::copyFromMeshVst(
             state.k_turb = m_vst.k_turb[index];
         
             for (l = 0; l < dim; ++l)
+            {
                 state.momn[l] = m_vst.momn[l][index];
-        
+            }
+
             if (gas_comp(top_comp[index]))
             {
                 state.eos = &(eqn_params->eos[comp]);
@@ -3697,7 +3720,9 @@ void G_CARTESIAN::copyFromMeshVst(
             k_turb[index] = state.k_turb;
         
             for (l = 0; l < dim; ++l)
+            {
                 momn[l][index] = state.momn[l];
+            }
         }
 	    break;
 
@@ -3717,8 +3742,10 @@ void G_CARTESIAN::copyFromMeshVst(
             state.k_turb = m_vst.k_turb[index];
         
             for (l = 0; l < dim; ++l)
+            {
                 state.momn[l] = m_vst.momn[l][index];
-        
+            }
+
             if (gas_comp(top_comp[index]))
             {
                 state.eos = &(eqn_params->eos[comp]);
@@ -3733,7 +3760,9 @@ void G_CARTESIAN::copyFromMeshVst(
             k_turb[index] = state.k_turb;
         
             for (l = 0; l < dim; ++l)
+            {
                 momn[l][index] = state.momn[l];
+            }
         }
         break;
 	}

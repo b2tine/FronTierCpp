@@ -4,13 +4,15 @@ Print interval: 0.05
 Movie frame interval: 0.00025
 CFL factor: 0.5
 Redistribution interval: 1000000000
+Type yes to turn off auto-redistribution: y
 
 *******************************************************
 
 Domain limit in 0-th dimension: 0 3.75
 Domain limit in 1-th dimension: 0 2.75
 
-Computational grid: 165 125
+Computational grid: 120 90
+XXXComputational gridXXX: 165 125
     XXXComputational gridXXX: 350 270
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -98,6 +100,8 @@ Type y to make scalar turb kinetic energy field movie: n
 ************Debugging options*****************
 Enter yes for debugging: yes
 Enter the debugging string: cfluid_dt
+Enter the debugging string: init
+Enter the debugging string: redistribute
 
 Enter the debugging stringXXX: no_heatflux
 Enter the debugging stringXXX: no_viscflux

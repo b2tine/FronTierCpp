@@ -54,10 +54,10 @@ int main(int argc, char **argv)
 	
     G_CARTESIAN	g_cartesian(&front);
 
-
 	/* Initialize basic computational data */
 
 	FT_Init(argc,argv,&f_basic);
+
 	f_basic.size_of_intfc_state = sizeof(STATE);
 	
         in_name                 = f_basic.in_name;
@@ -71,7 +71,8 @@ int main(int argc, char **argv)
                         right_flush(RestartStep,7));
         sprintf(restart_name,"%s/intfc-ts%s",restart_name,
 			right_flush(RestartStep,7));
-	if (pp_numnodes() > 1)
+	
+    if (pp_numnodes() > 1)
 	{
             sprintf(restart_name,"%s-nd%s",restart_name,
 			right_flush(pp_mynode(),4));
@@ -80,7 +81,7 @@ int main(int argc, char **argv)
 	}
 
 	FT_ReadSpaceDomain(in_name,&f_basic);
-	FT_StartUp(&front,&f_basic);
+    FT_StartUp(&front,&f_basic);
 	FT_InitDebug(in_name);
 
 	if (debugging("sample_velocity"))
@@ -128,7 +129,7 @@ int main(int argc, char **argv)
         if (f_basic.dim < 3)
 	    	FT_ClipIntfcToSubdomain(&front);
 	    
-        FT_RedistMesh(&front);
+        //    FT_RedistMesh(&front);
 	    
         if (debugging("trace"))
             (void) printf("Passed FT_InitIntfc()\n");
@@ -195,16 +196,18 @@ int main(int argc, char **argv)
 	clean_up(0);
 }
 
-static  void gas_driver(
+static void gas_driver(
         Front *front,
 	G_CARTESIAN &g_cartesian)
 {
-        double CFL;
-
-	Curve_redistribution_function(front) = full_redistribute;
-
 	FT_ReadTimeControl(in_name,front);
-	CFL = Time_step_factor(front);
+	double CFL = Time_step_factor(front);
+	
+	Curve_redistribution_function(front) = full_redistribute;
+    if (!RestartRun)
+    {
+        FT_RedistMesh(front);
+    }
 
 	if (!RestartRun)
 	{

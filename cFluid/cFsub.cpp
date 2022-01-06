@@ -808,7 +808,9 @@ extern void cF_flowThroughBoundaryState2d(
     STATE* newst = (STATE*)state;
 	STATE** sts;
 
-    int nrad = 3;
+    //TODO: Should nrad be 2 or 3?
+    int nrad = 2;
+    //int nrad = 3;
 
 	if (debugging("flow_through"))
 	    printf("Entering cF_flowThroughBoundaryState2d()\n");
@@ -1032,7 +1034,9 @@ extern void cF_flowThroughBoundaryState3d(
     STATE* newst = (STATE*)state;
 	STATE** sts;
 	
-    int nrad = 3;
+    //TODO: Should nrad be 2 or 3?
+    int nrad = 2;
+    //int nrad = 3;
 
 	if (debugging("flow_through"))
 	    printf("Entering cF_flowThroughBoundaryState3d()\n");

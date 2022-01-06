@@ -654,7 +654,21 @@ static FABRIC_COLLISION_PARAMS getFabricCollisionParams(Front* front)
     return collsn_params;
 }
 
-//NEW
+//TODO: See make_save_intfc() in fredist2d.c.
+//      attempt to use as follows ... 
+//
+//      INTERFACE* save_intfc = make_save_intfc(fr->interf);
+//
+//      
+//      // now if propagate fails
+//      delete_interface(fr->interf);
+//      fr->interf = save_intfc;
+//      set_current_interface(fr->interf);
+//
+//
+//      Can also use the correspondence structure in the saved interface
+//      to determine configuration history etc. 
+//
 void elastic_set_propagate(Front* fr, double fr_dt)
 {
     Front* newfront;
