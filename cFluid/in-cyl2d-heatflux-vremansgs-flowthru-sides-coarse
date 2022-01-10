@@ -100,8 +100,8 @@ Type y to make scalar turb kinetic energy field movie: n
 ************Debugging options*****************
 Enter yes for debugging: yes
 Enter the debugging string: cfluid_dt
-Enter the debugging string: init
-Enter the debugging string: redistribute
+Enter the debugging stringX: init
+Enter the debugging stringX: redistribute
 
 Enter the debugging stringXXX: no_heatflux
 Enter the debugging stringXXX: no_viscflux
