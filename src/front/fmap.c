@@ -3123,7 +3123,8 @@ LOCAL void FrontPreAdvance3d(
 	bi_array(&torque,max_body_index,MAXD,FLOAT);
 	bi_array(&force,max_body_index,MAXD,FLOAT);
 	uni_array(&flags,max_body_index,INT);
-	for (i = 0; i < max_body_index; ++i)
+	
+    for (i = 0; i < max_body_index; ++i)
 	{
 	    for (j = 0; j < dim; ++j)
 	    {

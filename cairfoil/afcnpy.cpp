@@ -1215,7 +1215,6 @@ static void fourth_order_elastic_set_propagate3d_serial(
     *newfront = copy_front(fr);
     set_size_of_intfc_state(size_of_state(fr->interf));
     set_copy_intfc_states(YES);
-        //set_copy_intfc_states(NO); //TODO: Why was this set to NO?
     (*newfront)->interf = pp_copy_interface(fr->interf);
     if ((*newfront)->interf == NULL)
     {
