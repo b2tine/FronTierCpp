@@ -34,7 +34,7 @@ Max time: 1.5
 Max step: 35000
 Print interval: 0.00125
 Movie frame interval: 0.00025
-CFL factor: 0.75
+CFL factor: 0.5
 Redistribution interval: 10000000
 type yes to turn off auto-redistribution: y
 
@@ -115,8 +115,7 @@ Available types of canopy boundaries are:
         Cross (X)
         Circular with belt (S)
 Enter type of canopy boundary: c
-Enter the height of the plane: 17.9671
-    XXXEnter the height of the planeXXX: 18
+Enter the height of the plane: 18
 Enter circle center: 6 6
 Enter circle radius: 4.2672
 Enter yes to attach gores to canopy: no
