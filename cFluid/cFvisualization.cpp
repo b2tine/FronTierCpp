@@ -5,7 +5,7 @@ void G_CARTESIAN::writeMeshFileVTK()
 {
     if (pp_numnodes() > 1)
     {
-        printf("\n\tWARNING writeMeshFileVTK() not implemented in parallel yet\n\n");
+        printf("\n\tWARNING: writeMeshFileVTK() not implemented in parallel yet\n\n");
         return;
     }
 
@@ -54,6 +54,62 @@ void G_CARTESIAN::writeMeshFileVTK()
     for (int k = 0; k <= top_gmax[2]; ++k)
     {
         fprintf(file,"%f ",top_L[2] + top_h[2]*k);
+    }
+
+    fclose(file);
+}
+
+void G_CARTESIAN::writeMeshFileVTK_PP()
+{
+    if (pp_mynode() != 0) return;
+
+    RECT_GRID grid = front->pp_grid->Global_grid;
+    int* gmax = grid.gmax;
+    double* L = grid.L;
+    double* h = grid.h;
+
+    char dirname[250];
+    sprintf(dirname,"%s/vtk",OutName(front));
+
+    if (!create_directory(dirname,YES))
+    {
+        screen("Cannot create directory %s\n",dirname);
+        LOC(); clean_up(ERROR);
+    }
+
+    char mesh_name[250];
+    sprintf(mesh_name,"%s/top_grid.vtk",dirname);
+    FILE* file = fopen(mesh_name,"w");
+
+    fprintf(file,"# vtk DataFile Version 3.0\n"
+            "Topological Grid\n"
+            "ASCII\n"
+            "DATASET RECTILINEAR_GRID\n");
+
+    int NX = (gmax[0] > 0) ? gmax[0] : 1;
+    int NY = (gmax[1] > 0) ? gmax[1] : 1;
+    int NZ = (gmax[2] > 0) ? gmax[2] : 1;
+
+    fprintf(file,"DIMENSIONS %d %d %d\n",NX,NY,NZ);
+
+    fprintf(file,"X_COORDINATES %d float\n",NX);
+    for (int i = 0; i < NX; ++i)
+    {
+        fprintf(file,"%f ", L[0] + (i + 0.5)*h[0]);
+    }
+    fprintf(file,"\n");
+
+    fprintf(file,"Y_COORDINATES %d float\n",NY);
+    for (int j = 0; j < NY; ++j)
+    {
+        fprintf(file,"%f ", L[1] + (j + 0.5)*h[1]);
+    }
+    fprintf(file,"\n");
+
+    fprintf(file,"Z_COORDINATES %d float\n",NZ);
+    for (int k = 0; k < NZ; ++k)
+    {
+        fprintf(file,"%f ", L[2] + (k + 0.5)*h[2]);
     }
 
     fclose(file);
@@ -118,6 +174,65 @@ void G_CARTESIAN::writeCompGridMeshFileVTK()
     for (int k = 0; k <= ctop_gmax[2]; ++k)
     {
         fprintf(file,"%f ",ctop_L[2] + ctop_h[2]*k);
+    }
+
+    fclose(file);
+}
+
+void G_CARTESIAN::writeCompGridMeshFileVTK_PP()
+{
+    if (pp_mynode() != 0) return;
+
+    RECT_GRID grid = front->pp_grid->Global_grid;
+    int* gmax = grid.gmax;
+    double* L = grid.L;
+    double* h = grid.h;
+
+    char dirname[250];
+    sprintf(dirname,"%s/vtk",OutName(front));
+
+    if (pp_mynode() == 0)
+    {
+        if (!create_directory(dirname,YES))
+        {
+            screen("Cannot create directory %s\n",dirname);
+            clean_up(ERROR);
+        }
+    }
+
+    char mesh_name[250];
+    sprintf(mesh_name,"%s/comp_grid.vtk",dirname);
+    FILE* file = fopen(mesh_name,"w");
+
+    fprintf(file,"# vtk DataFile Version 3.0\n"
+            "Computational Grid\n"
+            "ASCII\n"
+            "DATASET RECTILINEAR_GRID\n");
+
+    int NX = gmax[0] + 1;
+    int NY = gmax[1] + 1;
+    int NZ = gmax[2] + 1;
+
+    fprintf(file,"DIMENSIONS %d %d %d\n",NX,NY,NZ);
+
+    fprintf(file,"X_COORDINATES %d float\n",NX);
+    for (int i = 0; i < NX; ++i)
+    {
+        fprintf(file,"%f ", L[0] + i*h[0]);
+    }
+    fprintf(file,"\n");
+
+    fprintf(file,"Y_COORDINATES %d float\n",NY);
+    for (int j = 0; j < NY; ++j)
+    {
+        fprintf(file,"%f ", L[1] + j*h[1]);
+    }
+    fprintf(file,"\n");
+
+    fprintf(file,"Z_COORDINATES %d float\n",NZ);
+    for (int k = 0; k < NZ; ++k)
+    {
+        fprintf(file,"%f ", L[2] + k*h[2]);
     }
 
     fclose(file);

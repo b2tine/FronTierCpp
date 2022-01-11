@@ -592,10 +592,10 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 	fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->p2);
 	(void) printf("%f %f\n",eqn_params->rho2,eqn_params->p2);
 
+    eqn_params->p1 = eqn_params->p2; //assume this is total pressure = atmospheric pres + gauge pres
     eqn_params->rho1 = eqn_params->rho2;
-    eqn_params->p1 = eqn_params->p2;
     
-    //eqn_params->p0 = eqn_params->p2; //p0 used when specifying mach number at inlet
+    //eqn_params->p0 = eqn_params->p2; //p0 used when specifying mach number at inlet ????
 
     STATE state;
     state.eos = &eqn_params->eos[GAS_COMP2];
@@ -759,9 +759,23 @@ extern void getChannelInletState(
 {
     getAmbientState(state,eqn_params,nullptr,comp);
 
+    //TODO: The ahead state needs to use stagnation temperature and pressure
+    //      instead of the absolute temperature and pressure... 
+    //
+    //      The relations in the behind_state computation functions are
+    //      done in the shock stationary frame of reference ... I believe.
+    
+
+    double shock_side = -1.0*eqn_params->shock_side;
+
+    behind_state(SHOCK_MACH_NUMBER,eqn_params->Mach_number,
+            &eqn_params->shock_speed,eqn_params->idir,shock_side,
+            state,state);
+    /* 
     behind_state(SHOCK_MACH_NUMBER,eqn_params->Mach_number,
             &eqn_params->shock_speed,eqn_params->idir,eqn_params->shock_side,
             state,state);
+    */
 
     state->engy = EosEnergy(state);
     state->temp = EosTemperature(state);
@@ -1319,6 +1333,19 @@ static void behind_state(
 	p0  = ahead_state->pres;
 	u0  = ahead_state->vel[idir]*shock_side;
 
+    /*
+    /////////////////////////////////////
+    double pref = 100000.0;
+    p0 -= pref;
+        //p0 += 1.0 - pref;
+    /////////////////////////////////////
+    */
+
+
+    //TODO: Need to double check these relations.
+    //      The behind state pressure should not be less
+    //      than the ahead state pressure
+
 	switch(which_parameter)
 	{
 	case SHOCK_MACH_NUMBER:
@@ -1330,8 +1357,10 @@ static void behind_state(
 	    r1 = r0*((u0 - U)/(u1 - U));
 	    if (debugging("rm_state"))
 	    {
-		printf("M0n = %f  shock_speed = %f\n",M0n,*shock_speed);
-		printf("p1 = %f  u1 = %f  r1 = %f\n",p1,u1,r1);
+            printf("EosSoundSpeed(ahead_state) = %f\n",EosSoundSpeed(ahead_state));
+            printf("M0n = %f  shock_speed = %f\n",M0n,*shock_speed);
+            printf("p0 = %f  u0 = %f  r0 = %f\n",p0,u0,r0);
+            printf("p1 = %f  u1 = %f  r1 = %f\n",p1,u1,r1);
 	    }
 	    break;
 	default:

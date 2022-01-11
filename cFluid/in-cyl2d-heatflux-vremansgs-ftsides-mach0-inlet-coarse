@@ -1,5 +1,6 @@
 Max time: 2.0
-Max step: 15000
+Max step: 15
+                            Max stepXXX: 15000
 Print interval: 0.05
 Movie frame interval: 0.00025
 CFL factor: 0.5
@@ -21,7 +22,7 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
 Enter yes to set mach number at inlet: yes
-Enter Mach number of shock: 2.0
+Enter Mach number of shock: 0.3
 Enter idir of shock: 0
 Enter direction of shock: 1
 For upper boundary in 0-th dimension
@@ -99,6 +100,7 @@ Type y to make scalar turb kinetic energy field movie: n
 ************Debugging options*****************
 Enter yes for debugging: yes
 Enter the debugging string: cfluid_dt
+
 Enter the debugging string: rm_state
 
 Enter the debugging stringXXX: no_heatflux

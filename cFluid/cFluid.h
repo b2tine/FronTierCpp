@@ -402,7 +402,11 @@ public:
 
 
     void writeMeshFileVTK();
+    void writeMeshFileVTK_PP();
+
     void writeCompGridMeshFileVTK();
+    void writeCompGridMeshFileVTK_PP();
+
     void writeMeshComponentsVTK();
 
 	void solve(double dt);

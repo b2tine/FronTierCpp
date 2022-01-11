@@ -3907,25 +3907,27 @@ LOCAL void vtk_plot_vector_field(
 	{
 	    gmax[i] = 1; L[i] = 0.0; h[i] = 0.0;
 	}
+
 	for (i = 0; i < dim; ++i)
 	{
-	    //gmax[i] = gr->gmax[i]; L[i] = gr->L[i]; h[i] = gr->h[i];
-	    gmax[i] = gr->gmax[i]; L[i] = front->pp_grid->Zoom_grid.L[i]; h[i] = gr->h[i];
+	    gmax[i] = gr->gmax[i];
+        h[i] = gr->h[i];
+        L[i] = front->pp_grid->Zoom_grid.L[i] - 0.5*h[i];
 	}
 
-	//fprintf(vfile,"# vtk DataFile Version 2.0\n");
 	fprintf(vfile,"# vtk DataFile Version 3.0\n");
 	fprintf(vfile,"%s\n",vname);
 	fprintf(vfile,"ASCII\n");
 	fprintf(vfile,"DATASET STRUCTURED_POINTS\n");
 	fprintf(vfile,"DIMENSIONS %d %d %d\n",gmax[0]+1,gmax[1]+1,gmax[2]+1);
-	fprintf(vfile,"SPACING %f %f %f\n",h[0], h[1],h[2]);
-	fprintf(vfile,"ORIGIN %f %f %f\n",L[0], L[1],L[2]);
+	fprintf(vfile,"SPACING %f %f %f\n", h[0], h[1], h[2]);
+	fprintf(vfile,"ORIGIN %f %f %f\n", L[0], L[1], L[2]);
 	fprintf(vfile,"POINT_DATA %d\n",(gmax[0]+1)*(gmax[1]+1)*(gmax[2]+1));
 	fprintf(vfile,"VECTORS %s double\n",vname);
 
 	for (l = 0; l < MAXD; ++l) vec[l] = 0.0;
-	for (k = 0; k <= gmax[2]; k++)
+	
+    for (k = 0; k <= gmax[2]; k++)
 	for (j = 0; j <= gmax[1]; j++)
 	for (i = 0; i <= gmax[0]; i++)
 	{		
@@ -3934,7 +3936,7 @@ LOCAL void vtk_plot_vector_field(
 	    icoords[2] = k;
 	    index  = d_index(icoords,gmax,dim);
 	    for (l = 0; l < dim; ++l)
-		vec[l] = top_var[l][index];
+            vec[l] = top_var[l][index];
 	    fprintf(vfile,"%f %f %f\n",vec[0],vec[1],vec[2]);
 	}
 	fclose(vfile);
@@ -3951,15 +3953,16 @@ LOCAL void vtk_plot_scalar_field(
 
 	switch(dim)
 	{
-	    case 2:
-		vtk_plot_scalar_field2d(dname,front,n);
-		break;
-	    case 3:
-		vtk_plot_scalar_field3d(dname,front,n);
-		break;
-	    default:
-		printf("Unknown dim = %d\n",dim);
-		clean_up(ERROR);
+    case 2:
+        vtk_plot_scalar_field2d(dname,front,n);
+        break;
+    case 3:
+        vtk_plot_scalar_field3d(dname,front,n);
+        break;
+    default:
+        printf("vtk_plot_scalar_field() ERROR: \
+                Invalid Dimension = %d\n",dim);
+        LOC(); clean_up(ERROR);
 	}
 }
 
@@ -3983,42 +3986,46 @@ LOCAL void vtk_plot_scalar_field2d(
         INTERFACE* grid_intfc = front->grid_intfc;
         RECT_GRID* top_grid = &topological_grid(grid_intfc);
 
-        int             *lbuf = front->rect_grid->lbuf;
-        int             *ubuf = front->rect_grid->ubuf;
-        int             *top_gmax = top_grid->gmax;
-        double          *top_h = top_grid->h;
+        int* lbuf = front->rect_grid->lbuf;
+        int* ubuf = front->rect_grid->ubuf;
+        int* top_gmax = top_grid->gmax;
+        double* top_h = top_grid->h;
+        
         //use local grid for plotting, buffer is not plotted out
-        double          *top_L = front->pp_grid->Zoom_grid.L;
+        double* top_L = front->pp_grid->Zoom_grid.L;
 
         int kmin,kmax,jmin,jmax,imin,imax;
 
-
-        //if (!vtk_movie_var->plot_band)
         if (vtk_movie_var->plot_band)
         {
-                imin = (lbuf[0] == 0) ? 1 : lbuf[0];
-                jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
-                imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
-                jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1];
+            imin = (lbuf[0] == 0) ? 1 : lbuf[0];
+            jmin = (lbuf[1] == 0) ? 1 : lbuf[1];
+            imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0];
+            jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1];
         }
         else
         {
-                imin = (lbuf[0] == 0) ? 1 : lbuf[0] - 1;
-                jmin = (lbuf[1] == 0) ? 1 : lbuf[1] - 1;
-                imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0] + 1;
-                jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1] + 1;
+            imin = (lbuf[0] == 0) ? 1 : lbuf[0] - 1;
+            jmin = (lbuf[1] == 0) ? 1 : lbuf[1] - 1;
+            imax = (ubuf[0] == 0) ? top_gmax[0] - 1 : top_gmax[0] - ubuf[0] + 1;
+            jmax = (ubuf[1] == 0) ? top_gmax[1] - 1 : top_gmax[1] - ubuf[1] + 1;
         }
         
-    sprintf(filename, "%s/vtk/vtk.ts%s",OutName(front),
+        sprintf(filename,"%s/vtk/vtk.ts%s",OutName(front),
                 right_flush(front->step,7));
+        
         if (pp_numnodes() > 1)
-            sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
+        {
+            sprintf(filename,"%s-nd%s",filename,
+                    right_flush(pp_mynode(),4));
+        }
 
         if (!create_directory(filename,NO))
         {
             printf("Cannot create directory %s\n",filename);
-            clean_up(ERROR);
+            LOC(); clean_up(ERROR);
         }
+
         sprintf(filename,"%s/%s.vtk",filename,varname);
         outfile = fopen(filename,"w");
         fprintf(outfile,"# vtk DataFile Version 3.0\n");
@@ -4188,17 +4195,16 @@ LOCAL void vtk_plot_scalar_field3d(
         INTERFACE* grid_intfc = front->grid_intfc;
         RECT_GRID* top_grid = &topological_grid(grid_intfc);
 
-        int             *lbuf = front->rect_grid->lbuf;
-        int             *ubuf = front->rect_grid->ubuf;
-        int             *top_gmax = top_grid->gmax;
-        double          *top_h = top_grid->h;
+        int* lbuf = front->rect_grid->lbuf;
+        int* ubuf = front->rect_grid->ubuf;
+        int* top_gmax = top_grid->gmax;
+        double* top_h = top_grid->h;
+        
         //use local grid for plotting, buffer is not plotted out
-        double          *top_L = front->pp_grid->Zoom_grid.L;
+        double* top_L = front->pp_grid->Zoom_grid.L;
 
         int kmin,kmax,jmin,jmax,imin,imax;
 
-        
-        //if (!vtk_movie_var->plot_band)
         if (vtk_movie_var->plot_band)
         {
             imin = (lbuf[0] == 0) ? 1 : lbuf[0];
@@ -4218,34 +4224,46 @@ LOCAL void vtk_plot_scalar_field3d(
             kmax = (ubuf[2] == 0) ? top_gmax[2] - 1 : top_gmax[2] - ubuf[2] + 1;
         }
 
-        sprintf(filename, "%s/vtk/vtk.ts%s",OutName(front),
+        sprintf(filename,"%s/vtk/vtk.ts%s",OutName(front),
                 right_flush(front->step,7));
+        
         if (pp_numnodes() > 1)
-            sprintf(filename,"%s-nd%s",filename,right_flush(pp_mynode(),4));
+        {
+            sprintf(filename,"%s-nd%s",filename,
+                    right_flush(pp_mynode(),4));
+        }
 
         if (!create_directory(filename,NO))
         {
             printf("Cannot create directory %s\n",filename);
-            clean_up(ERROR);
+            LOC(); clean_up(ERROR);
         }
+        
         sprintf(filename,"%s/%s.vtk",filename,varname);
         outfile = fopen(filename,"w");
         fprintf(outfile,"# vtk DataFile Version 3.0\n");
         fprintf(outfile,"%s\n",varname);
         fprintf(outfile,"ASCII\n\n");
 
+        //TODO: Need to either shorten by a grid point on upper boundaries,
+        //      or add a point on the lower boundaries for plot to be symmetric
+        //      about the center of the rectangular domain.
         pointsx = imax - imin + 1;
         pointsy = jmax - jmin + 1;
         pointsz = kmax - kmin + 1;
         num_points = pointsx * pointsy * pointsz;
+        
         fprintf(outfile,"DATASET RECTILINEAR_GRID\n");
         fprintf(outfile,"DIMENSIONS  %d  %d  %d\n",pointsx,pointsy,pointsz);
+        
         fprintf(outfile,"X_COORDINATES    %d float\n",pointsx);
         for (i = imin; i <= imax; i++)
                 fprintf(outfile,"%f\n",top_L[0]+(i-imin+0.5)*top_h[0]);
+        
         fprintf(outfile,"Y_COORDINATES    %d float\n",pointsy);
         for (i = jmin; i <= jmax; i++)
                 fprintf(outfile,"%f\n",top_L[1]+(i-jmin+0.5)*top_h[1]);
+        
         fprintf(outfile,"Z_COORDINATES    %d float\n",pointsz);
         for (i = kmin; i <= kmax; i++)
                 fprintf(outfile,"%f\n",top_L[2]+(i-kmin+0.5)*top_h[2]);

@@ -11,8 +11,8 @@ Type yes to turn off auto-redistribution: y
 Domain limit in 0-th dimension: 0 3.75
 Domain limit in 1-th dimension: 0 2.75
 
-Computational grid: 120 90
-XXXComputational gridXXX: 165 125
+Computational grid: 165 125
+    XXXComputational gridXXX: 120 90
     XXXComputational gridXXX: 350 270
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY

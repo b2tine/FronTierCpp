@@ -51,7 +51,7 @@ Type y to make movie of velocity: y
 
 ************Debugging options*****************
 
-Enter yes for debugging: no
+Enter yes for debugging: yes
 Enter the debugging string: trace
 Enter the debugging string: CLOCK
 Enter the debugging string: step_size

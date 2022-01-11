@@ -168,7 +168,6 @@ static void promptForDirichletBdryState(
         case 'c':			// Constant state
         case 'C':
         {
-            
             comp = gas_comp(positive_component(hs[0])) ? 
                     positive_component(hs[0]) : negative_component(hs[0]);
             

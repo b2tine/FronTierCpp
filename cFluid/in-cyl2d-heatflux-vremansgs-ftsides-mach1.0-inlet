@@ -1,9 +1,10 @@
 Max time: 2.0
 Max step: 15000
-Print interval: 0.025
+Print interval: 0.005
 Movie frame interval: 0.00025
 CFL factor: 0.5
 Redistribution interval: 1000000000
+Type yes to turn off auto-redistribution: y
 
 *******************************************************
 

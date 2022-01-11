@@ -108,10 +108,10 @@ Enter the initial center of mass velocity: 0 0 0
 Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 
-Type y to make xy cross section movie: y
-Type y to make movie of density: y
-Type y to make movie of pressure: y
-Type y to make movie of velocity: y
+Type y to make xy cross section movie: n
+Type y to make movie of density: n
+Type y to make movie of pressure: n
+Type y to make movie of velocity: n
 
 
 Type y to make scalar density field movie: y

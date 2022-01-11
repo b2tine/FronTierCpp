@@ -167,10 +167,20 @@ int main(int argc, char **argv)
 
 	g_cartesian.initMesh();
 
+
+    //TODO: The PP version of these functions appear to be working
+    //      correctly -- make the default after testing.
     if (pp_numnodes() == 1)
     {
-        g_cartesian.writeMeshFileVTK();
-        g_cartesian.writeCompGridMeshFileVTK();
+        //g_cartesian.writeMeshFileVTK();
+        //g_cartesian.writeCompGridMeshFileVTK();
+        g_cartesian.writeMeshFileVTK_PP();
+        g_cartesian.writeCompGridMeshFileVTK_PP();
+    }
+    else
+    {
+        g_cartesian.writeMeshFileVTK_PP();
+        g_cartesian.writeCompGridMeshFileVTK_PP();
     }
     
     if (RestartRun)
