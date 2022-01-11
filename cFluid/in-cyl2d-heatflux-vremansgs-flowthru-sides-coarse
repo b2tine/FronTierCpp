@@ -4,7 +4,7 @@ Print interval: 0.05
 Movie frame interval: 0.00025
 CFL factor: 0.5
 Redistribution interval: 1000000000
-Type yes to turn off auto-redistribution: y
+Type yes to turn off auto-redistribution: yes
 
 *******************************************************
 
