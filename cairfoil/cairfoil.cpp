@@ -155,11 +155,8 @@ int main(int argc, char **argv)
     g_cartesian.findStateAtCrossing = af_find_state_at_crossing;
 	g_cartesian.initMesh();
     
-    if (pp_numnodes() == 1)
-    {
-        g_cartesian.writeMeshFileVTK();
-        g_cartesian.writeCompGridMeshFileVTK();
-    }
+    g_cartesian.writeMeshFileVTK();
+    g_cartesian.writeCompGridMeshFileVTK();
         
 	    //g_cartesian.getInitialState = zero_state;
 

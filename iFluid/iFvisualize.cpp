@@ -150,6 +150,7 @@ void Incompress_Solver_Smooth_Basis::writeMeshFileVTK()
 {
     if (pp_numnodes() > 1)
     {
+        //TODO: See cFluid/cFvisualization.cpp
         printf("\n\tWARNING writeMeshFileVTK() not implemented in parallel yet\n\n");
         return;
     }
@@ -208,6 +209,7 @@ void Incompress_Solver_Smooth_Basis::writeCompGridMeshFileVTK()
 {
     if (pp_numnodes() > 1)
     {
+        //TODO: See cFluid/cFvisualization.cpp
         printf("\n\tWARNING writeMeshFileVTK() not implemented in parallel yet\n\n");
         return;
     }

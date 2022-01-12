@@ -402,12 +402,13 @@ public:
 
 
     void writeMeshFileVTK();
-    void writeMeshFileVTK_PP();
-
     void writeCompGridMeshFileVTK();
-    void writeCompGridMeshFileVTK_PP();
-
-    void writeMeshComponentsVTK();
+    void writeMeshComponentsVTK();  //parallel version not implemented yet; calls serial version
+    
+    void serialWriteMeshFileVTK();          //should be safe to remove
+    void serialWriteCompGridMeshFileVTK();  //should be safe to remove
+    void serialWriteMeshComponentsVTK();
+    
 
 	void solve(double dt);
 
