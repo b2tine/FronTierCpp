@@ -541,6 +541,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                     {
                         //TODO: Implement in setElasticStates and use the
                         //      logic of addErgunEquationSourceTerms()
+                        /*
                         for (k = i; k <= nrad; ++k)
                         {
                             vst->dens[nrad-k] = m_vst->dens[index];
@@ -569,6 +570,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                                 }
                             }
                         }
+                        */
                     }
                     else
                     {
@@ -771,6 +773,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                     {
                         //TODO: Implement in setElasticStates and use the
                         //      logic of addErgunEquationSourceTerms()
+                        /*
                         for (k = i; k <= nrad; ++k)
                         {
                             vst->dens[n+nrad+k-1] = m_vst->dens[index];
@@ -799,6 +802,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                                 }
                             }
                         }
+                        */
                     }
                     else
                     {
@@ -872,6 +876,9 @@ void CFABRIC_CARTESIAN::setElasticStates(
         case PORO_SCHEME::REFLECTION:
             setElasticStatesRFB(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
             break;
+        case PORO_SCHEME::ERGUN:
+            setElasticStatesErgun(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
+            break;
         case PORO_SCHEME::RIEMANN:
             setElasticStatesRiem(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
             break;
@@ -880,6 +887,230 @@ void CFABRIC_CARTESIAN::setElasticStates(
             LOC(); clean_up(EXIT_FAILURE);
     }
 }
+
+void CFABRIC_CARTESIAN::setElasticStatesErgun(
+	SWEEP		*vst,
+	SWEEP		*m_vst,
+	HYPER_SURF 	*hs,
+	STATE		*state,
+	int		*icoords,
+	int		idir,
+	int		nb,
+	int		n,
+	int		istart,
+	COMPONENT	comp)
+{
+    ////////////////////////////////////////////////////////////////////
+    printf("\n\nsetElasticStatesErgun() not implemented yet!\n\n");
+    LOC(); clean_up(EXIT_FAILURE);
+    ////////////////////////////////////////////////////////////////////
+
+    /*
+	int i,j,index,index_ghost;
+	int ind2[2][2] = {{0,1},{1,0}};
+    int ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
+	int ic_ghost[MAXD];
+
+	double	coords[MAXD],coords_ref[MAXD],coords_ghost[MAXD],crx_coords[MAXD];
+	double	nor[MAXD],v[MAXD],v_ghost[MAXD],v_real[MAXD];
+	
+	double* vel_intfc = state->vel;
+	double poro = eqn_params->porosity;
+	
+	GRID_DIRECTION  dir;
+	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
+	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
+
+	STATE st_tmp_real;
+	STATE st_tmp_ghost;	
+
+	st_tmp_real.dim = dim;
+	st_tmp_real.eos = &eqn_params->eos[comp];
+
+    st_tmp_ghost.dim = dim;
+    st_tmp_ghost.eos = &eqn_params->eos[comp];
+
+	index = d_index(icoords,top_gmax,dim);
+	for (i = 0; i < dim; ++i)
+	{
+	    coords[i] = top_L[i] + icoords[i]*top_h[i];
+	    ic_ghost[i] = icoords[i];
+	}
+	
+    dir = (nb == 0) ? ldir[idir] : rdir[idir];
+	FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+
+	if (debugging("elastic_buffer"))
+	{
+	    (void) printf("\nEntered setElasticStatesRFB_normal():\n");
+	    (void) printf("comp = %d\n",comp);
+	    (void) printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
+	    (void) printf("idir = %d nb = %d\n",idir,nb);
+	    (void) printf("istart = %d nrad = %d n = %d\n",istart,nrad,n);
+	    (void) print_general_vector("coords = ",coords,dim,"\n");
+	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
+	    (void) print_general_vector("nor = ",nor,dim,"\n");
+	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
+	}
+
+	    //if nb = 0, the point is above the boundary, and we
+        //           select three points below the boundary
+	    //if nb = 1, the point is below the boundary, and we
+        //           select three points above the boundary
+
+	for (i = istart; i <= nrad; ++i)
+	{
+	    //ghost point icoords and index
+	    ic_ghost[idir] = (nb == 0) ?
+            icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
+
+	    index_ghost = d_index(ic_ghost,top_gmax,dim);
+
+        //ghost point coords
+	    for (j = 0; j < dim; ++j)
+        {
+            coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
+            coords_ref[j] = coords_ghost[j];
+	    }
+        
+        // Reflect ghost point through intfc-mirror at crossing
+        //first reflect across the grid line containing the intfc crossing 
+	    double vn = 0.0;
+	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ghost[idir];
+
+	    for (j = 0; j < dim; ++j)
+	    {
+		    v[j] = coords_ref[j] - crx_coords[j];
+		    vn += v[j]*nor[j];
+	    }
+           
+        //reflect v across the line containing the normal vector
+	    for (j = 0; j < dim; ++j)
+		    v[j] = 2.0*vn*nor[j] - v[j];
+	    
+        //desired reflected point
+        for (j = 0; j < dim; ++j)
+		    coords_ref[j] = crx_coords[j] + v[j];
+			
+        // Interpolate the state at the reflected point
+	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->dens,getStateDens,&st_tmp_ghost.dens,&m_vst->dens[index]);
+	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->pres,getStatePres,&st_tmp_ghost.pres,&m_vst->pres[index]);
+	    
+        for (j = 0; j < dim; ++j)
+        {
+            FT_IntrpStateVarAtCoords(front,comp,coords_ref,m_vst->momn[j],
+                    getStateMom[j],&st_tmp_ghost.momn[j],&m_vst->momn[j][index]);
+        }
+        
+        //Compute relative normal velocity in frame of interface crossing.
+        vn = 0.0;
+        double v_reflect[3], v_rel[3];
+        for (j = 0; j < dim; j++)
+	    {
+            v_reflect[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
+            vn += (v_reflect[j] - vel_intfc[j])*nor[j];
+	    }
+	    
+        //Ghost vel has relative normal velocity component equal in magnitude to
+        //reflected point's relative normal velocity and going in the opposite direction.
+        //TODO: We leave the question of relative tangential velocity wrt to the intfc
+        //      to be determined
+        //
+        //      NEEDS TO BE TESTED
+        for (j = 0; j < dim; j++)
+        {
+            //zero relative tangential velocity
+            v_ghost[j] = vel_intfc[j] - vn*nor[j];
+        }
+
+	    st_tmp_real.dens = m_vst->dens[index_ghost];
+	    st_tmp_real.pres = m_vst->pres[index_ghost];
+	    
+        st_tmp_ghost.dens = (1.0 - poro)*st_tmp_ghost.dens + poro*st_tmp_real.dens;
+	    st_tmp_ghost.pres = (1.0 - poro)*st_tmp_ghost.pres + poro*st_tmp_real.pres;
+	  
+        for (j = 0; j < dim; ++j)
+        {
+            st_tmp_real.momn[j] = m_vst->momn[j][index_ghost];
+            v_real[j] = st_tmp_real.momn[j]/st_tmp_real.dens;
+            v_ghost[j] = (1.0 - poro)*v_ghost[j] + poro*v_real[j];
+            st_tmp_ghost.momn[j] = v_ghost[j]*st_tmp_ghost.dens;
+        }
+	    
+	    st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
+
+	    // debugging printout
+	    if (st_tmp_ghost.engy < 0.0 || st_tmp_ghost.eos->gamma < 0.001)
+	    {
+            printf("negative engrgy! \n");
+            printf("icoords = %d %d %d \n",icoords[0],icoords[1],icoords[2]);
+            printf("%f %f %f %f %f %f \n",st_tmp_ghost.dens,st_tmp_ghost.momn[0],
+                st_tmp_ghost.momn[1],st_tmp_ghost.momn[2],st_tmp_ghost.pres,
+                st_tmp_ghost.engy);
+            printf("st_tmp_ghost.dim = %d, idir = %d, nb = %d \n",
+                st_tmp_ghost.dim,idir,nb);
+            printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp_ghost.eos->gamma,
+                st_tmp_ghost.eos->einf,st_tmp_ghost.eos->pinf);
+            printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],
+                            coords_ref[2]);
+            clean_up(EXIT_FAILURE);
+	    }
+
+	    if (nb == 0)
+	    {
+            vst->dens[nrad-i] = st_tmp_ghost.dens;
+            vst->engy[nrad-i] = st_tmp_ghost.engy;
+            vst->pres[nrad-i] = st_tmp_ghost.pres;
+	    	for (j = 0; j < 3; j++)
+                vst->momn[j][nrad-i] = 0.0;
+
+            if (dim == 3)
+            {
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind3[idir][j]];
+            }
+	    	else if (dim == 2)
+            {
+                for (j = 0; j < 2; j++)
+                    vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind2[idir][j]];
+            }
+            else
+            {
+                vst->momn[0][nrad-i] = st_tmp_ghost.momn[0];
+            }
+	    }
+	    else
+	    {
+            vst->dens[n+nrad+i-1] = st_tmp_ghost.dens;
+            vst->engy[n+nrad+i-1] = st_tmp_ghost.engy;
+            vst->pres[n+nrad+i-1] = st_tmp_ghost.pres;
+	    	for (j = 0; j < 3; j++)
+                vst->momn[j][n+nrad+i-1] = 0.0;
+    
+	    	if (dim == 3)
+            {
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind3[idir][j]];
+            }
+	    	else if (dim == 2)
+            {
+                for (j = 0; j < 2; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind2[idir][j]];
+            }
+            else
+            {
+                vst->momn[0][n+nrad+i-1] = st_tmp_ghost.momn[0];
+            }
+	    }
+	}
+
+	if (debugging("elastic_buffer"))
+        (void) printf("Leaving setElasticStatesErgun()\n");
+    */
+}	/* end setElasticStatesRFB_normal */
 
 //Reflection Boundary Formulation of Porosity -- No relative tangential velocity
 void CFABRIC_CARTESIAN::setElasticStatesRFB_normal(
