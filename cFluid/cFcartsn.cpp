@@ -338,13 +338,16 @@ void G_CARTESIAN::computeMeshFlux(
         addViscousFlux(&m_vst,m_flux,delta_t);
     }
 	
-    addSourceTerm(&m_vst,m_flux,delta_t);// addSourceTerm(m_vst,m_flux,delta_t);
+    addSourceTerm(&m_vst,m_flux,delta_t);
 
+    /*
     if (eqn_params->with_porosity == YES && 
         eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
     {
         addErgunEquationSourceTerms(&m_vst,m_flux,delta_t);
     }
+    */
+
 }	/* end computeMeshFlux */
 
 /*
@@ -608,8 +611,6 @@ void G_CARTESIAN::addSourceTerm(
             {
                 for (l = 0; l < dim; ++l)
                 {
-                    //m_flux->momn_flux[l][index] += delta_t*gravity[l]*m_vst.dens[index];
-                    //m_flux->engy_flux[index] += delta_t*gravity[l]*m_vst.momn[l][index];
                     m_flux->momn_flux[l][index] += delta_t*gravity[l]*m_vst->dens[index];
                     m_flux->engy_flux[index] += delta_t*gravity[l]*m_vst->momn[l][index];
                 }
@@ -634,8 +635,6 @@ void G_CARTESIAN::addSourceTerm(
             {
                 for (l = 0; l < dim; ++l)
                 {
-                    //m_flux->momn_flux[l][index] += delta_t*gravity[l]*m_vst.dens[index];
-                    //m_flux->engy_flux[index] += delta_t*gravity[l]*m_vst.momn[l][index];
                     m_flux->momn_flux[l][index] += delta_t*gravity[l]*m_vst->dens[index];
                     m_flux->engy_flux[index] += delta_t*gravity[l]*m_vst->momn[l][index];
                 }
@@ -661,8 +660,6 @@ void G_CARTESIAN::addSourceTerm(
             {
                 for (l = 0; l < dim; ++l)
                 {
-                    //m_flux->momn_flux[l][index] += delta_t*gravity[l]*m_vst.dens[index];
-                    //m_flux->engy_flux[index] += delta_t*gravity[l]*m_vst.momn[l][index];
                     m_flux->momn_flux[l][index] += delta_t*gravity[l]*m_vst->dens[index];
                     m_flux->engy_flux[index] += delta_t*gravity[l]*m_vst->momn[l][index];
                 }
@@ -6095,9 +6092,12 @@ void G_CARTESIAN::setDirichletStates(
             }
         }
         else if (boundary_state_function(hs) &&
-                strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0)
+                (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
+                 strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ))
         {
-            //TODO: why not using the state value to extrapolate???
+            //TODO: For local supersonic outflow this should be fine, but for subsonic do
+            //      we need to compute the state with cF_flowThroughBoundaryState() and then
+            //      extrapolate? Or use characteristic theory boundary condition?
             for (k = istart; k <= nrad; ++k)
             {
                 index = d_index(icoords,top_gmax, dim);

@@ -280,14 +280,41 @@ static void promptForDirichletBdryState(
             break;
         */
 
-        case 'f':			// Flow through state
-        case 'F':
+        case 's':
+        case 'S':			// Supersonic outflow
         {
-            FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
-                    "cF_flowThroughBoundaryState",NULL,NULL,*hs,i_hs);
+            FT_InsertDirichletBoundary(front,cF_supersonicOutflowState,
+                    "cF_supersonicOutflowState",NULL,NULL,*hs,i_hs);
             for (int i = 1; i < nhs; ++i)
             {
                 bstate_index(hs[i]) = bstate_index(hs[0]);
+            }
+        }
+        break;
+
+        case 'f':
+        case 'F':
+        {
+	        switch (s[1])
+            {
+                case 'a':
+                case 'A':			// Far-field state
+                {
+
+                }
+                break;
+
+                case 'l':
+                case 'L':			// Flow through state
+                {
+                    FT_InsertDirichletBoundary(front,cF_flowThroughBoundaryState,
+                            "cF_flowThroughBoundaryState",NULL,NULL,*hs,i_hs);
+                    for (int i = 1; i < nhs; ++i)
+                    {
+                        bstate_index(hs[i]) = bstate_index(hs[0]);
+                    }
+                }
+                break;
             }
         }
         break;
@@ -1215,6 +1242,65 @@ extern void cF_flowThroughBoundaryState3d(
 	}
 }       /* end cF_flowThroughBoundaryState3d */
 
+//TODO: Should only be used if local outflow mach number >= 1
+extern void cF_supersonicOutflowState(
+        double          *p0,
+        HYPER_SURF      *hs,
+        Front           *front,
+        POINTER         params,
+        POINTER         state)
+{
+	FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
+	POINT *oldp = ft_params->oldp;
+	COMPONENT comp = ft_params->comp;
+	EQN_PARAMS *eqn_params = ft_params->eqn_params;
+
+	POINTER sl, sr;
+    FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
+    
+    STATE* oldst;
+    if (comp == negative_component(hs))  
+        oldst = (STATE*)sl;
+    else
+        oldst = (STATE*)sr;
+
+    STATE* newst = (STATE*)state;
+    newst->eos = &eqn_params->eos[comp]; 
+    
+    int nrad = 2;
+	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
+
+	int dim = front->rect_grid->dim;
+	for (int i = 0; i < dim; ++i)
+	{
+	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
+			eqn_params->vel[i],getStateVel[i],&newst->vel[i],&oldst->vel[i]);
+        //TODO: project out non-normal velocity components?
+	}
+
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->pres,
+            getStatePres,&newst->pres,&oldst->pres);
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->dens,
+            getStateDens,&newst->dens,&oldst->dens);
+
+    newst->engy = EosEnergy(newst);
+    newst->temp = EosTemperature(newst);
+    newst->mu = EosViscosity(newst);
+	
+    set_state_max_speed(front,newst,p0);
+	
+    if (debugging("outflow"))
+	{
+	    printf("supersonic outflow boundary state:\n");
+	    print_general_vector("Velocity: ",newst->vel,dim,"\n");
+	    printf("Pressure: %f\n",newst->pres);
+	    printf("Density: %f\n",newst->dens);
+	    printf("Energy: %f\n",newst->engy);
+	    printf("Temperature: %f\n",newst->temp);
+	    printf("Viscosity: %f\n",newst->mu);
+	}
+}
+
 extern void cFluid_point_propagate(
         Front *front,
         POINTER wave,
@@ -1443,20 +1529,20 @@ static void dirichlet_point_propagate(
         //////////////////////////////////////////////////////////////////
 
         set_state_max_speed(front,newst,Coords(oldp));
-
-	    if (debugging("dirichlet_bdry"))
-	    {
-            printf("Dirichlet boundary state:\n");
-            
-            print_general_vector("Velocity: ",newst->vel,dim,"\n");
-            printf("Density: %f\n",newst->dens);
-            printf("Energy: %f\n",newst->engy);
-            printf("Pressure: %f\n",newst->pres);
-            printf("Temperature: %f\n",newst->temp);
-            printf("Viscosity: %f\n",newst->mu);
-            printf("Vorticity: %f\n",newst->vort);
-	    }
 	}
+
+    if (debugging("dirichlet_bdry"))
+    {
+        printf("Dirichlet boundary state:\n");
+        
+        print_general_vector("Velocity: ",newst->vel,dim,"\n");
+        printf("Density: %f\n",newst->dens);
+        printf("Energy: %f\n",newst->engy);
+        printf("Pressure: %f\n",newst->pres);
+        printf("Temperature: %f\n",newst->temp);
+        printf("Viscosity: %f\n",newst->mu);
+        printf("Vorticity: %f\n",newst->vort);
+    }
 
 	if (debugging("dirichlet_bdry"))
 	    printf("Leaving dirichlet_point_propagate()\n");

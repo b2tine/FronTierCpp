@@ -129,6 +129,8 @@ struct EQN_PARAMS
     double p1;
     double p2;
     double p3;
+
+    double p_operating; //environment reference pressure
 	
     double rho0;
     double rho1;
@@ -683,6 +685,8 @@ extern void restart_set_dirichlet_bdry_function(Front*);
 
 extern void cF_constantWithWhiteNoise(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 extern void cF_variableBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
+
+extern void cF_supersonicOutflowState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 
 extern void cF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 extern void cF_flowThroughBoundaryState2d(double*,HYPER_SURF*,Front*,POINTER,POINTER);

@@ -588,14 +588,26 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     (eqn_params->eos[GAS_COMP1]).S = S;
     (eqn_params->eos[GAS_COMP2]).S = S;
 
+    //TODO: Need to specify the static/gauge pressure and
+    //      the operating pressure separately.
+
     CursorAfterString(infile,"Enter density and pressure of ambient air:");
 	fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->p2);
 	(void) printf("%f %f\n",eqn_params->rho2,eqn_params->p2);
 
-    eqn_params->p1 = eqn_params->p2; //assume this is total pressure = atmospheric pres + gauge pres
+    eqn_params->p1 = eqn_params->p2; //this is static pressure (abs pres - operating pres)
     eqn_params->rho1 = eqn_params->rho2;
     
+    double p_ref = 101325.0;
+    if (CursorAfterStringOpt(infile,"Enter the operating pressure:"))
+    {
+        fscanf(infile,"%lf",&p_ref);
+        (void) printf("%f\n",p_ref);
+    }
+    eqn_params->p_operating = p_ref;
+
     //eqn_params->p0 = eqn_params->p2; //p0 used when specifying mach number at inlet ????
+
 
     STATE state;
     state.eos = &eqn_params->eos[GAS_COMP2];
