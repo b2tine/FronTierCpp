@@ -2896,41 +2896,31 @@ extern void InstallNewLoadNode(
 	    (void) printf("%s\n",string);
 	    if (string[0] == 'y' || string[0] == 'Y')
 	    {
-		int rg_index;
-		SURFACE **rg_surf;
-		CursorAfterString(infile,
-				"Enter the body index of the target RGB:");
-		fscanf(infile,"%d",&rg_index);
-		(void) printf("%d\n",rg_index);
+            af_params->rgb_payload = true;
+		    int rg_index;
+		    CursorAfterString(infile,"Enter the body index of the target RGB:");
+            fscanf(infile,"%d",&rg_index);
+            (void) printf("%d\n",rg_index);
 		
-        intfc_surface_loop(intfc, rg_surf)
-		{
-		    if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
-			    (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
-		    {
-                if (body_index(*rg_surf) == rg_index)
+		    SURFACE** rg_surf;
+            intfc_surface_loop(intfc, rg_surf)
+            {
+                if ((wave_type(*rg_surf) == NEUMANN_BOUNDARY) || 
+                    (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY))
                 {
-                    if (wave_type(*rg_surf) == MOVABLE_BODY_BOUNDARY)
-                    {
-                        HYPER_SURF* hs = Hyper_surf(*rg_surf);
-                        af_params->rgb_payload = true;
-                    }
-                    break;
+                    if (body_index(*rg_surf) == rg_index) break;
                 }
-		    }
-		}
-		connectStringtoRGB(front,*rg_surf,&sec_nload,1);
-		delete_node(nload);
-		set_current_interface(cur_intfc);
-		fclose(infile);
-		FT_FreeThese(1,string_curves);
-		return;
+            }
+            connectStringtoRGB(front,*rg_surf,&sec_nload,1);
+            delete_node(nload);
+            set_current_interface(cur_intfc);
+            fclose(infile);
+            FT_FreeThese(1,string_curves);
+            return;
 	    }
 	}
-
     
     //For pointmass run
-    
     double hmin = std::min(h[0],h[1]);
     hmin = std::min(hmin,h[2]);
 
@@ -3183,9 +3173,10 @@ static void CgalCircleBelt(
 
 	if (string_bool[0] == 'y' || string_bool[0] == 'Y')
 	{
-            findBeltNodePoints(belt,curves,center,ubelt_node_pts,
-                                lbelt_node_pts,num_strings,offset);
-	    findStringNodePoints(*surf,out_nodes_coords,circle_node_pts,
+        findBeltNodePoints(belt,curves,center,ubelt_node_pts,
+                            lbelt_node_pts,num_strings,offset);
+	    
+        findStringNodePoints(*surf,out_nodes_coords,circle_node_pts,
                                 num_strings,&cbdry);
 	    
         installCircleBeltString(front,*surf,belt,circle_node_pts,
@@ -3196,14 +3187,18 @@ static void CgalCircleBelt(
         
             //gview_plot_interface("test-DGB0",front->interf);
 	}
+
 	setSurfZeroMesh(*surf);
 	setSurfZeroMesh(belt);
 	setMonoCompBdryZeroLength(*surf);
 	setMonoCompBdryZeroLength(belt);
         //gview_plot_interface("test",front->interf);
-	FT_FreeThese(3,circle_node_pts,ubelt_node_pts,lbelt_node_pts);
+	
+    FT_FreeThese(3,circle_node_pts,ubelt_node_pts,lbelt_node_pts);
 	if (consistent_interface(front->interf) == NO)
-	    clean_up(ERROR);
+    {
+        LOC(); clean_up(ERROR);
+    }
 }	/* end CgalCircleBelt */
 
 static void findBeltNodePoints(
