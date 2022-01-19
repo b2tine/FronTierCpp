@@ -1,6 +1,5 @@
 Max time: 1.0
-Max step: 3
-                    Max stepXXX: 100000
+Max ste: 100000
 Print interval: 0.0001
 Movie frame interval: 0.00001
 CFL factor: 0.5
@@ -25,8 +24,8 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 663.2 0 0
-Enter pressure: 101325.0
-Enter density: 0.22
+Enter pressure: 262897.1
+Enter density: 1.83
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
@@ -66,7 +65,7 @@ Enter the specific gas constant: 287.058
 Enter the Prandtl number: 0.71
 
 Enter the reference molecular viscosity: 1.716e-05
-Enter the reference temperature: 273.0
+Enter the reference temperature: 273.15
 Enter the effective temperature: 111.0
 
 
