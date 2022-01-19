@@ -6037,6 +6037,10 @@ void G_CARTESIAN::setDirichletStates(
         {
             //TODO: Should the boundary_state_function be called here and then use the
             //      computed boundary state to fill the stencil (constant extrapolation)
+            //
+            //      WE CAN INTERPOLATE THE INTFC STATE AT THE CROSSING:
+            //
+            //      SEE setDirichletViscousGhostState() for how to do this.
             
             for (k = istart; k <= nrad; ++k)
             {
