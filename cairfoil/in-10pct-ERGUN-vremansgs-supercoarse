@@ -2,7 +2,7 @@ Domain limit in 0-th dimension: 0 1.2
 Domain limit in 1-th dimension: 0 1.2
 Domain limit in 2-th dimension: 0 1.2
 
-Computational grid: 30 30 30
+Computational grid: 25 25 25
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -23,10 +23,9 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 25
-    XXXEnter velocityXXX: 0 0 125
-Enter pressure: 175000
-Enter density: 2.675
+Enter velocity: 0 0 50
+Enter pressure: 101325
+Enter density: 0.9
 For upper boundary in 2-th dimension
 
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -40,8 +39,7 @@ Max time: 2.0
 Max step: 5000
 Print interval: 0.001
 Movie frame interval: 0.0001
-CFL factor: 1.0
-    XXXCFL factorXXX: 0.75
+CFL factor: 0.75
 type yes to turn off auto-redistribution: y
 
 //////////////////////////////////////////////////////////
@@ -53,7 +51,7 @@ Enter numerical scheme for interior solver: WENO_4th_ORDER
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.29 110000
+Enter density and pressure of ambient air: 1.29 101325
 
 Enter the specific gas constant: 287.058
 Enter the Prandtl number: 0.71
@@ -121,8 +119,11 @@ Enter nsub per collision step: 25
 Enter yes to use porosity: yes
 Enter fabric porosity: 0.1
 Enter porosity ghost fluid method: ERGUN
-Enter viscous parameter: 0.316077
+
+Enter viscous parameter: 316.077
 Enter inertial parameter: 2.54032
+    XXXEnter viscous parameterXXX: 0.316077
+    XXXEnter inertial parameterXXX: 2.54032
 
 Enter area density of canopy: 0.5
 Enter yes to use total mass: yes
@@ -158,7 +159,7 @@ Available velocity functions are:
         Fixed point velocity (FP)
         Free fall velocity (FF)
 
-Enter velocity function: Z
+Enter velocity function: Zero
 Enter gravity: 0 0 0
 
 //////////////////////////////////////////////////////////
@@ -180,8 +181,9 @@ Type y to make vector vorticity field movie: y
 *************************************************
 Enter yes for debugging: yes
 
+Enter the debugging string: collision_off
+Enter the debugging stringXXX: collision
 Enter the debugging string: proximity
-Enter the debugging string: collision
 Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
 Enter the debugging string: cfluid_dt
@@ -191,6 +193,5 @@ Enter the debugging string: skip_strainvel
 Enter the debugging stringXXX: no_viscflux
 
 Enter the debugging stringXXX: elastic_buffer
-Enter the debugging stringXXX: collision_off
 Enter the debugging stringXXX: trace
 

@@ -340,13 +340,11 @@ void G_CARTESIAN::computeMeshFlux(
 	
     addSourceTerm(&m_vst,m_flux,delta_t);
 
-    /*
     if (eqn_params->with_porosity == YES && 
         eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
     {
         addErgunEquationSourceTerms(&m_vst,m_flux,delta_t);
     }
-    */
 
 }	/* end computeMeshFlux */
 
@@ -733,6 +731,7 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
     COMPONENT comp = top_comp[index];
 
     double dens_fluid = m_vst->dens[index];
+    double visc_fluid = m_vst->mu[index]+  m_vst->mu_turb[index];
 
     int max_nb = 6;
     for (int nb = 0; nb < max_nb; nb++)
@@ -790,7 +789,12 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
             //       those used in the literature since the units are different.
             
             //NOTE: alpha and beta include thickness factor
-            d_p = (alpha + fabs(Un)*beta)*Un;
+            d_p = (alpha*visc_fluid + fabs(Un)*beta*dens_fluid)*Un;
+                //d_p = (alpha + fabs(Un)*beta)*Un;
+
+            //TODO: need to remove viscosity from the alpha term provided as input
+            //      and multiply by the local viscosity instead of the constant visc
+            //      incorporated into alpha currently.
 
             
             for (int i = 0; i < dim; i++)
@@ -799,21 +803,24 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
             side = Dotd(nor,vec,dim);
             
             //TODO: What is correct way to add as source term?
+                
+            double Pin = getStatePres(sl);
+            double Pout = getStatePres(sr);
 
             // modify pressure gradient
-            //if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1))
-            if (side <= 0)
+            //if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1)) //TODO: NEED THIS LOGIC
+            if (side >= 0)
             {
-                double Pin = getStatePres(sl);
-                double Pout = getStatePres(sr);
+                    //double Pin = getStatePres(sl);
+                    //double Pout = getStatePres(sr);
                 gradP[nb/2] -= 2.0*d_p*Pout/(Pin + Pout);
-                //gradP[nb/2] -= 0.5*d_p/top_h[nb/2];
+                    //gradP[nb/2] -= 0.5*d_p/top_h[nb/2];
             }
-            //else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0))
-            else if (side  > 0)
+            //else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0)) //TODO: NEED THIS LOGIC
+            else //if (side < 0)
             {
-                double Pin = getStatePres(sr);
-                double Pout = getStatePres(sl);
+                    //double Pin = getStatePres(sr);
+                    //double Pout = getStatePres(sl);
                 gradP[nb/2] += 2.0*d_p*Pout/(Pin + Pout);
                 //gradP[nb/2] += 0.5*d_p/top_h[nb/2];
             }

@@ -778,7 +778,7 @@ extern void getChannelInletState(
     //      done in the shock stationary frame of reference ... I believe.
     
 
-    double shock_side = -1.0*eqn_params->shock_side;
+    double shock_side = eqn_params->shock_side;
 
     behind_state(SHOCK_MACH_NUMBER,eqn_params->Mach_number,
             &eqn_params->shock_speed,eqn_params->idir,shock_side,
@@ -1345,18 +1345,6 @@ static void behind_state(
 	p0  = ahead_state->pres;
 	u0  = ahead_state->vel[idir]*shock_side;
 
-    /*
-    /////////////////////////////////////
-    double pref = 100000.0;
-    p0 -= pref;
-        //p0 += 1.0 - pref;
-    /////////////////////////////////////
-    */
-
-
-    //TODO: Need to double check these relations.
-    //      The behind state pressure should not be less
-    //      than the ahead state pressure
 
 	switch(which_parameter)
 	{

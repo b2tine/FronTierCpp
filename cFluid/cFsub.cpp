@@ -171,6 +171,8 @@ static void promptForDirichletBdryState(
             comp = gas_comp(positive_component(hs[0])) ? 
                     positive_component(hs[0]) : negative_component(hs[0]);
             
+            state->eos = &(eqn_params->eos[comp]);
+
             bool set_inlet_mach_number = false;
             if (CursorAfterStringOpt(infile,"Enter yes to set mach number at inlet:"))
             {
@@ -205,24 +207,10 @@ static void promptForDirichletBdryState(
 
                 getChannelInletState(state,eqn_params,comp);
 
-                printf("\nShock Speed: %f\n\n",eqn_params->shock_speed);
-                
-                printf("Inlet Density: %f\n",state->dens);
-                printf("Inlet Velocity:");
-                for (int i = 0; i < dim; ++i)
-                {
-                    printf(" %f", state->vel[i]);
-                }
-                printf("\n");
-                printf("Inlet Pressure: %f\n",state->pres);
-                printf("Inlet Temperature: %f\n",state->temp);
-                printf("Inlet Viscosity: %g\n",state->mu);
-                printf("Inlet Energy: %f\n",state->engy);
+                printf("\nShock Speed: %f\n\n",eqn_params->shock_speed);    
             }
             else
             {
-                state->eos = &(eqn_params->eos[comp]);
-
                 CursorAfterString(infile,"Enter velocity:");
                 for (int k = 0; k < dim; ++k)
                 {
@@ -247,15 +235,28 @@ static void promptForDirichletBdryState(
                 state->temp = EosTemperature(state);
                 state->mu = EosViscosity(state);
                 
-                printf("Constant State Inlet Temperature: %f\n",state->temp);
-                printf("Constant State Inlet Viscosity: %f\n",state->mu);
+                //printf("Constant State Inlet Temperature: %f\n",state->temp);
+                //printf("Constant State Inlet Viscosity: %f\n",state->mu);
             }
-            printf("\n");
             
             ////////////////////////////////////
             state->k_turb = 0.0;
             ////////////////////////////////////
 
+            
+            printf("\n");
+            printf("Inlet Density: %f\n",state->dens);
+            printf("Inlet Velocity:");
+            for (int i = 0; i < dim; ++i)
+            {
+                printf(" %f", state->vel[i]);
+            }
+            printf("\n");
+            printf("Inlet Energy: %f\n",state->engy);
+            printf("Inlet Pressure: %f\n",state->pres);
+            printf("Inlet Temperature: %f\n",state->temp);
+            printf("Inlet Viscosity: %g\n",state->mu);
+            printf("\n");
 
             FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,*hs,i_hs);
 
@@ -1467,10 +1468,9 @@ static void dirichlet_point_propagate(
 	FLOW_THROUGH_PARAMS ft_params;
 	COMPONENT comp;
 
-	if (debugging("dirichlet_bdry"))
+	if (debugging("trace"))
 	{
 	    printf("Entering dirichlet_point_propagate()\n");
-	    print_general_vector("oldp:  ",Coords(oldp),dim,"\n");
 	}
 
 	slsr(oldp,oldhse,oldhs,(POINTER*)&sl,(POINTER*)&sr);
@@ -1527,24 +1527,25 @@ static void dirichlet_point_propagate(
         //////////////////////////////////////////////////////////////////
         newst->vort = 0.0;
         //////////////////////////////////////////////////////////////////
-
-        set_state_max_speed(front,newst,Coords(oldp));
 	}
+
+    set_state_max_speed(front,newst,Coords(oldp));
+
 
     if (debugging("dirichlet_bdry"))
     {
-        printf("Dirichlet boundary state:\n");
-        
+        printf("\nDirichlet boundary state:\n");
+        print_general_vector("Coords: ",Coords(oldp),dim,"\n\n");
         print_general_vector("Velocity: ",newst->vel,dim,"\n");
-        printf("Density: %f\n",newst->dens);
-        printf("Energy: %f\n",newst->engy);
-        printf("Pressure: %f\n",newst->pres);
-        printf("Temperature: %f\n",newst->temp);
-        printf("Viscosity: %f\n",newst->mu);
-        printf("Vorticity: %f\n",newst->vort);
+        printf("\tDensity: %f\n",newst->dens);
+        printf("\tEnergy: %f\n",newst->engy);
+        printf("\tPressure: %f\n",newst->pres);
+        printf("\tTemperature: %f\n",newst->temp);
+        printf("\tViscosity: %f\n",newst->mu);
+        printf("\tVorticity: %f\n",newst->vort);
     }
 
-	if (debugging("dirichlet_bdry"))
+	if (debugging("trace"))
 	    printf("Leaving dirichlet_point_propagate()\n");
 }	/* end dirichlet_point_propagate */
 

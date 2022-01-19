@@ -533,15 +533,14 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                 {
                 case NEUMANN_BOUNDARY:
                 case MOVABLE_BODY_BOUNDARY:
-                    setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
-                            nb,0,i,comp);
+                    setNeumannStates(vst,m_vst,hs,state,ic_next,idir,nb,0,i,comp);
                     break;
+
                 case ELASTIC_BOUNDARY:
                     if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
                     {
                         //TODO: Implement in setElasticStates and use the
                         //      logic of addErgunEquationSourceTerms()
-                        /*
                         for (k = i; k <= nrad; ++k)
                         {
                             vst->dens[nrad-k] = m_vst->dens[index];
@@ -557,7 +556,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                             }
                             else if (dim == 2)
                             {
-                                for(j = 0; j < 2; j++)
+                                for (j = 0; j < 2; j++)
                                 {
                                     vst->momn[j][nrad-k] = m_vst->momn[ind2[idir][j]][index];
                                 }
@@ -570,21 +569,19 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                                 }
                             }
                         }
-                        */
                     }
                     else
                     {
-                        setElasticStates(vst,m_vst,hs,state,ic_next,
-                                idir,nb,0,i,comp);
+                        setElasticStates(vst,m_vst,hs,state,ic_next,idir,nb,0,i,comp);
                     }
-                break;
-                case DIRICHLET_BOUNDARY:
-                    setDirichletStates(state,vst,m_vst,hs,ic_next,
-                        idir,nb,0,i);
                     break;
+    
+                case DIRICHLET_BOUNDARY:
+                    setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,0,i);
+                    break;
+
                 case FIRST_PHYSICS_WAVE_TYPE:
                     GFMGhostState(ic,comp,&ghost_st);
-                    
                     for (k = i; k <= nrad; ++k)
                     {
                         vst->dens[nrad-k] = ghost_st.dens;
@@ -615,9 +612,10 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                     (void) print_wave_type("Unknown wave type ",
                         wave_type(hs),"\n",front->interf);
                     (void) print_int_vector("icoords=", icoords,3,"\n");
-                    clean_up(ERROR);
+                    LOC(); clean_up(ERROR);
                 }
-                break;
+
+                break; //breaks out of for i loop
             }
             
         }
@@ -765,15 +763,14 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                 {
                 case NEUMANN_BOUNDARY:
                 case MOVABLE_BODY_BOUNDARY:
-                    setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
-                            nb,n,i,comp);
+                    setNeumannStates(vst,m_vst,hs,state,ic_next,idir,nb,n,i,comp);
                     break;
+
                 case ELASTIC_BOUNDARY:
                     if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
                     {
                         //TODO: Implement in setElasticStates and use the
                         //      logic of addErgunEquationSourceTerms()
-                        /*
                         for (k = i; k <= nrad; ++k)
                         {
                             vst->dens[n+nrad+k-1] = m_vst->dens[index];
@@ -802,7 +799,6 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                                 }
                             }
                         }
-                        */
                     }
                     else
                     {
@@ -810,20 +806,20 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                                 idir,nb,n,i,comp);
                     }
                     break;
+
                 case DIRICHLET_BOUNDARY:
-                    setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,
-                            n,i);
+                    setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,n,i);
                     break;
+
                 case FIRST_PHYSICS_WAVE_TYPE:
                     GFMGhostState(ic,comp,&ghost_st);
-
                     for (k = i; k <= nrad; ++k)
                     {
                         vst->dens[n+nrad+k-1] = ghost_st.dens;
                         vst->engy[n+nrad+k-1] = ghost_st.engy;
                         vst->pres[n+nrad+k-1] = ghost_st.pres;
                 
-                        for(j=0; j<3; j++)
+                        for (j = 0; j < 3; j++)
                             vst->momn[j][n+nrad+k-1] = 0.0;
 
                         if (dim == 1)
@@ -832,25 +828,27 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                         }
                         else if (dim == 2)
                         {
-                            for(j = 0; j < 2; j++)
+                            for (j = 0; j < 2; j++)
                                 vst->momn[j][n+nrad+k-1] = ghost_st.momn[ind2[idir][j]];
                         }
                         else if (dim == 3)
                         {
-                            for(j = 0; j < 3; j++)
+                            for (j = 0; j < 3; j++)
                                 vst->momn[j][n+nrad+k-1] = ghost_st.momn[ind3[idir][j]];
                         }
                     }
                     break;
+
                 default:
                     (void) printf("In appendGhostBuffer(): ");
                     (void) print_wave_type("Unknown wave type ",
                     wave_type(hs),"\n",front->interf);
                     (void) print_int_vector("icoords=",icoords,3,"\n");
                     (void) printf("nb = %d\n",nb);
-                    clean_up(ERROR);
+                    LOC(); clean_up(ERROR);
                 }
-                break;
+                
+                break; //breaks out of for i loop
             }
         }
 	}
@@ -870,14 +868,16 @@ void CFABRIC_CARTESIAN::setElasticStates(
 {
     switch (eqn_params->poro_scheme)
     {
+        /*
+        case PORO_SCHEME::ERGUN:
+            setElasticStatesErgun(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
+            break;
+        */
         case PORO_SCHEME::NORMAL_REFLECTION:
             setElasticStatesRFB_normal(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
             break;
         case PORO_SCHEME::REFLECTION:
             setElasticStatesRFB(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
-            break;
-        case PORO_SCHEME::ERGUN:
-            setElasticStatesErgun(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
             break;
         case PORO_SCHEME::RIEMANN:
             setElasticStatesRiem(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);

@@ -1,7 +1,8 @@
 Max time: 1.0
-Max step: 100000
-Print interval: 0.0015
-Movie frame interval: 0.00015
+Max step: 3
+                    Max stepXXX: 100000
+Print interval: 0.0001
+Movie frame interval: 0.00001
 CFL factor: 0.5
 Redistribution interval: 10000000000000
 Type yes to turn off auto-redistribution: yes
@@ -24,7 +25,7 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 663.2 0 0
-Enter pressure: 101325
+Enter pressure: 101325.0
 Enter density: 0.22
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
@@ -57,7 +58,7 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.29 101325
+Enter density and pressure of ambient air: 1.29 101325.0
 
 Enter yes for heat flux: yes
 
@@ -126,6 +127,8 @@ Type y to make vector vorticity field movie: y
 ************Debugging options*****************
 Enter yes for debugging: yes
 Enter the debugging string: cfluid_dt
+
+Enter the debugging stringXXX: dirichlet_bdry
 
 Enter the debugging stringXXX: no_heatflux
 Enter the debugging stringXXX: no_viscflux

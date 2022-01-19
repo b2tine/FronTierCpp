@@ -42,6 +42,7 @@ extern double EosViscosity(
 extern double EosTemperature(
 	STATE *state)
 {
+    //TODO: Should throw error/exception
 	if (state->dens <= 0.0) return 0.0;
 
     EOS_PARAMS* eos = state->eos;
