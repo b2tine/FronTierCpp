@@ -22,9 +22,9 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 663.2
-Enter pressure: 101325
-Enter density: 0.22
+Enter velocity: 0 0 663.22
+Enter pressure: 262897.1
+Enter density: 1.83
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
@@ -46,13 +46,13 @@ Enter numerical scheme for interior solver: WENO_4th_ORDER
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.29 101325
+Enter density and pressure of ambient air: 1.29 101325.0
 
 Enter the specific gas constant: 287.058
 Enter the Prandtl number: 0.71
 
 Enter the reference molecular viscosity: 1.716e-05
-Enter the reference temperature: 273.0
+Enter the reference temperature: 273.15
 Enter the effective temperature: 111.0
 
 Enter gravity: 0 0 0
@@ -113,7 +113,7 @@ Available types of canopy boundaries are:
         Elliptic (E)
         Cross (X)
         Circular with belt (S)
-Enter type of canopy boundary: c
+Enter type of canopy boundary: S
 Enter the height of the plane: 18
 Enter circle center: 6 6
 Enter circle radius: 4.2672
@@ -122,15 +122,23 @@ Enter yes to cut a vent on canopy: yes
 Enter radius of the vent: 0.42672
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 28
+Enter the length of the drape: 1.5
+Enter the gap between canopy and drape: 0.75
 
+Enter yes to install the strings to RGB: no
 Enter initial position of load: 6 6 12.451
-Enter yes to install the strings to RGB: yes
-Enter the body index of the target RGB: 1
 Enter yes to fix the load node: no
 
-Enter type of plane edge: c
-Enter start angle of chord: 6.263185
-Enter rotation angles: 0.0
+Enter yes for string-fluid interaction: no
+
+Enter new load position: 6 6 11.951
+Enter connection position: 6 6 12.251
+Enter yes to fix new load node: no
+Enter yes to install the multi-parachute to RGB: yes
+Enter the body index of the target RGB: 1
+Enter yes to skip rg_nodes in x direction for 1: yes
+Enter yes to skip rg_nodes in y direction for 1: yes
+
 
 
 //////////////////////////////////////////////////////////

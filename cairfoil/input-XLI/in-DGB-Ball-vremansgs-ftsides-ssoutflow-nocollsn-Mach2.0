@@ -153,7 +153,7 @@ Enter interior propagator: p
 Enter interior sub step number: 1
 
 Enter yes for collision substepping: yes
-Enter nsub per collision step: 1
+Enter nsub per collision step: 25
 
 Enter area density of canopy: 0.5
 Enter yes to use total mass: yes
