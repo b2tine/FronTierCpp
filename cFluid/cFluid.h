@@ -104,6 +104,16 @@ enum class EDDY_VISC_MODEL
     WALE
 };
 
+//For specifying freestream condition to initialize flow field,
+//and for external flow problems to apply far-field (outflow) boundary conditions.
+struct FREESTREAM_PARAMS
+{
+    double M;   //mach number
+    double P;   //pressure
+    double T;   //temperature
+    double Re;  //reynolds number
+};
+
 struct EQN_PARAMS
 {
     int dim;
@@ -686,6 +696,7 @@ extern void restart_set_dirichlet_bdry_function(Front*);
 extern void cF_constantWithWhiteNoise(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 extern void cF_variableBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 
+extern void cF_farfieldBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 extern void cF_supersonicOutflowState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 
 extern void cF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);

@@ -1,6 +1,6 @@
-Max time: 0.05
+Max time: 2.0
 Max step: 15000
-Print interval: 0.0025
+Print interval: 0.05
 Movie frame interval: 0.00025
 CFL factor: 0.5
 Redistribution interval: 1000000000
@@ -8,10 +8,11 @@ Type yes to turn off auto-redistribution: yes
 
 *******************************************************
 
-Domain limit in 0-th dimension: 0 3.75
-Domain limit in 1-th dimension: 0 2.75
+Domain limit in 0-th dimension: -1.075 7.45
+Domain limit in 1-th dimension: -0.95 3.7
 
 Computational grid: 165 125
+    Computational gridXXX: 75 50
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -21,21 +22,15 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 663.2 0
-Enter pressure: 101325.0
-Enter density: 0.22
+Enter pressure: 262897.1
+Enter density: 1.83
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
 For lower boundary in 1-th dimension
 Enter type of Dirichlet boundary: FAR_FIELD
-Enter velocity: 663.2 0
-Enter pressure: 101325.0
-Enter density: 0.22
 For upper boundary in 1-th dimension
 Enter type of Dirichlet boundary: FAR_FIELD
-Enter velocity: 663.2 0
-Enter pressure: 101325.0
-Enter density: 0.22
 
 *******************************************************
 Problem type can be
@@ -67,7 +62,7 @@ Enter the specific gas constant: 287.058
 Enter the Prandtl number: 0.71
 
 Enter the reference molecular viscosity: 1.716e-05
-Enter the reference temperature: 273.0
+Enter the reference temperature: 273.15
 Enter the effective temperature: 111.0
 
 Enter gravity: 0 0 

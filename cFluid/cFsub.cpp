@@ -301,7 +301,17 @@ static void promptForDirichletBdryState(
                 case 'a':
                 case 'A':			// Far-field state
                 {
+                    ////////////////////////////////////////////////////////////////////////
+                        //printf("\nERROR: FAR_FIELD boundary condition not yet implemented\n");
+                        //LOC(); clean_up(EXIT_FAILURE);
+                    ////////////////////////////////////////////////////////////////////////
 
+                    FT_InsertDirichletBoundary(front,cF_farfieldBoundaryState,
+                            "cF_farfieldBoundaryState",NULL,NULL,*hs,i_hs);
+                    for (int i = 1; i < nhs; ++i)
+                    {
+                        bstate_index(hs[i]) = bstate_index(hs[0]);
+                    }
                 }
                 break;
 
@@ -542,13 +552,82 @@ void cF_variableBoundaryState3d(
         POINTER         params,
         POINTER         state)
 {
+    ////////////////////////////////////////////////////////////////////////
     printf("\nERROR cF_variableBoundaryState3d() not implemented yet!\n");
     LOC(); clean_up(EXIT_FAILURE);
+    ////////////////////////////////////////////////////////////////////////
 }	/* end cF_variableBoundaryState3d */
 
+extern void cF_farfieldBoundaryState(
+        double          *p0,
+        HYPER_SURF      *hs,
+        Front           *front,
+        POINTER         params,
+        POINTER         state)
+{
+    ////////////////////////////////////////////////////////////////////////
+        //printf("\nERROR: FAR_FIELD boundary condition not yet implemented\n");
+        //LOC(); clean_up(EXIT_FAILURE);
+    ////////////////////////////////////////////////////////////////////////
+
+    int dim = front->rect_grid->dim;
+	FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
+	POINT *oldp = ft_params->oldp;
+	COMPONENT comp = ft_params->comp;
+	EQN_PARAMS *eqn_params = ft_params->eqn_params;
+
+	STATE* newst = (STATE*)state;
+    newst->eos = &eqn_params->eos[comp]; 
+
+    //TODO: read these from input file; hardcoded now to prototype
+    double M_freestream = 2.0;
+    double alpha = 0.0; //angle of attack
+    double beta = 0.0;  //yaw
+
+    double c_freestream = 331.61;
+    double dens_freestream = 1.83;
+    double pres_freestream = dens_freestream * sqr(c_freestream) / (newst->eos)->gamma;
+
+    newst->dens = dens_freestream;
+    newst->pres = pres_freestream;
+
+    double U_dimless[3] = {0.0};
+    U_dimless[0] = M_freestream * std::cos(alpha) * std::sin(beta);
+    U_dimless[1] = -1.0*M_freestream * std::sin(beta);
+    U_dimless[2] = M_freestream *std::sin(alpha) * std::cos(beta);
+
+    for (int i = 0; i < dim; ++i)
+    {
+        newst->vel[i] = U_dimless[i] * c_freestream;
+        newst->momn[i] = newst->dens * newst->vel[i];
+    }
+
+    newst->engy = EosEnergy(newst);
+    newst->temp = EosTemperature(newst);
+    newst->mu = EosViscosity(newst);
+    
+    set_state_max_speed(front,newst,p0);
+    
+    if (debugging("far_field"))
+	{
+	    printf("far-field boundary state:\n");
+        printf("Coords:");
+        for (int i = 0; i < dim; ++i)
+        {
+            printf(" %f",Coords(oldp)[i]);
+        }
+        printf("\n\n");
+
+	    print_general_vector("Velocity: ",newst->vel,dim,"\n");
+	    printf("Pressure: %f\n",newst->pres);
+	    printf("Density: %f\n",newst->dens);
+	    printf("Energy: %f\n",newst->engy);
+	    printf("Temperature: %f\n",newst->temp);
+	    printf("Viscosity: %f\n",newst->mu);
+	}
+}
+
 /*
-//TODO: Remove when new version is working and has been tested.
-//
 //OLD VERSION
 extern void cF_flowThroughBoundaryState(
         double          *p0,
@@ -564,9 +643,6 @@ extern void cF_flowThroughBoundaryState(
 	COMPONENT comp = ft_params->comp;
 	EQN_PARAMS *eqn_params = ft_params->eqn_params;
 	
-    static SWEEP *st_stencil;
-	static FSWEEP *st_flux;
-	
     double dir[MAXD];
 	double u[3];		// velocity in the sweeping direction
 	double v[3][MAXD];	// velocity in the orthogonal direction
@@ -580,36 +656,24 @@ extern void cF_flowThroughBoundaryState(
 	double f_dens;		// density flux
 	
     double dn, dt = front->dt;
-	STATE *newst = (STATE*)state;
 	STATE  *s0,*sl,*sr,**sts;
-	static STATE *s1;
 	int i,j,dim = front->rect_grid->dim;
 	
-    int nrad = 3;
-	int size = 2*nrad + 1;
+    int nrad = 2;
 	
+    STATE *newst = (STATE*)state;
+    newst->eos = &eqn_params->eos[comp]; 
+
+
 	if (debugging("flow_through"))
 	    printf("Entering cF_flowThroughBoundaryState()\n");
-	if (s1 == NULL)
+	
+	static STATE *s1;
+    if (s1 == NULL)
 	{
 	    FT_ScalarMemoryAlloc((POINTER*)&s1,sizeof(STATE));
-	    FT_ScalarMemoryAlloc((POINTER*)&st_stencil,sizeof(SWEEP));
-	    FT_ScalarMemoryAlloc((POINTER*)&st_flux,sizeof(FSWEEP));
-	    FT_VectorMemoryAlloc((POINTER*)&st_stencil->dens,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_stencil->engy,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_stencil->pres,size,
-					sizeof(double));
-	    FT_MatrixMemoryAlloc((POINTER*)&st_stencil->momn,MAXD,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_flux->dens_flux,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&st_flux->engy_flux,size,
-					sizeof(double));
-	    FT_MatrixMemoryAlloc((POINTER*)&st_flux->momn_flux,MAXD,size,
-					sizeof(double));
-	}
+    }
+	 
 
 	tsten = FrontGetTanStencils(front,oldp,nrad);
 	if (tsten != NULL)
@@ -681,7 +745,7 @@ extern void cF_flowThroughBoundaryState(
 	    f_dens = linear_flux(u[1],dens[0],dens[1],dens[2]);
 
 	    for (i = 0; i < dim; ++i)
-	    	newst->vel[i] = sts[0]->vel[i] - dt/dn*(f_u*dir[i] + f_v[i]) ;
+	    	newst->vel[i] = sts[0]->vel[i] - dt/dn*(f_u*dir[i] + f_v[i]);
 	    newst->vort = sts[0]->vort - dt/dn*f_vort;
 	    newst->pres = sts[0]->pres - dt/dn*f_pres;
 	    newst->dens = sts[0]->dens - dt/dn*f_dens;
@@ -690,9 +754,9 @@ extern void cF_flowThroughBoundaryState(
 	{
 	    slsr(oldp,oldp->hse,oldp->hs,(POINTER*)&sl,(POINTER*)&sr);
 	    if (comp == negative_component(hs))  
-		s0 = sl;
+		    s0 = sl;
 	    else
-		s0 = sr;
+		    s0 = sr;
 	}
 	
 	nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
@@ -731,6 +795,7 @@ extern void cF_flowThroughBoundaryState(
 		v[j][i] = s0->vel[i]*(1.0 - dir[i]);
 	    }
 	}
+
 	for (i = 0; i < dim; ++i)
 	{
 	    double vtmp;
@@ -738,19 +803,24 @@ extern void cF_flowThroughBoundaryState(
 			eqn_params->vel[i],getStateVel[i],&vtmp,&s0->vel[i]);
 	    s1->vel[i] = vtmp;
 	}
-	if (dim == 2)
+	
+    if (dim == 2)
 	{
 	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
 			eqn_params->vort,getStateVort,&vort[2],&s0->vort);
 	    s1->vort = vort[2];
 	}
-	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->pres,
+	
+    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->pres,
                             getStatePres,&pres[2],&s0->pres);
-	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->dens,
+	
+    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->dens,
                             getStateDens,&dens[2],&s0->dens);
-	s1->pres = pres[2];
+	
+    s1->pres = pres[2];
 	s1->dens = dens[2];
-	for (i = 0; i < dim; ++i)
+	
+    for (i = 0; i < dim; ++i)
 	{
 	    u[2] += s1->vel[i]*dir[i];
 	    v[2][i] = s1->vel[i] - s1->vel[i]*dir[i];
@@ -764,18 +834,30 @@ extern void cF_flowThroughBoundaryState(
 	f_dens = linear_flux(u[1],dens[0],dens[1],dens[2]);
 
 	for (i = 0; i < dim; ++i)
-	    newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]) ;
+	    newst->vel[i] += - dt/dn*(f_u*dir[i] + f_v[i]);
 	newst->vort += - dt/dn*f_vort;
 	newst->pres += - dt/dn*f_pres;
 	newst->dens += - dt/dn*f_dens;
-	set_state_max_speed(front,newst,p0);
+	
+	for (i = 0; i < dim; ++i)
+        newst->momn[i] = newst->dens * newst->vel[i];
+
+    newst->engy = EosEnergy(newst);
+    newst->temp = EosTemperature(newst);
+    newst->mu = EosViscosity(newst);
+    
+    set_state_max_speed(front,newst,p0);
 	
     if (debugging("flow_through"))
 	{
 	    printf("flow through boundary state:\n");
 	    print_general_vector("Velocity: ",newst->vel,dim,"\n");
+        printf("Vorticity: %f\n",newst->vort);
 	    printf("Pressure: %f\n",newst->pres);
-	    printf("Vorticity: %f\n",newst->vort);
+	    printf("Density: %f\n",newst->dens);
+	    printf("Energy: %f\n",newst->engy);
+	    printf("Temperature: %f\n",newst->temp);
+	    printf("Viscosity: %f\n",newst->mu);
 	}
 }*/       /* end cF_flowThroughBoundaryState */
 
@@ -835,9 +917,7 @@ extern void cF_flowThroughBoundaryState2d(
     STATE* newst = (STATE*)state;
 	STATE** sts;
 
-    //TODO: Should nrad be 2 or 3?
     int nrad = 2;
-    //int nrad = 3;
 
 	if (debugging("flow_through"))
 	    printf("Entering cF_flowThroughBoundaryState2d()\n");
@@ -858,8 +938,6 @@ extern void cF_flowThroughBoundaryState2d(
     newst->vort = oldst->vort;
     newst->pres = oldst->pres;
     newst->dens = oldst->dens;
-
-    //double c = EosSoundSpeed(newst); //sound speed
 
     //Normal
 	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
@@ -950,7 +1028,7 @@ extern void cF_flowThroughBoundaryState2d(
             newst->vel[0],newst->vel[1],newst->vel[2]);
     }
 
-    
+
     //Tangential
 	Tan_stencil** tsten = FrontGetTanStencils(front,oldp,nrad);
 
@@ -1005,11 +1083,17 @@ extern void cF_flowThroughBoundaryState2d(
         {
 	    	newst->vel[i] -= dt/dn*(f_u*dir[i] + f_v[i]);
         }
+
 	    newst->vort -= dt/dn*f_vort;
 	    newst->pres -= dt/dn*f_pres;
 	    newst->dens -= dt/dn*f_dens;
 	}
 
+    for (i = 0; i < dim; ++i)
+    {
+        newst->momn[i] = newst->dens * newst->vel[i];
+    }
+    
     newst->engy = EosEnergy(newst);
     newst->temp = EosTemperature(newst);
     newst->mu = EosViscosity(newst);
@@ -1061,9 +1145,7 @@ extern void cF_flowThroughBoundaryState3d(
     STATE* newst = (STATE*)state;
 	STATE** sts;
 	
-    //TODO: Should nrad be 2 or 3?
     int nrad = 2;
-    //int nrad = 3;
 
 	if (debugging("flow_through"))
 	    printf("Entering cF_flowThroughBoundaryState3d()\n");
@@ -1220,11 +1302,17 @@ extern void cF_flowThroughBoundaryState3d(
             {
                 newst->vel[i] -= dt/dn*(f_u*dir[i] + f_v[i]);
             }
+
             newst->pres -= dt/dn*f_pres;
             newst->dens -= dt/dn*f_dens;
         }
 	}
     
+    for (i = 0; i < dim; ++i)
+    {
+        newst->momn[i] = newst->dens * newst->vel[i];
+    }
+
     newst->engy = EosEnergy(newst);
     newst->temp = EosTemperature(newst);
     newst->mu = EosViscosity(newst);

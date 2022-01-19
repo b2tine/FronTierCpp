@@ -6031,9 +6031,13 @@ void G_CARTESIAN::setDirichletStates(
           }
         }
         else if (boundary_state_function(hs) &&
-                strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0)
+                (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
+                 strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
+                 strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
         {
-            //TODO: why not using the state value to extrapolate???
+            //TODO: Should the boundary_state_function be called here and then use the
+            //      computed boundary state to fill the stencil (constant extrapolation)
+            
             for (k = istart; k <= nrad; ++k)
             {
                 index = d_index(icoords,top_gmax, dim);
@@ -6100,11 +6104,16 @@ void G_CARTESIAN::setDirichletStates(
         }
         else if (boundary_state_function(hs) &&
                 (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
-                 strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ))
+                 strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
+                 strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
         {
             //TODO: For local supersonic outflow this should be fine, but for subsonic do
             //      we need to compute the state with cF_flowThroughBoundaryState() and then
             //      extrapolate? Or use characteristic theory boundary condition?
+            
+            //TODO: Should the boundary_state_function be called here and then use the
+            //      computed boundary state to fill the stencil (constant extrapolation)
+            
             for (k = istart; k <= nrad; ++k)
             {
                 index = d_index(icoords,top_gmax, dim);

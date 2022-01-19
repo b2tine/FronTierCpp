@@ -572,7 +572,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     (eqn_params->eos[GAS_COMP1]).mu_ref = mu_ref;
     (eqn_params->eos[GAS_COMP2]).mu_ref = mu_ref;
 
-    double T_ref = 273.0;
+    double T_ref = 273.15;
     CursorAfterString(infile,"Enter the reference temperature:");
     fscanf(infile,"%lf",&T_ref);
     (void) printf("%f\n",T_ref);
