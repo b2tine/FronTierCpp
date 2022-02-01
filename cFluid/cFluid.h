@@ -193,6 +193,13 @@ struct EQN_PARAMS
     double C_v; //Vreman model coefficient
 
     bool perturb_const_inlet_bdry {false};
+
+    //TODO: FREESTREAM VARIABLES
+    double Mach_free;
+    double c_free;
+    double pres_free;
+    double alpha;       //angle of attack
+    double beta;        //yaw angle
     
 /////////////////////////////    
 //TODO: Move to cAirfoil -- could get from af_params held by the front
@@ -714,6 +721,7 @@ extern void findGhostState(STATE,STATE,STATE*);
 // cFeos.cpp
 extern double EosViscosity(STATE*);
 extern double EosTemperature(STATE*);
+extern double EosDensity(STATE*);
 extern double EosPressure(STATE*);
 extern double EosInternalEnergy(STATE*);
 extern double EosEnergy(STATE*);

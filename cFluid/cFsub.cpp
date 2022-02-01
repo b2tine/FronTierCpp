@@ -223,20 +223,33 @@ static void promptForDirichletBdryState(
                 fscanf(infile,"%lf",&state->pres);
                 (void) printf("%f\n",state->pres);
 
+                if (CursorAfterStringOpt(infile,"Enter temperature:"))
+                {
+                    fscanf(infile,"%lf",&state->temp);
+                    printf("%f\n",state->temp);
+                    state->dens = EosDensity(state);
+                }
+                else
+                {
+                    CursorAfterString(infile,"Enter density:");
+                    fscanf(infile,"%lf",&state->dens);
+                    printf("%f\n",state->dens);
+                    state->temp = EosTemperature(state);
+                }
+
+                /*
                 CursorAfterString(infile,"Enter density:");
                 fscanf(infile,"%lf",&state->dens);
                 (void) printf("%f\n",state->dens);
+                */
 
                 for (int k = 0; k < dim; ++k)
                 {
                     state->momn[k] = state->dens*state->vel[k];
                 }
+
                 state->engy = EosEnergy(state);
-                state->temp = EosTemperature(state);
                 state->mu = EosViscosity(state);
-                
-                //printf("Constant State Inlet Temperature: %f\n",state->temp);
-                //printf("Constant State Inlet Viscosity: %f\n",state->mu);
             }
             
             ////////////////////////////////////
@@ -580,6 +593,8 @@ extern void cF_farfieldBoundaryState(
     newst->eos = &eqn_params->eos[comp]; 
 
     //TODO: read these from input file; hardcoded now to prototype
+    //
+    //      SEE EQN_PARAMS for declarations
     double M_freestream = 2.0;
     double alpha = 0.0; //angle of attack
     double beta = 0.0;  //yaw

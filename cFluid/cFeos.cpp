@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "cFluid.h"
 
 
-
+//Sutherland's Law
 extern double EosViscosity(
 	STATE *state)
 {
@@ -50,6 +50,19 @@ extern double EosTemperature(
 
     double temp = state->pres/state->dens/R_specific;
 	return temp;
+}	/* end EosTemperature */
+
+extern double EosDensity(
+	STATE *state)
+{
+    //TODO: Should throw error/exception
+	if (state->temp <= 0.0) return 0.0;
+
+    EOS_PARAMS* eos = state->eos;
+	double R_specific = eos->R_specific;
+
+    double dens = state->pres/state->temp/R_specific;
+	return dens;
 }	/* end EosTemperature */
 
 extern double EosPressure(
