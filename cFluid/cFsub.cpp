@@ -2679,8 +2679,17 @@ extern void restart_set_dirichlet_bdry_function(Front *front)
         
         if (strcmp(s,"cF_flowThroughBoundaryState") == 0)
             bstate->_boundary_state_function = cF_flowThroughBoundaryState;
+        else if (strcmp(s,"cF_supersonicOutflowState") == 0)
+            bstate->_boundary_state_function = cF_supersonicOutflowState;
+        else if (strcmp(s,"cF_farfieldBoundaryState") == 0)
+            bstate->_boundary_state_function = cF_farfieldBoundaryState;
         else if (strcmp(s,"cF_variableBoundaryState") == 0)
             bstate->_boundary_state_function = cF_variableBoundaryState;
+        else
+        {
+            printf("\n\nUnrecognized Dirichlet boundary type!\n\n");
+            LOC(); clean_up(EXIT_FAILURE);
+        }
     }
 
 	switch (dim)

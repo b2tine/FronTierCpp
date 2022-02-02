@@ -6071,7 +6071,7 @@ void G_CARTESIAN::setDirichletStates(
         }
         else
         {
-            (void) printf("Unimplemented Dirichlet boundary type!\n");
+            printf("\n\nUnrecognized Dirichlet boundary type!\n\n");
             LOC(); clean_up(ERROR);
         }
     }
@@ -6147,7 +6147,7 @@ void G_CARTESIAN::setDirichletStates(
         }
         else
         {
-            (void) printf("Unimplemented Dirichlet boundary type!\n");
+            printf("\n\nUnrecognized Dirichlet boundary type!\n\n");
             LOC(); clean_up(ERROR);
         }
     }

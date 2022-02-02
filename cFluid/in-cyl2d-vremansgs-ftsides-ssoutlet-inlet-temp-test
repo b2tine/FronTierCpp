@@ -1,8 +1,8 @@
 Max time: 2.0
-Max step: 15000
-Print interval: 0.05
-Movie frame interval: 0.00025
-CFL factor: 0.5
+Max step: 25000
+Print interval: 0.0015
+Movie frame interval: 0.00015
+CFL factor: 0.25
 Redistribution interval: 1000000000
 Type yes to turn off auto-redistribution: yes
 
@@ -11,8 +11,8 @@ Type yes to turn off auto-redistribution: yes
 Domain limit in 0-th dimension: -1.075 7.45
 Domain limit in 1-th dimension: -0.95 3.7
 
-Computational grid: 165 125
-    Computational gridXXX: 75 50
+Computational grid: 427 233
+                                XXXComputational gridXXX: 250 150
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -21,9 +21,10 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 576.0 0
+Enter velocity: 663.2 0
+                        XXXEnter velocityXXX: 576.0 0
 Enter pressure: 515000.0
-Enter temperature: 294
+Enter temperature: 394
     XXXEnter densityXXX: 6.102253
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
