@@ -1,8 +1,8 @@
 Max time: 2.0
 Max step: 15000
-Print interval: 0.05
-Movie frame interval: 0.00025
-CFL factor: 0.5
+Print interval: 0.0015
+Movie frame interval: 0.00015
+CFL factor: 0.25
 Redistribution interval: 1000000000
 Type yes to turn off auto-redistribution: yes
 
@@ -32,6 +32,10 @@ For lower boundary in 1-th dimension
 Enter type of Dirichlet boundary: FAR_FIELD
 For upper boundary in 1-th dimension
 Enter type of Dirichlet boundary: FAR_FIELD
+
+Enter freestream direction: 0
+Enter angle of attack: 0.0
+Enter sideslip angle: 0.0
 
 *******************************************************
 Problem type can be

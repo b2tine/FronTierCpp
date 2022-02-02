@@ -194,13 +194,19 @@ struct EQN_PARAMS
 
     bool perturb_const_inlet_bdry {false};
 
-    //TODO: FREESTREAM VARIABLES
-    double Mach_free;
-    double c_free;
-    double pres_free;
-    double alpha;       //angle of attack
-    double beta;        //yaw angle
+    ////////////////////////////////////////////////////////////////////////////
+    //FREESTREAM VARIABLES
+    int dir_freestream;     //freestream orientation ({x,y,z} = {0,1,2})
+    double alpha {0.0};     //angle of attack wrt to the freestream orientation
+    double beta {0.0};      //sideslip angle wrt to the freestream orientation
     
+    double Mach_freestream; //freestream mach number
+    double c_freestream;    //freestream sound speed
+    double dens_freestream; //freestream density
+    double pres_freestream; //freestream pressure
+    ////////////////////////////////////////////////////////////////////////////
+
+
 /////////////////////////////    
 //TODO: Move to cAirfoil -- could get from af_params held by the front
 //      in the CFABRIC_CARTESIAN class ...

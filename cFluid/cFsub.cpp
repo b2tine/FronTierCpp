@@ -185,7 +185,7 @@ static void promptForDirichletBdryState(
                 }
             }
 
-            if (set_inlet_mach_number)
+            if (set_inlet_mach_number) //TODO: NOT CORRECT
             {
                 /*
                 CursorAfterString(infile,"Enter pressure:");
@@ -223,6 +223,9 @@ static void promptForDirichletBdryState(
                 fscanf(infile,"%lf",&state->pres);
                 (void) printf("%f\n",state->pres);
 
+                //Can specify temperature or density at the inlet.
+                // Computes the unspecified value using the eqn of state.
+                // Uses temperature as input if both values are specified.
                 if (CursorAfterStringOpt(infile,"Enter temperature:"))
                 {
                     fscanf(infile,"%lf",&state->temp);
@@ -237,12 +240,6 @@ static void promptForDirichletBdryState(
                     state->temp = EosTemperature(state);
                 }
 
-                /*
-                CursorAfterString(infile,"Enter density:");
-                fscanf(infile,"%lf",&state->dens);
-                (void) printf("%f\n",state->dens);
-                */
-
                 for (int k = 0; k < dim; ++k)
                 {
                     state->momn[k] = state->dens*state->vel[k];
@@ -255,6 +252,37 @@ static void promptForDirichletBdryState(
             ////////////////////////////////////
             state->k_turb = 0.0;
             ////////////////////////////////////
+
+
+            //////////////////////////////////////////////////////////////////////////////////
+            //FREESTREAM VALUES -- assumed to be that of inlet state
+            //
+            //TODO: Is this a correct/valid assumption?
+            eqn_params->dens_freestream = state->dens;
+            
+            eqn_params->c_freestream = EosSoundSpeed(state);
+            
+            eqn_params->Mach_freestream = Magd(state->vel,dim)/eqn_params->c_freestream;
+            
+            eqn_params->pres_freestream = 
+                eqn_params->dens_freestream * sqr(eqn_params->c_freestream) / (state->eos)->gamma;
+
+            eqn_params->dir_freestream = (dim == 2) ? 0 : 2;
+            if (CursorAfterStringOpt(infile,"Enter freestream direction:"))
+            {
+                fscanf(infile,"%d",&eqn_params->dir_freestream);
+                printf("%d\n",eqn_params->dir_freestream);
+            }
+
+            eqn_params->alpha = 0.0;
+            eqn_params->beta = 0.0;
+            
+            //TODO: input options for alpha and beta (angle of attack and sideslip angle)
+            
+            //TODO: precompute U_dimless during initialization like the other values above.
+
+            //TODO: print freestream state values for debugging
+            //////////////////////////////////////////////////////////////////////////////////
 
             
             printf("\n");
@@ -595,25 +623,64 @@ extern void cF_farfieldBoundaryState(
     //TODO: read these from input file; hardcoded now to prototype
     //
     //      SEE EQN_PARAMS for declarations
-    double M_freestream = 2.0;
+    
+    int dir_free = eqn_params->dir_freestream;
+    double alpha = eqn_params->alpha;
+    double beta = eqn_params->beta;
+
+    double M_free = eqn_params->Mach_freestream;
+    double c_free = eqn_params->c_freestream;
+    double dens_free = eqn_params->dens_freestream;
+    double pres_free = eqn_params->pres_freestream;
+    
+    /*
+    double M_free = 2.0;
     double alpha = 0.0; //angle of attack
     double beta = 0.0;  //yaw
 
     double c_freestream = 331.61;
     double dens_freestream = 1.83;
+    
     double pres_freestream = dens_freestream * sqr(c_freestream) / (newst->eos)->gamma;
+    */
 
-    newst->dens = dens_freestream;
-    newst->pres = pres_freestream;
+    newst->dens = dens_free;
+    newst->pres = pres_free;
 
     double U_dimless[3] = {0.0};
-    U_dimless[0] = M_freestream * std::cos(alpha) * std::sin(beta);
+
+    //TODO: Can also precompute U_dimless during initialization like the other values
+    
+    /*
+    U_dimless[0] = M_freestream * std::cos(alpha) * std::cos(beta);
     U_dimless[1] = -1.0*M_freestream * std::sin(beta);
-    U_dimless[2] = M_freestream *std::sin(alpha) * std::cos(beta);
+    U_dimless[2] = M_freestream * std::sin(alpha) * std::cos(beta);
+    */
+
+    //TODO: Double check these for accuracy, and simplify if possible.
+    switch (dir_free)
+    {
+        case 0: //alpha in x-z plane, beta in x-y plane
+            U_dimless[0] = M_free* std::cos(alpha) * std::cos(beta);
+            U_dimless[1] = -1.0*M_free* std::sin(beta);
+            U_dimless[2] = M_free* std::sin(alpha) * std::cos(beta);
+            break;
+        case 1: //alpha in y-x plane, beta in y-z plane
+            U_dimless[0] = M_free* std::sin(alpha) * std::cos(beta);
+            U_dimless[1] = M_free* std::cos(alpha) * std::cos(beta);
+            U_dimless[2] = -1.0*M_free* std::sin(beta);
+            break;
+        case 2: //alpha in z-y plane, beta in z-x plane
+            U_dimless[0] = -1.0*M_free* std::sin(beta);
+            U_dimless[1] = M_free* std::sin(alpha) * std::cos(beta);
+            U_dimless[2] = M_free* std::cos(alpha) * std::cos(beta);
+            break;
+    }
+    
 
     for (int i = 0; i < dim; ++i)
     {
-        newst->vel[i] = U_dimless[i] * c_freestream;
+        newst->vel[i] = U_dimless[i] * c_free;
         newst->momn[i] = newst->dens * newst->vel[i];
     }
 
