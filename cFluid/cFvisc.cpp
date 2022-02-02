@@ -652,14 +652,14 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double mu_reflect;
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu,
             getStateMu,&mu_reflect,&m_vst->mu[index]);
-    //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-      //      getStateMu,&mu_reflect,&field.mu[index]);
+    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu,
+            getStateMu,&mu_reflect,nullptr);*/
     
     if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
     {
        printf("\nsetSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,m_vst->mu[index]);
-       LOC(); //clean_up(EXIT_FAILURE);
+       LOC(); clean_up(EXIT_FAILURE);
     }
     
     /*
@@ -671,8 +671,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double mu_turb_reflect = 0.0;
     if (eqn_params->use_eddy_viscosity)
     {
-        /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
-                getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);*/
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu_turb,
                 getStateMuTurb,&mu_turb_reflect,&m_vst->mu_turb[index]);
         mu_reflect += mu_turb_reflect;
@@ -704,9 +702,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     ///////////////////////////////////////////////////////////////////////////////////////////////
     */
     
-    //NOTE: In all numerical experiments, when computing the wall shear stress
-    //      Newton's method converged when the initial guess for the dimensionless
-    //      wall velocity was inside the interval [40.0, 50.0].
     
     double tau_wall[MAXD] = {0.0};
     
@@ -724,12 +719,14 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double vel_ghost_rel[MAXD] = {0.0};
     double v_slip[MAXD] = {0.0};
     
+    //TODO: Should it be:
+    //                       (dist_reflect + dist_ghost)/mu_reflect;
+    //      instead?                 
     double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
 
     for (int j = 0; j < dim; ++j)
     {
         vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
-        //vel_ghost_tan[j] = vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
 
         /*
         vel_ghost_tan[j] = vel_rel_tan[j]
@@ -740,8 +737,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
         
-        vs->vel[j] = v_slip[j];
-        //vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
+        vs->vel[j] = v_slip[j]; //vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
     
     
@@ -752,7 +748,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
             getStateTemp,&temp_reflect,&m_vst->temp[index]);
     */
 
-    //double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
     double sqrmag_vel_ghost_tan = Dotd(vel_ghost_tan, vel_ghost_tan, dim);
     
     double temp_ghost = temp_reflect + 0.5*pow(Pr,1.0/3.0)*(sqrmag_vel_tan - sqrmag_vel_ghost_tan)/Cp;

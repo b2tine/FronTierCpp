@@ -941,12 +941,18 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
             getStateMu,&mu_reflect,&field.mu[index]);
 
-     if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
-     {
-        printf("\nsetSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
-        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,field.mu[index]);
-        LOC(); //clean_up(EXIT_FAILURE);
-     }
+    if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
+    {
+       printf("\nsetSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
+       printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,field.mu[index]);
+       LOC(); clean_up(EXIT_FAILURE);
+    }
+
+    double mu_turb_reflect = 0.0;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
+            getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);
+    mu_reflect += mu_turb_reflect;
+
 
     //TODO: Need to use mu_reflect and dens_reflect for wall shear stress computation?
     //
@@ -976,9 +982,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double tau_wall[MAXD] = {0.0};
     //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l,45.0);
     double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,100.0);
-    //NOTE: In all numerical experiments, Newton's method converged
-    //      when the initial guess for the dimensionless wall velocity
-    //      was in the range of 40-50.
 
     if (mag_vtan > MACH_EPS)
     {
@@ -986,16 +989,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
             tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
     }
 
-    // Interpolate the effective viscosity at the reflected point
-    //double mu_reflect;
-    /*
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-                getStateMu,&mu_reflect,nullptr);
-    if (mu_reflect < MACH_EPS) mu_reflect = field.mu[index]; //TODO: Need this?
-    */
-    //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-      //          getStateMu,&mu_reflect,&field.mu[index]);
-    
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
 
@@ -1006,6 +999,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
         //vel_ghost_tan[j] = vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
 
+        //TODO: OR IS IT THIS (WITH + SIGN)
         /*
         vel_ghost_tan[j] = vel_rel_tan[j]
             - (dist_reflect + dist_ghost)/mu_reflect*tau_wall[j];
