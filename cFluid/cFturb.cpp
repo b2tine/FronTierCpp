@@ -948,6 +948,10 @@ void G_CARTESIAN::setSlipBoundaryNIP(
        LOC(); clean_up(EXIT_FAILURE);
     }
 
+    //TODO: Is it correct to use the total effective viscosity including the existing
+    //      sgs viscosity to compute the new sgs viscosity?
+    //
+    //          i.e. Should we skip adding mu_turb_reflect?
     double mu_turb_reflect = 0.0;
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
             getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);

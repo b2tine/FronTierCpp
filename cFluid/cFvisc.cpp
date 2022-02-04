@@ -14,7 +14,8 @@ static double (*getStateMom[MAXD])(Locstate) =
 //      then update it when the temperature gets updated after advancing
 //      the solution?
 //
-//      DO NEED TO FIND MU_MAX THOUGH.
+//TODO: Should rename to reflect that temperature and dynamic viscosity
+//      are being computed/updated.
 void G_CARTESIAN::computeDynamicViscosity()
 {
     mu_max = 0.0;
