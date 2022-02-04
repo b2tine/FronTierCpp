@@ -21,9 +21,9 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 576.0 0
-Enter pressure: 515000.0
-Enter temperature: 294
+Enter velocity: 676.0 0
+Enter pressure: 255000.0
+Enter temperature: 394
     XXXEnter densityXXX: 6.102253
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
