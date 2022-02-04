@@ -41,7 +41,7 @@ Enter sideslip angle: 0.0
 Max time: 2.0
 Max step: 5000
 Print interval: 0.001
-Movie frame interval: 0.0001
+Movie frame interval: 0.00001
 CFL factor: 0.25
 type yes to turn off auto-redistribution: y
 
