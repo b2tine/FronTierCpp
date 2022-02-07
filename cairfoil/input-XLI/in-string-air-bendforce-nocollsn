@@ -89,6 +89,7 @@ Enter the number of fabric optimization rounds: 0
 Enter number of canopy surfaces: 0
 
 Enter yes to add isolated curves: yes
+
 Enter yes for string-fluid interaction: yes
 Enter string radius: 0.04
 Enter string mass density: 0.2336
@@ -105,7 +106,6 @@ Enter yes to fix the endpoints of curve 0: y
 
 Enter string point spacingX: 0.01
 
-Enter yes for string bending force: yes
 
 //////////////////////////////////////////////////////////
 //////  Start parameters for spring-mass system   ////////
@@ -134,6 +134,8 @@ Enter string point mass: 0.002336
 Enter string thickness: 0.004
 Enter string rounding tolerance: 0.000004
 
+Enter yes for string bending force: yes
+
 Enter strain limit: 0.03
 Enter compressive strain limit: 0.01
 Enter strain rate limit: 0.075
@@ -158,6 +160,7 @@ Type y to make vector vorticity field movie: y
 *************************************************
 Enter yes for debugging: yes
 
+Enter the debugging string: collision_off
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting
@@ -166,7 +169,6 @@ Enter the debugging string: cfluid_dt
 
 Enter the debugging string: skip_strainvel
 
-Enter the debugging stringXXX: collision_off
 Enter the debugging stringXXX: no_viscflux
 
 Enter the debugging stringXXX: elastic_buffer

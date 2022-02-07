@@ -281,7 +281,16 @@ static void promptForDirichletBdryState(
             
             //TODO: precompute U_dimless during initialization like the other values above.
 
-            //TODO: print freestream state values for debugging
+            //TODO: make sure values are correct
+            /*
+            printf("\n");
+            printf("Free-stream Density: %f\n",eqn_params->dens_freestream);
+            printf("Free-stream Pressure: %f\n",eqn_params->pres_freestream);
+            printf("Free-stream Sound Speed: %f\n",eqn_params->c_freestream);
+            printf("Free-stream Mach Number: %f\n",eqn_params->Mach_freestream);
+            printf("\n");
+            */
+
             //////////////////////////////////////////////////////////////////////////////////
 
             
