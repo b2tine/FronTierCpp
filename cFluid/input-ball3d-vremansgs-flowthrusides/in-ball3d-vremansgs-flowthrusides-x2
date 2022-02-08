@@ -1,0 +1,149 @@
+Max time: 1.0
+Max step: 100000
+Print interval: 0.0015
+Movie frame interval: 0.00015
+CFL factor: 0.25
+Redistribution interval: 10000000000000
+Type yes to turn off auto-redistribution: yes
+
+*******************************************************
+
+Domain limit in 0-th dimension: -1.075 7.45
+Domain limit in 1-th dimension: -0.95 3.7
+Domain limit in 2-th dimension: -0.95 3.7
+
+    Computational gridXXX: 165 125 125
+Computational grid: 330 250 250
+    Computational gridXXX: 660 500 500
+    Computational gridXXX: 1320 1000 1000
+
+Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY 
+Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY 
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+For lower boundary in 0-th dimension
+Enter type of Dirichlet boundary: CONSTANT
+Enter velocity: 576 0 0
+Enter pressure: 515000
+Enter temperature: 294
+For upper boundary in 0-th dimension
+Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
+
+For lower boundary in 1-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+For upper boundary in 1-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+Enter freestream direction: 0
+Enter angle of attack: 0.0
+Enter sideslip angle: 0.0
+
+*******************************************************
+Problem type can be
+	TWO_FLUID_BUBBLE
+	TWO_FLUID_RT
+	TWO_FLUID_BUBBLE
+	FLUID_SOLID_CIRCLE
+    CHANNEL_FLOW
+Enter problem type: CHANNEL_FLOW
+
+Numerical scheme for interior solver can be
+        TVD_1st_ORDER
+        TVD_2nd_ORDER
+        TVD_4th_ORDER
+Enter numerical scheme for interior solver: WENO_4th_ORDER
+Point propagator order can be (1,2,4)
+Enter order of point propagator: 4
+
+Enter gamma, pinf, einf of ambient air: 1.4 0 0
+Enter density and pressure of ambient air: 1.29 101325.0
+
+Enter yes for heat flux: yes
+
+Enter the specific gas constant: 287.058
+Enter the Prandtl number: 0.71
+
+Enter the reference molecular viscosity: 1.716e-05
+Enter the reference temperature: 273.15
+Enter the effective temperature: 111.0
+
+
+Enter gravity: 0 0 0
+
+Type yes to track the interface: no
+
+
+*******************************************************
+
+Enter yes to use eddy viscosity: yes
+Enter eddy viscosity model: Vreman
+Enter model constant: 0.025
+
+Enter the turbulent Prandtl number: 0.9
+
+*******************************************************
+
+
+************Rigid body parameters*************
+
+Enter yes to add rigid body: yes
+Enter the number of rigid bodies: 1
+
+For rigid body 1
+Enter type of rigid body: Sphere
+Enter center of the sphere: 1.25 1.375 1.375
+Enter radius of the sphere: 0.075 0.075 0.075
+Type yes if the rigid body is fixed: yes
+Type yes to use CGAL for rigid body: yes
+Enter refinement level: 1
+
+Type yes if motion is preset: no
+Enter type of dynamic motion: COM_MOTION
+Enter the direction of motion: 1 0 0
+Enter the total mass for rigid body: 10
+Enter the initial center of mass for rigid body: 1.25 1.375 1.375
+Enter the initial center of mass velocity: 0 0 0
+
+*******************************************************
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+
+Type y to make xy cross section movie: n
+Type y to make movie of density: n
+Type y to make movie of pressure: n
+Type y to make movie of velocity: n
+
+
+Type y to make scalar density field movie: y
+Type y to make scalar pressure field movie: y
+Type y to make scalar temperature field movie: y
+Type y to make scalar viscosity field movie: y
+
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: y
+
+************Debugging options*****************
+Enter yes for debugging: yes
+Enter the debugging string: cfluid_dt
+
+Enter the debugging stringXXX: dirichlet_bdry
+
+Enter the debugging stringXXX: no_heatflux
+Enter the debugging stringXXX: no_viscflux
+
+Enter the debugging stringXXX: max_dt
+
+Enter the debugging stringXXX: init_intfc
+Enter the debugging stringXXX: flow_through
+
+Enter the debugging stringXXX: trace
+Enter the debugging stringXXX: CLOCK
+Enter the debugging stringXXX: step_size

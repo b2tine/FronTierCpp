@@ -13,6 +13,9 @@ Domain limit in 1-th dimension: -0.95 3.7
 Domain limit in 2-th dimension: -0.95 3.7
 
 Computational grid: 165 125 125
+    Computational gridXXX: 330 250 250
+    Computational gridXXX: 660 500 500
+    Computational gridXXX: 1320 1000 1000
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -23,21 +26,21 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 676 0 0
-Enter pressure: 255000
-Enter temperature: 394
+Enter velocity: 576 0 0
+Enter pressure: 515000
+Enter temperature: 294
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
 For lower boundary in 1-th dimension
-Enter type of Dirichlet boundary: FAR_FIELD
+Enter type of Dirichlet boundary: FLOW_THROUGH
 For upper boundary in 1-th dimension
-Enter type of Dirichlet boundary: FAR_FIELD
+Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
-Enter type of Dirichlet boundary: FAR_FIELD
+Enter type of Dirichlet boundary: FLOW_THROUGH
 For upper boundary in 2-th dimension
-Enter type of Dirichlet boundary: FAR_FIELD
+Enter type of Dirichlet boundary: FLOW_THROUGH
 
 Enter freestream direction: 0
 Enter angle of attack: 0.0
