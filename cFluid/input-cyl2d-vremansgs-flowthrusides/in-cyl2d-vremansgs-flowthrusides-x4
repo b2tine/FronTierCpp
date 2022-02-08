@@ -11,10 +11,10 @@ Type yes to turn off auto-redistribution: yes
 Domain limit in 0-th dimension: -1.075 7.45
 Domain limit in 1-th dimension: -0.95 3.7
 
-Computational grid: 165 125
+    Computational gridXXX: 165 125
     Computational gridXXX: 330 250
     Computational gridXXX: 660 500
-    Computational gridXXX: 1320 1000
+Computational grid: 1320 1000
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -23,16 +23,16 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 558.2
-Enter pressure: 124.418
-Enter temperature: 250.35
+Enter velocity: 576 0
+Enter pressure: 515000
+Enter temperature: 294
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
 For lower boundary in 1-th dimension
-Enter type of Dirichlet boundary: FAR_FIELD
+Enter type of Dirichlet boundary: FLOW_THROUGH
 For upper boundary in 1-th dimension
-Enter type of Dirichlet boundary: FAR_FIELD
+Enter type of Dirichlet boundary: FLOW_THROUGH
 
 Enter freestream direction: 0
 Enter angle of attack: 0.0
@@ -59,7 +59,6 @@ Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
 Enter density and pressure of ambient air: 1.29 101325.0
-    Enter density and pressure of ambient airXXX: 1.29 101325.0
 
     XXXEnter the operating pressureXXX:
 
