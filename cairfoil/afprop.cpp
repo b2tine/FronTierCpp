@@ -238,7 +238,8 @@ static void elastic_point_propagate_fsi(
         {
             dv[i] = dP*nor[i]/area_dens; //dv has units of acceleration
         }
-        else if (debugging("rigid_canopy"))
+        
+        if (debugging("rigid_canopy"))
         {
             dv[i] = 0.0;
         }

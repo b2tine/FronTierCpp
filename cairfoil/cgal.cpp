@@ -470,7 +470,21 @@ static void CgalCircle(
 	GenerateCgalSurf(front,surf,&cdt,flag,height);
 	checkReducedTri(*surf);
     wave_type(*surf) = ELASTIC_BOUNDARY;
-    FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+    
+    bool fixed_bdry = false;
+    if (CursorAfterStringOpt(infile,"Enter yes for fixed boundary: "))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            fixed_bdry = true;
+    }
+
+    if (fixed_bdry == true)
+        FT_InstallSurfEdge(*surf,FIXED_HSBDRY);
+    else
+        FT_InstallSurfEdge(*surf,MONO_COMP_HSBDRY);
+
 	setMonoCompBdryZeroLength(*surf);
 
 	if (string_bool[0] == 'y' || string_bool[0] == 'Y')
