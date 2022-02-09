@@ -2575,6 +2575,8 @@ static void findPointsonRGB(
         //{
     if (candidate.size() == 1)
     {
+        target.push_back(candidate.front());
+
         double z_coord = Coords(candidate.front())[2] - 0.5*h[2];
         candidate.clear();
 
@@ -2590,6 +2592,12 @@ static void findPointsonRGB(
                 }
             }
         }
+
+        if (candidate.empty())
+        {
+            return;
+        }
+        target.clear();
     }
         //}
 
@@ -3111,8 +3119,39 @@ static void CgalCircleBelt(
 	    }
 	}
 	
+    //TODO: Make input options for cgal, should be independent of the fluid mesh.
+    //      Currently the fabric mesh is too fine for the collision solver, when
+    //      we use a fine fluid mesh. When working, this should be moved into a
+    //      higher level function and passed along in a cgal triangulation
+    //      parameters structure CGAL_PARAM_PACK for example.
+    
+    double* h =computational_grid(front->interf)->h; 
+    double hmin = std::min(std::min(h[0],h[1]),h[2]);
+
+    //B = r/l when r is the triangle circumradius, and l is the min triangle edge length
+    double B = 0.125;
+    double min_edge_length = 0.6*hmin;
+
+	if (CursorAfterStringOpt(infile,"Enter yes to adjust cgal triangulation criteria:"))
+    {
+        char string[100];
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            CursorAfterString(infile,"Enter B ratio:");
+            fscanf(infile,"%lf",&B);
+            printf("%f\n",B);
+            CursorAfterString(infile,"Enter min triangle edge length:");
+            fscanf(infile,"%lf",&min_edge_length);
+            printf("%f\n",min_edge_length);
+	    }
+    }
+    
 	CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
-			list_of_seeds.end(),Criteria(0.3, cri_dx));
+			list_of_seeds.end(),Criteria(B,min_edge_length));
+        /*CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), 
+                list_of_seeds.end(),Criteria(0.3,min_edge_length));*/
 
 	int *flag;
 	flag = new int[cdt.number_of_faces()];
