@@ -6443,7 +6443,7 @@ void G_CARTESIAN::errFunction()
 
 void G_CARTESIAN::adjustGFMStates()
 {
-    if(eqn_params->tracked)
+    if (eqn_params->tracked)
     {
        double ***Gvel = eqn_params->Gvel;
        double **Gdens = eqn_params->Gdens;
@@ -6471,53 +6471,64 @@ void G_CARTESIAN::adjustGFMStates()
                 {
                      icoords[1] = j+jj;
                      index1 = d_index(icoords,top_gmax,dim);
+                     
                      Gdens[ind][index] = Gdens[ind][index1];
-         for (kk = 0; kk < dim; ++kk)
+                     for (kk = 0; kk < dim; ++kk)
                          Gvel[ind][kk][index] = Gvel[ind][kk][index1];
                      Gpres[ind][index] = Gpres[ind][index1];
 
-                     if (Gdens[ind][index] != 0)
-                         break;
+                     if (Gdens[ind][index] != 0) break;
                 }
 
                 for (jj = 0; (j+jj) >= 0; jj--)
                 {
                      icoords[1] = j+jj;
                      index1 = d_index(icoords,top_gmax,dim);
+                     
                      Gdens[ind][index] = Gdens[ind][index1];
-         for (kk = 0; kk < dim; ++kk)
+                     for (kk = 0; kk < dim; ++kk)
                          Gvel[ind][kk][index] = Gvel[ind][kk][index1];
                      Gpres[ind][index] = Gpres[ind][index1];
 
-                     if (Gdens[ind][index] != 0)
-                         break;
+                     if (Gdens[ind][index] != 0) break;
                 }
 
                 for (ii = 0; (i+ii) >= 0; ii--)
                 {
                      icoords[0] = i+ii;
                      index1 = d_index(icoords,top_gmax,dim);
+                     
                      Gdens[ind][index] = Gdens[ind][index1];
-         for (kk = 0; kk < dim; ++kk)
+                     for (kk = 0; kk < dim; ++kk)
                          Gvel[ind][kk][index] = Gvel[ind][kk][index1];
                      Gpres[ind][index] = Gpres[ind][index1];
 
-                     if (Gdens[ind][index] != 0)
-                         break;
+                     if (Gdens[ind][index] != 0) break;
                 }
 
                 for (ii = 0; (i+ii) <= top_gmax[0]; ii++)
                 {
                      icoords[0] = i+ii;
                      index1 = d_index(icoords,top_gmax,dim);
+                     
                      Gdens[ind][index] = Gdens[ind][index1];
-         for (kk = 0; kk < dim; ++kk)
+                     for (kk = 0; kk < dim; ++kk)
                          Gvel[ind][kk][index] = Gvel[ind][kk][index1];
                      Gpres[ind][index] = Gpres[ind][index1];
 
-                     if (Gdens[ind][index] != 0)
-                         break;
+                     if (Gdens[ind][index] != 0) break;
                 }
+
+            
+                //TODO: 
+                        //for (kk = 0; (k+kk) <= top_gmax[2]; kk++)
+                        //{
+                        //
+                        //}
+                        //for (kk = 0; (k+kk) >= 0; kk--)
+                        //{
+                        //
+                        //}
             }
        }
     }
