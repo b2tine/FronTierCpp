@@ -26,6 +26,12 @@ Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 688.85 0
 Enter pressure: 39434.7
 Enter temperature: 294
+
+#NOTE: 3943.7 = 26500 + 12934  (see operating pressure note below)
+
+    # velocity computed from freestream mach number of 2.3 and
+    # the sound speed of air at elevation of 10,000 m
+
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
@@ -58,7 +64,13 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 0.414 26500.0
+Enter density and pressure of ambient air: 0.414 26500
+
+#NOTE: 26500 is the operating/reference pressure
+       
+    # The above density and pressure taken from a properties
+    # table for atmosphere at high altitude. In this case the
+    # state corresponds to an altitude of 10,000 m
 
     XXXEnter the operating pressureXXX:
 
