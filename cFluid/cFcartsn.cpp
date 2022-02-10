@@ -245,7 +245,6 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	    {
 	    	allocMeshVst(&st_field[i]);
 	    	allocMeshFlux(&st_flux[i]);
-	    	    //allocMeshVst(&st_tmp); //only needs to be called once.
 	    }
         allocMeshVst(&st_tmp); //only needs to be called once.
 
@@ -859,10 +858,24 @@ void G_CARTESIAN::solve(double dt)
     //      TEMPERATURE AND VISCOSITY SHOULD BE GETTING UPDATED
     //      BY THE SOLVER. 
     //
-    //      DO NEED TO GET THE MU_MAX IT FINDS FOR TIME STEP RESTRICTION THOUGH.
-    //      
     //NOTE: ALSO COMPUTES THE TEMPERATURE -- SHOULD CHANGE NAME TO REFLECT THIS.
     computeDynamicViscosity();
+
+    //TODO: Precompute wall shear stress magnitudes
+    //      (which are assumed to be constant over the time step)
+    //
+    //      Note that the wall shear stress  {\tau}_{wall} * (u_{T} / |u_{T}|)
+    //      will not remain constant since it is computed using the instantaneous
+    //      tangential velocity.
+    //
+    //      Just the magnitude of the wall stress is assumed to remain constant,
+    //      and it can be interpreted as an average value over the time step.
+
+    
+    //TODO: implement this
+    //
+    //computeWallShearStressMagnitudes();
+
 
     computeSGSTerms();
     
