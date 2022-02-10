@@ -3075,15 +3075,15 @@ void Incompress_Solver_Smooth_3D_Basis::addImmersedForce()
                 double massFluid = rhoF*VolFluid;
                 
                 double dragForce[MAXD] = {0.0};
-                //if (front->step > iFparams->fsi_startstep)
-                //{
+                if (front->step > iFparams->fsi_startstep)
+                {
                     for (int i = 0; i < 3; ++i)
                     {
                         dragForce[i] = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
                         dragForce[i] *= ampFluidFactor;
-                        //dragForce[i] *= massFluid/mass;
+                            //dragForce[i] *= massFluid/mass;
                     }
-                //}
+                }
 
                 if (debugging("string_fluid"))
                 {

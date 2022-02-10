@@ -408,6 +408,7 @@ static void string_curve_propagation(
     double c_drag = params->c_drag;
     double radius = params->radius;
     double rhoS = params->dens;
+    double ampFluidFactor = params->ampFluidFactor;
     
         //int count = 0;
 
@@ -476,7 +477,10 @@ static void string_curve_propagation(
             if (front->step > af_params->fsi_startstep)
             {
                 for (int i = 0; i < 3; ++i)
+                {
                     dragForce[i] = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
+                    dragForce[i] *= ampFluidFactor;
+                }
             }
 
             for (int i = 0; i < 3; ++i)
