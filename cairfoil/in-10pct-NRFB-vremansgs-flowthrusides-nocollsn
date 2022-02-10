@@ -12,14 +12,14 @@ Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
-Enter type of Dirichlet boundary: FAR_FIELD
+Enter type of Dirichlet boundary: FLOW_THROUGH
 For upper boundary in 0-th dimension
-Enter type of Dirichlet boundary: FAR_FIELD
+Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 1-th dimension
-Enter type of Dirichlet boundary: FAR_FIELD
+Enter type of Dirichlet boundary: FLOW_THROUGH
 For upper boundary in 1-th dimension
-Enter type of Dirichlet boundary: FAR_FIELD
+Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
@@ -28,10 +28,6 @@ Enter pressure: 255000
 Enter temperature: 294
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
-
-Enter freestream direction: 2
-Enter angle of attack: 0.0
-Enter sideslip angle: 0.0
 
 
 //////////////////////////////////////////////////////////
@@ -180,6 +176,7 @@ Type y to make vector vorticity field movie: y
 Enter yes for debugging: yes
 
 Enter the debugging string: collision_off
+
 Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging string: strain_limiting

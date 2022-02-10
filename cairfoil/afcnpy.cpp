@@ -1332,9 +1332,9 @@ static void fourth_order_elastic_set_propagate3d_serial(
     //      the previous time step. 
     setCollisionFreePoints3d(elastic_intfc);
     
+    resetBendingForce(elastic_intfc);
     if (!debugging("bendforce_off"))
     {
-        resetBendingForce(elastic_intfc);
         double bends = af_params->kbs;
         double bendd = af_params->lambda_bs;
         computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic

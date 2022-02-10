@@ -23,9 +23,9 @@ Enter type of Dirichlet boundary: FAR_FIELD
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 676
+Enter velocity: 0 0 576
 Enter pressure: 255000
-Enter temperature: 394
+Enter temperature: 294
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
@@ -39,9 +39,9 @@ Enter sideslip angle: 0.0
 //////////////////////////////////////////////////////////
 
 Max time: 2.0
-Max step: 5000
+Max step: 25000
 Print interval: 0.001
-Movie frame interval: 0.00001
+Movie frame interval: 0.0001
 CFL factor: 0.25
 type yes to turn off auto-redistribution: y
 

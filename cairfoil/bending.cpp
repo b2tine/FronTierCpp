@@ -383,7 +383,7 @@ void computeStringPointBendingForce(BOND* b1, BOND* b2)
 //      (bending stiffness and damping) somewhere during initialization.
 void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double bendd)
 {
-    //TODO: add switch to turn off (early return)
+    if (debugging("rigid_canopy")) return;
 
     SURFACE **surf;
     TRI *tri;

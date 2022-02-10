@@ -1618,7 +1618,6 @@ extern void set_elastic_params(
 {
 	Front *front = geom_set->front;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	double dt_tol;
 
 	/* Set elastic set kinetic parameters */
     geom_set->ks = af_params->ks;
@@ -1631,8 +1630,14 @@ extern void set_elastic_params(
     geom_set->lambda_g = af_params->lambda_g;
     geom_set->m_g = af_params->m_g;
 
+    if (debugging("rigid_canopy"))
+    {
+	    geom_set->dt_tol = HUGE;
+        return;
+    }
+
 	/* Set elastic set time step */
-    dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
+    double dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
     
     /*
     const int Ms = 6;
