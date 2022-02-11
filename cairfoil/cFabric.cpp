@@ -539,35 +539,29 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                 case ELASTIC_BOUNDARY:
                     if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
                     {
+                        ghost_st.dim = dim;
+                        ghost_st.eos = &(eqn_params->eos[comp]);
+                        
                         int index_next = d_index(ic_next,top_gmax,dim);
+                        ghost_st.pres = m_vst->pres[index_next];
+                        
+                        ghost_st.dens = m_vst->dens[index];
+                        for (j = 0; j < 3; j++)
+                            ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index];
+                        ghost_st.engy = EosEnergy(&ghost_st);
+
                         for (k = i; k <= nrad; ++k)
                         {
-                            //TODO: Need to compute energy from density and pressure
-                            //      with the EOS ???
-                            vst->dens[nrad-k] = m_vst->dens[index];
-                            vst->engy[nrad-k] = m_vst->engy[index];
-                            vst->pres[nrad-k] = m_vst->pres[index_next];
+                            vst->dens[nrad-k] = ghost_st.dens; //m_vst->dens[index];
+                            vst->engy[nrad-k] = ghost_st.engy; //m_vst->engy[index];
+                            vst->pres[nrad-k] = ghost_st.pres; //m_vst->pres[index_next];
 
                             for (j = 0; j < 3; j++)
                                 vst->momn[j][nrad-k] = 0.0;
                             
-                            if (dim == 1)
+                            for (j = 0; j < 3; j++)
                             {
-                                vst->momn[0][nrad-k] = m_vst->momn[0][index];
-                            }
-                            else if (dim == 2)
-                            {
-                                for(j = 0; j < 2; j++)
-                                {
-                                    vst->momn[j][nrad-k] = m_vst->momn[ind2[idir][j]][index];
-                                }
-                            }
-                            else if (dim == 3)
-                            {
-                                for (j = 0; j < 3; j++)
-                                {
-                                    vst->momn[j][nrad-k] = m_vst->momn[ind3[idir][j]][index];
-                                }
+                                vst->momn[j][nrad-k] = ghost_st.momn[j]; //m_vst->momn[ind3[idir][j]][index];
                             }
                         }
                         //LOC(); clean_up(EXIT_FAILURE);
@@ -771,36 +765,32 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                 case ELASTIC_BOUNDARY:
                     if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
                     {
-                        //LOC(); clean_up(EXIT_FAILURE);
+                        ghost_st.dim = dim;
+                        ghost_st.eos = &(eqn_params->eos[comp]);
+                        
                         int index_next = d_index(ic_next,top_gmax,dim);
+                        ghost_st.pres = m_vst->pres[index_next];
+
+                        ghost_st.dens = m_vst->dens[index];
+                        for (j = 0; j < 3; j++)
+                            ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index];
+                        ghost_st.engy = EosEnergy(&ghost_st);
+
                         for (k = i; k <= nrad; ++k)
                         {
-                            vst->dens[n+nrad+k-1] = m_vst->dens[index];
-                            vst->engy[n+nrad+k-1] = m_vst->engy[index];
-                            vst->pres[n+nrad+k-1] = m_vst->pres[index_next];
+                            vst->dens[n+nrad+k-1] = ghost_st.dens; //m_vst->dens[index];
+                            vst->engy[n+nrad+k-1] = ghost_st.engy; //m_vst->engy[index];
+                            vst->pres[n+nrad+k-1] = ghost_st.pres; //m_vst->pres[index_next];
                             
                             for (j = 0; j < 3; j++)
                                 vst->momn[j][n+nrad+k-1] = 0.0;
                             
-                            if (dim == 1)
+                            for (j = 0; j < 3; j++)
                             {
-                                vst->momn[0][n+nrad+k-1] = m_vst->momn[0][index];
-                            }
-                            else if (dim == 2)
-                            {
-                                for(j = 0; j < 2; j++)
-                                {
-                                    vst->momn[j][n+nrad+k-1] = m_vst->momn[ind2[idir][j]][index];
-                                }
-                            }
-                            else if (dim == 3)
-                            {
-                                for (j = 0; j < 3; j++)
-                                {
-                                    vst->momn[j][n+nrad+k-1] = m_vst->momn[ind3[idir][j]][index];
-                                }
+                                vst->momn[j][n+nrad+k-1] = ghost_st.momn[j]; //m_vst->momn[ind3[idir][j]][index];
                             }
                         }
+                        //LOC(); clean_up(EXIT_FAILURE);
                     }
                     else
                     {

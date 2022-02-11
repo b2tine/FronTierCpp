@@ -686,10 +686,14 @@ void G_CARTESIAN::addErgunEquationSourceTerms(
         
         for (int l = 0; l < dim; ++l)
         {
+            /*
             m_flux->momn_flux[l][index] += delta_t*gradP[l];
             m_flux->engy_flux[index] += 
                 delta_t*m_vst->momn[l][index]/m_vst->dens[index]*gradP[l];
-            //m_flux->engy_flux[index] += delta_t*m_vst->vel[l][index]*gradP[l];
+            */
+            m_flux->momn_flux[l][index] -= delta_t*gradP[l];
+            m_flux->engy_flux[index] -= 
+                delta_t*m_vst->momn[l][index]/m_vst->dens[index]*gradP[l];
         }
     }
 }
