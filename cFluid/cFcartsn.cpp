@@ -686,14 +686,14 @@ void G_CARTESIAN::addErgunEquationSourceTerms(
         
         for (int l = 0; l < dim; ++l)
         {
-            /*
             m_flux->momn_flux[l][index] += delta_t*gradP[l];
             m_flux->engy_flux[index] += 
                 delta_t*m_vst->momn[l][index]/m_vst->dens[index]*gradP[l];
-            */
+            /*
             m_flux->momn_flux[l][index] -= delta_t*gradP[l];
             m_flux->engy_flux[index] -= 
                 delta_t*m_vst->momn[l][index]/m_vst->dens[index]*gradP[l];
+            */
         }
     }
 }
@@ -718,6 +718,7 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
     HYPER_SURF* hs;
     HYPER_SURF_ELEMENT* hse;
     INTERFACE* grid_intfc = front->grid_intfc;
+        //RECT_GRID* rgr = &topological_grid(front->interf);
     RECT_GRID* rgr = computational_grid(front->interf);
     bool is_intfc = false;
 
