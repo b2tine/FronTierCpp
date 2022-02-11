@@ -922,9 +922,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double Cp = gamma/(gamma - 1.0)*R_specific;
     double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
 
-    //TODO: Need to use law of the wall for temperature?
-    //      Or can we just interpolate and set equal to temp_reflect?
-
     //Compute Wall Temperature
     double temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
 
@@ -958,31 +955,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     mu_reflect += mu_turb_reflect;
 
 
-    //TODO: Need to use mu_reflect and dens_reflect for wall shear stress computation?
-    //
-    //      See cFvisc.cpp setNeumannViscousGhostState()
-    
-    /*
-    double mu_l;
-    double rho_l;
-
-    switch (comp)
-    {
-        case GAS_COMP1:
-            mu_l = m_mu[0];
-            rho_l = m_dens[0];
-            break;
-        case GAS_COMP2:
-            mu_l = m_mu[1];
-            rho_l = m_dens[1];
-            break;
-        default:
-            printf("Unknown fluid COMPONENT: %d\n",comp);
-            LOC(); clean_up(EXIT_FAILURE);
-            break;
-    }
-    */
-    
     double tau_wall[MAXD] = {0.0};
     //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l,45.0);
     double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,100.0);

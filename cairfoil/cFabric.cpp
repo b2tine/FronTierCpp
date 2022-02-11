@@ -539,13 +539,14 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                 case ELASTIC_BOUNDARY:
                     if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
                     {
-                        //TODO: Implement in setElasticStates and use the
-                        //      logic of addErgunEquationSourceTerms()
+                        int index_next = d_index(ic_next,top_gmax,dim);
                         for (k = i; k <= nrad; ++k)
                         {
+                            //TODO: Need to compute energy from density and pressure
+                            //      with the EOS ???
                             vst->dens[nrad-k] = m_vst->dens[index];
                             vst->engy[nrad-k] = m_vst->engy[index];
-                            vst->pres[nrad-k] = m_vst->pres[index];
+                            vst->pres[nrad-k] = m_vst->pres[index_next];
 
                             for (j = 0; j < 3; j++)
                                 vst->momn[j][nrad-k] = 0.0;
@@ -556,7 +557,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                             }
                             else if (dim == 2)
                             {
-                                for (j = 0; j < 2; j++)
+                                for(j = 0; j < 2; j++)
                                 {
                                     vst->momn[j][nrad-k] = m_vst->momn[ind2[idir][j]][index];
                                 }
@@ -569,6 +570,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                                 }
                             }
                         }
+                        //LOC(); clean_up(EXIT_FAILURE);
                     }
                     else
                     {
@@ -769,13 +771,13 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                 case ELASTIC_BOUNDARY:
                     if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
                     {
-                        //TODO: Implement in setElasticStates and use the
-                        //      logic of addErgunEquationSourceTerms()
+                        //LOC(); clean_up(EXIT_FAILURE);
+                        int index_next = d_index(ic_next,top_gmax,dim);
                         for (k = i; k <= nrad; ++k)
                         {
                             vst->dens[n+nrad+k-1] = m_vst->dens[index];
                             vst->engy[n+nrad+k-1] = m_vst->engy[index];
-                            vst->pres[n+nrad+k-1] = m_vst->pres[index];
+                            vst->pres[n+nrad+k-1] = m_vst->pres[index_next];
                             
                             for (j = 0; j < 3; j++)
                                 vst->momn[j][n+nrad+k-1] = 0.0;
@@ -904,6 +906,10 @@ void CFABRIC_CARTESIAN::setElasticStatesErgun(
     printf("\n\nsetElasticStatesErgun() not implemented yet!\n\n");
     LOC(); clean_up(EXIT_FAILURE);
     ////////////////////////////////////////////////////////////////////
+
+    //TODO: 1. First compute the pressure gradient ignoring the interface
+    //
+    //      2. Add source terms to RHS of equation
 
     /*
 	int i,j,index,index_ghost;
@@ -1148,7 +1154,6 @@ void CFABRIC_CARTESIAN::setElasticStatesRFB_normal(
 
     st_tmp_ghost.dim = dim;
     st_tmp_ghost.eos = &eqn_params->eos[comp];
-	//st_tmp_ghost.eos = state->eos;
 
 	index = d_index(icoords,top_gmax,dim);
 	for (i = 0; i < dim; ++i)

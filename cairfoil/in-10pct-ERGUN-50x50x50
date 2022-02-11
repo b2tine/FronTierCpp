@@ -1,6 +1,6 @@
 Domain limit in 0-th dimension: 0 1
 Domain limit in 1-th dimension: 0 1
-Domain limit in 2-th dimension: 0 1.25
+Domain limit in 2-th dimension: 0 1
 
 Computational grid: 50 50 65
 
@@ -38,7 +38,7 @@ Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 Max time: 2.0
 Max step: 25000
 Print interval: 0.001
-Movie frame interval: 0.0001
+Movie frame interval: 0.00005
 CFL factor: 0.25
 
 //////////////////////////////////////////////////////////

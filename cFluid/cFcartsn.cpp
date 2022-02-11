@@ -573,7 +573,7 @@ void G_CARTESIAN::scatMeshFlux(FSWEEP *m_flux)
 //      Eg. Compressible Ergun equation source term for enforcing pressure
 //      jump boundary condition at porous interface.
 
-//TODO: WHY DID I CHANGE THIS TO A POINT INSTEAD OF USING CONST REFERENCE?
+//TODO: WHY DID I CHANGE THIS TO A POINTER INSTEAD OF USING CONST REFERENCE?
 //      I THINK I USED IT FOR SOMETHING THAT ENDED UP NOT WORKING OUT ...
 //      IT SHOULD BE PROBABLY BE CHANGED BACK.
 //
@@ -717,8 +717,7 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
     RECT_GRID* rgr = computational_grid(front->interf);
     bool is_intfc = false;
 
-    POINTER sl, sr;
-    //POINTER state;
+    //POINTER sl, sr;
 
     std::vector<double> gradP = {0,0,0};
 
@@ -729,8 +728,8 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
     int index = d_index(icoords,top_gmax,dim);
     COMPONENT comp = top_comp[index];
 
-    double dens_fluid = m_vst->dens[index];
-    double visc_fluid = m_vst->mu[index]+  m_vst->mu_turb[index];
+    //double dens_fluid = m_vst->dens[index];
+    //double visc_fluid = m_vst->mu[index] +  m_vst->mu_turb[index];
 
     int max_nb = 6;
     for (int nb = 0; nb < max_nb; nb++)
@@ -744,38 +743,29 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
             next_ip_in_dir(icoords,dir[nb],ipn,top_gmin,top_gmax);
             index_nb = d_index(ipn,top_gmax,dim);
 
-            /*
             //get relative velocity
             FT_StateStructAtGridCrossing(front,grid_intfc,icoords,dir[nb],
-                            comp,&state,&hs,crx_coords);
-            */
-
-            //get relative velocity
-            is_intfc = FT_StateStructsAtGridCrossing(front,grid_intfc,icoords,
-                    dir[nb],&sl,&sr,&hs,&hse,crx_coords);
+                            comp,&intfc_state,&hs,crx_coords);
 
             if (!is_intfc) continue;
             
+            double dens_fluid;
+            FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,
+                    m_vst->dens,getStateDens,&dens_fluid,nullptr);
+
             double vel_fluid[MAXD] = {0.0};
             double momn_fluid[MAXD] = {0.0};
             
             for (int k = 0; k < dim; k++)
             {
-                /*
-                if (state)
-                    vel_intfc[k] = (*getStateVel[k])(state);
-                else
-                    vel_intfc[k] = 0.0;
-                */
-
-                vel_intfc[k] = (*getStateVel[k])(sl);
+                vel_intfc[k] = (*getStateVel[k])(intfc_state);
 
                 FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,
                                          m_vst->momn[k],getStateMom[k],
                                          &momn_fluid[k],nullptr);
                 
                 vel_fluid[k] = momn_fluid[k]/dens_fluid;
-                
+
                 vel_rel[k] = vel_fluid[k] - vel_intfc[k];
             }
 
@@ -788,8 +778,8 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
             //       those used in the literature since the units are different.
             
             //NOTE: alpha and beta include thickness factor
-            d_p = (alpha*visc_fluid + fabs(Un)*beta*dens_fluid)*Un;
-                //d_p = (alpha + fabs(Un)*beta)*Un;
+            d_p = (alpha + fabs(Un)*beta)*Un;
+                //d_p = (alpha*visc_fluid + fabs(Un)*beta*dens_fluid)*Un;
 
             //TODO: need to remove viscosity from the alpha term provided as input
             //      and multiply by the local viscosity instead of the constant visc
@@ -803,25 +793,23 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
             
             //TODO: What is correct way to add as source term?
                 
-            double Pin = getStatePres(sl);
-            double Pout = getStatePres(sr);
+            //double Pin = getStatePres(sl);
+            //double Pout = getStatePres(sr);
 
             // modify pressure gradient
-            //if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1)) //TODO: NEED THIS LOGIC
-            if (side >= 0)
+            if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1)) //TODO: NEED THIS LOGIC
             {
                     //double Pin = getStatePres(sl);
                     //double Pout = getStatePres(sr);
-                gradP[nb/2] -= 2.0*d_p*Pout/(Pin + Pout);
-                    //gradP[nb/2] -= 0.5*d_p/top_h[nb/2];
+                //gradP[nb/2] -= 2.0*d_p*Pout/(Pin + Pout);
+                gradP[nb/2] -= 0.5*d_p/top_h[nb/2];
             }
-            //else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0)) //TODO: NEED THIS LOGIC
-            else //if (side < 0)
+            else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0)) //TODO: NEED THIS LOGIC
             {
                     //double Pin = getStatePres(sr);
                     //double Pout = getStatePres(sl);
-                gradP[nb/2] += 2.0*d_p*Pout/(Pin + Pout);
-                //gradP[nb/2] += 0.5*d_p/top_h[nb/2];
+                //gradP[nb/2] += 2.0*d_p*Pout/(Pin + Pout);
+                gradP[nb/2] += 0.5*d_p/top_h[nb/2];
             }
             
             if (debugging("pressure_drop"))

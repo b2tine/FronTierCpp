@@ -1120,7 +1120,7 @@ extern void cF_flowThroughBoundaryState2d(
     }
 
 
-    /*
+    ////////////////////////////////////////////////////////////
     //Tangential
 	Tan_stencil** tsten = FrontGetTanStencils(front,oldp,nrad);
 
@@ -1180,7 +1180,7 @@ extern void cF_flowThroughBoundaryState2d(
 	    newst->pres -= dt/dn*f_pres;
 	    newst->dens -= dt/dn*f_dens;
 	}
-    */
+    ////////////////////////////////////////////////////////////
 
     for (i = 0; i < dim; ++i)
     {
@@ -1340,7 +1340,7 @@ extern void cF_flowThroughBoundaryState3d(
             newst->vel[0],newst->vel[1],newst->vel[2]);
     }
     
-    /*
+    ////////////////////////////////////////////////////////////
     //Tangential
 	Tan_stencil** tsten = FrontGetTanStencils(front,oldp,nrad);
 
@@ -1401,7 +1401,7 @@ extern void cF_flowThroughBoundaryState3d(
             newst->dens -= dt/dn*f_dens;
         }
 	}
-    */
+    ////////////////////////////////////////////////////////////
     
     for (i = 0; i < dim; ++i)
     {

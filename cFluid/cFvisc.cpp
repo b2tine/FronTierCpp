@@ -676,33 +676,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
                 getStateMuTurb,&mu_turb_reflect,&m_vst->mu_turb[index]);
         mu_reflect += mu_turb_reflect;
     }
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    //TODO: Need to use mu_reflect and dens_wall for wall shear stress computation?
-    //
-    //      However, using the initial ambient state values does not appear to give unreasonable results.
-    
-    /*
-    double mu_l;
-    double rho_l;
-
-    switch (comp)
-    {
-        case GAS_COMP1:
-            mu_l = m_mu[0];
-            rho_l = m_dens[0];
-            break;
-        case GAS_COMP2:
-            mu_l = m_mu[1];
-            rho_l = m_dens[1];
-            break;
-        default:
-            printf("Unknown fluid COMPONENT: %d\n",comp);
-            LOC(); clean_up(EXIT_FAILURE);
-            break;
-    }
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    */
-    
     
     double tau_wall[MAXD] = {0.0};
     
@@ -742,20 +715,12 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
     
     
-    //////////////////////////////////////////////////////////////////////////////////////
-    /*
-    double temp_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
-            getStateTemp,&temp_reflect,&m_vst->temp[index]);
-    */
-
     double sqrmag_vel_ghost_tan = Dotd(vel_ghost_tan, vel_ghost_tan, dim);
-    
     double temp_ghost = temp_reflect + 0.5*pow(Pr,1.0/3.0)*(sqrmag_vel_tan - sqrmag_vel_ghost_tan)/Cp;
 
     vs->temp = temp_ghost;
-    //////////////////////////////////////////////////////////////////////////////////////
 
+    
     if (std::isnan(v_slip[0]) || std::isinf(v_slip[0]) ||
         std::isnan(v_slip[1]) || std::isinf(v_slip[1]) ||
         std::isnan(v_slip[2]) || std::isinf(v_slip[2]))

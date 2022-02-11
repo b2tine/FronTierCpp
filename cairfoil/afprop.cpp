@@ -327,21 +327,21 @@ extern void airfoil_curve_propagate(
 	    switch (hsbdry_type(oldc))
 	    {
 		case STRING_HSBDRY:
-	    	    return string_curve_propagation(front,wave,oldc,newc,dt);
+            return string_curve_propagation(front,wave,oldc,newc,dt);
 		case MONO_COMP_HSBDRY:
-	    	    return mono_curve_propagation(front,wave,oldc,newc,dt);
+            return mono_curve_propagation(front,wave,oldc,newc,dt);
 		case GORE_HSBDRY:
-	    	    return gore_curve_propagation(front,wave,oldc,newc,dt);
+            return gore_curve_propagation(front,wave,oldc,newc,dt);
 		case PASSIVE_HSBDRY:
 		    return passive_curve_propagation(front,wave,oldc,newc,dt);
-		default:
+        default:
             return;
 	    }
 	}
 	else if (dim == 2)
 	{
 	    if (wave_type(oldc) == ELASTIC_BOUNDARY)
-		string_curve_propagation(front,wave,oldc,newc,dt);
+            string_curve_propagation(front,wave,oldc,newc,dt);
 	}
 }	/* end airfoil_curve_propagate */
 
@@ -418,110 +418,103 @@ static void string_curve_propagation(
         oldp = oldb->end;
         newp = newb->end;
 
-            //TODO: vel_string = sl->vel; ?
-            state_intfc = (STATE*)left_state(oldp);
-            double* vel_intfc = state_intfc->vel;
-            //sl = (STATE*)left_state(oldp);
-            //sr = (STATE*)right_state(oldp);
+        state_intfc = (STATE*)left_state(oldp);
+        double* vel_intfc = state_intfc->vel;
+        //sl = (STATE*)left_state(oldp);
+        //sr = (STATE*)right_state(oldp);
 
-            newsl = (STATE*)left_state(newp);
-            newsr = (STATE*)right_state(newp);
-                //count++;
- 
-            //tangential direction along string BOND
-            double ldir[3];
-            for (int i = 0; i < 3; ++i)	
-                ldir[i] = Coords(oldb->end)[i] - Coords(oldb->start)[i];
-            double length = Mag3d(ldir);
-            if (length < MACH_EPS)
-            {
-                printf("BOND length < MACH_EPS\n");
-                clean_up(EXIT_FAILURE);
-            }
-            
-            for (int i = 0; i < 3; ++i)
-                ldir[i] /= length;
+        newsl = (STATE*)left_state(newp);
+        newsr = (STATE*)right_state(newp);
+            //count++;
 
-            double vt = 0.0;
-            double vfluid[3], vrel[3];
-            for (int i = 0; i < 3; ++i)
-            {
-                /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);*/
-                /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-                        vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);*/
-                
-                FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
-                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
-
-                vrel[i] = vfluid[i] - vel_intfc[i];
-                vt += vrel[i]*ldir[i];
-            }
-
-            double speed = 0.0;
-            double vtan[3], vnor[3];
-            for (int i = 0; i < 3; ++i)
-            {
-                //vtan[i] = vt*ldir[i];
-                //vnor[i] = vrel[i] - vtan[i];
-                vnor[i] = vrel[i] - vt*ldir[i];
-                speed += sqr(vnor[i]);
-            }
-            speed = sqrt(speed);
-
-            double A_ref = 2.0*PI*radius*length;
-            double Vol = PI*radius*radius*length;
-            double massCyl = rhoS*Vol;
-
-            double dragForce[MAXD] = {0.0};
-            if (front->step > af_params->fsi_startstep)
-            {
-                for (int i = 0; i < 3; ++i)
-                {
-                    dragForce[i] = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
-                    dragForce[i] *= ampFluidFactor;
-                }
-            }
-
-            for (int i = 0; i < 3; ++i)
-            {
-                //Save to dragForce to newp's left state, newsl, for use in
-                //addImmersedForce() in the application of equal but opposite
-                //reaction force on the fluid.
-                //
-                //newsl->linedrag_force[i] = dragForce[i];//NO!
-                
-                //Compute acceleration
-                newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce[i]/massCyl;
-                newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-	            newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
-	            newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
-            }
-
-            /*
-            //TODO: inside debug string
-            printf("pt = %f %f %f \n",Coords(oldp)[0],Coords(oldp)[1],Coords(oldp)[2]);
-            printf("\tdragForce = %g %g %g\n",
-                      dragForce[0],dragForce[1],dragForce[2]);
-            printf("\tc_drag = %f  |  A_ref = %f \n",c_drag,A_ref);
-            printf("\tspeed = %f\n",speed);
-            printf("\tmassCyl = %g\n",massCyl);
-            */
-            
-            //printf("drag_force/mass = %g %g %g\n",
-             //         dragForce[0]/massCyl,dragForce[1]/massCyl,dragForce[2]/massCyl);
-
-            //printf("newsl->drag_force = %g %g %g\n",
-              //        newsl->drag_force[0],newsl->drag_force[1],newsl->drag_force[2]);
-            
-            /*
-            if (count == 5)
-                printf("Interpolated vel = %f %f %f accel = %f %f %f\n",
-                        newsl->vel[0],newsl->vel[1],newsl->vel[2],
-                        newsl->fluid_accel[0],newsl->fluid_accel[1],
-                        newsl->fluid_accel[2]);
-            */
+        //tangential direction along string BOND
+        double ldir[3];
+        for (int i = 0; i < 3; ++i)	
+            ldir[i] = Coords(oldb->end)[i] - Coords(oldb->start)[i];
+        double length = Mag3d(ldir);
+        if (length < MACH_EPS)
+        {
+            printf("BOND length < MACH_EPS\n");
+            LOC(); clean_up(EXIT_FAILURE);
         }
+        
+        for (int i = 0; i < 3; ++i)
+            ldir[i] /= length;
+
+        double vt = 0.0;
+        double vfluid[3], vrel[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
+                    vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);*/
+            /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
+                    vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);*/
+            
+            FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
+                    vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
+
+            vrel[i] = vfluid[i] - vel_intfc[i];
+            vt += vrel[i]*ldir[i];
+        }
+
+        double speed = 0.0;
+        double vtan[3], vnor[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            //vtan[i] = vt*ldir[i];
+            //vnor[i] = vrel[i] - vtan[i];
+            vnor[i] = vrel[i] - vt*ldir[i];
+            speed += sqr(vnor[i]);
+        }
+        speed = sqrt(speed);
+
+        double A_ref = 2.0*PI*radius*length;
+        double Vol = PI*radius*radius*length;
+        double massCyl = rhoS*Vol;
+
+        double dragForce[MAXD] = {0.0};
+        if (front->step > af_params->fsi_startstep)
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                dragForce[i] = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
+                dragForce[i] *= ampFluidFactor;
+            }
+        }
+
+        for (int i = 0; i < 3; ++i)
+        {
+            //Compute acceleration
+            newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce[i]/massCyl;
+            newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
+            newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
+            newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];
+        }
+
+        /*
+        //TODO: inside debug string
+        printf("pt = %f %f %f \n",Coords(oldp)[0],Coords(oldp)[1],Coords(oldp)[2]);
+        printf("\tdragForce = %g %g %g\n",
+                  dragForce[0],dragForce[1],dragForce[2]);
+        printf("\tc_drag = %f  |  A_ref = %f \n",c_drag,A_ref);
+        printf("\tspeed = %f\n",speed);
+        printf("\tmassCyl = %g\n",massCyl);
+        */
+        
+        //printf("drag_force/mass = %g %g %g\n",
+         //         dragForce[0]/massCyl,dragForce[1]/massCyl,dragForce[2]/massCyl);
+
+        //printf("newsl->drag_force = %g %g %g\n",
+          //        newsl->drag_force[0],newsl->drag_force[1],newsl->drag_force[2]);
+        
+        /*
+        if (count == 5)
+            printf("Interpolated vel = %f %f %f accel = %f %f %f\n",
+                    newsl->vel[0],newsl->vel[1],newsl->vel[2],
+                    newsl->fluid_accel[0],newsl->fluid_accel[1],
+                    newsl->fluid_accel[2]);
+        */
+    }
 }	/* end string_curve_propagation */
 
 static void gore_curve_propagation(
