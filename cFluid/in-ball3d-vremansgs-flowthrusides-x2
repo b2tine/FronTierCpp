@@ -26,8 +26,8 @@ Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 576 0 0
-Enter pressure: 515000
+Enter velocity: 688.85 0
+Enter pressure: 39434.7
 Enter temperature: 294
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
@@ -64,7 +64,7 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.29 101325.0
+Enter density and pressure of ambient air: 0.414 26500
 
 Enter yes for heat flux: yes
 
@@ -73,7 +73,7 @@ Enter the Prandtl number: 0.71
 
 Enter the reference molecular viscosity: 1.716e-05
 Enter the reference temperature: 273.15
-Enter the effective temperature: 111.0
+Enter the effective temperature: 110.4
 
 
 Enter gravity: 0 0 0
