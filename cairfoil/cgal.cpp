@@ -2497,36 +2497,40 @@ static void connectStringtoRGB(
 
 FINITE_STRING* getFiniteStringParams(Front* front)
 {
-    FINITE_STRING* finite_string = nullptr;
+    static FINITE_STRING* finite_string = nullptr;
 
-    FILE* infile = fopen(InName(front),"r");
-    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
+    if (finite_string == nullptr)
     {
-	    char string[25];
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
+        FILE* infile = fopen(InName(front),"r");
+        if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
         {
-            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
-            
-            CursorAfterString(infile,"Enter string radius:");
-            fscanf(infile,"%lf",&finite_string->radius); 
-            printf("%f\n",finite_string->radius);
-            
-            CursorAfterString(infile,"Enter string mass density:");
-            fscanf(infile,"%lf",&finite_string->dens); 
-            printf("%f\n",finite_string->dens);
+            char string[25];
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+            {
+                FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
+                
+                CursorAfterString(infile,"Enter string radius:");
+                fscanf(infile,"%lf",&finite_string->radius); 
+                printf("%f\n",finite_string->radius);
+                
+                CursorAfterString(infile,"Enter string mass density:");
+                fscanf(infile,"%lf",&finite_string->dens); 
+                printf("%f\n",finite_string->dens);
 
-            CursorAfterString(infile,"Enter drag coefficient:");
-            fscanf(infile,"%lf",&finite_string->c_drag); 
-            printf("%f\n",finite_string->c_drag);
-            
-            CursorAfterString(infile,"Enter fluid force scaling factor:");
-            fscanf(infile,"%lf",&finite_string->ampFluidFactor);
-            printf("%f\n",finite_string->ampFluidFactor);
+                CursorAfterString(infile,"Enter drag coefficient:");
+                fscanf(infile,"%lf",&finite_string->c_drag); 
+                printf("%f\n",finite_string->c_drag);
+                
+                CursorAfterString(infile,"Enter fluid force scaling factor:");
+                fscanf(infile,"%lf",&finite_string->ampFluidFactor);
+                printf("%f\n",finite_string->ampFluidFactor);
+            }
         }
+        
+        fclose(infile);
     }
-    fclose(infile);
 
     return finite_string;
 }
@@ -3457,7 +3461,11 @@ static void connectTwoStringNodes(
 
 	string_curve = make_curve(0,0,start,end);
 	hsbdry_type(string_curve) = STRING_HSBDRY;
-	spacing = separation(start->posn,end->posn,3);
+
+    FINITE_STRING* finite_string = getFiniteStringParams(front);
+    string_curve->extra = (POINTER)finite_string;
+	    
+    spacing = separation(start->posn,end->posn,3);
 
     double hmin = std::min(h[0],h[1]);
     hmin = std::min(hmin,h[2]);
