@@ -68,7 +68,10 @@ extern void read_cFluid_params(
 	(void) printf("%s\n",string);
     if (string[0] == 'N' || string[0] == 'n')
     {
-        eqn_params->prob_type = NO_FLUID;
+        if (string[1] == 'O' || string[1] == 'o')
+            eqn_params->prob_type = NO_FLUID;
+        else if (string[1] == 'A' || string[1] == 'a')
+            eqn_params->prob_type = NACA0012_AIRFOIL;
     }
 	else if (string[0] == 'C' || string[0] == 'c')
     {
@@ -299,6 +302,7 @@ static void set_cFluid_params(FILE* infile, EQN_PARAMS* eqn_params)
 	switch (eqn_params->prob_type)
     {
         case PROJECTILE:
+        case NACA0012_AIRFOIL:
         case FLUID_SOLID_CIRCLE:
         case FLUID_SOLID_RECT:
         case FLUID_SOLID_TRIANGLE:
@@ -345,6 +349,9 @@ void G_CARTESIAN::setInitialStates()
     {
         case NO_FLUID:
             return;
+        case NACA0012_AIRFOIL:
+            //initNACA0012States();
+            //break;
         case PROJECTILE:
         case FLUID_SOLID_CIRCLE:
         case FLUID_SOLID_RECT:
@@ -384,8 +391,6 @@ void G_CARTESIAN::setInitialStates()
         case OBLIQUE_SHOCK_REFLECT:
             initRichtmyerMeshkovStates();
             break;
-        case NACA0012_AIRFOIL:
-            initNACA0012States();
         default:
             (void) printf("In setInitialStates(), case not implemented!\n");
             LOC(); clean_up(ERROR);
@@ -603,7 +608,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     eqn_params->p1 = eqn_params->p2; //this is static pressure (abs pres - operating pres)
     eqn_params->rho1 = eqn_params->rho2;
     
-    double p_ref = 101325.0;
+    double p_ref = 0.0;
     if (CursorAfterStringOpt(infile,"Enter the operating pressure:"))
     {
         fscanf(infile,"%lf",&p_ref);
@@ -626,6 +631,22 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
         state.vel[i] = 0.0;
         state.momn[i] = 0.0;
     }
+
+    if (eqn_params->prob_type == NACA0012_AIRFOIL)
+    {
+        state.vel[0] = 0.99875;
+        state.vel[1] = 0.049896;
+        state.vel[2] = 0.0;
+
+        state.momn[0] = state.vel[0]*state.dens;
+        state.momn[1] = state.vel[1]*state.dens;
+        state.momn[2] = state.vel[2]*state.dens;
+
+        eqn_params->v1[0] = eqn_params->v2[0] = state.vel[0];
+        eqn_params->v1[1] = eqn_params->v2[1] = state.vel[1];
+        eqn_params->v1[2] = eqn_params->v2[2] = state.vel[2];
+    }
+
 
     state.engy = EosEnergy(&state);
 
@@ -672,7 +693,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     */
 }	/* end setChannelFlowParams */
 
-void G_CARTESIAN::initChannelFlowStates()
+void G_CARTESIAN::initNACA0012States()
 {
     //TODO: implement -- needs nonzero ambient velocity field
     printf("\nERROR: initChannelFlowStates() not implemented yet!\n");

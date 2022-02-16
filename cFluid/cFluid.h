@@ -623,6 +623,7 @@ protected:
 	void initRiemannProb(LEVEL_FUNC_PACK*,char*);
 
 	void initChannelFlowStates();
+	void initNACA0012States();
 	void initRayleiTaylorStates();
 	void initRichtmyerMeshkovStates();
 	void initBubbleStates();
