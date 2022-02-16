@@ -391,6 +391,8 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
 	index = d_index(ic,top_gmax,dim);
 	comp = cell_center[index].comp;
 
+    bool nobreak = false;
+
 	switch(nb)
 	{
 	case 0:
@@ -545,14 +547,15 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                         int index_next = d_index(ic_next,top_gmax,dim);
                         ghost_st.pres = m_vst->pres[index_next];
                         
-                        ghost_st.dens = m_vst->dens[index_next];
-                            //ghost_st.dens = m_vst->dens[index];
+                        ghost_st.dens = m_vst->dens[index];
+                            //ghost_st.dens = m_vst->dens[index_next];
                         for (j = 0; j < 3; j++)
                         {
-                            ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index_next];
-                                //ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index];
+                            ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index];
+                            //ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index_next];
                         }
                         ghost_st.engy = EosEnergy(&ghost_st);
+                        //ghost_st.engy = m_vst->engy[index];
 
                         for (k = i; k <= nrad; ++k)
                         {
@@ -775,14 +778,15 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                         int index_next = d_index(ic_next,top_gmax,dim);
                         ghost_st.pres = m_vst->pres[index_next];
 
-                        ghost_st.dens = m_vst->dens[index_next];
-                            //ghost_st.dens = m_vst->dens[index];
+                        ghost_st.dens = m_vst->dens[index];
+                            //ghost_st.dens = m_vst->dens[index_next];
                         for (j = 0; j < 3; j++)
                         {
-                            ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index_next];
-                                //ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index];
+                            ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index];
+                                //ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index_next];
                         }
                         ghost_st.engy = EosEnergy(&ghost_st);
+                            //ghost_st.engy = m_vst->engy[index];
 
                         for (k = i; k <= nrad; ++k)
                         {

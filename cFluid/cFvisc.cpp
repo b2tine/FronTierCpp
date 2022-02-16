@@ -720,6 +720,9 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
     vs->temp = temp_ghost;
 
+    //TODO: COMPUTE GHOST DENSITY WITH EQUATION OF STATE?
+        //vs->dens = pres_reflect/temp_ghost/R_specific;
+
     
     if (std::isnan(v_slip[0]) || std::isinf(v_slip[0]) ||
         std::isnan(v_slip[1]) || std::isinf(v_slip[1]) ||

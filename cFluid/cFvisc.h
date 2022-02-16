@@ -17,6 +17,7 @@ struct VSWEEP
     double vel[MAXD];
     double mu;
     double temp;
+    double dens;
 };
 
 struct VStencil2d

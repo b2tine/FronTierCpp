@@ -348,6 +348,7 @@ struct SWEEP
 {
     double *dens;           /* density vector */
     double **momn;          /* momentum vector */
+    double **vel;
     double *engy;           /* internal energy vector */
     double *pres;           /* used for EOS */
     double *mu;

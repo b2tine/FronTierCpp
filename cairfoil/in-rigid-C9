@@ -22,8 +22,8 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 576
-Enter pressure: 515000
+Enter velocity: 0 0 50
+Enter pressure: 101800
 Enter temperature: 294
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
@@ -100,7 +100,7 @@ Enter circle center: 6 6
 Enter circle radius: 4.2672
 
 Enter vertex coordinate of the paraboloid: 6 6 10
-Enter coefficients of the paraboloid: 0.1 0.1
+Enter coefficients of the paraboloid: 0.175 0.175
 
 Enter yes to attach gores to canopy: no
 Enter yes to cut a vent on canopy: yes

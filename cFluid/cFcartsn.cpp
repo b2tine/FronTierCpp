@@ -689,11 +689,6 @@ void G_CARTESIAN::addErgunEquationSourceTerms(
             m_flux->momn_flux[l][index] += delta_t*gradP[l];
             m_flux->engy_flux[index] += 
                 delta_t*m_vst->momn[l][index]/m_vst->dens[index]*gradP[l];
-            /*
-            m_flux->momn_flux[l][index] -= delta_t*gradP[l];
-            m_flux->engy_flux[index] -= 
-                delta_t*m_vst->momn[l][index]/m_vst->dens[index]*gradP[l];
-            */
         }
     }
 }
@@ -722,7 +717,7 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
     RECT_GRID* rgr = computational_grid(front->interf);
     bool is_intfc = false;
 
-    //POINTER sl, sr;
+    POINTER sl, sr;
 
     std::vector<double> gradP = {0,0,0};
 
@@ -749,6 +744,9 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
             index_nb = d_index(ipn,top_gmax,dim);
 
             //get relative velocity
+            FT_StateStructsAtGridCrossing(front,grid_intfc,icoords,dir[nb],
+                    &sl,&sr,&hs,&hse,crx_coords);
+
             FT_StateStructAtGridCrossing(front,grid_intfc,icoords,dir[nb],
                             comp,&intfc_state,&hs,crx_coords);
 
@@ -777,6 +775,18 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
             /*project to normal direction*/
             Un = Dotd(nor,vel_rel,dim);
 
+            double Pin, Pout;
+            if (Un >= 0)
+            {
+                Pin = getStatePres(sl);
+                Pout = getStatePres(sr);
+            }
+            else
+            {
+                Pin = getStatePres(sr);
+                Pout = getStatePres(sl);
+            }
+            
             //TODO: Should not build the fabric thickness into alpha and beta,
             //      we should divide by thickness explicitly when computing d_P here.
             //      Is confusing this way and values for alpha and beta do not match
@@ -786,6 +796,10 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
             d_p = (alpha + fabs(Un)*beta)*Un;
                 //d_p = (alpha*visc_fluid + fabs(Un)*beta*dens_fluid)*Un;
 
+                
+            //double deltaP = d_p;
+            double deltaP = 2.0*d_p*Pout/(Pin + Pout);
+            
             //TODO: need to remove viscosity from the alpha term provided as input
             //      and multiply by the local viscosity instead of the constant visc
             //      incorporated into alpha currently.
@@ -796,25 +810,21 @@ std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
 
             side = Dotd(nor,vec,dim);
             
-            //TODO: What is correct way to add as source term?
-                
             //double Pin = getStatePres(sl);
             //double Pout = getStatePres(sr);
 
             // modify pressure gradient
-            if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1)) //TODO: NEED THIS LOGIC
+            if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1))
             {
-                    //double Pin = getStatePres(sl);
-                    //double Pout = getStatePres(sr);
-                //gradP[nb/2] -= 2.0*d_p*Pout/(Pin + Pout);
-                gradP[nb/2] -= 0.5*d_p/top_h[nb/2];
+                gradP[nb/2] += deltaP;
+                    //gradP[nb/2] += 0.5*deltaP/top_h[nb/2];
+                    //gradP[nb/2] += 0.5*d_p/top_h[nb/2];
             }
-            else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0)) //TODO: NEED THIS LOGIC
+            else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0))
             {
-                    //double Pin = getStatePres(sr);
-                    //double Pout = getStatePres(sl);
-                //gradP[nb/2] += 2.0*d_p*Pout/(Pin + Pout);
-                gradP[nb/2] += 0.5*d_p/top_h[nb/2];
+                gradP[nb/2] -= deltaP;
+                    //gradP[nb/2] -= 0.5*deltaP/top_h[nb/2];
+                    //gradP[nb/2] -= 0.5*d_p/top_h[nb/2];
             }
             
             if (debugging("pressure_drop"))

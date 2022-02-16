@@ -23,9 +23,9 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 50
-Enter pressure: 101925
-Enter temperature: 282
+Enter velocity: 0 0 25
+Enter pressure: 101725
+Enter temperature: 294
 For upper boundary in 2-th dimension
 
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -36,7 +36,7 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 //////////////////////////////////////////////////////////
 
 Max time: 2.0
-Max step: 5000
+Max step: 600
 Print interval: 0.001
 Movie frame interval: 0.0001
 CFL factor: 0.25
@@ -100,9 +100,9 @@ Available types of canopy boundaries are:
         Cross (X)
         Circular with belt (S)
 Enter type of canopy boundary: R
-Enter the height of the plane: 0.44
-Enter lower bounds of the rectangle: 0.39 0.39
-Enter upper bounds of the rectangle: 0.81 0.81
+Enter the height of the plane: 0.4354
+Enter lower bounds of the rectangle: 0.29 0.29
+Enter upper bounds of the rectangle: 0.91 0.91
 Enter yes for fixed boundary: yes
 Enter yes to install boundary on each side: no
 
@@ -120,16 +120,14 @@ Enter yes to use porosity: yes
 Enter fabric porosity: 0.1
 Enter porosity ghost fluid method: ERGUN
 
-Enter viscous parameter: 0.316077
-Enter inertial parameter: 2.54032
-    Enter viscous parameterXXX: 316.077
-    Enter inertial parameterXXX: 2.54032
+Enter viscous parameter: 0.00180696
+Enter inertial parameter: 0.230488
 
 
 Enter area density of canopy: 0.05
 Enter yes to use total mass: yes
 
-Enter fabric spring constant: 5000
+Enter fabric spring constant: 25000
 Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
@@ -182,6 +180,7 @@ Type y to make vector vorticity field movie: y
 *************************************************
 Enter yes for debugging: yes
 
+Enter the debugging string: rigid_canopy
 Enter the debugging string: collision_off
 Enter the debugging stringXXX: collision
 Enter the debugging string: proximity
