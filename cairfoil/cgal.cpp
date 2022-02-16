@@ -1610,11 +1610,7 @@ static void installStrings(
         installStringsLoadNode(infile,front,surf,canopy_bdry,string_node_pts,num_strings);
     }
 
-    //TODO: Can move this out of this function if the below block works correctly.
-    //      Not sure how/why the memory in af_params->string_curves does not become
-    //      corrupt after freeing the string_curves array used in the installStringsX()
-    //      functions above.
-    //
+    /*
     //Initialize string-fluid interaction
     FINITE_STRING* finite_string;
     if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
@@ -1634,11 +1630,13 @@ static void installStrings(
             fscanf(infile,"%lf",&finite_string->dens); 
             printf("%f\n",finite_string->dens);
 
-            if (CursorAfterStringOpt(infile,"Enter drag coefficient:"))
-            {
-                fscanf(infile,"%lf",&finite_string->c_drag); 
-                printf("%f\n",finite_string->c_drag);
-            }
+            CursorAfterString(infile,"Enter drag coefficient:");
+            fscanf(infile,"%lf",&finite_string->c_drag); 
+            printf("%f\n",finite_string->c_drag);
+            
+            CursorAfterString(infile,"Enter fluid force scaling factor:");
+            fscanf(infile,"%lf",&finite_string->ampFluidFactor);
+            printf("%f\n",finite_string->ampFluidFactor);
 
             //TODO: Need to be able to restart with FINITE_STRING in curve->extra
             AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
@@ -1649,6 +1647,7 @@ static void installStrings(
             }
         }
     }
+    */
 }
 
 static void installStringsRigidBody(
@@ -1819,6 +1818,8 @@ static void installStringsLoadNode(
 	}
 
 
+    FINITE_STRING* finite_string = getFiniteStringParams(front);
+
     // make the all initial springs at their equilibruim length
     FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,sizeof(CURVE*));
 	
@@ -1827,8 +1828,10 @@ static void installStringsLoadNode(
     for (i = 0; i < num_strings; ++i)
 	{
 	    string_curves[i] = make_curve(0,0,string_nodes[i],nload);
-
 	    hsbdry_type(string_curves[i]) = STRING_HSBDRY;
+
+        string_curves[i]->extra = (POINTER)finite_string; //for string-fluid interaction
+
 	    spacing = separation(string_nodes[i]->posn,nload->posn,3);
 	    for (j = 0; j < 3; ++j)
 		dir[j] = (Coords(nload->posn)[j] -
@@ -2408,35 +2411,11 @@ static void connectStringtoRGB(
         */
 	}
 
-    /*
-    //TODO: Would like to have string-fluid interaction initialization decoupled from this function.
-    //
-    //string-fluid interaction
-    FINITE_STRING* finite_string = nullptr;
-    FILE* infile = fopen(InName(front),"r");
-    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction: "))
-    {
-        char string[100];
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-        {
-            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
-            CursorAfterString(infile,"Enter string radius: ");
-            fscanf(infile,"%lf",&finite_string->radius); 
-            printf("%f\n",finite_string->radius);
-            CursorAfterString(infile,"Enter string mass density: ");
-            fscanf(infile,"%lf",&finite_string->dens); 
-            printf("%f\n",finite_string->dens);
-            if (CursorAfterStringOpt(infile,"Enter drag coefficient: "))
-            {
-                fscanf(infile,"%lf",&finite_string->c_drag); 
-                printf("%f\n",finite_string->c_drag);
-            }
-        }
-    }
-    fclose(infile);
-    */
+
+
+    //for string-fluid interaction
+    FINITE_STRING* finite_string = getFiniteStringParams(front);
+    
 
     CURVE** string_curves;
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,sizeof(CURVE*));
@@ -2481,7 +2460,7 @@ static void connectStringtoRGB(
             string_curves[k] = make_curve(0,0,start,end);
             hsbdry_type(string_curves[k]) = STRING_HSBDRY;
             
-                //string_curves[k]->extra = (POINTER)finite_string;//for string-fluid interaction
+            string_curves[k]->extra = (POINTER)finite_string;//for string-fluid interaction
 
             spacing = separation(start->posn,end->posn,3);
             for (j = 0; j < 3; ++j)
@@ -2515,6 +2494,42 @@ static void connectStringtoRGB(
 	if (debugging("trace"))
 	    printf("Leaving connectStringtoRGB() \n");
 }	/* end connectStringtoRGB */
+
+FINITE_STRING* getFiniteStringParams(Front* front)
+{
+    FINITE_STRING* finite_string = nullptr;
+
+    FILE* infile = fopen(InName(front),"r");
+    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
+    {
+	    char string[25];
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
+            
+            CursorAfterString(infile,"Enter string radius:");
+            fscanf(infile,"%lf",&finite_string->radius); 
+            printf("%f\n",finite_string->radius);
+            
+            CursorAfterString(infile,"Enter string mass density:");
+            fscanf(infile,"%lf",&finite_string->dens); 
+            printf("%f\n",finite_string->dens);
+
+            CursorAfterString(infile,"Enter drag coefficient:");
+            fscanf(infile,"%lf",&finite_string->c_drag); 
+            printf("%f\n",finite_string->c_drag);
+            
+            CursorAfterString(infile,"Enter fluid force scaling factor:");
+            fscanf(infile,"%lf",&finite_string->ampFluidFactor);
+            printf("%f\n",finite_string->ampFluidFactor);
+        }
+    }
+    fclose(infile);
+
+    return finite_string;
+}
 
 static void findPointsonRGB(
 	Front *front,

@@ -2533,15 +2533,23 @@ extern void initIsolated3dCurves(Front* front)
     char string[200];
     CURVE *curve;
 
+    bool add_curves = false;
     if (CursorAfterStringOpt(infile,"Enter yes to add isolated curves:"))
     {
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
         if (string[0] != 'y' && string[0] != 'Y')
-            return;
+        {
+            add_curves = true;
+        }
     }
-    else
+
+    if (!add_curves)
+    {
+        fclose(infile);
         return;
+    }
+
     
     FINITE_STRING *finite_string = NULL;
     if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
@@ -2664,6 +2672,7 @@ extern void initIsolated3dCurves(Front* front)
             curve->extra = (POINTER)finite_string;
         }
 	}
+    fclose(infile);
 
     addStringBenders(front);
 
@@ -2705,6 +2714,7 @@ static CURVE *init3dCurve(
             fscanf(infile,"%lf",&spacing);
             (void) printf("%f\n",spacing);
         }
+        fclose(infile);
 
         BOND* b = curve->first;
         double coords[3];
