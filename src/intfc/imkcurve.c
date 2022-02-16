@@ -1621,6 +1621,50 @@ EXPORT double wing_func(
 	return dist;
 }
 
+EXPORT double NACA0012_func(
+        POINTER func_params,
+        double *coords)
+{
+    //NACA_PARAMS* params = (NACA_PARAMS*)func_params;
+	
+    double x0 = 0.0; //params->nose_coords[0];
+    double y0 = 0.0; //params->nose_coords[1];
+    double L = 1.0; //double L = params->chord_length;
+    double t = 1.0; //double t = params->max_thickness_frac;
+
+    if (coords[0] < x0 || L < coords[0])
+    {
+        return HUGE;
+    }
+
+    double A = 0.2969;
+    double B = -0.1260;
+    double C = -0.3516;
+    double D = 0.2843;
+    double E = -0.1015;
+
+    double x = (coords[0] - x0)/L;
+    double y_r = 5.0 * t * L * (A*sqrt(x) + B*x + C*x*x + D*x*x*x + E*x*x*x*x);
+    double y_L = y0 - y_r;
+    double y_U = y0 + y_r;
+
+    if (coords[1] < y_L || y_U < coords[1])
+    {
+        return HUGE;
+    }
+
+	double dist;
+    if (coords[1] >= y0)
+    {
+        dist = coords[1] - y_U;
+    }
+    else
+    {
+        dist = -1.0*(coords[1] - y_L);
+    }
+    
+	return dist;
+}
 
 EXPORT double propeller_func(
         POINTER func_params,

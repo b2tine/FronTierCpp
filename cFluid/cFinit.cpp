@@ -384,6 +384,8 @@ void G_CARTESIAN::setInitialStates()
         case OBLIQUE_SHOCK_REFLECT:
             initRichtmyerMeshkovStates();
             break;
+        case NACA0012_AIRFOIL:
+            initNACA0012States();
         default:
             (void) printf("In setInitialStates(), case not implemented!\n");
             LOC(); clean_up(ERROR);
@@ -437,6 +439,9 @@ void G_CARTESIAN::setInitialIntfc(
 	case OBLIQUE_SHOCK_REFLECT:
 	    initObliqueIntfc(level_func_pack,inname);
 	    break;
+    case NACA0012_AIRFOIL:
+        initNACA0012PlaneIntfc(level_func_pack,inname);
+        break;
     case CHANNEL_FLOW:
         initChannelFlow(level_func_pack,inname);
         break;
@@ -666,6 +671,13 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     }
     */
 }	/* end setChannelFlowParams */
+
+void G_CARTESIAN::initChannelFlowStates()
+{
+    //TODO: implement -- needs nonzero ambient velocity field
+    printf("\nERROR: initChannelFlowStates() not implemented yet!\n");
+    LOC(); clean_up(EXIT_FAILURE);
+}
 
 void G_CARTESIAN::initChannelFlowStates()
 {
@@ -2615,6 +2627,63 @@ static void getAccuracySineWaveState(
 	state->momn[0]= state->dens * state->vel[0];
 	state->engy = EosEnergy(state);
 }	/* end getAccuracySineWaveState */
+
+void G_CARTESIAN::initNACA0012PlaneIntfc(
+        LEVEL_FUNC_PACK *level_func_pack,
+        char *inname)
+{
+        EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+        PROB_TYPE prob_type = eqn_params->prob_type;
+        FILE *infile = fopen(inname,"r");
+            //static NACA_PARAMS* naca_params;
+        int i,dim;
+        char string[100];
+
+            //FT_ScalarMemoryAlloc((POINTER*)&naca_params,sizeof(NACA_PARAMS));
+            //naca_params->dim = dim = front->rect_grid->dim;
+        
+        /*
+        CursorAfterString(infile,"Enter the center of the rectangle:");
+        for (i = 0; i < dim; ++i)
+        {
+            fscanf(infile,"%lf",&rect_params->center[i]);
+            (void) printf("%f ",rect_params->center[i]);
+        }
+        (void) printf("\n");
+        CursorAfterString(infile,"Enter lengths of the rectangle:");
+        for (i = 0; i < dim; ++i)
+        {
+            fscanf(infile,"%lf",&rect_params->length[i]);
+            (void) printf("%f\n",rect_params->length[i]);
+        }
+        (void) printf("\n");
+
+        level_func_pack->func_params = (POINTER)rect_params;
+        */
+
+        switch (prob_type)
+        {
+        case NACA0012_AIRFOIL:
+            level_func_pack->neg_component = SOLID_COMP;
+            level_func_pack->pos_component = GAS_COMP1;
+            level_func_pack->func = NACA0012_func;
+            level_func_pack->wave_type = NEUMANN_BOUNDARY;
+            /*
+            if (CursorAfterStringOpt(infile,"Enter yes if the object is fixed:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                    level_func_pack->wave_type = NEUMANN_BOUNDARY;
+            }
+            */
+            break;
+        default:
+            (void) printf("ERROR: unrecognized initialization function\n");
+            LOC(); clean_up(EXIT_FAILURE);
+        }
+        fclose(infile);
+}       /* end initNACA0012PlaneIntfc */
 
 void G_CARTESIAN::initRectPlaneIntfc(
         LEVEL_FUNC_PACK *level_func_pack,

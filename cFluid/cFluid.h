@@ -48,6 +48,7 @@ enum PROB_TYPE
     FLUID_SOLID_TRIANGLE,
     FLUID_SOLID_CYLINDER,
     OBLIQUE_SHOCK_REFLECT,
+    NACA0012_AIRFOIL,
     CHANNEL_FLOW,
     NO_FLUID
 };
@@ -631,6 +632,8 @@ protected:
 	void initBlastWaveStates();
 	void initShockSineWaveStates();
 	void initAccuracySineWaveStates();
+	
+    void initNACA0012PlaneIntfc(LEVEL_FUNC_PACK*,char*);
 	void initRectPlaneIntfc(LEVEL_FUNC_PACK*,char*);
 	void initTrianglePlaneIntfc(LEVEL_FUNC_PACK*,char*);
 	void initCylinderPlaneIntfc(LEVEL_FUNC_PACK*,char*);

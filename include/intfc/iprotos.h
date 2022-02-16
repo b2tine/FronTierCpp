@@ -815,6 +815,7 @@ IMPORT  POINTER init_taegeuk_params(RECT_GRID*);
 IMPORT  double   taegeuk_func(POINTER,double*);
 IMPORT  POINTER init_wing_params(RECT_GRID*);
 IMPORT  double   wing_func(POINTER,double*);
+IMPORT  double   NACA0012_func(POINTER,double*);
 IMPORT  POINTER init_propeller_params(RECT_GRID*);
 IMPORT  double   propeller_func(POINTER,double*);
 IMPORT  double   multi_circle_func(POINTER,double*);
