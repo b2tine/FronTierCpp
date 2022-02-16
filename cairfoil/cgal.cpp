@@ -2957,6 +2957,12 @@ extern void InstallNewLoadNode(
 	    }
 	}
     
+
+    
+    //for string-fluid interaction
+    FINITE_STRING* finite_string = getFiniteStringParams(front);
+    
+    
     //For pointmass run
     double hmin = std::min(h[0],h[1]);
     hmin = std::min(hmin,h[2]);
@@ -2968,7 +2974,10 @@ extern void InstallNewLoadNode(
 	{
 	    string_curves[i] = make_curve(0,0,sec_nload,nload);
 	    hsbdry_type(string_curves[i]) = STRING_HSBDRY;
-	    spacing = separation(sec_nload->posn,nload->posn,3);
+	    
+        string_curves[i]->extra = (POINTER)finite_string;
+        
+        spacing = separation(sec_nload->posn,nload->posn,3);
 	    for (j = 0; j < 3; ++j)
 		dir[j] = (Coords(nload->posn)[j] -
 				Coords(sec_nload->posn)[j])/spacing;
