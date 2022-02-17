@@ -1,7 +1,7 @@
 Max time: 2.0
-Max step: 125000
-Print interval: 0.0025
-Movie frame interval: 0.0001
+Max step: 50000
+Print interval: 0.00025
+Movie frame interval: 0.00005
 CFL factor: 0.25
 Redistribution interval: 1000000000
 Type yes to turn off auto-redistribution: yes
@@ -11,7 +11,8 @@ Type yes to turn off auto-redistribution: yes
 Domain limit in 0-th dimension: -1.0 2.0
 Domain limit in 1-th dimension: -1.0 1.0
 
-Computational grid: 245 50
+Computational grid: 245 75
+    Computational gridXXX: 245 50
 
 Lower boundary in 0-th dimension: PERIODIC_BOUNDARY 
 Upper boundary in 0-th dimension: PERIODIC_BOUNDARY 
@@ -47,15 +48,12 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.0 1.11887
 
-#NOTE: 26500 is the operating/reference pressure
-       
-    # The above density and pressure taken from a properties
-    # table for atmosphere at high altitude. In this case the
-    # state corresponds to an altitude of 10,000 m
+Enter density and pressure of ambient air: 1.0 101326.11887
+    XXXEnter density and pressure of ambient airXXX: 1.0 1.11887
+    XXXEnter density and pressure of ambient airXXX: 1.0 1118.87
 
-    XXXEnter the operating pressureXXX:
+XXXEnter the operating pressureXXX:
 
 Enter yes for heat flux: yes
 

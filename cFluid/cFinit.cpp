@@ -632,11 +632,28 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
         state.momn[i] = 0.0;
     }
 
+    //NACA0012_AIRFOIL
     if (eqn_params->prob_type == NACA0012_AIRFOIL)
     {
-        state.vel[0] = 0.99875;
-        state.vel[1] = 0.049896;
+        /*
+        state.vel[0] = 128.621639;
+        state.vel[1] = 6.425737;
         state.vel[2] = 0.0;
+        */
+
+        /*
+        state.vel[0] = 117.472616;
+        state.vel[1] = 5.868750;
+        state.vel[2] = 0.0;
+        */  
+        
+        state.vel[0] = 512.366372;
+        state.vel[1] = 25.597029;
+        state.vel[2] = 0.0;
+            
+               //state.vel[0] = 0.99875;
+               //state.vel[1] = 0.049896;
+               //state.vel[2] = 0.0;
 
         state.momn[0] = state.vel[0]*state.dens;
         state.momn[1] = state.vel[1]*state.dens;

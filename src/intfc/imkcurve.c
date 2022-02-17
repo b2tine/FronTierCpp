@@ -1630,7 +1630,7 @@ EXPORT double NACA0012_func(
     double x0 = 0.0; //params->nose_coords[0];
     double y0 = 0.0; //params->nose_coords[1];
     double L = 1.0; //double L = params->chord_length;
-    double t = 0.25; //double t = params->max_thickness_frac;
+    double t = 0.12; //double t = params->max_thickness_frac;
 
     if (coords[0] < x0 || L < coords[0])
     {
