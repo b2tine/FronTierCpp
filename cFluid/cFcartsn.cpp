@@ -856,32 +856,36 @@ void G_CARTESIAN::solve(double dt)
     appendOpenEndStates(); /* open boundary test */
 	
     ///////////////////////////////////////////////////////////////////////////
-    
-    //TODO: WE CAN PROBABLY JUST CALL THIS ONCE ON START UP,
-    //      TEMPERATURE AND VISCOSITY SHOULD BE GETTING UPDATED
-    //      BY THE SOLVER. 
+    //TODO: WE CAN PROBABLY JUST CALL computeDynamicViscosity() ONCE ON START UP.
+    //      TEMPERATURE AND VISCOSITY SHOULD BE GETTING UPDATED BY THE SOLVER AT
+    //      THE END OF EACH TIME STEP MAKING THIS CALL REDUNDANT. 
     //
-    //NOTE: ALSO COMPUTES THE TEMPERATURE -- SHOULD CHANGE NAME TO REFLECT THIS.
-    computeDynamicViscosity();
+    //      NOTE: computeDynamicViscosity() ALSO COMPUTES THE TEMPERATURE.
+    //            SHOULD CHANGE NAME TO REFLECT THIS.
+     
+    //TODO: USE A BOOLEAN FLAG FOR THIS SWITCH INSTEAD OF THE DEBUGGING STRING
+    if (!debugging("no_viscflux"))
+    {
+        computeDynamicViscosity();
 
-    //TODO: Precompute wall shear stress magnitudes
-    //      (which are assumed to be constant over the time step)
-    //
-    //      Note that the wall shear stress  {\tau}_{wall} * (u_{T} / |u_{T}|)
-    //      will not remain constant since it is computed using the instantaneous
-    //      tangential velocity.
-    //
-    //      Just the magnitude of the wall stress is assumed to remain constant,
-    //      and it can be interpreted as an average value over the time step.
+        //TODO: Precompute wall shear stress magnitudes
+        //      (which are assumed to be constant over the time step)
+        //
+        //      Note that the wall shear stress  {\tau}_{wall} * (u_{T} / |u_{T}|)
+        //      will not remain constant since it is computed using the instantaneous
+        //      tangential velocity.
+        //
+        //      Just the magnitude of the wall stress is assumed to remain constant,
+        //      and it can be interpreted as an average value over the time step.
 
-    
-    //TODO: implement this
-    //
-    //computeWallShearStressMagnitudes();
+        
+        //TODO: implement this
+        //
+        //computeWallShearStressMagnitudes();
 
 
-    computeSGSTerms();
-    
+        computeSGSTerms();
+    }
     ///////////////////////////////////////////////////////////////////////////
 
     scatMeshStates();
