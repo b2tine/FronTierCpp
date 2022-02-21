@@ -6039,7 +6039,6 @@ void G_CARTESIAN::setDirichletStates(
             //      SEE setDirichletViscousGhostState() for how to do this.
             
 
-            /*
             for (k = istart; k <= nrad; ++k)
             {
                 index = d_index(icoords,top_gmax, dim);
@@ -6066,8 +6065,8 @@ void G_CARTESIAN::setDirichletStates(
                         vst->momn[j][nrad-k] = m_vst->momn[ind3[dir][j]][index];
                 }
             }
-            */
 
+            /*
               for (k = istart; k <= nrad; ++k)
               {
                   vst->dens[nrad-k] = crx_state->dens;
@@ -6093,6 +6092,7 @@ void G_CARTESIAN::setDirichletStates(
                           vst->momn[j][nrad-k] = crx_state->momn[ind3[dir][j]];
                   }
               }
+            */
         }
         else if (boundary_state(hs) != NULL)
         {
@@ -6141,7 +6141,6 @@ void G_CARTESIAN::setDirichletStates(
             //TODO: Should the boundary_state_function be called here and then use the
             //      computed boundary state to fill the stencil (constant extrapolation)
             
-            /*
             for (k = istart; k <= nrad; ++k)
             {
                 index = d_index(icoords,top_gmax, dim);
@@ -6168,8 +6167,8 @@ void G_CARTESIAN::setDirichletStates(
                         vst->momn[j][n+nrad+k-1] = m_vst->momn[ind3[dir][j]][index];
                 }
             }
-            */
 
+            /*
             for (k = istart; k <= nrad; ++k)
             {
                 vst->dens[n+nrad+k-1] = crx_state->dens;
@@ -6195,6 +6194,7 @@ void G_CARTESIAN::setDirichletStates(
                         vst->momn[j][n+nrad+k-1] = crx_state->momn[ind3[dir][j]];
                 }
             }
+            */
 
         }
         else if (boundary_state(hs) != NULL)
