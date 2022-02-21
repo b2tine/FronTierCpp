@@ -26,6 +26,7 @@ For lower boundary in 1-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
 For upper boundary in 1-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
+    XXXEnter type of Dirichlet boundaryXXX: FAR_FIELD
 
 Enter freestream direction: 0
 Enter angle of attack: 0.0
@@ -51,9 +52,13 @@ Enter numerical scheme for interior solver: WENO_4th_ORDER
 Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
+Enter freestream directionXXX: 0
+Enter angle-of-attack and side-sweep angleXXX: 2.86 0
+
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
 
-Enter density and pressure of ambient air: 1.0 101326.11887
+Enter density and pressure of ambient air: 1.0 85543.3
+    XXXEnter density and pressure of ambient airXXX: 1.0 101326.11887
 
 XXXEnter the operating pressureXXX:
 

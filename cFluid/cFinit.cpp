@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "cFluid.h"
 
 static void set_cFluid_params(FILE* infile, EQN_PARAMS* eqn_params);
+static void setFreestreamState(FILE* infile, EQN_PARAMS* eqn_params);
 
 static void setChannelFlowParams(FILE*,EQN_PARAMS*);
 static void setRayleiTaylorParams(FILE*,EQN_PARAMS*);
@@ -341,6 +342,10 @@ static void set_cFluid_params(FILE* infile, EQN_PARAMS* eqn_params)
             printf("In setProbParams(), unknown problem type!\n");
             LOC(); clean_up(ERROR);
     }
+
+    //TODO:
+            //setFreestreamState(infile,eqn_params);
+
 }	/* end set_cFluid_params */
 
 void G_CARTESIAN::setInitialStates()
@@ -680,6 +685,22 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     printf("Initial Ambient Gas Viscosity: %g\n",eqn_params->mu2);
     
 	
+    eqn_params->use_fixed_wall_temp = false;
+    if (CursorAfterStringOpt(infile,"Enter yes to fix wall temperature:"))
+    {
+        char string[25];
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            eqn_params->use_fixed_wall_temp = true;
+            CursorAfterString(infile,"Enter wall temperature:");
+	        fscanf(infile,"%lf",&eqn_params->fixed_wall_temp);
+	        (void) printf("%f\n",eqn_params->fixed_wall_temp);
+        }
+    }
+
+
     CursorAfterString(infile,"Enter gravity:");
 	for (int i = 0; i < dim; ++i)
 	{
@@ -711,11 +732,52 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     */
 }	/* end setChannelFlowParams */
 
-void G_CARTESIAN::initNACA0012States()
+static void G_CARTESIAN::setFreestreamState(FILE* infile, EQN_PARAMS* eqn_params)
 {
-    //TODO: implement -- needs nonzero ambient velocity field
-    printf("\nERROR: initChannelFlowStates() not implemented yet!\n");
+    ////////////////////////////////////////////////////////////
+    printf("\nERROR: setFreestreamState() not implemented yet!\n");
     LOC(); clean_up(EXIT_FAILURE);
+    ////////////////////////////////////////////////////////////
+
+    eqn_params->dir_freestream = (dim == 2) ? 0 : 2;
+    if (CursorAfterStringOpt(infile,"Enter freestream direction:"))
+    {
+        fscanf(infile,"%d",&eqn_params->dir_freestream);
+        printf("%d\n",eqn_params->dir_freestream);
+    }
+
+    eqn_params->alpha = 0.0;
+    eqn_params->beta = 0.0;
+    if (CursorAfterStringOpt(infile,"Enter angle-of-attack and side-sweep angle:"))
+    {
+        fscanf(infile,"%d %d",&eqn_params->alpha,&eqn_params->beta);
+        printf("%d %d\n",eqn_params->alpha,eqn_params->beta);
+    }
+
+    /*
+    //CursorAfterString(infile,"Enter the freestream temperature:");
+    
+    eqn_params->dens_freestream = state->dens;
+
+    eqn_params->c_freestream = EosSoundSpeed(state);
+
+    eqn_params->Mach_freestream = Magd(state->vel,dim)/eqn_params->c_freestream;
+
+    eqn_params->pres_freestream =
+        eqn_params->dens_freestream * sqr(eqn_params->c_freestream) / (state->eos)->gamma;
+    */
+
+    //TODO: precompute U_dimless during initialization like the other values above.
+    /*
+    printf("\n");
+    printf("Free-stream Density: %f\n",eqn_params->dens_freestream);
+    printf("Free-stream Pressure: %f\n",eqn_params->pres_freestream);
+    printf("Free-stream Sound Speed: %f\n",eqn_params->c_freestream);
+    printf("Free-stream Mach Number: %f\n",eqn_params->Mach_freestream);
+    printf("\n");
+    */
+
+    //////////////////////////////////////////////////////////////////////////////////
 }
 
 void G_CARTESIAN::initChannelFlowStates()
@@ -3403,18 +3465,26 @@ void initSplitState(Front* front)
     INTERFACE* save_intfc = current_interface();
     set_current_interface(front->interf);
 
-    double node_coords[MAXD] = {0.0};
+    int num_nodes;
+    double** node_coords;
 
     FILE *infile = fopen(InName(front),"r");
-    CursorAfterString(infile,"Enter coordinates of node:"); printf("\n");
-    fscanf(infile,"%lf %lf",&node_coords[0],&node_coords[1]);
-    printf("%f %f\n",node_coords[0],node_coords[1]);
-    fclose(infile);
+    CursorAfterString(infile,"Enter number of node points:");
+    fscanf(infile,"%d",&num_nodes);
+    printf("%d\n",num_nodes);
+    FT_MatrixMemoryAlloc((POINTER*)&node_coords,num_nodes,MAXD,sizeof(double));
     
-    NODE* new_node = make_node(Point(node_coords));
+    CursorAfterString(infile,"Enter coordinates of node points:"); printf("\n");
+    for (int i = 0; i < num_nodes; ++i)
+    {
+        fscanf(infile,"%lf %lf",&node_coords[i][0],&node_coords[i][1]);
+        printf("%f %f\n",node_coords[i][0],node_coords[i][1]);
+    
+        NODE* new_node = make_node(Point(node_coords[i]));
+    }
+    fclose(infile);
 
-    //COMPONENT neg_comp = SOLID_COMP;
-    //COMPONENT pos_comp = GAS_COMP2;
+    FT_FreeThese(1,node_coords);
 
     set_current_interface(save_intfc);
 }

@@ -11,41 +11,56 @@ fixed time step: 0.001
 
 *******************************************************
 
-    XXXDomain limit in 0-th dimensionXXX: -0.2 2.0
-Domain limit in 0-th dimension: 0 2.0
-Domain limit in 1-th dimension: 0 1.2
+Domain limit in 0-th dimension: -0.2 2.0
+Domain limit in 1-th dimension: 0.0 1.2
 
 Computational grid: 286 131
 
 Lower boundary in 0-th dimension: MIXED_TYPE_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
-Lower boundary in 1-th dimension: NEUMANN_BOUNDARY
+Lower boundary in 1-th dimension: MIXED_TYPE_BOUNDARY
 Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
 Enter yes to insert boundary object: yes
 Enter boundary object type: SPLIT_STATE_NODE
-Enter coordinates of node: 0.0 0.6
-    XXXEnter coordinates of nodeXXX: 0.0 0.0
+Enter number of node points: 2
+Enter coordinates of node points:
+-0.2 0.8478
+0.0 0.0
 
+For lower boundary in 0-th dimension
 Enter type of node 1: FIXED_NODE
 Enter type of node 2: FIXED_NODE
 Enter type of node 3: FIXED_NODE
 
-For lower boundary in 0-th dimension
 Enter wave type of the curve between nodes 12: DIRICHLET_BOUNDARY
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 687.468 0
-Enter pressure: 334.686
-Enter temperature: 294
+Enter velocity: 692.129 0
+Enter pressure: 680.984
+Enter temperature: 298
 
 Enter wave type of the curve between nodes 23: DIRICHLET_BOUNDARY
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 642.217 -64.6257
-Enter pressure: 458.0546
-Enter temperature: 321.8667
+Enter velocity: 646.022 -65.2614
+Enter pressure: 932.00321
+Enter temperature: 326.245
 
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
+
+For lower boundary in 1-th dimension
+Enter type of node 1: FIXED_NODE
+Enter type of node 2: FIXED_NODE
+Enter type of node 3: FIXED_NODE
+
+Enter wave type of the curve between nodes 12: SYMMETRY_BOUNDARY
+    
+        XXXEnter wave type of the curve between nodes 12XXX: DIRICHLET_BOUNDARY
+        XXXEnter type of Dirichlet boundaryXXX: FLOW_THROUGH
+
+Enter wave type of the curve between nodes 23: NEUMANN_BOUNDARY
+Enter yes to fix wall temperature: yes
+Enter wall temperature: 298
 
 For upper boundary in 1-th dimension
 Enter type of Dirichlet boundary: FLOW_THROUGH
@@ -64,12 +79,12 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 0.0039657 334.686
+Enter density and pressure of ambient air: 0.007961 680.984
 
     XXXEnter the operating pressureXXX:
 
 Enter yes to set initial velocity: yes
-Enter initial velocity: 687.468 0
+Enter initial velocity: 692.129 0
 
 
 Enter yes for heat flux: yes
@@ -81,7 +96,7 @@ Enter the reference molecular viscosity: 1.716e-05
 Enter the reference temperature: 273.15
 Enter the effective temperature: 110.4
 
-Enter gravity: 0 0 
+Enter gravity: 0 -9.8 
 
 Type yes to track the interface: no
 

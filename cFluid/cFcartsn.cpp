@@ -4550,6 +4550,7 @@ void G_CARTESIAN::appendGhostBuffer(
         //      to add ELASTIC_BOUNDARY
 		    switch (wave_type(hs))
 		    {
+            case SYMMETRY_BOUNDARY:
 		    case NEUMANN_BOUNDARY:
 		    case MOVABLE_BODY_BOUNDARY:
 		    	setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
@@ -4704,6 +4705,7 @@ void G_CARTESIAN::appendGhostBuffer(
         //      to add ELASTIC_BOUNDARY
 		    switch (wave_type(hs))
 		    {
+            case SYMMETRY_BOUNDARY:
 		    case NEUMANN_BOUNDARY:
 		    case MOVABLE_BODY_BOUNDARY:
 		    	setNeumannStates(vst,m_vst,hs,state,ic_next,idir,
@@ -5833,7 +5835,7 @@ void G_CARTESIAN::setNeumannStates(
 	int             ind2[2][2] = {{0,1},{1,0}};
         int             ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
 	int 		ic[MAXD];
-	double		*vel_ref = state->vel;
+	double		*vel_intfc = state->vel;
 	double		coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
 	double		nor[MAXD],vn,v[MAXD];
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
@@ -5863,7 +5865,7 @@ void G_CARTESIAN::setNeumannStates(
 	    (void) print_general_vector("coords = ",coords,dim,"\n");
 	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
 	    (void) print_general_vector("nor = ",nor,dim,"\n");
-	    (void) print_general_vector("vel_ref = ",vel_ref,dim,"\n");
+	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
 	}
 
 	for (i = istart; i <= nrad; ++i)
@@ -5918,7 +5920,7 @@ void G_CARTESIAN::setNeumannStates(
 	    vn = 0.0;
 	    for (j = 0; j < dim; j++)
 	    {
-		    v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
+		    v[j] = st_tmp.momn[j]/st_tmp.dens - vel_intfc[j];
 		    vn += v[j]*nor[j];
 	    }
             
@@ -5928,8 +5930,7 @@ void G_CARTESIAN::setNeumannStates(
             relative tangent velocity is zero */
         for (j = 0; j < dim; j++)
 	    {
-            //NOTE: vel_ref is the intfc velocity
-            v[j] = vel_ref[j] - 1.0*vn*nor[j];
+            v[j] = vel_intfc[j] - 1.0*vn*nor[j];
     		st_tmp.momn[j] = v[j]*st_tmp.dens;
 	    }
 

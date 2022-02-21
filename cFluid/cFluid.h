@@ -207,6 +207,8 @@ struct EQN_PARAMS
     double pres_freestream; //freestream pressure
     ////////////////////////////////////////////////////////////////////////////
 
+    bool use_fixed_wall_temp {false};
+    double fixed_wall_temp {294.0};
 
 /////////////////////////////    
 //TODO: Move to cAirfoil -- could get from af_params held by the front
@@ -579,6 +581,10 @@ protected:
             double* crx_coords, COMPONENT comp, double* intrp_coeffs,
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
     
+    void setSymmetryViscousGhostState(int* iccords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
+            double* crx_coords, COMPONENT comp, double* intrp_coeffs,
+            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
+    
     void computeViscousFlux2d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
             double delta_t, VStencil2d* vsten);
     void computeViscousFlux2d_5pt(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
@@ -607,6 +613,9 @@ protected:
     
     std::vector<std::vector<double>> computeVelocityGradient(int *icoords);
     
+    void setSymmetryBoundaryNIP(int* icoords, int idir, int nb, int comp,
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
+
     void setSlipBoundary(int* icoords, int idir, int nb, int comp,
             HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
 
@@ -617,7 +626,6 @@ protected:
     // -------------------------------------------------------
 	// 		initialization functions
 	// -------------------------------------------------------
-    
 	void initChannelFlow(LEVEL_FUNC_PACK*,char*);
 	void initSinePertIntfc(LEVEL_FUNC_PACK*,char*);
 	void initRandPertIntfc(LEVEL_FUNC_PACK*,char*);
@@ -629,7 +637,6 @@ protected:
 	void initRiemannProb(LEVEL_FUNC_PACK*,char*);
 
 	void initChannelFlowStates();
-	void initNACA0012States();
 	void initRayleiTaylorStates();
 	void initRichtmyerMeshkovStates();
 	void initBubbleStates();

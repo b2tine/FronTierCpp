@@ -446,9 +446,15 @@ extern void cF_constantWithWhiteNoise(
     int dim = bdry_params->dim;
     double amp = bdry_params->amplitude;
 
-	STATE *newst = (STATE*)state;
+    STATE *newst = (STATE*)state;
     newst->eos = &eqn_params->eos[comp]; 
-
+	
+    for (int i = 0; i < MAXD; ++i)
+    {
+        newst->vel[i] = 0.0;
+        newst->momn[i] = 0.0;
+    }
+    
     STATE* bstate = &(bdry_params->base_state);
     //if (boundary_state(oldhs) != NULL)
     if (bstate != nullptr)

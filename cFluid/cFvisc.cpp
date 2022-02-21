@@ -382,6 +382,12 @@ void G_CARTESIAN::setViscousGhostState(
                     nip_coords,comp,intrp_coeffs,hse,hs);
             break;
         }
+        case SYMMETRY_BOUNDARY:
+        {
+            setSymmetryViscousGhostState(icoords,m_vst,vs,&ghost_coords[0],
+                    nip_coords,comp,intrp_coeffs,hse,hs);
+            break;
+        }
         default:
         {
             printf("\n\nsetViscousGhostState() ERROR: unknown boundary type\n\n");
@@ -585,34 +591,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
-    /*
-    //TODO: CAN WE GET RID OF THIS?
-    //      THIS SHOULD ONLY BE DONE IF NO DIFFUSIVE FLUX BEING USED?
-    /////////////////////////////////////////////////////////////////////////
-    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-    if (eqn_params->use_eddy_viscosity == NO)
-    {
-        //for (int j = 0; j < dim; ++j)
-        //{
-        //    //TODO: Is this correct?
-        //    vs->vel[j] = vel_reflect[j] + vel_ghost_nor[j];
-        //}
-            
-        double vel_ghost_rel[MAXD];
-        for (int j = 0; j < dim; ++j)
-        {
-            vel_ghost_rel[j] = vel_rel_tan[j] + vel_ghost_nor[j];
-            vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
-        }
-
-        double temp_ghost = temp_reflect;
-        vs->temp = temp_ghost;
-
-        return;
-    }
-    /////////////////////////////////////////////////////////////////////////
-    */
-
     if (debugging("slip_boundary"))
     {
         fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
@@ -622,11 +600,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
     }
 
-    //Interpolate the temperature at the reflected point
-    double temp_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
-            getStateTemp,&temp_reflect,&m_vst->temp[index]);
-
     EOS_PARAMS eos = eqn_params->eos[comp];
     double R_specific = eos.R_specific;
     double gamma = eos.gamma;
@@ -635,11 +608,17 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double Cp = gamma/(gamma - 1.0)*R_specific;
     double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
 
-    //TODO: Need to use law of the wall for temperature?
-    //      Or can we just interpolate and set equal to temp_reflect?
+    double temp_reflect;
+    double temp_wall = eqn_params->fixed_wall_temp;
+    if (!eqn_params->use_fixed_wall_temp)
+    {
+        //Interpolate the temperature at the reflected point
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
+                getStateTemp,&temp_reflect,&m_vst->temp[index]);
 
-    //Compute Wall Temperature 
-    double temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
+        //Compute Wall Temperature 
+        temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
+    }
 
     //Interpolate the pressure at the reflected point
     double pres_reflect;
@@ -715,8 +694,12 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
     
     
-    double sqrmag_vel_ghost_tan = Dotd(vel_ghost_tan, vel_ghost_tan, dim);
-    double temp_ghost = temp_reflect + 0.5*pow(Pr,1.0/3.0)*(sqrmag_vel_tan - sqrmag_vel_ghost_tan)/Cp;
+    double temp_ghost = eqn_params->fixed_wall_temp;
+    if (!eqn_params->use_fixed_wall_temp)
+    {
+        double sqrmag_vel_ghost_tan = Dotd(vel_ghost_tan, vel_ghost_tan, dim);
+        temp_ghost = temp_reflect + 0.5*pow(Pr,1.0/3.0)*(sqrmag_vel_tan - sqrmag_vel_ghost_tan)/Cp;
+    }
 
     vs->temp = temp_ghost;
 
@@ -748,6 +731,206 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         fprint_general_vector(stdout,"vel_ghost_rel",vel_ghost_rel,dim,"\n");
         fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
         printf("temp_ghost = %g\n",temp_ghost);
+    }
+}
+
+void G_CARTESIAN::setSymmetryViscousGhostState(
+        int* icoords,
+        SWEEP* m_vst,
+        VSWEEP* vs,
+        double* ghost_coords,
+        double* crx_coords,
+        COMPONENT comp,
+        double* intrp_coeffs,
+        HYPER_SURF_ELEMENT* hse,
+        HYPER_SURF* hs)
+{
+    double nor[MAXD] = {0.0};
+    double vel_intfc[MAXD] = {0.0};
+
+    switch (dim)
+    {
+    case 2:
+        {
+            STATE* ss;
+            STATE* se;
+
+            if (gas_comp(negative_component(hs)))
+            {
+                ss = (STATE*)left_state(Bond_of_hse(hse)->start);
+                se = (STATE*)left_state(Bond_of_hse(hse)->end);
+            }
+            else if (gas_comp(positive_component(hs)))
+            {
+                ss = (STATE*)right_state(Bond_of_hse(hse)->start);
+                se = (STATE*)right_state(Bond_of_hse(hse)->end);
+            }
+            else
+            {
+                printf("setNeumannViscousGhostState() ERROR: "
+                        "no gas component on hypersurface\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+
+            double ns[MAXD] = {0.0};
+            double ne[MAXD] = {0.0};
+            
+            normal(Bond_of_hse(hse)->start,hse,hs,ns,front);
+            normal(Bond_of_hse(hse)->end,hse,hs,ne,front);
+
+            for (int i = 0; i < dim; ++i)
+            {
+                nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+                vel_intfc[i] = (1.0 - intrp_coeffs[0])*ss->vel[i] + intrp_coeffs[0]*se->vel[i];
+            }
+        }
+        break;
+
+    case 3:
+        {
+            STATE* st[3];
+            TRI* nearTri = Tri_of_hse(hse);
+
+            if (gas_comp(negative_component(hs)))
+            {
+                for (int j = 0; j < 3; ++j)
+                    st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+            }
+            else if (gas_comp(positive_component(hs)))
+            {
+                for (int j = 0; j < 3; ++j)
+                    st[j] = (STATE*)right_state(Point_of_tri(nearTri)[j]);
+            }
+            else
+            {
+                printf("setNeumannViscousGhostState() ERROR: "
+                        "no gas component on hypersurface\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+
+            //NOTE: Tri_normal() does not return a unit vector
+            const double* tnor = Tri_normal(nearTri);
+
+            for (int i = 0; i < dim; ++i)
+            {
+                nor[i] = tnor[i];
+
+                vel_intfc[i] = 0.0;
+                for (int j = 0; j < 3; ++j)
+                    vel_intfc[i] += intrp_coeffs[j]*st[j]->vel[i];
+            }
+        }
+        break;
+    }
+
+    //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+    double mag_nor = Magd(nor,dim);
+    for (int i = 0; i < dim; ++i)
+        nor[i] /= mag_nor;
+        
+    if (comp == negative_component(hs))
+	{
+	    for (int i = 0; i < dim; ++i)
+            nor[i] *= -1.0;
+	}
+    
+    double dist_ghost = distance_between_positions(ghost_coords,crx_coords,dim);
+    double dist_reflect = dist_ghost;
+        //double dist_reflect = FT_GridSizeInDir(nor,front);
+    
+    //The desired reflected point
+    double coords_reflect[MAXD] = {0.0};
+    for (int j = 0; j < dim; ++j)
+    {
+        coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
+    }
+
+    int index = d_index(icoords,top_gmax,dim);
+
+    //Interpolate the temperature at the reflected point
+    double temp_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
+            getStateTemp,&temp_reflect,&m_vst->temp[index]);
+
+    vs->temp = temp_reflect;
+
+    //Interpolate Density and Momentum at the reflected point
+    double dens_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
+            getStateDens,&dens_reflect,&m_vst->dens[index]);
+
+    double mom_reflect[MAXD];
+    double vel_reflect[MAXD];
+    for (int j = 0; j < dim; ++j)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
+                getStateMom[j],&mom_reflect[j],&m_vst->momn[j][index]);
+        
+        vel_reflect[j] = mom_reflect[j]/dens_reflect;
+    }
+
+    double vel_rel[MAXD] = {0.0};
+    double vn = 0.0;
+
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+        vn += vel_rel[j]*nor[j];
+    }
+
+    double vel_rel_tan[MAXD] = {0.0};
+    double vel_rel_nor[MAXD] = {0.0};
+    double vel_ghost_nor[MAXD] = {0.0};
+    double vel_ghost_tan[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
+	    vel_ghost_tan[j] = vel_rel_tan[j];
+	    vel_rel_nor[j] = vn*nor[j];
+	    vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
+    }
+
+    if (debugging("slip_boundary"))
+    {
+        fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
+        fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_nor",vel_rel_nor,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+    }
+
+    
+    double vel_ghost_rel[MAXD] = {0.0};
+    double v_sym[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
+        v_sym[j] = vel_ghost_rel[j] + vel_intfc[j];
+        vs->vel[j] = v_sym[j];
+    }
+    
+    if (std::isnan(v_sym[0]) || std::isinf(v_sym[0]) ||
+        std::isnan(v_sym[1]) || std::isinf(v_sym[1]) ||
+        std::isnan(v_sym[2]) || std::isinf(v_sym[2]))
+    {
+        printf("\nsetSymmetryViscousGhostState() ERROR: nan/inf v_sym\n");
+        fprint_int_vector(stdout,"icoords",icoords,dim,"\n");
+        fprint_general_vector(stdout,"v_sym",v_sym,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+    if (debugging("sym_boundary"))
+    {
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_rel",vel_ghost_rel,dim,"\n");
+        fprint_general_vector(stdout,"v_sym",v_sym,dim,"\n");
+        printf("temp_reflect = %g\n",temp_reflect);
     }
 }
 
@@ -798,27 +981,12 @@ void G_CARTESIAN::computeViscousFlux2d(
     double tauyy_y = 2.0/3.0*mu*(2.0*v_yy - u_xy);
     double tauxy_y = mu*(u_yy + v_xy);
     double tauxy_x = mu*(u_xy + v_xx);
-    /*
-    double* mu = m_vst->mu; //double* mu = field.mu;
-    double* mu_turb = m_vst->mu_turb;
-    int index = d_index(icoords,top_gmax,dim);
-    
-    double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y);
-    double tauyy = 2.0/3.0*mu[index]*(2.0*v_y - u_x);
-    double tauxy = mu[index]*(u_y + v_x);
-
-    double tauxx_x = 2.0/3.0*mu[index]*(2.0*u_xx - v_xy);
-    double tauyy_y = 2.0/3.0*mu[index]*(2.0*v_yy - u_xy);
-    double tauxy_y = mu[index]*(u_yy + v_xy);
-    double tauxy_x = mu[index]*(u_xy + v_xx);
-    */
 
     v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y);
     v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y);
     
     v_flux->engy_flux = delta_t*(u_x*tauxx + u*tauxx_x + v_x*tauxy
             + v*tauxy_y + u_y*tauxy + u*tauxy_y + v_y*tauyy + v*tauyy_y);
-
 
     //if (debugging("no_heatflux")) return;
     
@@ -1082,30 +1250,6 @@ void G_CARTESIAN::computeViscousFlux3d(
     double tauyz_y = mu*(v_yz + w_yy);
     double tauxz_z = mu*(u_zz + w_xz);
     double tauyz_z = mu*(v_zz + w_yz);
-    /*
-    double* mu = m_vst->mu; //double* mu = field.mu;
-    double* mu_turb = m_vst->mu_turb;
-    int index = d_index(icoords,top_gmax,dim);
-    
-    double tauxx = 2.0/3.0*mu[index]*(2.0*u_x - v_y - w_z);
-    double tauyy = 2.0/3.0*mu[index]*(2.0*v_y - u_x - w_z);
-    double tauzz = 2.0/3.0*mu[index]*(2.0*w_z - u_x - v_y);
-    
-    double tauxy = mu[index]*(u_y + v_x);
-    double tauxz = mu[index]*(u_z + w_x);
-    double tauyz = mu[index]*(v_z + w_y);
-
-    double tauxx_x = 2.0/3.0*mu[index]*(2.0*u_xx - v_xy - w_xz);
-    double tauyy_y = 2.0/3.0*mu[index]*(2.0*v_yy - u_xy - w_yz);
-    double tauzz_z = 2.0/3.0*mu[index]*(2.0*w_zz - u_xz - v_yz);
-
-    double tauxy_x = mu[index]*(u_xy + v_xx);
-    double tauxz_x = mu[index]*(u_xz + w_xx);
-    double tauxy_y = mu[index]*(u_yy + v_xy);
-    double tauyz_y = mu[index]*(v_yz + w_yy);
-    double tauxz_z = mu[index]*(u_zz + w_xz);
-    double tauyz_z = mu[index]*(v_zz + w_yz);
-    */
 
     v_flux->momn_flux[0] = delta_t*(tauxx_x + tauxy_y + tauxz_z);
     v_flux->momn_flux[1] = delta_t*(tauxy_x + tauyy_y + tauyz_z);

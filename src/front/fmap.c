@@ -2118,10 +2118,10 @@ EXPORT void FT_ReadSpaceDomain(
 	infile = fopen(in_name,"r");
 	for (i = 0; i < f_basic->dim; ++i)
 	{
-            sprintf(input_string,"Domain limit in %d-th dimension:",i);
-            CursorAfterString(infile,input_string);
-            status = fscanf(infile,"%lf %lf",&f_basic->L[i],&f_basic->U[i]);
-            (void) printf("%f %f\n",f_basic->L[i],f_basic->U[i]);
+        sprintf(input_string,"Domain limit in %d-th dimension:",i);
+        CursorAfterString(infile,input_string);
+        status = fscanf(infile,"%lf %lf",&f_basic->L[i],&f_basic->U[i]);
+        (void) printf("%f %f\n",f_basic->L[i],f_basic->U[i]);
 	}
 	CursorAfterString(infile,"Computational grid:");
 	for (i = 0; i < f_basic->dim; ++i)
@@ -4014,6 +4014,10 @@ EXPORT void FT_PromptSetMixedTypeBoundary2d(
 		case 'N':
 		case 'n':
 		    wave_type(curve) = NEUMANN_BOUNDARY;
+		    break;
+		case 'S':
+		case 's':
+		    wave_type(curve) = SYMMETRY_BOUNDARY;
 		    break;
 		case 'P':
 		case 'p':

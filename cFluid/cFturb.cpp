@@ -508,6 +508,13 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                 int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
                 vel_nb[nb] = vel[l][index_nb];
             }
+            else if (wave_type(hs) == SYMMETRY_BOUNDARY)
+            {
+                //TODO: Should use grid aligned version instead of NIP for this boundary type
+                double v_sym[MAXD] = {0.0};
+                setSymmetryBoundaryNIP(icoords,m,nb,comp,hs,intfc_state,vel,v_sym);
+                vel_nb[nb] = v_sym[l];
+            }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                      wave_type(hs) == MOVABLE_BODY_BOUNDARY)
             {
@@ -552,6 +559,300 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
     return J;
 }
 
+void G_CARTESIAN::setSymmetryBoundaryNIP(
+	int *icoords,
+	int idir,
+	int nb,
+	int comp,
+	HYPER_SURF *hs,
+	POINTER state,
+	double** vel,
+	double* v_sym)
+{
+    int ghost_ic[MAXD];
+    double coords[MAXD], crx_coords[MAXD];
+    double coords_reflect[MAXD], coords_ghost[MAXD];
+    double nor[MAXD];
+    
+    double vel_intfc_gcrx[MAXD];
+    for (int i = 0; i < dim; ++i)
+    {
+        vel_intfc_gcrx[i] = (*getStateVel[i])(state);
+        coords[i] = top_L[i] + icoords[i]*top_h[i];
+        ghost_ic[i] = icoords[i];
+    }
+    
+    ghost_ic[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+    int ghost_index = d_index(ghost_ic,top_gmax,dim);
+    COMPONENT ghost_comp = top_comp[ghost_index];
+    
+    for (int j = 0; j < dim; ++j)
+    {
+        coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
+    }
+
+    double intrp_coeffs[MAXD] = {0.0};
+    HYPER_SURF_ELEMENT* hsurf_elem;
+    HYPER_SURF* hsurf;
+    int range = 2;
+
+    //TODO: Why does this fail for INCLUDE_BOUNDARIES and NO_SUBDOMAIN values?
+    //      Conversely, why does it work with NO_BOUNDARIES in the backward facing
+    //      step scenario -- to what degree is it working?
+    //
+    //      nearest_intfc_point_in_range() etc. doesn't find NEUMANN_BOUNDARY
+    //      when it is domain (rect) boundary, but nearest_intfc_point() does.
+    //
+    //TODO: Is the above todo stil valid? Or did I just not understand what was happening?
+    //
+    
+    /*
+    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
+    /*
+    bool nip_found = 
+        FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
+    /*
+    bool nip_found = 
+        FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
+    /*
+    bool nip_found = 
+        FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_SUBDOMAIN,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
+    /*
+    bool nip_found = 
+        FT_FindNearestIntfcPointInRange(front, comp, coords_ghost,INCLUDE_BOUNDARIES,
+            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+    */
+
+    //FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
+      //      crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
+
+    //bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
+      //      INCLUDE_BOUNDARIES,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+
+    bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
+            NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+
+    if (!nip_found)
+    {
+        printf("ERROR G_CARTESIAN::setSlipBoundaryNIP(): "
+                "can't find nearest interface point\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+
+
+    //TODO: We should get the ring of tris around the nearest interface point,
+    //      and possible consider other nearby interface points that are within
+    //      range. For a complex interface such as the human vtk model, there appears
+    //      to be some error in the fluid region between the head and the hands.
+    //      Excessively large velocities -- maybe not enough drag from the other
+    //      nearby interface points that aren't being taken into account.
+
+    double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+    
+    //compute the normal and velocity vectors at the interface point
+    double vel_intfc[MAXD] = {0.0};
+    switch (dim)
+	{
+        case 2:
+            {
+                double ns[MAXD] = {0.0};
+                double ne[MAXD] = {0.0};
+                
+                normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
+                normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
+
+                STATE* ss;
+                STATE* se;
+
+                if (gas_comp(negative_component(hsurf)))
+                {
+                    ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
+                    se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
+                }
+                else if (gas_comp(positive_component(hsurf)))
+                {
+                    ss = (STATE*)right_state(Bond_of_hse(hsurf_elem)->start);
+                    se = (STATE*)right_state(Bond_of_hse(hsurf_elem)->end);
+                }
+                else
+                {
+                    printf("ERROR setSlipBoundaryNIP(): "
+                            "no fluid component on hypersurface\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+                    vel_intfc[i] = (1.0 - intrp_coeffs[0])*ss->vel[i] + intrp_coeffs[0]*se->vel[i];
+                }
+            }
+            break;
+
+        case 3:
+            {
+                TRI* nearTri = Tri_of_hse(hsurf_elem);
+                const double* tnor = Tri_normal(nearTri);
+                
+                STATE* st[3];
+
+                if (gas_comp(negative_component(hsurf)))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+                }
+                else if (gas_comp(positive_component(hsurf)))
+                {
+                    for (int j = 0; j < 3; ++j)
+                        st[j] = (STATE*)right_state(Point_of_tri(nearTri)[j]);
+                }
+                else
+                {
+                    printf("ERROR setSlipBoundaryNIP(): "
+                            "no fluid component on hypersurface\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                for (int i = 0; i < dim; ++i)
+                {
+                    nor[i] = tnor[i];
+
+                    vel_intfc[i] = 0.0;
+                    for (int j = 0; j < 3; ++j)
+                        vel_intfc[i] += intrp_coeffs[j]*st[j]->vel[i];
+                }
+            }
+            break;
+	}
+
+    //NOTE: Tri_normal() does not return a unit vector
+    double mag_nor = Magd(nor,dim);
+    for (int i = 0; i < dim; ++i)
+        nor[i] /= mag_nor;
+        
+    if (comp == negative_component(hsurf))
+	{
+	    for (int i = 0; i < dim; ++i)
+            nor[i] *= -1.0;
+	}
+    
+    //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+        //double dist_reflect = FT_GridSizeInDir(nor,front);
+    double dist_reflect = dist_ghost;
+
+    //The desired reflected point
+    for (int j = 0; j < dim; ++j)
+    {
+        coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
+    }
+
+    
+    if (debugging("slip_boundary"))
+    {
+        printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
+        printf("idir = %d nb = %d\n",idir,nb);
+        fprint_int_vector(stdout,"icoords",icoords,dim,", ");
+        fprint_int_vector(stdout,"ghost_ic",ghost_ic,dim,"\n");
+        fprint_general_vector(stdout,"coords",coords,dim,"\n");
+        fprint_general_vector(stdout,"coords_ghost",coords_ghost,dim,"\n");
+        fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
+        fprint_general_vector(stdout,"normal",nor,dim,"\n");
+        fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
+        printf("dist_ghost = %g , dist_reflect = %g\n",dist_ghost,dist_reflect);
+        printf("dist_ghost/dist_reflect = %g  dist_reflect - dist_ghost = %g\n",
+                dist_ghost/dist_reflect, dist_reflect - dist_ghost);
+    }
+
+    
+    // Interpolate the velocity at the reflected point
+    int index = d_index(icoords,top_gmax,dim);
+    double vel_reflect[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,vel[j],
+                getStateVel[j],&vel_reflect[j],&vel[j][index]);
+    }
+ 
+    double vel_rel[MAXD] = {0.0};
+    double vn = 0.0;
+
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+        vn += vel_rel[j]*nor[j];
+    }
+
+    double vel_rel_tan[MAXD] = {0.0};
+    double vel_rel_nor[MAXD] = {0.0};
+    double vel_ghost_nor[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
+	    vel_rel_nor[j] = vn*nor[j];
+	    vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
+    }
+
+    if (debugging("slip_boundary"))
+    {
+        fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
+        fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_tan",vel_rel_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_rel_nor",vel_rel_nor,dim,"\n");
+    }
+
+    double vel_ghost_tan[MAXD] = {0.0};
+    double vel_ghost_rel[MAXD] = {0.0};
+
+    for (int j = 0; j < dim; ++j)
+    {
+        vel_ghost_tan[j] = vel_rel_tan[j];
+        vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
+        v_sym[j] = vel_ghost_rel[j] + vel_intfc[j];
+    }
+
+
+    if (std::isnan(v_sym[0]) || std::isinf(v_sym[0]) ||
+        std::isnan(v_sym[1]) || std::isinf(v_sym[1]) ||
+        std::isnan(v_sym[2]) || std::isinf(v_sym[2]))
+    {
+        printf("\nsetsymBoundaryNIP() ERROR: nan/inf v_sym\n");
+        printf("\nidir = %d nb = %d\n",idir,nb);
+        fprint_int_vector(stdout,"icoords",icoords,dim,"\n");
+        fprint_general_vector(stdout,"v_sym",v_sym,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+        LOC(); //clean_up(EXIT_FAILURE);
+    }
+
+    if (debugging("sym_boundary"))
+    {
+        fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
+        fprint_general_vector(stdout,"vel_ghost_rel",vel_ghost_rel,dim,"\n");
+        fprint_general_vector(stdout,"v_sym",v_sym,dim,"\n");
+    }
+    
+    /*
+    //store data to avoid recomputing values in the fluid solver -- see iFluid handling of this
+    int fid = face_index(idir,nb);
+    for (int i = 0; i < dim; ++i)
+    {
+        ghost_data[fid][index].vel[i] = v_sym[i];
+        ghost_data[fid][index].force[i] = 0.0;
+    }
+    */
+}
 void G_CARTESIAN::setSlipBoundary(
         int *icoords,
         int idir,
@@ -566,8 +867,6 @@ void G_CARTESIAN::setSlipBoundary(
 }
 
 //TODO: Make function return the computed slip velocity, v_slip, as a std::vector<double>
-
-//TODO: Do we need to consider the near wall temperature in this boundary condition?
 void G_CARTESIAN::setSlipBoundaryNIP(
 	int *icoords,
 	int idir,
@@ -578,7 +877,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 	double** vel,
 	double* v_slip)
 {
-    //TODO: dir is unused here?
+    //TODO: dir is unused here
     GRID_DIRECTION dir[3][2] = {
         {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
     };
@@ -828,28 +1127,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
-    /*
-    //TODO: CAN WE GET RID OF THIS?
-    //      THIS SHOULD ONLY BE DONE IF NO DIFFUSIVE FLUX BEING USED?
-    /////////////////////////////////////////////////////////////////////////
-    if (eqn_params->use_eddy_viscosity == NO)
-    {
-        //for (int j = 0; j < dim; ++j)
-          //  v_slip[j] = vel_reflect[j] + vel_ghost_nor[j];
-
-        //What about this?
-        double vel_ghost_rel[MAXD] = {0.0};
-        for (int j = 0; j < dim; ++j)
-        {
-            vel_ghost_rel[j] = vel_rel_tan[j] + vel_ghost_nor[j];
-            v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
-        }
-
-        return;
-    }
-    /////////////////////////////////////////////////////////////////////////
-    */
-
     if (debugging("slip_boundary"))
     {
         fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
@@ -859,10 +1136,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         printf("Magd(vel_rel_tan,dim) = %g\n",mag_vtan);
     }
 
-    //Interpolate the temperature at the reflected point
-    double temp_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.temp,
-            getStateTemp,&temp_reflect,&field.temp[index]);
 
     EOS_PARAMS eos = eqn_params->eos[comp];
     double R_specific = eos.R_specific;
@@ -872,8 +1145,17 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double Cp = gamma/(gamma - 1.0)*R_specific;
     double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
 
-    //Compute Wall Temperature
-    double temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
+    double temp_wall = eqn_params->fixed_wall_temp;
+    if (!eqn_params->use_fixed_wall_temp)
+    {
+        //Interpolate the temperature at the reflected point
+        double temp_reflect;
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.temp,
+                getStateTemp,&temp_reflect,&field.temp[index]);
+
+        //Compute Wall Temperature
+        temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
+    }
 
     //Interpolate the pressure at the reflected point
     double pres_reflect;
@@ -918,19 +1200,12 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
 
+    //TODO: OR WITH + SIGN (dist_reflect + dist_ghost)/mu_reflect ???
     double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
     
     for (int j = 0; j < dim; ++j)
     {
         vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
-        //vel_ghost_tan[j] = vel_rel_tan[j] - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
-
-        //TODO: OR IS IT THIS (WITH + SIGN)
-        /*
-        vel_ghost_tan[j] = vel_rel_tan[j]
-            - (dist_reflect + dist_ghost)/mu_reflect*tau_wall[j];
-        */
-
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
