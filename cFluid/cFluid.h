@@ -698,8 +698,14 @@ protected:
 
 // cFinit.cpp
 extern void read_cFluid_params(char*,EQN_PARAMS*);
-extern void insert_objects(Front*);
 extern void getChannelInletState(STATE* state, EQN_PARAMS *eqn_params, COMPONENT comp);
+extern void insert_objects(Front*);
+extern void insert_boundary_objects(Front* front);
+extern void initSplitState(Front* front);
+extern void initBackwardFacingStep(Front* front);
+extern void initBump(Front* front);
+extern void initRamp(Front* front);
+
 
 // cFcartsn.cpp
 extern void readFrontStates(Front*,char*);

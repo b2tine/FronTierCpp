@@ -632,36 +632,37 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
         state.momn[i] = 0.0;
     }
 
-    //NACA0012_AIRFOIL
-    if (eqn_params->prob_type == NACA0012_AIRFOIL)
+    bool init_velo = false;
+    if (CursorAfterStringOpt(infile,"Enter yes to set initial velocity:"))
     {
-        /*
-        state.vel[0] = 128.621639;
-        state.vel[1] = 6.425737;
-        state.vel[2] = 0.0;
-        */
+        char string[25];
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            init_velo = true;
+        }
+    }
 
-        /*
-        state.vel[0] = 117.472616;
-        state.vel[1] = 5.868750;
-        state.vel[2] = 0.0;
-        */  
-        
-        state.vel[0] = 512.366372;
-        state.vel[1] = 25.597029;
-        state.vel[2] = 0.0;
-            
-               //state.vel[0] = 0.99875;
-               //state.vel[1] = 0.049896;
-               //state.vel[2] = 0.0;
+    if (init_velo)
+    {
+        CursorAfterString(infile,"Enter initial velocity:");
+        for (int k = 0; k < dim; ++k)
+        {
+            fscanf(infile,"%lf",&state.vel[k]);
+            (void) printf("%f ",state.vel[k]);
+        }
+        (void) printf("\n");
 
-        state.momn[0] = state.vel[0]*state.dens;
-        state.momn[1] = state.vel[1]*state.dens;
-        state.momn[2] = state.vel[2]*state.dens;
+        for (int k = 0; k < dim; ++k)
+        {
+            state.momn[k] = state.vel[k]*state.dens;
+        }
 
-        eqn_params->v1[0] = eqn_params->v2[0] = state.vel[0];
-        eqn_params->v1[1] = eqn_params->v2[1] = state.vel[1];
-        eqn_params->v1[2] = eqn_params->v2[2] = state.vel[2];
+        for (int k = 0; k < dim; ++k)
+        {
+            eqn_params->v1[k] = eqn_params->v2[k] = state.vel[k];
+        }
     }
 
 
@@ -3252,11 +3253,13 @@ extern void insert_objects(
 	Front *front)
 {
 	int dim = front->rect_grid->dim;
-        EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-	switch (eqn_params->prob_type)
-        {
-	case PROJECTILE:
-	    init_gun_and_bullet(front);
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	
+    switch (eqn_params->prob_type)
+    {
+        case PROJECTILE:
+            init_gun_and_bullet(front);
+            break;
 	}
 }	/* end insert_objects */
 
@@ -3340,4 +3343,148 @@ static void init_gun_and_bullet(
                         front->interf,neg_comp,pos_comp,func,func_params,
                         MOVABLE_BODY_BOUNDARY,&num_segs);
 }	/* end init_gun_and_bullet */
+
+//Attach a wall structure, such as a backward facing step, to the boundary interface
+void insert_boundary_objects(Front *front)
+{
+    FILE* infile = fopen(InName(front),"r");
+    char string[100];
+
+    bool insert_bdry_obj = false;
+    if (CursorAfterStringOpt(infile,"Enter yes to insert boundary object:"))
+    {
+        fscanf(infile,"%s",string);
+        printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
+            insert_bdry_obj = true;
+    }
+    
+    if (!insert_bdry_obj)
+    {
+        fclose(infile);
+        return;
+    }
+
+    CursorAfterString(infile,"Enter boundary object type:");
+    fscanf(infile,"%s",string);
+    printf("%s\n",string);
+    if (string[0] == 'S' || string[0] == 's')
+    {
+        initSplitState(front);
+    }
+    else if (string[0] == 'B' || string[0] == 'b')
+    {
+        if (string[1] == 'A' || string[1] == 'a')
+        {
+            initBackwardFacingStep(front);
+        }
+        else if (string[1] == 'U' || string[1] == 'u')
+        {
+            initBump(front);
+        }
+    }
+    else if (string[0] == 'R' || string[0] == 'r')
+    {
+        initRamp(front);
+    }
+
+    fclose(infile);
+}
+
+void initSplitState(Front* front)
+{
+    if (FT_Dimension() != 2)
+    {
+        printf("ERROR: initSplitState() "
+                "currently only available for dim = 2!\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+    INTERFACE* save_intfc = current_interface();
+    set_current_interface(front->interf);
+
+    double node_coords[MAXD] = {0.0};
+
+    FILE *infile = fopen(InName(front),"r");
+    CursorAfterString(infile,"Enter coordinates of node:"); printf("\n");
+    fscanf(infile,"%lf %lf",&node_coords[0],&node_coords[1]);
+    printf("%f %f\n",node_coords[0],node_coords[1]);
+    fclose(infile);
+    
+    NODE* new_node = make_node(Point(node_coords));
+
+    //COMPONENT neg_comp = SOLID_COMP;
+    //COMPONENT pos_comp = GAS_COMP2;
+
+    set_current_interface(save_intfc);
+}
+
+///////////////////////////////////////////////////////////////
+//TODO: initialization functions below only for 2d runs;    //
+//       write 3d versions when working                    //
+////////////////////////////////////////////////////////////
+
+//static void initBackwardFacingStep(Front* front)
+void initBackwardFacingStep(Front* front)
+{
+    if (FT_Dimension() != 2)
+    {
+        printf("ERROR: initBackwardFacingStep() "
+                "currently only available for dim = 2!\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+
+    int num_nodes;
+    double** node_coords;
+
+    FILE *infile = fopen(InName(front),"r");
+    CursorAfterString(infile,"Enter number of node points:");
+    fscanf(infile,"%d",&num_nodes);
+    printf("%d\n",num_nodes);
+    FT_MatrixMemoryAlloc((POINTER*)&node_coords,num_nodes,MAXD,sizeof(double));
+    
+    CursorAfterString(infile,"Enter coordinates of node points:"); printf("\n");
+    for (int i = 0; i < num_nodes; ++i)
+    {
+        fscanf(infile,"%lf %lf",&node_coords[i][0],&node_coords[i][1]);
+        printf("%f %f\n",node_coords[i][0],node_coords[i][1]);
+    }
+    fclose(infile);
+    
+    double scale_factor = 0.75;
+    COMPONENT neg_comp = SOLID_COMP;
+    COMPONENT pos_comp = GAS_COMP2;
+    boolean closed_curve = NO;
+
+    CURVE* bfstep = FT_MakeNodeArrayCurve(front,num_nodes,node_coords,
+            neg_comp,pos_comp,closed_curve,scale_factor,NEUMANN_BOUNDARY);
+
+    FT_FreeThese(1,node_coords);
+}
+
+//static void initBump(Front* front)
+void initBump(Front* front)
+{
+    printf("ERROR: initBump() not implemented yet!\n");
+    LOC(); clean_up(EXIT_FAILURE);
+
+    if (FT_Dimension() != 2)
+    {
+        printf("ERROR: initBump() currently only available for dim = 2!\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+}
+
+//static void initRamp(Front* front)
+void initRamp(Front* front)
+{
+    printf("ERROR: initRamp() not implemented yet!\n");
+    LOC(); clean_up(EXIT_FAILURE);
+
+    if (FT_Dimension() != 2)
+    {
+        printf("ERROR: initRamp() currently only available for dim = 2!\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+}
 

@@ -109,6 +109,8 @@ int main(int argc, char **argv)
 	{
 	    g_cartesian.setInitialIntfc(&level_func_pack,in_name);
 	    
+        insert_boundary_objects(&front);
+
         if (f_basic.dim == 3) level_func_pack.set_3d_bdry = YES;
 	    
         FT_InitIntfc(&front,&level_func_pack);
@@ -197,6 +199,25 @@ static void gas_driver(
         Front *front,
 	G_CARTESIAN &g_cartesian)
 {
+    double fixed_dt;
+    bool use_fixed_dt = false;
+
+    FILE* infile = fopen(InName(front),"r");
+    if (CursorAfterStringOpt(infile,"Enter yes to fix time step:"))
+    {
+        char s[25];
+        fscanf(infile,"%s",s);
+        (void) printf("%s\n",s);
+        if (s[0] == 'y' || s[0] == 'Y')
+        {
+            CursorAfterString(infile,"fixed time step:");
+            fscanf(infile,"%lf",&fixed_dt);
+            printf("%f\n",fixed_dt);
+            use_fixed_dt = true;
+        }
+    }
+
+
 	FT_ReadTimeControl(in_name,front);
 	double CFL = Time_step_factor(front);
 	
@@ -228,6 +249,10 @@ static void gas_driver(
 	    FT_SetTimeStep(front);
         
 	    front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);
+        if (use_fixed_dt)
+        {
+            front->dt = fixed_dt;
+        }
 
 	    FT_SetOutputCounter(front);
     }
@@ -283,6 +308,10 @@ static void gas_driver(
         }
         
         front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);
+        if (use_fixed_dt)
+        {
+            front->dt = fixed_dt;
+        }
 
             /* Output section */
 
