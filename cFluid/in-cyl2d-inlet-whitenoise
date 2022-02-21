@@ -121,6 +121,7 @@ Type y to make scalar turb kinetic energy field movie: n
 Enter yes for debugging: yes
 Enter the debugging string: cfluid_dt
 
+Enter the debugging stringXXX: dirichlet_bdry
 Enter the debugging stringXXX: const_whitenoise_bdry
 
 

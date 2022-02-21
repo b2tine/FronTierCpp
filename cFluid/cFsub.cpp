@@ -309,8 +309,8 @@ static void promptForDirichletBdryState(
             printf("\n");
 
 
-            void (*state_func)(double*,HYPER_SURF*,Front*,POINTER,POINTER) = nullptr;
-            POINTER state_func_params = nullptr;
+            //void (*state_func)(double*,HYPER_SURF*,Front*,POINTER,POINTER) = nullptr;
+            //POINTER state_func_params = nullptr;
 
             bool add_whitenoise = false;
             if (CursorAfterStringOpt(infile,"Enter yes to add white noise to inlet:"))
@@ -326,17 +326,18 @@ static void promptForDirichletBdryState(
 
             if (add_whitenoise)
             {
-                //WHITE_NOISE_PARAMS* bdry_params;
+                //WHITE_NOISE_PARAMS* bdry_params = getWhiteNoiseParams(dim,infile);
                 static WHITE_NOISE_PARAMS bdry_params;
                 bdry_params.dim = dim;
-                bdry_params.amplitude = 75.0; //TODO: read from input file
+                bdry_params.amplitude = 175.0; //TODO: read from input file
                 std::copy(state,state+1,&(bdry_params.base_state));
                 
-                state_func = cF_constantWithWhiteNoise;
-                state_func_params = (POINTER)&bdry_params;
+                //state_func = cF_constantWithWhiteNoise;
+                //state_func_params = (POINTER)&bdry_params;
             
-                FT_InsertDirichletBoundary(front,state_func,"cF_constantWithWhiteNoise",
-                        state_func_params,nullptr,*hs,i_hs);
+                FT_InsertDirichletBoundary(front,cF_constantWithWhiteNoise,
+                        "cF_constantWithWhiteNoise",(POINTER)&bdry_params,
+                        nullptr,*hs,i_hs);
                 /*FT_InsertDirichletBoundary(front,state_func,"cF_constantWithWhiteNoise",
                         state_func_params,(POINTER)state,*hs,i_hs);*/
             }
