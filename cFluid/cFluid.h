@@ -245,6 +245,12 @@ struct FLOW_THROUGH_PARAMS
     EQN_PARAMS *eqn_params;
 };
 
+struct WHITE_NOISE_PARAMS
+{
+    int dim;
+    double amplitude;
+    STATE base_state;
+};
 
 //TODO: This should be named PISTON_BDRY_PARAMS or similar
 //      -- not generic variable bdry
@@ -552,7 +558,7 @@ protected:
 	void appendStencilBuffer2d(SWEEP*,SWEEP*,int,int);//UNUSED
 	void appendStencilBuffer3d(SWEEP*,SWEEP*,int,int,int);//UNUSED
 	
-	void setDirichletStates(STATE*,SWEEP*,SWEEP*,HYPER_SURF*,int*,int,int,int,int);
+	void setDirichletStates(STATE*,SWEEP*,SWEEP*,HYPER_SURF*,int*,int,int,int,int,int);
 	void setNeumannStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,int,int);
     
 	/* Viscous flux */

@@ -11,7 +11,6 @@ static double (*getStateMom[MAXD])(Locstate) =
 void G_CARTESIAN::computeSGSTerms()
 {
     computeEddyViscosity();
-        //computeTurbulentHeatFlux();
 }
 
 void G_CARTESIAN::computeEddyViscosity()
@@ -56,38 +55,15 @@ void G_CARTESIAN::computeEddyViscosity2d()
             continue;
         }
 
-        /*
-        double mu_molecular;
-        switch (comp)
-        {
-            case GAS_COMP1:
-                mu_molecular = eqn_params->mu1;
-                break;
-            case GAS_COMP2:
-                mu_molecular = eqn_params->mu2;
-                break;
-            default:
-                printf("\nERROR computeEddyViscosity2d(): unrecognized component!\n");
-                printf("\t\tcomp = %d\n", comp);
-                LOC(); clean_up(EXIT_FAILURE);
-        }
-
-        mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
-            //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
-        */
-        
-        //TODO: Use model specified by eqn_params->eddy_viscosity_model
         switch (model)
         {
             case EDDY_VISC_MODEL::VREMAN:
             {
-                //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
                 mu_turb[index] = computeEddyViscosityVremanModel_BdryAware(icoords);
                 break;
             }
             case EDDY_VISC_MODEL::WALE:
             {
-                //mu[index] = computeEddyViscosityWALE(icoords);
                 mu_turb[index] = computeEddyViscosityWALE(icoords);
                 break;
             }
@@ -98,10 +74,8 @@ void G_CARTESIAN::computeEddyViscosity2d()
             }
         }
         
-        //if (mu[index] > mu_max)
         if (mu[index] + mu_turb[index] > mu_max)
         {
-            //mu_max = mu[index];
             mu_max = mu[index] + mu_turb[index];
         }
     }
@@ -130,37 +104,15 @@ void G_CARTESIAN::computeEddyViscosity3d()
             continue;
         }
 
-        /*
-        double mu_molecular;
-        switch (comp)
-        {
-            case GAS_COMP1:
-                mu_molecular = eqn_params->mu1;
-                break;
-            case GAS_COMP2:
-                mu_molecular = eqn_params->mu2;
-                break;
-            default:
-                printf("\nERROR computeEddyViscosity3d(): unrecognized component!\n");
-                printf("\t\tcomp = %d\n", comp);
-                LOC(); clean_up(EXIT_FAILURE);
-        }
-
-        mu[index] = mu_molecular + computeEddyViscosityVremanModel_BdryAware(icoords);
-            //mu[index] = mu_molecular + computeEddyViscosityVremanModel(icoords);
-        */
-
         switch (model)
         {
             case EDDY_VISC_MODEL::VREMAN:
             {
-                //mu[index] += computeEddyViscosityVremanModel_BdryAware(icoords);
                 mu_turb[index] = computeEddyViscosityVremanModel_BdryAware(icoords);
                 break;
             }
             case EDDY_VISC_MODEL::WALE:
             {
-                //mu[index] += computeEddyViscosityWALE(icoords);
                 mu_turb[index] = computeEddyViscosityWALE(icoords);
                 break;
             }
@@ -171,10 +123,8 @@ void G_CARTESIAN::computeEddyViscosity3d()
             }
         }
     
-        //if (mu[index] > mu_max)
         if (mu[index] + mu_turb[index] > mu_max)
         {
-            //mu_max = mu[index];
             mu_max = mu[index] + mu_turb[index];
         }
     }

@@ -580,7 +580,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                     break;
     
                 case DIRICHLET_BOUNDARY:
-                    setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,0,i);
+                    setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,0,i,comp);
                     break;
 
                 case FIRST_PHYSICS_WAVE_TYPE:
@@ -812,7 +812,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                     break;
 
                 case DIRICHLET_BOUNDARY:
-                    setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,n,i);
+                    setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,n,i,comp);
                     break;
 
                 case FIRST_PHYSICS_WAVE_TYPE:

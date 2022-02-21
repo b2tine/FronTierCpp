@@ -308,7 +308,44 @@ static void promptForDirichletBdryState(
             printf("Inlet Viscosity: %g\n",state->mu);
             printf("\n");
 
-            FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,*hs,i_hs);
+
+            void (*state_func)(double*,HYPER_SURF*,Front*,POINTER,POINTER) = nullptr;
+            POINTER state_func_params = nullptr;
+
+            bool add_whitenoise = false;
+            if (CursorAfterStringOpt(infile,"Enter yes to add white noise to inlet:"))
+            {
+                char string[25];
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                {
+                    add_whitenoise = true;
+                }
+            }
+
+            if (add_whitenoise)
+            {
+                //WHITE_NOISE_PARAMS* bdry_params;
+                static WHITE_NOISE_PARAMS bdry_params;
+                bdry_params.dim = dim;
+                bdry_params.amplitude = 75.0; //TODO: read from input file
+                std::copy(state,state+1,&(bdry_params.base_state));
+                
+                state_func = cF_constantWithWhiteNoise;
+                state_func_params = (POINTER)&bdry_params;
+            
+                FT_InsertDirichletBoundary(front,state_func,"cF_constantWithWhiteNoise",
+                        state_func_params,nullptr,*hs,i_hs);
+                /*FT_InsertDirichletBoundary(front,state_func,"cF_constantWithWhiteNoise",
+                        state_func_params,(POINTER)state,*hs,i_hs);*/
+            }
+            else
+            {
+                FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,*hs,i_hs);
+            }
+
+                //FT_InsertDirichletBoundary(front,NULL,NULL,NULL,(POINTER)state,*hs,i_hs);
 
             for (int i = 1; i < nhs; ++i)
             {
@@ -351,11 +388,6 @@ static void promptForDirichletBdryState(
                 case 'a':
                 case 'A':			// Far-field state
                 {
-                    ////////////////////////////////////////////////////////////////////////
-                        //printf("\nERROR: FAR_FIELD boundary condition not yet implemented\n");
-                        //LOC(); clean_up(EXIT_FAILURE);
-                    ////////////////////////////////////////////////////////////////////////
-
                     FT_InsertDirichletBoundary(front,cF_farfieldBoundaryState,
                             "cF_farfieldBoundaryState",NULL,NULL,*hs,i_hs);
                     for (int i = 1; i < nhs; ++i)
@@ -395,7 +427,6 @@ static void promptForDirichletBdryState(
     }
 } 	/* end  promptForDirichletBdryState */
 
-/*
 extern void cF_constantWithWhiteNoise(
         double          *p0,
         HYPER_SURF      *hs,
@@ -403,18 +434,12 @@ extern void cF_constantWithWhiteNoise(
         POINTER         params,
         POINTER         state)
 {
-    //////////////////////////////////////////////////////////////////////////
-        //printf("\n\nERROR cF_constantWithWhiteNoise(): not implemented yet\n");
-        //LOC(); clean_up(EXIT_FAILURE);
-    //////////////////////////////////////////////////////////////////////////
-
-	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
-    
-    INLET_PARAMS* inlet_params = (INLET_PARAMS*)params;
-    POINT *oldp = inlet_params->oldp;
+    FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
+    EQN_PARAMS *eqn_params = ft_params->eqn_params;
+    COMPONENT comp = ft_params->comp;
+    POINT *oldp = ft_params->oldp;
     HYPER_SURF *oldhs = oldp->hs;
     HYPER_SURF_ELEMENT *oldhse = oldp->hse;
-    COMPONENT comp = inlet_params->comp;
 
     WHITE_NOISE_PARAMS* bdry_params = (WHITE_NOISE_PARAMS*)boundary_state_function_params(hs);
     int dim = bdry_params->dim;
@@ -423,12 +448,16 @@ extern void cF_constantWithWhiteNoise(
 	STATE *newst = (STATE*)state;
     newst->eos = &eqn_params->eos[comp]; 
 
-    if (boundary_state(oldhs) != NULL)
+    STATE* bstate = &(bdry_params->base_state);
+    //if (boundary_state(oldhs) != NULL)
+    if (bstate != nullptr)
 	{
-	    STATE *bstate = (STATE*)boundary_state(oldhs);
+	    //STATE *bstate = (STATE*)boundary_state(oldhs);
 
 	    newst->dens = bstate->dens;
         newst->pres = bstate->pres;
+        newst->temp = bstate->temp;
+        newst->mu = bstate->mu;
         
         ////////////////////////////////////////////////////////////////////
         double white_noise_vel[MAXD] = {0.0};
@@ -457,7 +486,6 @@ extern void cF_constantWithWhiteNoise(
 	    	newst->momn[i] = newst->dens*newst->vel[i];
         }
 	    newst->engy = EosEnergy(newst);
-	        //newst->engy = bstate->engy;
 	    
         //TODO: Should vort/vorticity be non-zero for turbulent inlet bdry?
         newst->vort = 0.0;
@@ -466,17 +494,17 @@ extern void cF_constantWithWhiteNoise(
 
 	    if (debugging("const_whitenoise_bdry"))
 	    {
-            printf("Preset boundary state %s:\n", 
-                eqn_params->perturb_const_inlet_bdry == false ?
-                    "\b" : "(With Velocity Perturbation)");
-            
-            print_general_vector("Velocity: ",newst->vel,dim,"\n");
-            print_general_vector("Momentum: ",newst->momn,dim,"\n");
+            printf("\n");
+            printf("Coords: %f %f %f\n", p0[0], p0[1], p0[2]);
+            printf("Velocity: %f %f %f\n", newst->vel[0], newst->vel[1], newst->vel[2]);
+            //print_general_vector("Coords: ",p0,dim,"\n");
+            //print_general_vector("Velocity: ",newst->vel,dim,"\n");
+            //print_general_vector("Momentum: ",newst->momn,dim,"\n");
             printf("Density: %f\n",newst->dens);
-            printf("Energy: %f\n",newst->engy); //TODO: out shows Energy constant????
-                printf("Const Energy: %f\n",bstate->engy);
+            printf("Energy: %f\n",newst->engy);
             printf("Pressure: %f\n",newst->pres);
-            printf("Vorticity: %f\n",newst->vort);
+            printf("Temperature: %f\n",newst->temp);
+            printf("Viscosity: %f\n",newst->mu);
 	    }
     }
     else
@@ -485,7 +513,6 @@ extern void cF_constantWithWhiteNoise(
         LOC(); clean_up(EXIT_FAILURE);
     }
 }
-*/
 
 extern void cF_variableBoundaryState(
         double          *p0,
@@ -615,11 +642,6 @@ extern void cF_farfieldBoundaryState(
         POINTER         params,
         POINTER         state)
 {
-    ////////////////////////////////////////////////////////////////////////
-        //printf("\nERROR: FAR_FIELD boundary condition not yet implemented\n");
-        //LOC(); clean_up(EXIT_FAILURE);
-    ////////////////////////////////////////////////////////////////////////
-
     int dim = front->rect_grid->dim;
 	FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
 	POINT *oldp = ft_params->oldp;
@@ -2759,6 +2781,8 @@ extern void restart_set_dirichlet_bdry_function(Front *front)
         
         if (strcmp(s,"cF_flowThroughBoundaryState") == 0)
             bstate->_boundary_state_function = cF_flowThroughBoundaryState;
+        else if (strcmp(s,"cF_constantWithWhiteNoise") == 0)
+            bstate->_boundary_state_function = cF_constantWithWhiteNoise;
         else if (strcmp(s,"cF_supersonicOutflowState") == 0)
             bstate->_boundary_state_function = cF_supersonicOutflowState;
         else if (strcmp(s,"cF_farfieldBoundaryState") == 0)

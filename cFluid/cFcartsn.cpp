@@ -866,7 +866,12 @@ void G_CARTESIAN::solve(double dt)
     //TODO: USE A BOOLEAN FLAG FOR THIS SWITCH INSTEAD OF THE DEBUGGING STRING
     if (!debugging("no_viscflux"))
     {
-        computeDynamicViscosity();
+        static bool first = true;
+        if (first)
+        {
+            computeDynamicViscosity();
+            first = false;
+        }
 
         //TODO: Precompute wall shear stress magnitudes
         //      (which are assumed to be constant over the time step)
@@ -3864,7 +3869,7 @@ void G_CARTESIAN::appendStencilBuffer2d(
 		switch (wave_type(hs))
 		{
 		case DIRICHLET_BOUNDARY:
-		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,0,0,1);
+		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,0,0,1,comp);
 		    break;
 		default: 
 		    printf("ERROR appendStencilBuffer2d: "
@@ -3927,7 +3932,7 @@ void G_CARTESIAN::appendStencilBuffer2d(
 		case DIRICHLET_BOUNDARY:
 		    offset = imax[dir] - imin[dir] + nrad;
 		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,1,
-					offset,1);
+					offset,1,comp);
 		    break;
 		default: 
 		    printf("ERROR appendStencilBuffer2d"
@@ -3990,7 +3995,7 @@ void G_CARTESIAN::appendStencilBuffer2d(
 		switch (wave_type(hs))
 		{
 		case DIRICHLET_BOUNDARY:
-		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,0,0,1);
+		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,0,0,1,comp);
 		    break;
 		default: 
 		    printf("ERROR appendStencilBuffer2d"
@@ -4055,7 +4060,7 @@ void G_CARTESIAN::appendStencilBuffer2d(
 		case DIRICHLET_BOUNDARY:
 		    offset = imax[dir] - imin[dir] + nrad;
 		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,1,
-					offset,1);
+					offset,1,comp);
 		    break;
 		default: 
 		    printf("ERROR appendStencilBuffer2d"
@@ -4552,7 +4557,7 @@ void G_CARTESIAN::appendGhostBuffer(
 		    	break;
 		    case DIRICHLET_BOUNDARY:
 		    	setDirichletStates(state,vst,m_vst,hs,ic_next,
-					idir,nb,0,i);
+					idir,nb,0,i,comp);
 		    	break;
 		    case FIRST_PHYSICS_WAVE_TYPE:
 		    	//GFM
@@ -4706,7 +4711,7 @@ void G_CARTESIAN::appendGhostBuffer(
 		    	break;
 		    case DIRICHLET_BOUNDARY:
 		    	setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,
-						n,i);
+						n,i,comp);
 		    	break;
 		    case FIRST_PHYSICS_WAVE_TYPE:
 		    	//GFM
@@ -6010,7 +6015,8 @@ void G_CARTESIAN::setDirichletStates(
 	int		dir,
 	int		nb,
 	int		n,
-	int		istart)
+	int		istart,
+    COMPONENT comp)
 {
 	int		j, k, index;
 	STATE 		*state;
@@ -6019,41 +6025,11 @@ void G_CARTESIAN::setDirichletStates(
 
 	if (nb == 0)
     {
-        if (boundary_state(hs) != NULL)
-        {
-          //preset state bdry
-          state = (STATE*)boundary_state(hs);
-          for (k = istart; k <= nrad; ++k)
-          {
-              vst->dens[nrad-k] = state->dens;
-              vst->engy[nrad-k] = state->engy;
-              vst->pres[nrad-k] = state->pres;
-              vst->k_turb[nrad-k] = state->k_turb;
-              //TODO: Need turb inlet with correct energy spectrum
-            
-              for (j = 0; j < 3; j++)
-                  vst->momn[j][nrad-k] = 0.0;
-
-              if (dim == 1)
-              {
-                  vst->momn[0][nrad-k] = state->momn[0];
-              }
-              else if (dim == 2)
-              {
-                  for (j = 0; j < 2; j++)
-                      vst->momn[j][nrad-k] = state->momn[ind2[dir][j]];
-              }
-              else if (dim == 3)
-              {
-                  for (j = 0; j < 3; j++)
-                      vst->momn[j][nrad-k] = state->momn[ind3[dir][j]];
-              }
-          }
-        }
-        else if (boundary_state_function(hs) &&
-                (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
-                 strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
-                 strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
+        if (boundary_state_function(hs) &&
+            (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_constantWithWhiteNoise") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
         {
             //TODO: Should the boundary_state_function be called here and then use the
             //      computed boundary state to fill the stencil (constant extrapolation)
@@ -6062,6 +6038,7 @@ void G_CARTESIAN::setDirichletStates(
             //
             //      SEE setDirichletViscousGhostState() for how to do this.
             
+
             for (k = istart; k <= nrad; ++k)
             {
                 index = d_index(icoords,top_gmax, dim);
@@ -6088,6 +6065,64 @@ void G_CARTESIAN::setDirichletStates(
                         vst->momn[j][nrad-k] = m_vst->momn[ind3[dir][j]][index];
                 }
             }
+
+            /*
+              for (k = istart; k <= nrad; ++k)
+              {
+                  vst->dens[nrad-k] = crx_state->dens;
+                  vst->engy[nrad-k] = crx_state->engy;
+                  vst->pres[nrad-k] = crx_state->pres;
+                  vst->k_turb[nrad-k] = crx_state->k_turb;
+                
+                  for (j = 0; j < 3; j++)
+                      vst->momn[j][nrad-k] = 0.0;
+
+                  if (dim == 1)
+                  {
+                      vst->momn[0][nrad-k] = crx_state->momn[0];
+                  }
+                  else if (dim == 2)
+                  {
+                      for (j = 0; j < 2; j++)
+                          vst->momn[j][nrad-k] = crx_state->momn[ind2[dir][j]];
+                  }
+                  else if (dim == 3)
+                  {
+                      for (j = 0; j < 3; j++)
+                          vst->momn[j][nrad-k] = crx_state->momn[ind3[dir][j]];
+                  }
+              }
+            */
+        }
+        else if (boundary_state(hs) != NULL)
+        {
+          //preset state bdry
+          state = (STATE*)boundary_state(hs);
+          for (k = istart; k <= nrad; ++k)
+          {
+              vst->dens[nrad-k] = state->dens;
+              vst->engy[nrad-k] = state->engy;
+              vst->pres[nrad-k] = state->pres;
+              vst->k_turb[nrad-k] = state->k_turb;
+            
+              for (j = 0; j < 3; j++)
+                  vst->momn[j][nrad-k] = 0.0;
+
+              if (dim == 1)
+              {
+                  vst->momn[0][nrad-k] = state->momn[0];
+              }
+              else if (dim == 2)
+              {
+                  for (j = 0; j < 2; j++)
+                      vst->momn[j][nrad-k] = state->momn[ind2[dir][j]];
+              }
+              else if (dim == 3)
+              {
+                  for (j = 0; j < 3; j++)
+                      vst->momn[j][nrad-k] = state->momn[ind3[dir][j]];
+              }
+          }
         }
         else
         {
@@ -6097,44 +6132,12 @@ void G_CARTESIAN::setDirichletStates(
     }
 	else
 	{
-        if (boundary_state(hs) != NULL)
+        if (boundary_state_function(hs) &&
+            (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_constantWithWhiteNoise") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
         {
-            state = (STATE*)boundary_state(hs);
-            for (k = istart; k <= nrad; ++k)
-            {
-                vst->dens[n+nrad+k-1] = state->dens;
-                vst->engy[n+nrad+k-1] = state->engy;
-                vst->pres[n+nrad+k-1] = state->pres;
-                vst->k_turb[n+nrad+k-1] = state->k_turb;
-                
-                for (j = 0; j < 3; j++)
-                    vst->momn[j][n+nrad+k-1] = 0.0;
-
-                if (dim == 1)
-                {
-                    vst->momn[0][n+nrad+k-1] = state->momn[0];
-                }
-                else if (dim == 2)
-                {
-                    for (j = 0; j < 2; j++)
-                        vst->momn[j][n+nrad+k-1] = state->momn[ind2[dir][j]];
-                }
-                else if (dim == 3)
-                {
-                    for (j = 0; j < 3; j++)
-                        vst->momn[j][n+nrad+k-1] = state->momn[ind3[dir][j]];
-                }
-            }
-        }
-        else if (boundary_state_function(hs) &&
-                (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
-                 strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
-                 strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
-        {
-            //TODO: For local supersonic outflow this should be fine, but for subsonic do
-            //      we need to compute the state with cF_flowThroughBoundaryState() and then
-            //      extrapolate? Or use characteristic theory boundary condition?
-            
             //TODO: Should the boundary_state_function be called here and then use the
             //      computed boundary state to fill the stencil (constant extrapolation)
             
@@ -6162,6 +6165,64 @@ void G_CARTESIAN::setDirichletStates(
                 {
                     for (j = 0; j < 3; j++)
                         vst->momn[j][n+nrad+k-1] = m_vst->momn[ind3[dir][j]][index];
+                }
+            }
+
+            /*
+            for (k = istart; k <= nrad; ++k)
+            {
+                vst->dens[n+nrad+k-1] = crx_state->dens;
+                vst->engy[n+nrad+k-1] = crx_state->engy;
+                vst->pres[n+nrad+k-1] = crx_state->pres;
+                vst->k_turb[n+nrad+k-1] = crx_state->k_turb;
+                
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+k-1] = 0.0;
+
+                if (dim == 1)
+                {
+                    vst->momn[0][n+nrad+k-1] = crx_state->momn[0];
+                }
+                else if (dim == 2)
+                {
+                    for (j = 0; j < 2; j++)
+                        vst->momn[j][n+nrad+k-1] = crx_state->momn[ind2[dir][j]];
+                }
+                else if (dim == 3)
+                {
+                    for (j = 0; j < 3; j++)
+                        vst->momn[j][n+nrad+k-1] = crx_state->momn[ind3[dir][j]];
+                }
+            }
+            */
+
+        }
+        else if (boundary_state(hs) != NULL)
+        {
+            state = (STATE*)boundary_state(hs);
+            for (k = istart; k <= nrad; ++k)
+            {
+                vst->dens[n+nrad+k-1] = state->dens;
+                vst->engy[n+nrad+k-1] = state->engy;
+                vst->pres[n+nrad+k-1] = state->pres;
+                vst->k_turb[n+nrad+k-1] = state->k_turb;
+                
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+k-1] = 0.0;
+
+                if (dim == 1)
+                {
+                    vst->momn[0][n+nrad+k-1] = state->momn[0];
+                }
+                else if (dim == 2)
+                {
+                    for (j = 0; j < 2; j++)
+                        vst->momn[j][n+nrad+k-1] = state->momn[ind2[dir][j]];
+                }
+                else if (dim == 3)
+                {
+                    for (j = 0; j < 3; j++)
+                        vst->momn[j][n+nrad+k-1] = state->momn[ind3[dir][j]];
                 }
             }
         }
