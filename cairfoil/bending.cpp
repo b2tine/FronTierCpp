@@ -86,10 +86,11 @@ void addStringBenders(Front* front)
         char string[100];
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
-        if (string[0] != 'y' || string[0] != 'Y')
+        if (string[0] == 'y' || string[0] == 'Y')
         {
             CursorAfterString(infile,"Enter string bending stiffness constant:");
             fscanf(infile,"%lf",&string_bends);
+            printf("%f\n",string_bends);
         }
     }
     else

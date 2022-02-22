@@ -537,11 +537,11 @@ EXPORT	void set_curve_gindex(
 	num_curves = 0;
 	intfc_curve_loop(intfc,c)
 	{
-	    if (dim == 3 && hsbdry_type(*c) == SUBDOMAIN_HSBDRY)
-		continue;
+	    if (dim == 3 && hsbdry_type(*c) == SUBDOMAIN_HSBDRY) continue;
 	    num_curves++;
 	}
-        FT_VectorMemoryAlloc((POINTER*)&n_dist,num_nodes,sizeof(long));
+        
+    FT_VectorMemoryAlloc((POINTER*)&n_dist,num_nodes,sizeof(long));
 	for (i = 0; i < num_nodes; ++i) n_dist[i] = 0;
 	n_dist[myid] = num_curves;
 	pp_global_lmax(n_dist,num_nodes);
@@ -556,8 +556,7 @@ EXPORT	void set_curve_gindex(
 	num_curves = 0;
 	intfc_curve_loop(intfc,c)
 	{
-	    if (dim == 3 && hsbdry_type(*c) == SUBDOMAIN_HSBDRY)
-		continue;
+	    if (dim == 3 && hsbdry_type(*c) == SUBDOMAIN_HSBDRY) continue;
 	    Gindex(*c) = num_curves + ilower;
 	    if (intfc->max_curve_gindex < Gindex(*c))
 		intfc->max_curve_gindex = Gindex(*c);

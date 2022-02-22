@@ -85,28 +85,12 @@ void printAfExtraData(
             fprintf(outfile,"%d\n",registered_pts->global_ids[i]);
     }
 
-    //TODO: need FINITE_STRING also ... do we still even us these below? or is this all in node extra?
     fprintf(outfile,"\nCurve extra data:\n");
     intfc_curve_loop(intfc,c)
 	{
         if (hsbdry_type(*c) != STRING_HSBDRY) continue;
 
         /*
-	    C_PARAMS *c_params = (C_PARAMS*)(*c)->extra;
-	    if (c_params == NULL)
-        {
-            fprintf(outfile,"curve extra: no\n");
-        }
-        else
-	    {
-            fprintf(outfile,"curve extra: yes\n");
-            fprintf(outfile,"point_mass = %24.18g\n",c_params->point_mass);
-            fprintf(outfile,"load_mass = %24.18g\n",c_params->load_mass);
-            fprintf(outfile,"load_type = %d\n",c_params->load_type);
-            fprintf(outfile,"dir = %d\n",c_params->dir);
-	    }
-        */
-
         if ((*c)->extra == nullptr)
         {
             fprintf(outfile,"curve extra: no\n");
@@ -120,6 +104,7 @@ void printAfExtraData(
             fprintf(outfile,"c_drag = %24.18g\n",s_params->c_drag);
             fprintf(outfile,"ampFluidFactor = %24.18g\n",s_params->ampFluidFactor);
         }
+        */
         
         for (b = (*c)->first; b != (*c)->last; b = b->next)
         {
@@ -279,31 +264,12 @@ void readAfExtraData(
         }
     }
     
-    //TODO: C_PARAMS no longer in use, should be removed.
     next_output_line_containing_string(infile,"Curve extra data:");
 	for (c = intfc->curves; c && *c; ++c)
 	{
         if (hsbdry_type(*c) != STRING_HSBDRY) continue;
 
         /*
-	    C_PARAMS *c_params;
-	    fgetstring(infile,"curve extra:");
-        fscanf(infile,"%s",string);
-	    if (string[0] == 'y')
-        {
-            FT_ScalarMemoryAlloc((POINTER*)&c_params,sizeof(C_PARAMS));
-            fgetstring(infile,"point_mass = ");
-                fscanf(infile,"%lf",&c_params->point_mass);
-            fgetstring(infile,"load_mass = ");
-                fscanf(infile,"%lf",&c_params->load_mass);
-            fgetstring(infile,"load_type = ");
-                fscanf(infile,"%d",(int*)&c_params->load_type);
-            fgetstring(infile,"dir = ");
-                fscanf(infile,"%d",&c_params->dir);
-            (*c)->extra = (POINTER)c_params;
-        }
-        */
-
         FINITE_STRING* s_params;
 	    fgetstring(infile,"curve extra:");
         fscanf(infile,"%s",string);
@@ -320,6 +286,7 @@ void readAfExtraData(
             fscanf(infile,"%lf",&s_params->ampFluidFactor);
             (*c)->extra = (POINTER)s_params;
         }
+        */
         
         for (b = (*c)->first; b != (*c)->last; b = b->next)
         {

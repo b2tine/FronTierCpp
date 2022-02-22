@@ -276,29 +276,6 @@ extern void compute_spring_accel1(
 	    }
 	    len = sqrt(len);
 
-        /*
-        //TODO: Can not do this for springs connecting string to triangle
-        //      at the parachute canopy skirt
-        //additional damping
-        double comp_vrel = 0.0;
-        for (int k = 0; k < dim; ++k)
-        {
-            comp_vrel += v_rel[k]*vec[k]/len;
-        }
-
-        for (int k = 0; k < dim; ++k)
-        {
-            accel[k] -= sv->lambda*comp_vrel*vec[k]/len;
-        }
-        */
-
-        /*
-//TEMP DEBUG
-///////////////////////////////////////////
-printf("nb %d:  len = %g   sv->len0[%d] = %g\n", j, len, j, sv->len0[j]);
-///////////////////////////////////////////
-        */
-
         double dL = len - sv->len0[j];
         
         /*
@@ -2257,10 +2234,13 @@ static void set_equilibrium_mesh3d(
 	    }
 	    never_redistribute(Hyper_surf(surf)) = YES;
 	}
+
+    /*
 	printf("Original length:\n");
 	printf("min_len = %16.12f\n",min_len);
 	printf("max_len = %16.12f\n",max_len);
 	printf("ave_len = %16.12f\n",ave_len/count);
+    */
 
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
@@ -2380,9 +2360,11 @@ static void set_equilibrium_mesh3d(
 		}
 	    }
 	}
+    /*
 	printf("Perturbed length:\n");
 	printf("min_len = %16.12f\n",min_len);
 	printf("max_len = %16.12f\n",max_len);
 	printf("ave_len = %16.12f\n",ave_len/count);
+    */
 }	/* end set_equilibrium_mesh3d */
 

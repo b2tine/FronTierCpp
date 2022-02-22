@@ -2538,7 +2538,7 @@ extern void initIsolated3dCurves(Front* front)
     {
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
-        if (string[0] != 'y' && string[0] != 'Y')
+        if (string[0] == 'y' || string[0] == 'Y')
         {
             add_curves = true;
         }
@@ -2551,15 +2551,16 @@ extern void initIsolated3dCurves(Front* front)
     }
 
     
+    FINITE_STRING* finite_string = getFiniteStringParams(front);
+    /*
     FINITE_STRING *finite_string = NULL;
     if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
     {
         fscanf(infile,"%s",string);
         (void) printf("%s\n",string);
-        if (string[0] != 'y' || string[0] != 'Y')
+        if (string[0] == 'y' || string[0] == 'Y')
         {
-            FT_ScalarMemoryAlloc((POINTER*)&finite_string,
-                            sizeof(FINITE_STRING));
+            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
             CursorAfterString(infile,"Enter string radius: ");
             fscanf(infile,"%lf",&finite_string->radius);
             printf("%f\n",finite_string->radius);
@@ -2574,6 +2575,7 @@ extern void initIsolated3dCurves(Front* front)
             printf("%f\n",finite_string->ampFluidFactor);
         }
     }
+    */
 
     int num_curves = 0;
 	CursorAfterString(infile,"Enter the number of curves:");
@@ -2609,24 +2611,25 @@ extern void initIsolated3dCurves(Front* front)
                     nd_type = STRING_NODE;
 	    }
 	    curve = init3dCurve(front,pt_s,pt_e,hsb_type,nd_type);
-            curve->extra = (POINTER)finite_string;
+        curve->extra = (POINTER)getFiniteStringParams(front);
 
+        bool duplicate_curve = false;
 	    sprintf(string,"Enter yes to have parallel curves for curve %d:",i);
 	    if (CursorAfterStringOpt(infile, string))
 	    {
-		fscanf(infile,"%s",string);
-		(void) printf("%s\n",string);
-		if (string[0] != 'y' && string[0] != 'Y')
-		    continue;
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'y' || string[0] == 'Y')
+                duplicate_curve = true;
 	    }
-	    else
-            continue;
 
-	    double pt_new_s[3];
-            double pt_new_e[3];
-            int local_num = 0;
-            int shift_dir[3] = {0,0,0}; //default
-            double shift = 0.0; //default
+        if (!duplicate_curve) continue;
+        
+        double pt_new_s[3];
+        double pt_new_e[3];
+        int local_num = 0;
+        int shift_dir[3] = {0,0,0}; //default
+        double shift = 0.0; //default
 
         if (CursorAfterStringOpt(infile,
                     "Enter the number of curves in each side:"))
@@ -2636,13 +2639,13 @@ extern void initIsolated3dCurves(Front* front)
         }
     
         if (CursorAfterStringOpt(infile,"Enter the shift direction:"))
-	    {
+        {
             for (int j = 0; j < 3; ++j)
             {
                 fscanf(infile,"%d",&shift_dir[j]);
                 (void) printf("%d ",shift_dir[j]);
             }
-	    }
+        }
         (void) printf("\n");
     
         if (CursorAfterStringOpt(infile,"Enter unit shifted displacement:"))
@@ -2660,7 +2663,9 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_s[j] += shift*(i+1)*shift_dir[j];
                 pt_new_e[j] += shift*(i+1)*shift_dir[j];
             }
-            init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+            curve = init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
+            curve->extra = (POINTER)getFiniteStringParams(front);
+            
             memcpy((void*)pt_new_s,(void*)pt_s,3*sizeof(double));
             memcpy((void*)pt_new_e,(void*)pt_e,3*sizeof(double));
             for (int j = 0; j < 3; ++j)
@@ -2669,7 +2674,7 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_e[j] -= shift*(i+1)*shift_dir[j];
             }
             curve = init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
-            curve->extra = (POINTER)finite_string;
+            curve->extra = (POINTER)getFiniteStringParams(front);
         }
 	}
     fclose(infile);
@@ -2704,7 +2709,9 @@ static CURVE *init3dCurve(
         }
 
         double *h = computational_grid(intfc)->h;
-        int nb = (int)(spacing/(0.5*h[0]));
+        double hmin = std::min(std::min(h[0],h[1]),h[2]);
+
+        int nb = (int)(spacing/(0.5*hmin));
         spacing /= (double)nb;
 
         //overide default spacing with input file option

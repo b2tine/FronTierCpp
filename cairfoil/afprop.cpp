@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "airfoil.h"
 
 static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,getStateZvel};
+static double (*getStateMom[3])(POINTER) = {getStateXmom,getStateYmom,getStateZmom};
 
 static SURFACE *canopy_of_string_node(NODE*);
 static void string_curve_propagation(Front*,POINTER,CURVE*,CURVE*,double);
@@ -401,9 +402,9 @@ static void string_curve_propagation(
     STATE *newsl,*newsr;
     COMPONENT base_comp = front->interf->default_comp;
 
-        //FIELD *field = eqn_params->field;
-    double rhoF = eqn_params->rho2;
+    double *dens = eqn_params->dens;
     double **vel = eqn_params->vel;
+    double **momn = eqn_params->mom;
 
     double c_drag = params->c_drag;
     double radius = params->radius;
@@ -441,8 +442,12 @@ static void string_curve_propagation(
         for (int i = 0; i < 3; ++i)
             ldir[i] /= length;
 
+        double dens_fluid;
+        FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
+                dens,getStateDens,&dens_fluid,nullptr);
+
         double vt = 0.0;
-        double vfluid[3], vrel[3];
+        double momn_fluid[3], vfluid[3], vrel[3];
         for (int i = 0; i < 3; ++i)
         {
             /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
@@ -450,23 +455,28 @@ static void string_curve_propagation(
             /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
                     vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);*/
             
+            /*FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
+                    vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);*/
+
             FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
-                    vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
+                    momn[i],getStateMom[i],&momn_fluid[i],nullptr);
+
+            vfluid[i] = momn_fluid[i]/dens_fluid;
 
             vrel[i] = vfluid[i] - vel_intfc[i];
             vt += vrel[i]*ldir[i];
         }
 
-        double speed = 0.0;
+        double nor_speed = 0.0;
         double vtan[3], vnor[3];
         for (int i = 0; i < 3; ++i)
         {
             //vtan[i] = vt*ldir[i];
             //vnor[i] = vrel[i] - vtan[i];
             vnor[i] = vrel[i] - vt*ldir[i];
-            speed += sqr(vnor[i]);
+            nor_speed += sqr(vnor[i]);
         }
-        speed = sqrt(speed);
+        nor_speed = sqrt(nor_speed);
 
         double A_ref = 2.0*PI*radius*length;
         double Vol = PI*radius*radius*length;
@@ -477,7 +487,7 @@ static void string_curve_propagation(
         {
             for (int i = 0; i < 3; ++i)
             {
-                dragForce[i] = 0.5*rhoF*c_drag*A_ref*speed*vnor[i];
+                dragForce[i] = 0.5*dens_fluid*c_drag*A_ref*nor_speed*vnor[i];
                 dragForce[i] *= ampFluidFactor;
             }
         }

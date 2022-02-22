@@ -2744,10 +2744,10 @@ static void setSurfVelocity(
             
             for (int j = 0; j < 3; ++j)
             {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
-                //sl->vel[j] = nor_speed*nor[j];
-                //sr->vel[j] = nor_speed*nor[j];
+                //sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
             }
             
             for (int j = 0; j < 3; ++j)
@@ -2871,10 +2871,10 @@ static void setCurveVelocity(
                 
                 for (int j = 0; j < 3; ++j)
                 {
-                    sl->vel[j] = vel[j];
-                    sr->vel[j] = vel[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                    //sl->vel[j] = vel[j];
+                    //sr->vel[j] = vel[j];
+                    sl->vel[j] = nor_speed*nor[j];
+                    sr->vel[j] = nor_speed*nor[j];
                 }
 
                 for (int j = 0; j < 3; ++j)
@@ -2969,10 +2969,10 @@ static void setNodeVelocity3d(
 
             for (int j = 0; j < 3; ++j)
             {
-                    sl->vel[j] = vel[j];
-                    sr->vel[j] = vel[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                    //sl->vel[j] = vel[j];
+                    //sr->vel[j] = vel[j];
+                    sl->vel[j] = nor_speed*nor[j];
+                    sr->vel[j] = nor_speed*nor[j];
             }
 
             for (int j = 0; j < 3; ++j)
@@ -3027,10 +3027,10 @@ static void setNodeVelocity3d(
 
             for (int j = 0; j < 3; ++j)
             {
-                sl->vel[j] = vel[j];
-                sr->vel[j] = vel[j];
-                //sl->vel[j] = nor_speed*nor[j];
-                //sr->vel[j] = nor_speed*nor[j];
+                //sl->vel[j] = vel[j];
+                //sr->vel[j] = vel[j];
+                sl->vel[j] = nor_speed*nor[j];
+                sr->vel[j] = nor_speed*nor[j];
             }
 
             for (int j = 0; j < 3; ++j)
@@ -3277,6 +3277,22 @@ extern void scatterAirfoilExtra(
 	int dim = gr->dim;
 
 	num_nodes = 0;
+    intfc_node_loop(intfc,n)
+    {
+        for (k = 0; k < dim; ++k)
+        {
+            if (Coords((*n)->posn)[k] <= L[k] ||
+                Coords((*n)->posn)[k] > U[k])
+                break;
+        }
+        if (k != dim || (*n)->extra == NULL) continue;
+        num_nodes++;
+    }
+
+    for (i = 0; i < pp_numnodes(); ++i)
+    {
+        if (i == pp_mynode()) continue;
+        pp_send(30,&num_nodes,sizeof(int),i);
         intfc_node_loop(intfc,n)
         {
             for (k = 0; k < dim; ++k)
@@ -3286,45 +3302,30 @@ extern void scatterAirfoilExtra(
                     break;
             }
             if (k != dim || (*n)->extra == NULL) continue;
-            num_nodes++;
+            pp_send(31,&(Gindex((*n)->posn)),sizeof(long),i);
+            pp_send(32,(*n)->extra,sizeof(AF_NODE_EXTRA),i);
         }
-        for (i = 0; i < pp_numnodes(); ++i)
+    }
+    
+    pp_gsync();
+    
+    for (i = 0; i < pp_numnodes(); ++i)
+    {
+        if (i == pp_mynode()) continue;
+        pp_recv(30,i,&num_nodes,sizeof(int));
+        for (j = 0; j < num_nodes; ++j)
         {
-            if (i == pp_mynode()) continue;
-            pp_send(30,&num_nodes,sizeof(int),i);
+            pp_recv(31,i,&global_index,sizeof(long));
+            pp_recv(32,i,&extra_recv,sizeof(AF_NODE_EXTRA));
             intfc_node_loop(intfc,n)
             {
-                for (k = 0; k < dim; ++k)
-                {
-                    if (Coords((*n)->posn)[k] <= L[k] ||
-                        Coords((*n)->posn)[k] > U[k])
-                        break;
-                }
-                if (k != dim || (*n)->extra == NULL) continue;
-                pp_send(31,&(Gindex((*n)->posn)),sizeof(long),i);
-                pp_send(32,(*n)->extra,sizeof(AF_NODE_EXTRA),i);
+                if (Gindex((*n)->posn) != global_index) continue;
+                FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+                *extra = extra_recv;
+                (*n)->extra = (POINTER)extra;
+                (*n)->size_of_extra = sizeof(AF_NODE_EXTRA);
             }
         }
-	pp_gsync();
-        for (i = 0; i < pp_numnodes(); ++i)
-        {
-            if (i == pp_mynode()) continue;
-            pp_recv(30,i,&num_nodes,sizeof(int));
-            for (j = 0; j < num_nodes; ++j)
-            {
-                pp_recv(31,i,&global_index,sizeof(long));
-                pp_recv(32,i,&extra_recv,sizeof(AF_NODE_EXTRA));
-                intfc_node_loop(intfc,n)
-                {
-                    if (Gindex((*n)->posn) != global_index)
-                        continue;
-                    FT_ScalarMemoryAlloc((POINTER*)&extra,
-                                sizeof(AF_NODE_EXTRA));
-                    *extra = extra_recv;
-                    (*n)->extra = (POINTER)extra;
-                    (*n)->size_of_extra = sizeof(AF_NODE_EXTRA);
-                }
-            }
 	}
 }	/* end scatterAirfoilExtra */
 

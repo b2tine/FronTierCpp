@@ -732,13 +732,14 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     */
 }	/* end setChannelFlowParams */
 
-static void G_CARTESIAN::setFreestreamState(FILE* infile, EQN_PARAMS* eqn_params)
+static void setFreestreamState(FILE* infile, EQN_PARAMS* eqn_params)
 {
     ////////////////////////////////////////////////////////////
     printf("\nERROR: setFreestreamState() not implemented yet!\n");
     LOC(); clean_up(EXIT_FAILURE);
     ////////////////////////////////////////////////////////////
 
+    int dim = eqn_params->dim;
     eqn_params->dir_freestream = (dim == 2) ? 0 : 2;
     if (CursorAfterStringOpt(infile,"Enter freestream direction:"))
     {

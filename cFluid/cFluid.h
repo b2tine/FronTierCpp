@@ -196,6 +196,8 @@ struct EQN_PARAMS
     bool perturb_const_inlet_bdry {false};
 
     ////////////////////////////////////////////////////////////////////////////
+    //TODO: Package all these into the FREESTREAM_PARAMS struct
+    //
     //FREESTREAM VARIABLES
     int dir_freestream;     //freestream orientation ({x,y,z} = {0,1,2})
     double alpha {0.0};     //angle of attack wrt to the freestream orientation
