@@ -178,11 +178,8 @@ int main(int argc, char **argv)
 	    {
             readFrontStates(&front,restart_state_name);
             g_cartesian.readInteriorStates(restart_state_name);
-                //g_cartesian.readFrontInteriorStates(restart_state_name);
 	    	readAfExtraData(&front,restart_state_name);
 	    }
-
-        FT_Draw(&front);
 	}
     else
     {
