@@ -501,15 +501,15 @@ void setFabricParams(Front* front)
                 (void) printf("%f\n",af_params->m_l);
             }
 
-            af_params->with_string_fsi = false;
+            eqn_params->with_string_fsi = false;
             if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
             {
                 fscanf(infile,"%s",string);
                 (void) printf("%s\n",string);
                 if (string[0] == 'y' || string[0] == 'Y')
                 {
-                    af_params->with_string_fsi = true;
-                    FINITE_STRING* sfsi_params = &(af_params->string_fsi_params);
+                    eqn_params->with_string_fsi = true;
+                    FINITE_STRING* sfsi_params = &(eqn_params->string_fsi_params);
 
                     CursorAfterString(infile,"Enter string radius:");
                     fscanf(infile,"%lf",&(sfsi_params->radius));

@@ -567,12 +567,6 @@ void G_CARTESIAN::scatMeshFlux(FSWEEP *m_flux)
 	}
 }	/* end scatMeshFlux */
 
-//TODO: Can modify this function to add application specific source terms
-//      to the momentum and energy balance equations.
-//
-//      Eg. Compressible Ergun equation source term for enforcing pressure
-//      jump boundary condition at porous interface.
-
 //TODO: WHY DID I CHANGE THIS TO A POINTER INSTEAD OF USING CONST REFERENCE?
 //      I THINK I USED IT FOR SOMETHING THAT ENDED UP NOT WORKING OUT ...
 //      IT SHOULD BE PROBABLY BE CHANGED BACK.
@@ -589,6 +583,8 @@ void G_CARTESIAN::addSourceTerm(
 {
 	int i,j,k,l,index;
 	double *gravity = eqn_params->gravity;
+
+    double** f_surf = field.f_surf;
 
 	switch (dim)
 	{
@@ -659,6 +655,13 @@ void G_CARTESIAN::addSourceTerm(
                 {
                     m_flux->momn_flux[l][index] += delta_t*gravity[l]*m_vst->dens[index];
                     m_flux->engy_flux[index] += delta_t*gravity[l]*m_vst->momn[l][index];
+                }
+                
+                //TODO: energy flux dot product with force?
+                for (l = 0; l < dim; ++l)
+                {
+                    m_flux->momn_flux[l][index] += delta_t*f_surf[l][index];
+                        //m_flux->engy_flux[index] += delta_t*f_surf[l][index]*vel[l][index];
                 }
             }
 	    }
@@ -893,6 +896,8 @@ void G_CARTESIAN::solve(double dt)
     }
     ///////////////////////////////////////////////////////////////////////////
 
+    addImmersedForce();
+
     scatMeshStates();
 
 	adjustGFMStates();
@@ -1117,6 +1122,7 @@ void G_CARTESIAN::setDomain()
 	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->engy,size,sizeof(double));
 	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->vel,dim,size,sizeof(double));
 	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->mom,dim,size,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->f_surf,dim,size,sizeof(double));
 	    
         //GFM
 	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->gnor,dim,size,sizeof(double));
@@ -1146,6 +1152,7 @@ void G_CARTESIAN::setDomain()
 	    field.vel = eqn_params->vel;
         field.vort = eqn_params->vort;
 	    field.vorticity = eqn_params->vorticity;
+	    field.f_surf = eqn_params->f_surf;
 	}
 
     //GFM
@@ -6618,6 +6625,163 @@ void G_CARTESIAN::adjustGFMStates()
        }
     }
 }	/* end adjustGFMState */
+
+void G_CARTESIAN::addImmersedForce()
+{
+    double** f_surf = field.f_surf;
+
+    for (int k = imin[2]; k <= imax[2]; ++k)
+    for (int j = imin[1]; j <= imax[1]; ++j)
+    for (int i = imin[0]; i <= imax[0]; ++i)
+    {
+        int index = d_index3d(i,j,k,top_gmax);
+        for (int l = 0; l < dim; ++l)
+            f_surf[l][index] = 0.0;
+    }
+
+    if (dim != 3) return;
+    if (!eqn_params->with_string_fsi) return;
+    
+    FINITE_STRING* params = &(eqn_params->string_fsi_params);
+    double radius = params->radius;
+    double rhoS = params->dens;
+    double c_drag = params->c_drag;
+    double ampFluidFactor = params->ampFluidFactor;
+
+    INTERFACE *grid_intfc = front->grid_intfc;
+    CURVE **c,*curve;
+    BOND *b;
+    POINT *p;
+
+    double* dens = field.dens;
+    double** vel = field.vel;
+
+    int icoords[MAXD];
+    intfc_curve_loop(grid_intfc,c)
+    {
+        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+
+        curve = *c;
+        for (b = curve->first; b != curve->last; b = b->next)
+        {
+            p = b->end;
+            STATE* state_intfc = (STATE*)left_state(p);
+
+            rect_in_which(Coords(p),icoords,top_grid);
+            int index = d_index(icoords,top_gmax,dim);
+
+            //tangential direction along string BOND
+            double ldir[3];
+            for (int i = 0; i < 3; ++i)
+                ldir[i] = Coords(b->end)[i] - Coords(b->start)[i];
+            double length = Mag3d(ldir);
+            if (length < MACH_EPS)
+            {
+                printf("BOND length < MACH_EPS\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+
+            for (int i = 0; i < 3; ++i)
+                ldir[i] /= length;
+
+            double vt = 0.0;
+            double vfluid[3], vrel[3];
+            double* vel_intfc = state_intfc->vel;
+
+            double dens_fluid;
+            FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
+                    dens,getStateDens,&dens_fluid,&dens[index]);
+            
+            //double momn_fluid[3];
+
+            for (int i = 0; i < 3; ++i)
+            {
+                FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
+                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
+
+                /*
+                FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
+                        momn[i],getStateMom[i],&momn_fluid[i],nullptr);
+                
+                vfluid[i] = momn_fluid[i]/dens_fluid;
+                */
+
+                vrel[i] = vfluid[i] - vel_intfc[i];
+                vt += vrel[i]*ldir[i];
+            }
+
+            double nor_speed = 0.0;
+            double vtan[3], vnor[3];
+            for (int i = 0; i < 3; ++i)
+            {   
+                vtan[i] = vt*ldir[i];
+                vnor[i] = vrel[i] - vtan[i];
+                nor_speed += sqr(vnor[i]);
+            }
+            nor_speed = sqrt(nor_speed);
+
+            double A_ref = 2.0*PI*radius*length;
+            double Vol = PI*radius*radius*length;
+            double massCyl = rhoS*Vol;
+
+            double dragForce[MAXD] = {0.0};
+            if (front->step > eqn_params->fsi_startstep)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    dragForce[i] = 0.5*dens_fluid*c_drag*A_ref*nor_speed*vnor[i];
+                    dragForce[i] *= ampFluidFactor;
+                }
+            }
+
+            if (debugging("string_fluid"))
+            {
+                printf("\n");
+                printf("pt = %f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+                printf("\tdragForce = %g %g %g \n",dragForce[0],dragForce[1],dragForce[2]);
+                printf("\tc_drag = %f  |  A_ref = %f  |  dens_fluid = %f\n",c_drag,A_ref,dens_fluid);
+                printf("\tnor_speed = %f  |  ampfactor = %f\n\n",nor_speed,ampFluidFactor);
+            }
+
+            for (int k = icoords[2]-2; k <= icoords[2]+2; k++)
+            for (int j = icoords[1]-2; j <= icoords[1]+2; j++)
+            for (int i = icoords[0]-2; i <= icoords[0]+2; i++)
+            {
+                if (i < 0 || j < 0 || k < 0) continue;
+                if (i > top_gmax[0] || j > top_gmax[1] || k > top_gmax[2]) continue;
+
+                int ic = d_index3d(i,j,k,top_gmax);
+                auto coords = cell_center[index].getCoords();
+                double dist = distance_between_positions(Coords(p),&coords[0],3);
+
+                //TODO: use smooth radial basis function e.g. smooothed dirac delta
+                double vec[MAXD];
+                for (int l = 0; l < dim; ++l)
+                    vec[l] = (coords[l] - Coords(p)[l])/dist;
+
+                double dir_h = FT_GridSizeInDir(vec,front);
+
+                double alpha = (dir_h*4.0 - dist)/(dir_h*4.0);
+
+                if (alpha < 0) continue;
+
+                //TODO: NEED TO DIVIDE f_surf by dx * dy * dz  ?????
+                for (int l = 0; l < dim; ++l)
+                {
+                    f_surf[l][ic] -= alpha*dragForce[l];
+                }
+
+                /*
+                printf("crds = %f %f %f dist = %f alpha = %f f_surf -= %f %f %f\n",
+                    coords[0],coords[1],coords[2],dist,alpha,
+                    alpha*dragForce[0],alpha*dragForce[1],alpha*dragForce[2]);
+                */
+            }
+        }
+    }
+
+    FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
+}   /* end addImmersedForce() */
 
 void G_CARTESIAN::appendOpenEndStates()
 {

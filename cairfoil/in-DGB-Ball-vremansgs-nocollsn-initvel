@@ -138,6 +138,14 @@ Enter initial position of load: 0 0 2.4452
 Enter yes to fix the load node: no
 
 Enter yes for string-fluid interaction: no
+Enter string radius: 0.045
+Enter string mass density: 0.2336
+                                    XXXEnter string mass densityXXX: 5.0
+Enter drag coefficient: 0.5
+Enter drag coefficientXXX: 0.1
+Enter drag coefficientXXX: 1.3
+Enter fluid force scaling factor: 100
+
 
 Enter new load position: 0 0 2
 Enter connection position: 0 0 2.4452
@@ -221,7 +229,7 @@ Enter the debugging string: proximity
 Enter the debugging string: collision
 Enter the debugging stringXXX: strain_limiting
 
-Enter the debugging stringXXX: bendforce_off
+Enter the debugging string: bendforce_off
 Enter the debugging stringXXX: no_viscflux
 
 Enter the debugging string: Xtrace

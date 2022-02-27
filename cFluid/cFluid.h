@@ -175,6 +175,8 @@ struct EQN_PARAMS
 	double *vort;    /* Vorticity-2d */
     double **vorticity; /* Vorticity-3d */
 
+    double** f_surf;
+
 	double **mom;
 	double *dens;
 	double *engy;
@@ -224,6 +226,9 @@ struct EQN_PARAMS
     double porosity;
     PORO_SCHEME poro_scheme;
     double porous_coeff[2];
+
+    bool with_string_fsi {false};
+    FINITE_STRING string_fsi_params;
     //////////////////////////////
     
     //Base front for comparison
@@ -342,6 +347,7 @@ enum VISITED_TYPE
 
 struct FIELD
 {
+    double **f_surf;
 	double **vel;
 	double **momn;
 	double *dens;
@@ -545,6 +551,8 @@ protected:
 
 	void addSourceTerm(SWEEP*,FSWEEP*,double); //void addSourceTerm(const SWEEP&,FSWEEP*,double);
 	
+    void addImmersedForce(); //for string fluid interaction, and potentially other forces
+
     void addErgunEquationSourceTerms(SWEEP* m_vst, FSWEEP *m_flux, double delta_t);
     std::vector<double> computeErgunEquationPressureJump(SWEEP* m_vst, int* icoords, double alpha, double beta);
 

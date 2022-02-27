@@ -395,14 +395,9 @@ static void string_curve_propagation(
     //      and A_ref is the cylinder enclosing the bond's surface area
     
         
-        
-        //FINITE_STRING* params = (FINITE_STRING*)oldc->extra;
-        //if (params == nullptr) return;
+    if (!eqn_params->with_string_fsi) return;
     
-        
-    if (!af_params->with_string_fsi) return;
-    
-    FINITE_STRING* params = &(af_params->string_fsi_params);
+    FINITE_STRING* params = &(eqn_params->string_fsi_params);
     
     double c_drag = params->c_drag;
     double radius = params->radius;
@@ -457,11 +452,8 @@ static void string_curve_propagation(
         double momn_fluid[3], vfluid[3], vrel[3];
         for (int i = 0; i < 3; ++i)
         {
-            /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-                    vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);*/
-            /*FT_IntrpStateVarAtCoords(front,base_comp,Coords(oldp),
-                    vel[i],getStateVel[i],&newsl->vel[i],&sl->vel[i]);*/
-            
+            //TODO: THIS SHOULD WORK
+            //
             /*FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
                     vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);*/
 
@@ -478,9 +470,8 @@ static void string_curve_propagation(
         double vtan[3], vnor[3];
         for (int i = 0; i < 3; ++i)
         {
-            //vtan[i] = vt*ldir[i];
-            //vnor[i] = vrel[i] - vtan[i];
-            vnor[i] = vrel[i] - vt*ldir[i];
+            vtan[i] = vt*ldir[i];
+            vnor[i] = vrel[i] - vtan[i];
             nor_speed += sqr(vnor[i]);
         }
         nor_speed = sqrt(nor_speed);
