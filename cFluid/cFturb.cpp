@@ -539,6 +539,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             else
             {
                 printf("ERROR: Unknown Boundary Type\n");
+                printf("\n\t wave_type(hs) = %d\n",wave_type(hs));
                 LOC(); clean_up(EXIT_FAILURE);
             }
         }

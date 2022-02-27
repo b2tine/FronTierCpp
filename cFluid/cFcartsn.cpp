@@ -6628,8 +6628,11 @@ void G_CARTESIAN::adjustGFMStates()
 
 void G_CARTESIAN::addImmersedForce()
 {
+    if (dim != 3) return;
+    
     double** f_surf = field.f_surf;
 
+    //TODO: set up for arbitrary usage in 2d and 3d
     for (int k = imin[2]; k <= imax[2]; ++k)
     for (int j = imin[1]; j <= imax[1]; ++j)
     for (int i = imin[0]; i <= imax[0]; ++i)
@@ -6639,7 +6642,6 @@ void G_CARTESIAN::addImmersedForce()
             f_surf[l][index] = 0.0;
     }
 
-    if (dim != 3) return;
     if (!eqn_params->with_string_fsi) return;
     
     FINITE_STRING* params = &(eqn_params->string_fsi_params);
