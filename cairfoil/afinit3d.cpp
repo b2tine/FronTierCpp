@@ -2551,7 +2551,16 @@ extern void initIsolated3dCurves(Front* front)
     }
 
     
-    FINITE_STRING* finite_string = getFiniteStringParams(front);
+    INTERFACE *save_intfc = current_interface();
+    set_current_interface(front->interf);
+
+    
+    //THIS RETURNS NULLPTR -- ATTEMPTING TO USE SINGLE STRUCT FOR
+    //ALL STRINGS THAT WE HOLD IN AF_PARAMS
+    //
+    
+        //FINITE_STRING* finite_string = getFiniteStringParams(front);
+    
     /*
     FINITE_STRING *finite_string = NULL;
     if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
@@ -2611,7 +2620,7 @@ extern void initIsolated3dCurves(Front* front)
                     nd_type = STRING_NODE;
 	    }
 	    curve = init3dCurve(front,pt_s,pt_e,hsb_type,nd_type);
-        curve->extra = (POINTER)getFiniteStringParams(front);
+        //curve->extra = (POINTER)getFiniteStringParams(front);
 
         bool duplicate_curve = false;
 	    sprintf(string,"Enter yes to have parallel curves for curve %d:",i);
@@ -2664,7 +2673,7 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_e[j] += shift*(i+1)*shift_dir[j];
             }
             curve = init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
-            curve->extra = (POINTER)getFiniteStringParams(front);
+            //curve->extra = (POINTER)getFiniteStringParams(front);
             
             memcpy((void*)pt_new_s,(void*)pt_s,3*sizeof(double));
             memcpy((void*)pt_new_e,(void*)pt_e,3*sizeof(double));
@@ -2674,13 +2683,14 @@ extern void initIsolated3dCurves(Front* front)
                 pt_new_e[j] -= shift*(i+1)*shift_dir[j];
             }
             curve = init3dCurve(front,pt_new_s,pt_new_e,hsb_type,nd_type);
-            curve->extra = (POINTER)getFiniteStringParams(front);
+            //curve->extra = (POINTER)getFiniteStringParams(front);
         }
 	}
     fclose(infile);
 
     addStringBenders(front);
 
+    set_current_interface(save_intfc);
 }	/* initIsolated3dCurves() */
 
 static CURVE *init3dCurve(

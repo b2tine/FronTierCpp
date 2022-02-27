@@ -1172,9 +1172,9 @@ EXPORT void geomview_interface_plot(
 	double *BBL = topological_grid(intfc).GL;
 	double *BBU = topological_grid(intfc).GU;
 
-	if (intfc->dim != 3)
-	    return;
-	if (create_directory(dname,YES) == FUNCTION_FAILED)
+	if (intfc->dim != 3) return;
+
+    if (create_directory(dname,YES) == FUNCTION_FAILED)
 	{
 	    (void) printf("WARNING in geomview_interface_plot(), directory "
 			  "%s doesn't exist and can't be created\n",dname);

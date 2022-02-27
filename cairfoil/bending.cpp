@@ -76,8 +76,10 @@ void resetBendingForce(INTERFACE* intfc)
     }
 }
 
+//TODO: PARALLEL COMMUNICATION OF BOND_BENDER data
 void addStringBenders(Front* front)
 {
+    bool add_benders = false;
     double string_bends = 0.0;
 
     FILE* infile = fopen(InName(front),"r");
@@ -91,15 +93,12 @@ void addStringBenders(Front* front)
             CursorAfterString(infile,"Enter string bending stiffness constant:");
             fscanf(infile,"%lf",&string_bends);
             printf("%f\n",string_bends);
+            add_benders = true;
         }
-    }
-    else
-    {
-        fclose(infile);
-        return;
     }
     fclose(infile);
     
+    if (!add_benders) return;
 
     INTERFACE* intfc = front->interf;
     CURVE** curve;

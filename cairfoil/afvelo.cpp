@@ -500,6 +500,36 @@ void setFabricParams(Front* front)
                 fscanf(infile,"%lf",&af_params->m_l);
                 (void) printf("%f\n",af_params->m_l);
             }
+
+            af_params->with_string_fsi = false;
+            if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                {
+                    af_params->with_string_fsi = true;
+                    FINITE_STRING* sfsi_params = &(af_params->string_fsi_params);
+
+                    CursorAfterString(infile,"Enter string radius:");
+                    fscanf(infile,"%lf",&(sfsi_params->radius));
+                    printf("%f\n",sfsi_params->radius);
+
+                    CursorAfterString(infile,"Enter string mass density:");
+                    fscanf(infile,"%lf",&(sfsi_params->dens));
+                    printf("%f\n",sfsi_params->dens);
+
+                    CursorAfterString(infile,"Enter drag coefficient:");
+                    fscanf(infile,"%lf",&(sfsi_params->c_drag));
+                    printf("%f\n",sfsi_params->c_drag);
+
+                    CursorAfterString(infile,"Enter fluid force scaling factor:");
+                    fscanf(infile,"%lf",&(sfsi_params->ampFluidFactor));
+                    printf("%f\n",sfsi_params->ampFluidFactor);
+                }
+            }
+
+
 	}
 
 

@@ -241,6 +241,10 @@ struct AF_PARAMS
 	int    unequal_strings_num;	/* number of unequal strings */
 	int    *unequal_strings_gindex; /* gindex of unequal strings */
 
+
+    bool with_string_fsi {false};
+    FINITE_STRING string_fsi_params;
+
 	std::vector<CURVE*> string_curves;	/* string curves in order */
 	std::map<int,int> string_hash;	/* map from string gindex to string 
 					   id, for users' convenience */

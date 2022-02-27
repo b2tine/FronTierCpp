@@ -216,19 +216,15 @@ struct EQN_PARAMS
     double fixed_wall_temp {294.0};
 
 
-/////////////////////////////    
-//TODO: Move to cAirfoil -- could get from af_params held by the front
-//      in the CFABRIC_CARTESIAN class ...
+    /////////////////////////////    
+    bool no_fluid {false};
+    int fsi_startstep;
+    
     boolean with_porosity;
     double porosity;
     PORO_SCHEME poro_scheme;
     double porous_coeff[2];
-
-    int fsi_startstep;
-
-    bool no_fluid {false};
-
-//////////////////////////////
+    //////////////////////////////
     
     //Base front for comparison
 	boolean use_base_soln;

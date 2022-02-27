@@ -394,11 +394,23 @@ static void string_curve_propagation(
     //      with drag coefficient C_d = 1.05
     //      and A_ref is the cylinder enclosing the bond's surface area
     
-    FINITE_STRING *params = (FINITE_STRING*)oldc->extra;
-    if (params == nullptr) return;
         
+        
+        //FINITE_STRING* params = (FINITE_STRING*)oldc->extra;
+        //if (params == nullptr) return;
+    
+        
+    if (!af_params->with_string_fsi) return;
+    
+    FINITE_STRING* params = &(af_params->string_fsi_params);
+    
+    double c_drag = params->c_drag;
+    double radius = params->radius;
+    double rhoS = params->dens;
+    double ampFluidFactor = params->ampFluidFactor;
+    
+    
     STATE *state_intfc;
-        //STATE *sl,*sr;
     STATE *newsl,*newsr;
     COMPONENT base_comp = front->interf->default_comp;
 
@@ -406,11 +418,6 @@ static void string_curve_propagation(
     double **vel = eqn_params->vel;
     double **momn = eqn_params->mom;
 
-    double c_drag = params->c_drag;
-    double radius = params->radius;
-    double rhoS = params->dens;
-    double ampFluidFactor = params->ampFluidFactor;
-    
         //int count = 0;
 
     for (oldb = oldc->first, newb = newc->first;

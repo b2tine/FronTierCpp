@@ -1852,10 +1852,10 @@ static void installStringsLoadNode(
 	    }
 	    bond->length0 = spacing;
 	    
-            //af_params->string_curves.push_back(string_curves[i]);
+        af_params->string_curves.push_back(string_curves[i]);
 	}
         
-	    //FT_FreeThese(1,string_curves);
+    FT_FreeThese(1,string_curves);
 
 }	/* end installStringsLoadNode */
 
@@ -2490,11 +2490,11 @@ static void connectStringtoRGB(
             
             b->length0 = spacing;
                 
-                //af_params->string_curves.push_back(string_curves[k]);
+            af_params->string_curves.push_back(string_curves[k]);
         }
     }
 	
-    //FT_FreeThese(1,string_curves);
+    FT_FreeThese(1,string_curves);
 
 	if (debugging("trace"))
 	    printf("Leaving connectStringtoRGB() \n");
@@ -2502,6 +2502,16 @@ static void connectStringtoRGB(
 
 FINITE_STRING* getFiniteStringParams(Front* front)
 {
+    /////////////////////////////////////////
+    return nullptr;
+    ////////////////////////////////////////
+    
+    //STRING PARAMS DISABLED -- THIS DOESN'T WORK IN PARALLEL
+    //  
+    //New Approach: add a FINITE_STRING struct to eqn_params
+    //              and access from there for all strings.
+    
+
     static FINITE_STRING* finite_string;
     /*
     static double radius;
@@ -2944,7 +2954,7 @@ extern void InstallNewLoadNode(
             }
             bond->length0 = spacing;
             
-                //af_params->string_curves.push_back(string_curves[i]);
+            af_params->string_curves.push_back(string_curves[i]);
 	    
             i++;
         }
@@ -3003,7 +3013,7 @@ extern void InstallNewLoadNode(
             set_current_interface(cur_intfc);
             fclose(infile);
             
-                //FT_FreeThese(1,string_curves);
+            FT_FreeThese(1,string_curves);
             
             return;
 	    }
@@ -3041,7 +3051,7 @@ extern void InstallNewLoadNode(
 	    }
 	    bond->length0 = spacing;
 	    
-            //af_params->string_curves.push_back(string_curves[i]);
+        af_params->string_curves.push_back(string_curves[i]);
 
         i++;
 	}
@@ -3049,7 +3059,7 @@ extern void InstallNewLoadNode(
     set_current_interface(cur_intfc);
 	fclose(infile);
 	
-        //FT_FreeThese(1,string_curves);
+    FT_FreeThese(1,string_curves);
 
 }       /* end InstallNewLoadNode */
 
@@ -3534,6 +3544,7 @@ static void connectTwoStringNodes(
 	}
 	b->length0 = spacing;
 	
-        //af_params->string_curves.push_back(string_curve);
+    af_params->string_curves.push_back(string_curve);
 
+    FT_FreeThese(1,string_curve);
 }       /* end connectTwoStringNodes */
