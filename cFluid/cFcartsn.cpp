@@ -1468,6 +1468,7 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
 	double *engy = field.engy;
 	double *pres = field.pres;
 	double **momn = field.momn;
+	double **vel = field.vel;
 
 	setDomain();
 	
@@ -1529,6 +1530,7 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
             {
                 fscanf(infile,"%lf",&momn[l][index]);
                 st_tmp.momn[l] = momn[l][index];
+                vel[l][index] = momn[l][index]/dens[index];
             }
             pres[index] = EosPressure(&st_tmp);
 	    }
@@ -1561,6 +1563,7 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
             {
                 fscanf(infile,"%lf",&momn[l][index]);
                 st_tmp.momn[l] = momn[l][index];
+                vel[l][index] = momn[l][index]/dens[index];
             }
             pres[index] = EosPressure(&st_tmp);
 	    }

@@ -330,6 +330,19 @@ void setFabricParams(Front* front)
                         eqn_params->porous_coeff[0] = af_params->porous_coeff[0];
                         eqn_params->porous_coeff[1] = af_params->porous_coeff[1];
                     }
+                    else if (string[0] == 'd' || string[0] == 'D')
+                    {
+                        af_params->poro_scheme = PORO_SCHEME::DARCY;
+                        CursorAfterString(infile,"Enter viscous parameter:");
+                        fscanf(infile,"%lf",&af_params->porous_coeff[0]);
+                        (void) printf("%f\n",af_params->porous_coeff[0]);
+                        CursorAfterString(infile,"Enter inertial parameter:");
+                        fscanf(infile,"%lf",&af_params->porous_coeff[1]);
+                        (void) printf("%f\n",af_params->porous_coeff[1]);
+                        eqn_params->porosity = af_params->porosity;
+                        eqn_params->porous_coeff[0] = af_params->porous_coeff[0];
+                        eqn_params->porous_coeff[1] = af_params->porous_coeff[1];
+                    }
                 
                     eqn_params->poro_scheme = af_params->poro_scheme;
                 }

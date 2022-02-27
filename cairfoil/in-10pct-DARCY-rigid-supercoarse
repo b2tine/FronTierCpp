@@ -24,11 +24,11 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
 Enter velocity: 0 0 25
-Enter pressure: 101725
-Enter temperature: 294
-For upper boundary in 2-th dimension
+Enter pressure: 101325
+Enter temperature: 298
 
-Enter type of Dirichlet boundary: FLOW_THROUGH
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
 
 //////////////////////////////////////////////////////////
@@ -36,8 +36,8 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 //////////////////////////////////////////////////////////
 
 Max time: 2.0
-Max step: 600
-Print interval: 0.001
+Max step: 60
+Print interval: 0.0005
 Movie frame interval: 0.00005
 CFL factor: 0.25
 type yes to turn off auto-redistribution: y
@@ -51,7 +51,7 @@ Enter numerical scheme for interior solver: WENO_4th_ORDER
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.29 101325
+Enter density and pressure of ambient air: 1.1845 101325
 
 Enter the specific gas constant: 287.058
 Enter the Prandtl number: 0.71
@@ -61,7 +61,7 @@ Enter the reference temperature: 273.15
 Enter the effective temperature: 110.4
 
 Enter yes to set initial velocity: yes
-Enter initial velocity: 0 0 25
+Enter initial velocity: 0 0 0
 
 Enter gravity: 0 0 0
 
@@ -103,7 +103,7 @@ Available types of canopy boundaries are:
         Cross (X)
         Circular with belt (S)
 Enter type of canopy boundary: R
-Enter the height of the plane: 0.4354
+Enter the height of the plane: 0.42354
 Enter lower bounds of the rectangle: 0.29 0.29
 Enter upper bounds of the rectangle: 0.91 0.91
 Enter yes for fixed boundary: yes
@@ -183,9 +183,10 @@ Type y to make vector vorticity field movie: y
 *************************************************
 Enter yes for debugging: yes
 
+Enter the debugging string: rigid_canopy
+Enter the debugging stringXXX: coat_comp
+
 Enter the debugging string: collision_off
-Enter the debugging stringXXX: rigid_canopy
-Enter the debugging stringXXX: collision
 Enter the debugging string: proximity
 Enter the debugging string: strain_limiting
 Enter the debugging string: max_speed
@@ -195,6 +196,6 @@ Enter the debugging string: skip_strainvel
 
 Enter the debugging stringXXX: no_viscflux
 
-Enter the debugging stringXXX: elastic_buffer
+Enter the debugging string: elastic_buffer
 Enter the debugging stringXXX: trace
 

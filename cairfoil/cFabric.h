@@ -31,7 +31,7 @@ private:
     void setElasticStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                         int*,int,int,int,int,int);
 
-    void setElasticStatesErgun(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
+    void setElasticStatesDarcy(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,
                             int*,int,int,int,int,int);
 
     void setElasticStatesRFB_normal(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,

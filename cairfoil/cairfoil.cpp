@@ -105,6 +105,8 @@ int main(int argc, char **argv)
     level_func_pack.pos_component = GAS_COMP2;
 	if (!RestartRun)
 	{
+        //g_cartesian.setInitialIntfc(&level_func_pack,in_name);
+
 	    FT_InitIntfc(&front,&level_func_pack);
         
         initFabricModules(&front);
@@ -273,6 +275,7 @@ void airfoil_driver(Front *front,
 	    {
 	    	coating_mono_hyper_surf(front);
 	    	g_cartesian->applicationSetComponent();
+            //g_cartesian->writeMeshComponentsVTK();
 	    }
 
 	    break_strings(front);
@@ -289,6 +292,9 @@ void airfoil_driver(Front *front,
 	    {
 	    	coating_mono_hyper_surf(front);
 	    	g_cartesian->applicationSetStates();
+	    	
+                //coating_mono_hyper_surf(front);
+	    	    //g_cartesian->applicationSetComponent();
 	    }
         
 	    if (!af_params->no_fluid)

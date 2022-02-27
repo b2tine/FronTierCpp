@@ -19,10 +19,11 @@
 #define         SOLID_COMP		0
 #define         GAS_COMP1		2
 #define         GAS_COMP2		3
+#define         GAS_COMP3		4
 #define         MAX_COMP        10
 
 #define	gas_comp(comp) (((comp) == GAS_COMP1 || \
-            comp == GAS_COMP2) ? YES : NO)
+            (comp) == GAS_COMP2 || (comp) == GAS_COMP3) ? YES : NO)
 
 enum PROB_TYPE 
 {
@@ -84,6 +85,7 @@ enum class PORO_SCHEME
     NORMAL_REFLECTION,
     REFLECTION,
     RIEMANN,
+    DARCY,
     ERGUN
 };
 

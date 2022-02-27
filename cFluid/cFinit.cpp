@@ -814,10 +814,13 @@ void G_CARTESIAN::initChannelFlowStates()
     next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
     {
-        //TODO: This should be setting interface state and not using ambient state?
 	    FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
 	    getAmbientState(sl,eqn_params,Coords(p),negative_component(hs));
 	    getAmbientState(sr,eqn_params,Coords(p),positive_component(hs));
+        sl->vel[0] = sl->vel[1] = sl->vel[2] = 0.0;
+        sl->momn[0] = sl->momn[1] = sl->momn[2] = 0.0;
+        sr->vel[0] = sr->vel[1] = sr->vel[2] = 0.0;
+        sr->momn[0] = sr->momn[1] = sr->momn[2] = 0.0;
 	}
 
 	FT_MakeGridIntfc(front);
