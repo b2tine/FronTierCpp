@@ -211,8 +211,10 @@ struct EQN_PARAMS
     double pres_freestream; //freestream pressure
     ////////////////////////////////////////////////////////////////////////////
 
+    bool no_slip_wall {false};
     bool use_fixed_wall_temp {false};
     double fixed_wall_temp {294.0};
+
 
 /////////////////////////////    
 //TODO: Move to cAirfoil -- could get from af_params held by the front

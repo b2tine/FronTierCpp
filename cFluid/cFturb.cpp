@@ -1203,9 +1203,15 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     //TODO: OR WITH + SIGN (dist_reflect + dist_ghost)/mu_reflect ???
     double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
     
+    double slip = 1.0;
+    if (eqn_params->no_slip_wall)
+    {
+        slip = 0.0;
+    }
+
     for (int j = 0; j < dim; ++j)
     {
-        vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
+        vel_ghost_tan[j] = slip*vel_rel_tan[j] - coeff_tau*tau_wall[j];
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
     }

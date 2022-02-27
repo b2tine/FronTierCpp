@@ -36,7 +36,7 @@ Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 //////////////////////////////////////////////////////////
 
 Max time: 2.0
-Max step: 60
+Max step: 600
 Print interval: 0.0005
 Movie frame interval: 0.00005
 CFL factor: 0.25
@@ -120,7 +120,7 @@ Enter yes for collision substepping: no
 Enter nsub per collision step: 25
 
 Enter yes to use porosity: yes
-Enter fabric porosity: 0.1
+Enter fabric porosity: 0.15
 Enter porosity ghost fluid method: DARCY
 
 Enter viscous parameter: 0.00180696
@@ -196,6 +196,6 @@ Enter the debugging string: skip_strainvel
 
 Enter the debugging stringXXX: no_viscflux
 
-Enter the debugging string: elastic_buffer
+Enter the debugging stringXXX: elastic_buffer
 Enter the debugging stringXXX: trace
 

@@ -685,6 +685,18 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     printf("Initial Ambient Gas Viscosity: %g\n",eqn_params->mu2);
     
 	
+    eqn_params->no_slip_wall = false;
+    if (CursorAfterStringOpt(infile,"Enter yes for no slip wall:"))
+    {
+        char string[25];
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            eqn_params->no_slip_wall = true;
+        }
+    }
+
     eqn_params->use_fixed_wall_temp = false;
     if (CursorAfterStringOpt(infile,"Enter yes to fix wall temperature:"))
     {
