@@ -505,6 +505,11 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                 //      to vanish -- destroying the porosity of the canopy
                 //
                 //      Above referring to iFluid solver -- what can/can't we do here?
+                
+                //TODO:    
+                //double v_poro[MAXD] = {0.0};
+                //setPorousWallBoundary(icoords,m,nb,comp,hs,intfc_state,vel,v_poro);
+
                 int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
                 vel_nb[nb] = vel[l][index_nb];
             }
@@ -1189,7 +1194,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 
 
     double tau_wall[MAXD] = {0.0};
-    //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l,45.0);
     double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,100.0);
 
     if (mag_vtan > MACH_EPS)

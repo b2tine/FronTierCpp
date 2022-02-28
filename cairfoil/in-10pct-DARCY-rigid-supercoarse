@@ -39,7 +39,7 @@ Max time: 2.0
 Max step: 600
 Print interval: 0.0005
 Movie frame interval: 0.00005
-CFL factor: 0.25
+CFL factor: 0.75
 type yes to turn off auto-redistribution: y
 
 //////////////////////////////////////////////////////////
@@ -120,7 +120,7 @@ Enter yes for collision substepping: no
 Enter nsub per collision step: 25
 
 Enter yes to use porosity: yes
-Enter fabric porosity: 0.15
+Enter fabric porosity: 0.25
 Enter porosity ghost fluid method: DARCY
 
 Enter viscous parameter: 0.00180696

@@ -6611,7 +6611,6 @@ void G_CARTESIAN::adjustGFMStates()
                      if (Gdens[ind][index] != 0) break;
                 }
 
-            
                 //TODO: 
                         //for (kk = 0; (k+kk) <= top_gmax[2]; kk++)
                         //{

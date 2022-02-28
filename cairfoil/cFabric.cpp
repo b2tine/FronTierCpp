@@ -1089,7 +1089,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         
         double mdot = -2.0*sgn*Msqr/(poro + std::sqrt(poro*poro + 4.0*beta*Msqr));
 	    
-        double fn = mdot*(vn_real - vn_reflect) + (pr - pl);
+        //double fn = mdot*(vn_real - vn_reflect) + (pr - pl);
         
         for (int j = 0; j < dim; ++j)
         {
@@ -1100,17 +1100,27 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             //double p_jump = fn - mdot*(vn_real - vn_reflect);
             //st_tmp_ghost.pres -= p_jump; 
         
-            st_tmp_ghost.pres = fn;
+            //st_tmp_ghost.pres = fn;
             //st_tmp_ghost.pres -= fn;
 
 
-	    st_tmp_ghost.dens = st_tmp_real.dens;
+	    //st_tmp_ghost.dens = st_tmp_real.dens;
 	    //st_tmp_ghost.dens = EosDensity(&st_tmp_ghost);
         
             //sgn = (mdot >= 0) ? 1.0 : -1.0;
             //st_tmp_ghost.dens = (rhor*pr - sgn*(gamma + 1.0)/gamma*Msqr)/st_tmp_ghost.pres; 
 
-	    st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
+	    //st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
+	    
+        double vel_intfc_poro[MAXD];
+        for (int j = 0; j < dim; ++j)
+        {
+            vel_intfc_poro[j] = mdot/rhol*nor[j];
+        }
+
+        st_tmp_ghost.engy += rhol*(st_tmp_ghost.engy 
+                - 0.5*Dot3d(vel_rel_reflect,vel_rel_reflect) +
+                0.5*Dot3d(vel_intfc_poro,vel_intfc_poro));
 
 
         ////////////////////////////////////////////////////////////////
@@ -1126,7 +1136,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             printf("rhol = %f pl = %f\n", rhol, pl);
             printf("rhor = %f pr = %f\n", rhor, pr);
             printf("rhol*pl - rhor*pr = %f\n",rhol*pl - rhor*pr);
-            printf("Msqr = %f \t mdot = %f \t fn = %f\n", Msqr, mdot, fn);
+            printf("Msqr = %f \t mdot = %f\n", Msqr, mdot);
             printf("nor = %f %f %f\n", nor[0],nor[1],nor[2]);
             //printf("p_jump = %f\n", p_jump);
         }
@@ -1149,7 +1159,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                             coords_ref[2]);
             printf("rhol*pl - rhor*pr = %f\n",rhol*pl - rhor*pr);
             printf("rhol = %f \t pl = %f \t rhor = %f \t pr = %f\n",rhol,pl,rhor,pr);
-            printf("Msqr = %f \t mdot = %f \t fn = %f\n", Msqr, mdot, fn);
+            printf("Msqr = %f \t mdot = %f\n", Msqr, mdot);
             //printf("p_jump = %f\n", p_jump);
             LOC(); clean_up(EXIT_FAILURE);
 	    }
