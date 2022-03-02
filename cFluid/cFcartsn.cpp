@@ -5910,6 +5910,9 @@ void G_CARTESIAN::setNeumannStates(
                 m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
 	    
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->temp,getStateTemp,&st_tmp.temp,&m_vst->temp[index]);
+	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->k_turb,getStateKTurb,&st_tmp.k_turb,&m_vst->k_turb[index]);
 	    
         //TODO: for loop instead of if statements
@@ -5934,8 +5937,6 @@ void G_CARTESIAN::setNeumannStates(
 		    vn += v[j]*nor[j];
 	    }
             
-        //TODO: Is this sufficient for slip wall bdry?
-        //
         /* Only normal component is reflected, 
             relative tangent velocity is zero */
         for (j = 0; j < dim; j++)
@@ -6307,8 +6308,8 @@ void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
         state->pres = min_pres;
     }
 
-    state->engy = EosEnergy(state);
     state->temp = EosTemperature(state);
+    state->engy = EosEnergy(state);
     state->mu = EosViscosity(state);
 }	/* end checkCorrectForTolerance */
 

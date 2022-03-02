@@ -962,8 +962,8 @@ extern void cF_flowThroughBoundaryState(
 	for (i = 0; i < dim; ++i)
         newst->momn[i] = newst->dens * newst->vel[i];
 
-    newst->engy = EosEnergy(newst);
     newst->temp = EosTemperature(newst);
+    newst->engy = EosEnergy(newst);
     newst->mu = EosViscosity(newst);
     
     set_state_max_speed(front,newst,p0);
@@ -1216,8 +1216,8 @@ extern void cF_flowThroughBoundaryState2d(
         newst->momn[i] = newst->dens * newst->vel[i];
     }
     
-    newst->engy = EosEnergy(newst);
     newst->temp = EosTemperature(newst);
+    newst->engy = EosEnergy(newst);
     newst->mu = EosViscosity(newst);
     
     set_state_max_speed(front,newst,p0);
@@ -1437,8 +1437,8 @@ extern void cF_flowThroughBoundaryState3d(
         newst->momn[i] = newst->dens * newst->vel[i];
     }
 
-    newst->engy = EosEnergy(newst);
     newst->temp = EosTemperature(newst);
+    newst->engy = EosEnergy(newst);
     newst->mu = EosViscosity(newst);
 	
     set_state_max_speed(front,newst,p0);
@@ -1496,8 +1496,8 @@ extern void cF_supersonicOutflowState(
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->dens,
             getStateDens,&newst->dens,&oldst->dens);
 
-    newst->engy = EosEnergy(newst);
     newst->temp = EosTemperature(newst);
+    newst->engy = EosEnergy(newst);
     newst->mu = EosViscosity(newst);
 	
     set_state_max_speed(front,newst,p0);

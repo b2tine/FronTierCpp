@@ -671,9 +671,9 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     }
 
 
+    state.temp = EosTemperature(&state);
     state.engy = EosEnergy(&state);
 
-    state.temp = EosTemperature(&state);
     eqn_params->T2 = state.temp;
     eqn_params->T1 = eqn_params->T2;
 
@@ -918,8 +918,8 @@ extern void getChannelInletState(
             state,state);
     */
 
-    state->engy = EosEnergy(state);
     state->temp = EosTemperature(state);
+    state->engy = EosEnergy(state);
     state->mu = EosViscosity(state);
 }
 

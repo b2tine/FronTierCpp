@@ -188,7 +188,8 @@ struct capsule_function
     double upper_slope = upper_cone_height/radius;
     double upper_frustrum_height = lower_cone_height*1.672;
 
-    double top_frustrum_height = lower_cone_height*0.073651;
+    double top_frustrum_height = lower_cone_height*0.25;
+    //double top_frustrum_height = lower_cone_height*0.73651;
     double radius_top_frustrum = (upper_cone_height - upper_frustrum_height)*std::tan(44.5*M_PI/180.0);
 
     FT operator()(Point_3 p) const
@@ -210,12 +211,12 @@ struct capsule_function
             return std::sqrt(sqr(x) + sqr(y))
                 - (radius - 1.0*(radius/upper_cone_height)*(z - lower_cone_height - mid_height));
         }
-        else if (z > 0 && (z - lower_cone_height - mid_height - upper_frustrum_height) <= top_frustrum_height)
+        else if (z > 0 && (z - lower_cone_height - mid_height - upper_frustrum_height) < top_frustrum_height)
         {
             return std::sqrt(sqr(x) + sqr(y))
                 - (radius_top_frustrum - 
-                        1.0*(radius_top_frustrum/(upper_cone_height - upper_frustrum_height))*(z - lower_cone_height - mid_height - upper_frustrum_height));
-                        //1.0*(radius_top_frustrum/top_frustrum_height)*(z - lower_cone_height - mid_height - upper_frustrum_height));
+                        1.0*(radius_top_frustrum/top_frustrum_height)*(z - lower_cone_height - mid_height - upper_frustrum_height));
+                        //1.0*(radius_top_frustrum/(upper_cone_height - upper_frustrum_height))*(z - lower_cone_height - mid_height - upper_frustrum_height));
         }
         else
         {

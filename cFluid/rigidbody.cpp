@@ -129,62 +129,63 @@ static void init_rigid_orion_space_capsule(
 	FILE *infile,
 	Front *front)
 {
-    printf("\ninit_rigid_orion_space_capsule() NOT YET AVAILABLE\n");
-    LOC(); clean_up(EXIT_FAILURE);
-        /*
-        char string[100];
-        double cen[MAXD];
-        double radius,radii[MAXD];
-        int w_type;
-        int i,dim = FT_Dimension();
-        int neg_comp,pos_comp;
-        SURFACE *surf;
+    char string[100];
+    double nose[MAXD];
+    double radius,radii[MAXD];
+    int w_type;
+    int i,dim = FT_Dimension();
+    int neg_comp,pos_comp;
+    SURFACE *surf;
 
-        CursorAfterString(infile,"Enter center of the sphere:");
-        fscanf(infile,"%lf %lf %lf",cen,cen+1,cen+2);
-        (void) printf("%f %f %f\n",cen[0],cen[1],cen[2]);
-        CursorAfterString(infile,"Enter radius of the sphere:");
-        fscanf(infile,"%lf",&radius);
-        (void) printf("%f\n",radius);
-        for (i = 0; i < dim; ++i) radii[i] = radius;
+    CursorAfterString(infile,"Enter nose of the capsule:");
+    fscanf(infile,"%lf %lf %lf",nose,nose+1,nose+2);
+    (void) printf("%f %f %f\n",nose[0],nose[1],nose[2]);
+    CursorAfterString(infile,"Enter radius of the capsule:");
+    fscanf(infile,"%lf",&radius);
+    (void) printf("%f\n",radius);
+        //for (i = 0; i < dim; ++i) radii[i] = radius;
 
-        (void) printf("Rigid body can be fixed (F) or Movable (M)\n");
-        (void) printf("The default is Movable (M)\n");
-        w_type = MOVABLE_BODY_BOUNDARY;
-        neg_comp = SOLID_COMP;
-        pos_comp = GAS_COMP2;
-        if (CursorAfterStringOpt(infile,"Type yes if the rigid body is fixed:"))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                w_type = NEUMANN_BOUNDARY;
-        }
+    (void) printf("Rigid body can be fixed (F) or Movable (M)\n");
+    (void) printf("The default is Movable (M)\n");
+    w_type = MOVABLE_BODY_BOUNDARY;
+    neg_comp = SOLID_COMP;
+    pos_comp = GAS_COMP2;
+    if (CursorAfterStringOpt(infile,"Type yes if the rigid body is fixed:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            w_type = NEUMANN_BOUNDARY;
+    }
 
-        bool cgal_mesh = false;
-        if (CursorAfterStringOpt(infile,"Type yes to use CGAL for rigid body:"))
-        {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-                cgal_mesh = true;
-        }
+    /*
+    bool cgal_mesh = false;
+    if (CursorAfterStringOpt(infile,"Type yes to use CGAL for rigid body:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            cgal_mesh = true;
+    }
+    */
 
-        if (cgal_mesh)
-        {
-            int refinement_level = 1;
-            CursorAfterStringOpt(infile,"Enter refinement level:");
-            fscanf(infile,"%ld",&refinement_level);
-            printf("%d\n",refinement_level);
-            CGAL_MakeEllipsoidalSurf(front,cen,radii,neg_comp,pos_comp,
-                    w_type,refinement_level,&surf);
-        }
-        else
-        {
-            FT_MakeEllipticSurf(front,cen,radii,neg_comp,pos_comp,w_type,2,
-                                        &surf);
-        }
-        */
+    bool cgal_mesh = true;
+    if (cgal_mesh)
+    {
+        int refinement_level = 1;
+        CursorAfterStringOpt(infile,"Enter refinement level:");
+        fscanf(infile,"%ld",&refinement_level);
+        printf("%d\n",refinement_level);
+        CGAL_MakeCapsuleSurf(front,nose,radius,neg_comp,pos_comp,
+                w_type,refinement_level,&surf);
+    }
+    /*
+    else
+    {
+        FT_MakeEllipticSurf(front,nose,radii,neg_comp,pos_comp,w_type,2,
+                                    &surf);
+    }
+    */
 
 }	/* end init_rigid_orion_space_capsule */
 

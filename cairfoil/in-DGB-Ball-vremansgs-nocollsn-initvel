@@ -137,14 +137,13 @@ Enter yes to install the strings to RGB: no
 Enter initial position of load: 0 0 2.4452
 Enter yes to fix the load node: no
 
-Enter yes for string-fluid interaction: no
+Enter yes for string-fluid interaction: yes
 Enter string radius: 0.045
 Enter string mass density: 0.2336
-                                    XXXEnter string mass densityXXX: 5.0
 Enter drag coefficient: 0.5
 Enter drag coefficientXXX: 0.1
 Enter drag coefficientXXX: 1.3
-Enter fluid force scaling factor: 100
+Enter fluid force scaling factor: 1.0
 
 
 Enter new load position: 0 0 2

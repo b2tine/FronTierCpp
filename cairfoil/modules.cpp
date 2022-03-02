@@ -129,6 +129,12 @@ extern void initFabricModules(Front* front)
 	//initRigidBodies(front);
 	initRigidBody(front);
     setRigidBodyMotionParams(front,&rgb_params);
+
+    if (debugging("rigid_body_intfc"))
+    {
+        FT_Draw(front);
+        LOC(); clean_up(0);
+    }
     
     initFabricDefault(front);
 

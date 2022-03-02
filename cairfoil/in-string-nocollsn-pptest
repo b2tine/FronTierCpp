@@ -96,7 +96,7 @@ Enter string mass density: 0.2336
 Enter drag coefficient: 0.5
 Enter drag coefficientXXX: 0.1
 Enter drag coefficientXXX: 1.3
-Enter fluid force scaling factor: 100
+Enter fluid force scaling factor: 1.0
 
 Enter the number of curves: 1
 Enter the start of curve 0: 0.2 0.2 0.2

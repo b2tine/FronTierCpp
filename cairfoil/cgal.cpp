@@ -2336,6 +2336,7 @@ static void connectStringtoRGB(
     
     if (num_strings == 1)
     {
+        printf("num_target = %d\n",num_target);
         //TODO: Correct for DGB or Cluster attached to SPHERE,
         //      but NOT for DGB or Cluster attached to BOX???
         //      Box should keep 4 target points. There is always
@@ -3545,6 +3546,4 @@ static void connectTwoStringNodes(
 	b->length0 = spacing;
 	
     af_params->string_curves.push_back(string_curve);
-
-    FT_FreeThese(1,string_curve);
 }       /* end connectTwoStringNodes */
