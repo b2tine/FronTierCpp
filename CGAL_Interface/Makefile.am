@@ -9,11 +9,14 @@ AM_CPPFLAGS = -I$(top_srcdir)/CGAL_Interface \
 AM_LDFLAGS = @CGAL_LIBS@ @BOOST_LIBS@
 
 
-noinst_PROGRAMS = cgal_intfc_test
+noinst_PROGRAMS = cgal_intfc_test \
+				  cgal_capsule_intfc_test
 
 cgal_intfc_test_SOURCES = cgal_intfc_test.cpp
 cgal_intfc_test_LDADD = $(builddir)/objs/libCgalIntfc.la
 
+cgal_capsule_intfc_test_SOURCES = cgal_capsule_intfc_test.cpp
+cgal_capsule_intfc_test_LDADD = $(builddir)/objs/libCgalIntfc.la
 
 tagsfile:
 	ctags *.h *.cpp \
