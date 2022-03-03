@@ -147,6 +147,7 @@ extern double EosEnergy(
             //e += 0.5*sqr(momn[i])/dens + k_turb;
     }
 
+    //e += dens*EosInternalEnergy(state);
     e += EosInternalEnergy(state);
 
 	return e;

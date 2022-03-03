@@ -929,7 +929,13 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
     
     double nor[MAXD];
 	FT_NormalAtGridCrossing(front,icoords,dir[idir][nb],NO_COMP,nor,&hs,crx_coords);
-	//FT_NormalAtGridCrossing(front,icoords,dir[idir][nb],comp,nor,&hs,crx_coords);
+	
+    /*
+    FT_NormalAtGridCrossing2(front,icoords,dir[idir][nb],NO_COMP,nor,&hs,&hse,crx_coords);
+
+    TRI* tri_crx = Tri_of_hse(hse);
+    double tri_crx_area = tri_area(tri_crx);
+    */
 
     /*
     SURFACE* surf = Surface_of_hs(hs);
@@ -939,17 +945,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
     */
     double* vel_intfc = state->vel;
     
-    /*
-    double vel_rel[MAXD] = {0.0};
-    
-    double vn_fluid = 0.0;
-    for (int j = 0; j < dim; ++j)
-    {
-        vel_rel[j] = vel_fluid[j] - vel_intfc[j];
-        vn_fluid += nor[j]*vel_rel[j];
-    }
-    */
-
 
 	int index_ghost;
 	int ind2[2][2] = {{0,1},{1,0}};
@@ -966,11 +961,35 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
     st_tmp_ghost.dim = dim;
     st_tmp_ghost.eos = &eqn_params->eos[comp];
 
+    int icoords_ghost[MAXD] = {0.0};
 	for (int i = 0; i < dim; ++i)
 	{
 	    coords[i] = top_L[i] + icoords[i]*top_h[i];
+	    icoords_ghost[i] = icoords[i];
 	    ic_ghost[i] = icoords[i];
 	}
+
+
+    icoords_ghost[idir] = (nb == 0) ?  icoords[idir] - 1 : icoords[idir] + 1;
+	for (int i = 0; i < dim; ++i)
+	{
+        coords_ghost[i] = top_L[i] + icoords_ghost[i]*top_h[i];
+    }
+
+    double vec_ghost[MAXD] = {0.0};
+	for (int i = 0; i < dim; ++i)
+	{
+        vec_ghost[i] = coords_ghost[i] - crx_coords[i];
+    }
+
+    /*
+    double side = Dotd(vec_ghost,nor,dim);
+    if (side < 0)
+    {
+        for (int i = 0; i < dim; ++i)
+            nor[i] *= -1.0;
+    }
+    */
 	
 
 	if (debugging("elastic_buffer"))
@@ -1025,7 +1044,8 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         //desired reflected point
         for (int j = 0; j < dim; ++j)
 		    coords_ref[j] = crx_coords[j] + v[j];
-			
+
+
         /* Interpolate the state at the reflected point */ 
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->dens,getStateDens,&st_tmp_ghost.dens,&m_vst->dens[index]);
@@ -1033,7 +1053,17 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                 m_vst->pres,getStatePres,&st_tmp_ghost.pres,&m_vst->pres[index]);
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->temp,getStateTemp,&st_tmp_ghost.temp,&m_vst->temp[index]);
+	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->engy,getStateEngy,&st_tmp_ghost.engy,&m_vst->engy[index]);
 	    
+        /*
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->mu,getStateMu,&st_tmp_ghost.mu,&m_vst->mu[index]);
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->mu_turb,getStateMuTurb,&st_tmp_ghost.mu_turb,&m_vst->mu_turb[index]);
+        double ghost_mu_total = st_tmp_ghost.mu + st_tmp_ghost.mu_turb;
+	    */
+
         double v_reflect[3];
         for (int j = 0; j < dim; ++j)
         {
@@ -1050,11 +1080,11 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             vel_rel_reflect[j] = v_reflect[j] - vel_intfc[j];
             vn_reflect += (v_reflect[j] - vel_intfc[j])*nor[j];
 	    }
-
-        for (int j = 0; j < dim; ++j)
+        
+        double vel_rel_tan[MAXD] = {0.0};
+        for (int j = 0; j < dim; j++)
         {
-            st_tmp_ghost.momn[j] = st_tmp_ghost.dens*vn_reflect*nor[j];
-            //st_tmp_ghost.momn[j] = st_tmp_ghost.dens*(vel_intfc[j] + vn_reflect*nor[j]);
+            vel_rel_tan[j] = vel_rel_reflect[j] - vn_reflect*nor[j];
         }
 
 	    st_tmp_real.dens = m_vst->dens[index_ghost];
@@ -1074,34 +1104,121 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             vn_real += (v_real[j] - vel_intfc[j])*nor[j];
 	    }
 
+        double vel_rel_real_tan[MAXD] = {0.0};
+        for (int j = 0; j < dim; j++)
+        {
+            vel_rel_real_tan[j] = vel_rel_real[j] - vn_real*nor[j];
+        }
+
         double pl = st_tmp_ghost.pres;
         double rhol = st_tmp_ghost.dens;
+
         double pr = st_tmp_real.pres;
         double rhor = st_tmp_real.dens;
         
         double gamma = 1.4;
 
-        double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
-        double Msqr = gamma/(1.0 + gamma)*std::abs(rhor*pr - rhol*pl);
+        double Msqr = gamma/(gamma + 1.0)*std::abs(rhor*pr - rhol*pl);
 
         double beta = 0.0;
         double poro = eqn_params->porosity;
+        double iporo = 1.0/poro;
         
-        double mdot = -2.0*sgn*Msqr/(poro + std::sqrt(poro*poro + 4.0*beta*Msqr));
-	    
-        //double fn = mdot*(vn_real - vn_reflect) + (pr - pl);
+        double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
+
+        double mdot = -2.0*sgn*Msqr/(iporo + std::sqrt(iporo*iporo + 4.0*beta*Msqr));
+
+        //double ghost_dens = rhol; double ghost_pres = pl;
+        //double real_dens = rhor; double real_pres = pr;
+        //double ghost_dens = rhor; double ghost_pres = pr;
+        //double real_dens = rhol; double real_pres = pl;
+
+        //st_tmp_ghost.dens = ghost_dens;
+
+        //double nor_vel = mdot/rhor;
+        //double nor_vel = mdot/rhol;
+        double nor_vel = mdot/rhor - mdot/rhol;
         
+        //double rho_mid = 0.5*(rhol + rhor);
+        //double nor_vel = mdot/rho_mid;
+        
+        double canopy_thickness = 0.001;
+        double alpha = poro/canopy_thickness;
+        double pres_drop = -1.0*(alpha*nor_vel + beta*std::abs(nor_vel)*nor_vel)*canopy_thickness;
+        
+        st_tmp_ghost.pres = pl + pres_drop;
+
+        st_tmp_ghost.dens = rhol*std::pow(st_tmp_ghost.pres/pl,1.0/gamma);
+        
+        
+        
+        double velo[MAXD] = {0.0};
         for (int j = 0; j < dim; ++j)
         {
-            st_tmp_ghost.momn[j] -= mdot*nor[j];
-                //st_tmp_ghost.momn[j] += fn*nor[j];
+            //velo[j] = vel_rel_tan[j] + nor_vel*nor[j] + vel_intfc[j];
+            velo[j] = vel_rel_real_tan[j] + nor_vel*nor[j] + vel_intfc[j];
+            //velo[j] = nor_vel*nor[j] + vel_intfc[j];
+            st_tmp_ghost.vel[j] = velo[j];
+            //st_tmp_ghost.momn[j] = ghost_dens*velo[j];
+            st_tmp_ghost.momn[j] = st_tmp_ghost.dens*velo[j];
         }
 
-            //double p_jump = fn - mdot*(vn_real - vn_reflect);
-            //st_tmp_ghost.pres -= p_jump; 
+        /*
+        double velo[MAXD] = {0.0};
+        for (int j = 0; j < dim; ++j)
+        {
+            velo[j] = mdot/ghost_dens*nor[j] + vel_intfc[j];
+            //velo[j] = mdot/real_dens*nor[j] + vel_intfc[j];
+        }
+
+        for (int j = 0; j < dim; ++j)
+        {
+            st_tmp_ghost.momn[j] -= mdot*nor[j] + ghost_dens*vel_intfc[j];
+            //st_tmp_ghost.momn[j] = mdot*nor[j] + ghost_dens*vel_intfc[j];
+            st_tmp_ghost.vel[j] = st_tmp_ghost.momn[j]/ghost_dens;
+        }
+        */
+
+        //st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
+
         
-            //st_tmp_ghost.pres = fn;
-            //st_tmp_ghost.pres -= fn;
+        double internal_engy = EosInternalEnergy(&st_tmp_ghost);
+        //st_tmp_ghost.engy = ghost_dens*internal_engy 
+        st_tmp_ghost.engy = internal_engy 
+            - 0.5*st_tmp_ghost.dens*Dotd(v_real,v_real,dim) 
+            + 0.5*st_tmp_ghost.dens*Dotd(velo,velo,dim);
+
+        /*
+        //double internal_engy = EosInternalEnergy(&st_tmp_ghost);
+        double internal_engy = EosInternalEnergy(&st_tmp_ghost)/ghost_dens;
+        
+        //st_tmp_ghost.engy = ghost_dens*internal_engy 
+        st_tmp_ghost.engy -= ghost_dens*internal_engy 
+            - 0.5*ghost_dens*Dotd(v_reflect,v_reflect,dim) 
+            + 0.5*ghost_dens*Dotd(velo,velo,dim);
+
+        //st_tmp_ghost.engy += ghost_dens*(real_pres/real_dens - ghost_pres/ghost_dens);
+
+        st_tmp_ghost.pres = EosPressure(&st_tmp_ghost);
+        */
+
+        //double nor_vel = mdot/st_tmp_ghost.dens;
+
+        /*
+        double vel_rel_new[MAXD] = {0.0};
+        for (int j = 0; j < dim; ++j)
+        {
+            vel_rel_new[j] = vel_rel_tan[j] + nor_vel*nor[j];
+            st_tmp_ghost.vel[j] = vel_rel_new[j] + vel_intfc[j];
+            st_tmp_ghost.momn[j] = rhol*st_tmp_ghost.vel[j];
+        }
+
+        st_tmp_ghost.engy = 0.0;
+        for (int j = 0; j < dim; ++j)
+            st_tmp_ghost.engy += 0.5*sqr(st_tmp_ghost.vel[j]);
+        st_tmp_ghost.engy += st_tmp_ghost.pres/(gamma - 1.0);
+        */
+
 
 
 	    //st_tmp_ghost.dens = st_tmp_real.dens;
@@ -1112,16 +1229,23 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 
 	    //st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
 	    
+	    
+        /*
         double vel_intfc_poro[MAXD];
         for (int j = 0; j < dim; ++j)
         {
             vel_intfc_poro[j] = mdot/rhol*nor[j];
         }
+        */
 
+        /*
         st_tmp_ghost.engy += rhol*(st_tmp_ghost.engy 
                 - 0.5*Dot3d(vel_rel_reflect,vel_rel_reflect) +
                 0.5*Dot3d(vel_intfc_poro,vel_intfc_poro));
+        */
 
+        //compute pressure after dens, momn, energy have been set?
+            //st_tmp_ghost.pres = EosPressure(&st_tmp_ghost);
 
         ////////////////////////////////////////////////////////////////
         double debug_coords[MAXD] = {0.6,0.6,0.42354};
@@ -1131,14 +1255,27 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         }
         if (Mag3d(debug_coords) < 1.0e-02)
         {
-            printf("\ncoords = %f %f %f\n",coords[0],coords[1],coords[2]);
+	        printf("\nistart = %d nrad = %d n = %d\n",istart,nrad,n);
+            printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
+            printf("crx_coords = %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
+            printf("coords_ghost = %f %f %f\n",coords_ghost[0],coords_ghost[1],coords_ghost[2]);
             printf("idir: %d \t nb: %d\n",idir,nb);
-            printf("rhol = %f pl = %f\n", rhol, pl);
-            printf("rhor = %f pr = %f\n", rhor, pr);
-            printf("rhol*pl - rhor*pr = %f\n",rhol*pl - rhor*pr);
-            printf("Msqr = %f \t mdot = %f\n", Msqr, mdot);
+            printf("rhol = %g pl = %g\n", rhol, pl);
+            printf("rhor = %g pr = %g\n", rhor, pr);
+            printf("rhor*pr - rhol*pl = %g \t sgn = %f\n",rhor*pr - rhol*pl,sgn);
+            printf("Msqr = %g \t mdot = %g\n", Msqr, mdot);
             printf("nor = %f %f %f\n", nor[0],nor[1],nor[2]);
-            //printf("p_jump = %f\n", p_jump);
+            printf("nor_vel = %f\n", nor_vel);
+            printf("pres_drop = %f\n", pres_drop);
+            //printf("dens_drop = %f\n", dens_drop);
+            printf("ghost_pres = %f\n", st_tmp_ghost.pres);
+            printf("ghost_dens = %f\n", st_tmp_ghost.dens);
+            printf("ghost_temp = %f\n", st_tmp_ghost.temp);
+            printf("ghost_engy = %f\n", st_tmp_ghost.engy);
+            printf("ghost_momn = %f %f %f\n",
+                st_tmp_ghost.momn[0],st_tmp_ghost.momn[1],st_tmp_ghost.momn[2]);
+            printf("ghost_vel = %f %f %f\n",
+                st_tmp_ghost.vel[0],st_tmp_ghost.vel[1],st_tmp_ghost.vel[2]);
         }
         ////////////////////////////////////////////////////////////////
 
@@ -1148,6 +1285,8 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 	    {
             printf("negative engrgy! \n");
             printf("icoords = %d %d %d \n",icoords[0],icoords[1],icoords[2]);
+            printf("crx_coords = %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
+            printf("idir: %d \t nb: %d\n",idir,nb);
             printf("%f %f %f %f %f %f \n",st_tmp_ghost.dens,st_tmp_ghost.momn[0],
                 st_tmp_ghost.momn[1],st_tmp_ghost.momn[2],st_tmp_ghost.pres,
                 st_tmp_ghost.engy);
@@ -1157,72 +1296,76 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                 st_tmp_ghost.eos->einf,st_tmp_ghost.eos->pinf);
             printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],
                             coords_ref[2]);
-            printf("rhol*pl - rhor*pr = %f\n",rhol*pl - rhor*pr);
+            printf("rhor*pr - rhol*pl = %f\n",rhor*pr - rhol*pl);
             printf("rhol = %f \t pl = %f \t rhor = %f \t pr = %f\n",rhol,pl,rhor,pr);
             printf("Msqr = %f \t mdot = %f\n", Msqr, mdot);
-            //printf("p_jump = %f\n", p_jump);
+            printf("nor = %f %f %f\n", nor[0],nor[1],nor[2]);
+            //printf("nor_vel = %f\n", nor_vel);
+            printf("ghost_pres = %f\n", st_tmp_ghost.pres);
+            //printf("pres_drop = %f\n", pres_drop);
             LOC(); clean_up(EXIT_FAILURE);
 	    }
     }
 
-	for (int i = istart; i <= nrad; ++i)
-	{
-	    if (nb == 0)
-	    {
-            vst->dens[nrad-i] = st_tmp_ghost.dens;
-            vst->engy[nrad-i] = st_tmp_ghost.engy;
-            vst->pres[nrad-i] = st_tmp_ghost.pres;
-	    	for (int j = 0; j < 3; j++)
-                vst->momn[j][nrad-i] = 0.0;
+        for (int i = istart; i <= nrad; ++i)
+        {
+            if (nb == 0)
+            {
+                vst->dens[nrad-i] = st_tmp_ghost.dens;
+                vst->engy[nrad-i] = st_tmp_ghost.engy;
+                vst->pres[nrad-i] = st_tmp_ghost.pres;
+                for (int j = 0; j < 3; j++)
+                    vst->momn[j][nrad-i] = 0.0;
 
-            if (dim == 3)
-            {
-                for (int j = 0; j < 3; j++)
-                    vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind3[idir][j]];
-            }
-	    	else if (dim == 2)
-            {
-                for (int j = 0; j < 2; j++)
-                    vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind2[idir][j]];
-            }
-            else
-            {
-                vst->momn[0][nrad-i] = st_tmp_ghost.momn[0];
-            }
-	    }
-	    else
-	    {
-            /* Debug selectively!
-            if (debugging("crx_reflection"))
-            {
-                    sprintf(fname,"intfc-%d-%d",count,i);
-                    sprintf(fname,"intfc-xx");
-                    xgraph_2d_reflection(fname,front->grid_intfc,coords,
-                    crx_coords,coords_ref,nor);
-            }
-            */
-            vst->dens[n+nrad+i-1] = st_tmp_ghost.dens;
-            vst->engy[n+nrad+i-1] = st_tmp_ghost.engy;
-            vst->pres[n+nrad+i-1] = st_tmp_ghost.pres;
-	    	for (int j = 0; j < 3; j++)
-                vst->momn[j][n+nrad+i-1] = 0.0;
-    
-	    	if (dim == 3)
-            {
-                for (int j = 0; j < 3; j++)
-                    vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind3[idir][j]];
-            }
-	    	else if (dim == 2)
-            {
-                for (int j = 0; j < 2; j++)
-                    vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind2[idir][j]];
+                if (dim == 3)
+                {
+                    for (int j = 0; j < 3; j++)
+                        vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind3[idir][j]];
+                }
+                else if (dim == 2)
+                {
+                    for (int j = 0; j < 2; j++)
+                        vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind2[idir][j]];
+                }
+                else
+                {
+                    vst->momn[0][nrad-i] = st_tmp_ghost.momn[0];
+                }
             }
             else
             {
-                vst->momn[0][n+nrad+i-1] = st_tmp_ghost.momn[0];
+                /* Debug selectively!
+                if (debugging("crx_reflection"))
+                {
+                        sprintf(fname,"intfc-%d-%d",count,i);
+                        sprintf(fname,"intfc-xx");
+                        xgraph_2d_reflection(fname,front->grid_intfc,coords,
+                        crx_coords,coords_ref,nor);
+                }
+                */
+                vst->dens[n+nrad+i-1] = st_tmp_ghost.dens;
+                vst->engy[n+nrad+i-1] = st_tmp_ghost.engy;
+                vst->pres[n+nrad+i-1] = st_tmp_ghost.pres;
+                for (int j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+i-1] = 0.0;
+        
+                if (dim == 3)
+                {
+                    for (int j = 0; j < 3; j++)
+                        vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind3[idir][j]];
+                }
+                else if (dim == 2)
+                {
+                    for (int j = 0; j < 2; j++)
+                        vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind2[idir][j]];
+                }
+                else
+                {
+                    vst->momn[0][n+nrad+i-1] = st_tmp_ghost.momn[0];
+                }
             }
-	    }
-	}
+        }
+    //}
 
 	if (debugging("elastic_buffer"))
         (void) printf("Leaving setElasticStatesDarcy()\n");

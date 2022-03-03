@@ -281,9 +281,8 @@ static void weno5_get_flux(
 		    (void) printf("In weno5_get_flux(): flux[%d][%d] = %f\n",
                                         j,i,flux[j][i]);
 		    for (k = 0; k < extend_size; ++k)
-                        printf("u[%d] = %f %f %f %f %f\n",k,u_old[0][k],
-				u_old[1][k],u_old[2][k],u_old[3][k],
-				u_old[4][k]);
+                        printf("u[%d] = %f %f %f %f %f %f\n",k,u_old[0][k],
+				u_old[1][k],u_old[2][k],u_old[3][k],u_old[4][k],u_old[5][k]);
                     clean_up(ERROR);
 		}
 	    }

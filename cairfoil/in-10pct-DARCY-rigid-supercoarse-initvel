@@ -23,7 +23,7 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 25
+Enter velocity: 0 0 50.0
 Enter pressure: 101325.0
 Enter temperature: 298
 
@@ -60,8 +60,8 @@ Enter the reference molecular viscosity: 1.716e-05
 Enter the reference temperature: 273.15
 Enter the effective temperature: 110.4
 
-Enter yes to set initial velocity: no
-Enter initial velocity: 0 0 0
+Enter yes to set initial velocity: yes
+Enter initial velocity: 0 0 50.0
 
 Enter gravity: 0 0 0
 
