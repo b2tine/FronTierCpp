@@ -849,6 +849,84 @@ EXPORT	boolean FT_NormalAtGridCrossing(
 	return YES;
 }	/* end FT_NormalAtGridCrossing */
 
+EXPORT	boolean FT_NormalAtGridCrossing2(
+	Front *front,
+	int *icoords,
+	GRID_DIRECTION dir,
+	COMPONENT comp,
+	double *nor,
+	HYPER_SURF **hs,
+	HYPER_SURF_ELEMENT **hse,
+	double *crx_coords)
+{
+        int j;
+	int crx_index;
+	INTERFACE *grid_intfc = front->grid_intfc;
+	CRXING *crxs[MAX_NUM_CRX];
+	int i,nc,dim = grid_intfc->dim;
+	POINT *p;
+	BOND *b;
+	TRI *t;
+	double len;
+	const double *tnor;
+
+	nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
+	if (nc == 0) return NO;
+
+	if (dir == EAST || dir == NORTH || dir == UPPER)
+	    crx_index = 0;
+	else
+	    crx_index = nc - 1;
+
+	*hs = crxs[crx_index]->hs;
+	p = crxs[crx_index]->pt;
+	/* if comp is not associated with hs or not specified, normal
+	   is the natural normal of the surface.
+	if (comp == negative_component(*hs) ||
+	    comp == positive_component(*hs))
+	*/
+	{
+	    for (i = 0; i < dim; ++i)
+		crx_coords[i] = Coords(p)[i];
+	    switch (dim)
+	    {
+	    case 2:
+		b = crxs[crx_index]->bond;
+		if (b == NULL)
+		    b = crxs[crx_index]->bond = Bond_of_hse(p->hse);
+	    *hse = Hyper_surf_element(b);
+		normal(p,Hyper_surf_element(b),*hs,nor,front);
+		if (comp == negative_component(*hs))
+		{
+	    	    for (i = 0; i < dim; ++i)
+			nor[i] *= -1.0;
+		}
+		break;
+	    case 3:
+		t = crxs[crx_index]->tri;
+	    *hse = Hyper_surf_element(crxs[crx_index]->tri);
+		len = sqr_norm(t);
+		len = sqrt(len);
+		tnor = Tri_normal(t);
+	    	
+        for (i = 0; i < dim; ++i)
+		    nor[i] = tnor[i]/len;
+		
+        if (comp == negative_component(*hs))
+		{
+            for (i = 0; i < dim; ++i)
+			    nor[i] *= -1.0;
+		}
+		break;
+	    default: 
+	    	screen("ERROR: In FT_NormalAtGridCrossing(),"
+			"unsupported dimension dim = %d\n",dim);
+		return NO;
+	    }
+	}
+	return YES;
+}	/* end FT_NormalAtGridCrossing2 */
+
 #define         MAX_NUM_VERTEX_IN_CELL          20
 EXPORT	boolean FT_StateStructAtGridCrossing(
 	Front *front,
