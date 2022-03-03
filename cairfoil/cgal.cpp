@@ -1609,48 +1609,6 @@ static void installStrings(
     {
         installStringsLoadNode(infile,front,surf,canopy_bdry,string_node_pts,num_strings);
     }
-
-    /*
-    //TODO: 
-    
-    //Initialize string-fluid interaction
-    FINITE_STRING* finite_string;
-    if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
-    {
-	    char string[25];
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-        {
-            FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
-            
-            CursorAfterString(infile,"Enter string radius:");
-            fscanf(infile,"%lf",&finite_string->radius); 
-            printf("%f\n",finite_string->radius);
-            
-            CursorAfterString(infile,"Enter string mass density:");
-            fscanf(infile,"%lf",&finite_string->dens); 
-            printf("%f\n",finite_string->dens);
-
-            CursorAfterString(infile,"Enter drag coefficient:");
-            fscanf(infile,"%lf",&finite_string->c_drag); 
-            printf("%f\n",finite_string->c_drag);
-            
-            CursorAfterString(infile,"Enter fluid force scaling factor:");
-            fscanf(infile,"%lf",&finite_string->ampFluidFactor);
-            printf("%f\n",finite_string->ampFluidFactor);
-
-            //TODO: Need to be able to restart with FINITE_STRING in curve->extra
-            AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-            auto string_curves = af_params->string_curves;
-
-            for (int i = 0; i < string_curves.size(); ++i)
-            {
-                string_curves[i]->extra = (POINTER)finite_string;
-            }
-        }
-    }
-    */
 }
 
 static void installStringsRigidBody(
@@ -1821,8 +1779,6 @@ static void installStringsLoadNode(
 	}
 
 
-    FINITE_STRING* finite_string = getFiniteStringParams(front);
-
     // make the all initial springs at their equilibruim length
     FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,sizeof(CURVE*));
 	
@@ -1832,8 +1788,6 @@ static void installStringsLoadNode(
 	{
 	    string_curves[i] = make_curve(0,0,string_nodes[i],nload);
 	    hsbdry_type(string_curves[i]) = STRING_HSBDRY;
-
-        string_curves[i]->extra = (POINTER)finite_string; //for string-fluid interaction
 
 	    spacing = separation(string_nodes[i]->posn,nload->posn,3);
 	    for (j = 0; j < 3; ++j)
@@ -2418,10 +2372,6 @@ static void connectStringtoRGB(
 
 
 
-    //for string-fluid interaction
-    FINITE_STRING* finite_string = getFiniteStringParams(front);
-    
-
     CURVE** string_curves;
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_strings,sizeof(CURVE*));
     double hmin = std::min(std::min(h[0],h[1]),h[2]);
@@ -2464,8 +2414,6 @@ static void connectStringtoRGB(
         {
             string_curves[k] = make_curve(0,0,start,end);
             hsbdry_type(string_curves[k]) = STRING_HSBDRY;
-            
-            string_curves[k]->extra = (POINTER)finite_string;//for string-fluid interaction
 
             spacing = separation(start->posn,end->posn,3);
             for (j = 0; j < 3; ++j)
@@ -2500,88 +2448,6 @@ static void connectStringtoRGB(
 	if (debugging("trace"))
 	    printf("Leaving connectStringtoRGB() \n");
 }	/* end connectStringtoRGB */
-
-FINITE_STRING* getFiniteStringParams(Front* front)
-{
-    /////////////////////////////////////////
-    return nullptr;
-    ////////////////////////////////////////
-    
-    //STRING PARAMS DISABLED -- THIS DOESN'T WORK IN PARALLEL
-    //  
-    //New Approach: add a FINITE_STRING struct to eqn_params
-    //              and access from there for all strings.
-    
-
-    static FINITE_STRING* finite_string;
-    /*
-    static double radius;
-    static double density;
-    static double drag_coef;
-    static double ampfactor;
-    static bool sfi_enabled = false;
-    */
-
-    static bool first = true;
-    if (first)
-    {
-        FILE* infile = fopen(InName(front),"r");
-        if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
-        {
-            char string[25];
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'y' || string[0] == 'Y')
-            {
-                FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
-                CursorAfterString(infile,"Enter string radius:");
-                //fscanf(infile,"%lf",&radius); 
-                //printf("%f\n",radius);
-                fscanf(infile,"%lf",&finite_string->radius); 
-                printf("%f\n",finite_string->radius);
-                
-                CursorAfterString(infile,"Enter string mass density:");
-                //fscanf(infile,"%lf",&density); 
-                //printf("%f\n",density);
-                fscanf(infile,"%lf",&finite_string->dens); 
-                printf("%f\n",finite_string->dens);
-
-                CursorAfterString(infile,"Enter drag coefficient:");
-                //fscanf(infile,"%lf",&drag_coef); 
-                //printf("%f\n",drag_coef);
-                fscanf(infile,"%lf",&finite_string->c_drag); 
-                printf("%f\n",finite_string->c_drag);
-                
-                CursorAfterString(infile,"Enter fluid force scaling factor:");
-                //fscanf(infile,"%lf",&ampfactor);
-                //printf("%f\n",ampfactor);
-                fscanf(infile,"%lf",&finite_string->ampFluidFactor);
-                printf("%f\n",finite_string->ampFluidFactor);
-            
-                //sfi_enabled = true;
-            }
-        }
-        fclose(infile);
-        
-        first = false;
-    }
-
-    /*
-    if (sfi_enabled)
-    {
-        FINITE_STRING* finite_string;
-        FT_ScalarMemoryAlloc((POINTER*)&finite_string,sizeof(FINITE_STRING));
-        finite_string->radius = radius;
-        finite_string->dens = density;
-        finite_string->c_drag = drag_coef;
-        finite_string->ampFluidFactor = ampfactor;
-        return finite_string;
-    }
-    */
-
-    return finite_string;
-    //return nullptr;
-}
 
 static void findPointsonRGB(
 	Front *front,
@@ -2911,9 +2777,6 @@ extern void InstallNewLoadNode(
 	CURVE **string_curves;
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_canopy+1,sizeof(CURVE*));
     
-    //for string-fluid interaction
-    FINITE_STRING* finite_string = getFiniteStringParams(front);
-    
 
 	int i = 0;
 	intfc_node_loop(intfc,n)
@@ -2935,8 +2798,6 @@ extern void InstallNewLoadNode(
         {
             string_curves[i] = make_curve(0,0,(*n),sec_nload);
             hsbdry_type(string_curves[i]) = STRING_HSBDRY;
-            
-            string_curves[i]->extra = (POINTER)finite_string;
             
             spacing = separation((*n)->posn,sec_nload->posn,3);
             for (j = 0; j < 3; ++j)
@@ -3033,8 +2894,6 @@ extern void InstallNewLoadNode(
 	    string_curves[i] = make_curve(0,0,sec_nload,nload);
 	    hsbdry_type(string_curves[i]) = STRING_HSBDRY;
 	    
-        string_curves[i]->extra = (POINTER)finite_string;
-        
         spacing = separation(sec_nload->posn,nload->posn,3);
 	    for (j = 0; j < 3; ++j)
 		dir[j] = (Coords(nload->posn)[j] -
@@ -3522,9 +3381,6 @@ static void connectTwoStringNodes(
 	string_curve = make_curve(0,0,start,end);
 	hsbdry_type(string_curve) = STRING_HSBDRY;
 
-    FINITE_STRING* finite_string = getFiniteStringParams(front);
-    string_curve->extra = (POINTER)finite_string;
-	    
     spacing = separation(start->posn,end->posn,3);
 
     double hmin = std::min(h[0],h[1]);

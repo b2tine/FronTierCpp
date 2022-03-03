@@ -6644,11 +6644,27 @@ void G_CARTESIAN::addImmersedForce()
 
     if (!eqn_params->with_string_fsi) return;
     
-    FINITE_STRING* params = &(eqn_params->string_fsi_params);
+    double radius = eqn_params->string_radius;
+    double rhoS = eqn_params->string_density;
+    double c_drag = eqn_params->string_drag_coef;
+    double ampFluidFactor = eqn_params->string_ampFactor;
+
+    /*
+    //FINITE_STRING* params = &(eqn_params->string_fsi_params);
+    FINITE_STRING* params = eqn_params->string_fsi_params;
     double radius = params->radius;
     double rhoS = params->dens;
     double c_drag = params->c_drag;
     double ampFluidFactor = params->ampFluidFactor;
+    */
+
+    /*
+    FINITE_STRING params = eqn_params->string_fsi_params;
+    double radius = params.radius;
+    double rhoS = params.dens;
+    double c_drag = params.c_drag;
+    double ampFluidFactor = params.ampFluidFactor;
+    */
 
     INTERFACE *grid_intfc = front->grid_intfc;
     CURVE **c,*curve;
@@ -6745,6 +6761,8 @@ void G_CARTESIAN::addImmersedForce()
                 printf("\tnor_speed = %f  |  ampfactor = %f\n\n",nor_speed,ampFluidFactor);
             }
 
+            double coords[MAXD];
+
             for (int k = icoords[2]-2; k <= icoords[2]+2; k++)
             for (int j = icoords[1]-2; j <= icoords[1]+2; j++)
             for (int i = icoords[0]-2; i <= icoords[0]+2; i++)
@@ -6753,8 +6771,17 @@ void G_CARTESIAN::addImmersedForce()
                 if (i > top_gmax[0] || j > top_gmax[1] || k > top_gmax[2]) continue;
 
                 int ic = d_index3d(i,j,k,top_gmax);
-                auto coords = cell_center[index].getCoords();
-                double dist = distance_between_positions(Coords(p),&coords[0],3);
+                
+                coords[0] = top_L[0] + i*top_h[0];
+                coords[1] = top_L[1] + j*top_h[1];
+                coords[2] = top_L[2] + k*top_h[2];
+                
+                double dist = distance_between_positions(Coords(p),coords,3);
+
+                //NOTE: This does not work with parallel runs
+                //
+                    //auto coords = cell_center[index].getCoords();
+                    //double dist = distance_between_positions(Coords(p),&coords[0],3);
 
                 //TODO: use smooth radial basis function e.g. smooothed dirac delta
                 double vec[MAXD];

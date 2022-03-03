@@ -443,7 +443,6 @@ extern void poisson_ratio(Front*);
 // cgal.cpp
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);
 extern void InstallNewLoadNode(Front*,int);
-extern FINITE_STRING* getFiniteStringParams(Front*);
 
 // modules.cpp
 extern void initFabricDefault(Front*);

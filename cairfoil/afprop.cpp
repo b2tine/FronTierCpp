@@ -397,13 +397,27 @@ static void string_curve_propagation(
         
     if (!eqn_params->with_string_fsi) return;
     
-    FINITE_STRING* params = &(eqn_params->string_fsi_params);
-    
-    double c_drag = params->c_drag;
+    double radius = eqn_params->string_radius;
+    double rhoS = eqn_params->string_density;
+    double c_drag = eqn_params->string_drag_coef;
+    double ampFluidFactor = eqn_params->string_ampFactor;
+
+    /*
+    //FINITE_STRING* params = &(eqn_params->string_fsi_params);
+    FINITE_STRING* params = eqn_params->string_fsi_params;
     double radius = params->radius;
     double rhoS = params->dens;
+    double c_drag = params->c_drag;
     double ampFluidFactor = params->ampFluidFactor;
+    */
     
+    /*
+    FINITE_STRING params = eqn_params->string_fsi_params;
+    double radius = params.radius;
+    double rhoS = params.dens;
+    double c_drag = params.c_drag;
+    double ampFluidFactor = params.ampFluidFactor;
+    */
     
     STATE *state_intfc;
     STATE *newsl,*newsr;

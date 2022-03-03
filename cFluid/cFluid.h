@@ -228,7 +228,11 @@ struct EQN_PARAMS
     double porous_coeff[2];
 
     bool with_string_fsi {false};
-    FINITE_STRING string_fsi_params;
+    //FINITE_STRING* string_fsi_params;
+    double string_radius {0.0};
+    double string_density {0.0};
+    double string_drag_coef {0.0};
+    double string_ampFactor {0.0};
     //////////////////////////////
     
     //Base front for comparison

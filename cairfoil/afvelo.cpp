@@ -509,8 +509,29 @@ void setFabricParams(Front* front)
                 if (string[0] == 'y' || string[0] == 'Y')
                 {
                     eqn_params->with_string_fsi = true;
-                    FINITE_STRING* sfsi_params = &(eqn_params->string_fsi_params);
+                    
+                    CursorAfterString(infile,"Enter string radius:");
+                    fscanf(infile,"%lf",&(eqn_params->string_radius));
+                    printf("%f\n",eqn_params->string_radius);
 
+                    CursorAfterString(infile,"Enter string mass density:");
+                    fscanf(infile,"%lf",&(eqn_params->string_density));
+                    printf("%f\n",eqn_params->string_density);
+
+                    CursorAfterString(infile,"Enter drag coefficient:");
+                    fscanf(infile,"%lf",&(eqn_params->string_drag_coef));
+                    printf("%f\n",eqn_params->string_drag_coef);
+
+                    CursorAfterString(infile,"Enter fluid force scaling factor:");
+                    fscanf(infile,"%lf",&(eqn_params->string_ampFactor));
+                    printf("%f\n",eqn_params->string_ampFactor);
+                    
+                    /*
+                    //FINITE_STRING* sfsi_params = &(eqn_params->string_fsi_params);
+                    FINITE_STRING* sfsi_params = eqn_params->string_fsi_params;
+                    
+                    FT_ScalarMemoryAlloc((POINTER*)&sfsi_params,sizeof(FINITE_STRING));
+                    
                     CursorAfterString(infile,"Enter string radius:");
                     fscanf(infile,"%lf",&(sfsi_params->radius));
                     printf("%f\n",sfsi_params->radius);
@@ -526,6 +547,7 @@ void setFabricParams(Front* front)
                     CursorAfterString(infile,"Enter fluid force scaling factor:");
                     fscanf(infile,"%lf",&(sfsi_params->ampFluidFactor));
                     printf("%f\n",sfsi_params->ampFluidFactor);
+                    */
                 }
             }
 

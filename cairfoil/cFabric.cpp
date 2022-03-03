@@ -1172,14 +1172,15 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         }
         */
 
-        //st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
-
+        st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
         
+        /*
         double internal_engy = EosInternalEnergy(&st_tmp_ghost);
         //st_tmp_ghost.engy = ghost_dens*internal_engy 
         st_tmp_ghost.engy = internal_engy 
             - 0.5*st_tmp_ghost.dens*Dotd(v_real,v_real,dim) 
             + 0.5*st_tmp_ghost.dens*Dotd(velo,velo,dim);
+        */
 
         /*
         //double internal_engy = EosInternalEnergy(&st_tmp_ghost);
@@ -1255,6 +1256,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                 printf("crx_coords = %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
                 printf("coords_ghost = %f %f %f\n",coords_ghost[0],coords_ghost[1],coords_ghost[2]);
                 printf("idir: %d \t nb: %d\n",idir,nb);
+                printf("v_real = %f %f %f\n",v_real[0],v_real[1],v_real[2]);
                 printf("rhol = %g pl = %g\n", rhol, pl);
                 printf("rhor = %g pr = %g\n", rhor, pr);
                 printf("rhor*pr - rhol*pl = %g \t sgn = %f\n",rhor*pr - rhol*pl,sgn);
@@ -1279,9 +1281,11 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 	    /* debugging printout */
 	    if (st_tmp_ghost.engy < 0.0 || st_tmp_ghost.eos->gamma < 0.001)
 	    {
-            printf("negative engrgy! \n");
+            printf("negative energy! \n");
             printf("icoords = %d %d %d \n",icoords[0],icoords[1],icoords[2]);
+            printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
             printf("crx_coords = %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
+            printf("coords_ghost = %f %f %f\n",coords_ghost[0],coords_ghost[1],coords_ghost[2]);
             printf("idir: %d \t nb: %d\n",idir,nb);
             printf("%f %f %f %f %f %f \n",st_tmp_ghost.dens,st_tmp_ghost.momn[0],
                 st_tmp_ghost.momn[1],st_tmp_ghost.momn[2],st_tmp_ghost.pres,
@@ -1292,13 +1296,21 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                 st_tmp_ghost.eos->einf,st_tmp_ghost.eos->pinf);
             printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],
                             coords_ref[2]);
-            printf("rhor*pr - rhol*pl = %f\n",rhor*pr - rhol*pl);
+            printf("v_real = %f %f %f\n",v_real[0],v_real[1],v_real[2]);
             printf("rhol = %f \t pl = %f \t rhor = %f \t pr = %f\n",rhol,pl,rhor,pr);
+            printf("rhor*pr - rhol*pl = %f \t sgn = %f\n",rhor*pr - rhol*pl,sgn);
             printf("Msqr = %f \t mdot = %f\n", Msqr, mdot);
             printf("nor = %f %f %f\n", nor[0],nor[1],nor[2]);
-            //printf("nor_vel = %f\n", nor_vel);
+            printf("nor_vel = %f\n", nor_vel);
+            printf("pres_drop = %f\n", pres_drop);
             printf("ghost_pres = %f\n", st_tmp_ghost.pres);
-            //printf("pres_drop = %f\n", pres_drop);
+            printf("ghost_dens = %f\n", st_tmp_ghost.dens);
+            printf("ghost_temp = %f\n", st_tmp_ghost.temp);
+            printf("ghost_engy = %f\n", st_tmp_ghost.engy);
+            printf("ghost_momn = %f %f %f\n",
+                st_tmp_ghost.momn[0],st_tmp_ghost.momn[1],st_tmp_ghost.momn[2]);
+            printf("ghost_vel = %f %f %f\n",
+                st_tmp_ghost.vel[0],st_tmp_ghost.vel[1],st_tmp_ghost.vel[2]);
             LOC(); clean_up(EXIT_FAILURE);
 	    }
     }
