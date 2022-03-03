@@ -1711,11 +1711,21 @@ static void convert_to_point_mass(
                     num_gore_pts += I_NumOfCurvePoints(*c);
                 }
             }
+
+
     
+            /*
             if (af_params->is_parachute_system == YES)
 	        	num_str_pts += 1; //load node
-	    
+	        */
+
             num_fabric_pts -= num_gore_pts;
+
+            pp_global_isum(&num_fabric_pts,1);
+            pp_global_isum(&num_str_pts,1);
+            pp_global_isum(&num_gore_pts,1);
+
+
 	        if (num_fabric_pts != 0)
 		        af_params->m_s = af_params->total_canopy_mass/num_fabric_pts;
             else
@@ -1733,7 +1743,7 @@ static void convert_to_point_mass(
 	    
             break;
         }
-}       /* end convert_to_point_mass */
+}   /* end convert_to_point_mass */
 
 //TODO: Should move to afsetd.cpp
 static void checkSetGoreNodes(
