@@ -982,14 +982,12 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         vec_ghost[i] = coords_ghost[i] - crx_coords[i];
     }
 
-    /*
     double side = Dotd(vec_ghost,nor,dim);
     if (side < 0)
     {
         for (int i = 0; i < dim; ++i)
             nor[i] *= -1.0;
     }
-    */
 	
 
 	if (debugging("elastic_buffer"))
@@ -1137,18 +1135,21 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 
         //double nor_vel = mdot/rhor;
         //double nor_vel = mdot/rhol;
-        double nor_vel = mdot/rhor - mdot/rhol;
+        //double nor_vel = mdot/rhol - mdot/rhor;
+        //double nor_vel = mdot/rhor - mdot/rhol;
+        double nor_vel = -1.0*sgn*std::abs(mdot/rhor - mdot/rhol);
         
         //double rho_mid = 0.5*(rhol + rhor);
         //double nor_vel = mdot/rho_mid;
         
         double canopy_thickness = 0.001;
-        double alpha = poro/canopy_thickness;
+        double alpha = 1.0/poro/canopy_thickness;
         double pres_drop = -1.0*(alpha*nor_vel + beta*std::abs(nor_vel)*nor_vel)*canopy_thickness;
         
         st_tmp_ghost.pres = pl + pres_drop;
 
         st_tmp_ghost.dens = rhol*std::pow(st_tmp_ghost.pres/pl,1.0/gamma);
+        //st_tmp_ghost.dens = rhor;
         
         
         
