@@ -1054,14 +1054,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->engy,getStateEngy,&st_tmp_ghost.engy,&m_vst->engy[index]);
 	    
-        /*
-        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->mu,getStateMu,&st_tmp_ghost.mu,&m_vst->mu[index]);
-        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->mu_turb,getStateMuTurb,&st_tmp_ghost.mu_turb,&m_vst->mu_turb[index]);
-        double ghost_mu_total = st_tmp_ghost.mu + st_tmp_ghost.mu_turb;
-	    */
-
         double v_reflect[3];
         for (int j = 0; j < dim; ++j)
         {
@@ -1249,34 +1241,37 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             //st_tmp_ghost.pres = EosPressure(&st_tmp_ghost);
 
         ////////////////////////////////////////////////////////////////
-        double debug_coords[MAXD] = {0.6,0.6,0.42354};
-        for (int j = 0; j < dim; ++j)
+        if (debugging("darcy_debug_coords"))
         {
-            debug_coords[j] -= crx_coords[j];
-        }
-        if (Mag3d(debug_coords) < 1.0e-02)
-        {
-	        printf("\nistart = %d nrad = %d n = %d\n",istart,nrad,n);
-            printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
-            printf("crx_coords = %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
-            printf("coords_ghost = %f %f %f\n",coords_ghost[0],coords_ghost[1],coords_ghost[2]);
-            printf("idir: %d \t nb: %d\n",idir,nb);
-            printf("rhol = %g pl = %g\n", rhol, pl);
-            printf("rhor = %g pr = %g\n", rhor, pr);
-            printf("rhor*pr - rhol*pl = %g \t sgn = %f\n",rhor*pr - rhol*pl,sgn);
-            printf("Msqr = %g \t mdot = %g\n", Msqr, mdot);
-            printf("nor = %f %f %f\n", nor[0],nor[1],nor[2]);
-            printf("nor_vel = %f\n", nor_vel);
-            printf("pres_drop = %f\n", pres_drop);
-            //printf("dens_drop = %f\n", dens_drop);
-            printf("ghost_pres = %f\n", st_tmp_ghost.pres);
-            printf("ghost_dens = %f\n", st_tmp_ghost.dens);
-            printf("ghost_temp = %f\n", st_tmp_ghost.temp);
-            printf("ghost_engy = %f\n", st_tmp_ghost.engy);
-            printf("ghost_momn = %f %f %f\n",
-                st_tmp_ghost.momn[0],st_tmp_ghost.momn[1],st_tmp_ghost.momn[2]);
-            printf("ghost_vel = %f %f %f\n",
-                st_tmp_ghost.vel[0],st_tmp_ghost.vel[1],st_tmp_ghost.vel[2]);
+            double debug_coords[MAXD] = {0.6,0.6,0.42354};
+            for (int j = 0; j < dim; ++j)
+            {
+                debug_coords[j] -= crx_coords[j];
+            }
+            if (Mag3d(debug_coords) < 1.0e-02)
+            {
+                printf("\nistart = %d nrad = %d n = %d\n",istart,nrad,n);
+                printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
+                printf("crx_coords = %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
+                printf("coords_ghost = %f %f %f\n",coords_ghost[0],coords_ghost[1],coords_ghost[2]);
+                printf("idir: %d \t nb: %d\n",idir,nb);
+                printf("rhol = %g pl = %g\n", rhol, pl);
+                printf("rhor = %g pr = %g\n", rhor, pr);
+                printf("rhor*pr - rhol*pl = %g \t sgn = %f\n",rhor*pr - rhol*pl,sgn);
+                printf("Msqr = %g \t mdot = %g\n", Msqr, mdot);
+                printf("nor = %f %f %f\n", nor[0],nor[1],nor[2]);
+                printf("nor_vel = %f\n", nor_vel);
+                printf("pres_drop = %f\n", pres_drop);
+                //printf("dens_drop = %f\n", dens_drop);
+                printf("ghost_pres = %f\n", st_tmp_ghost.pres);
+                printf("ghost_dens = %f\n", st_tmp_ghost.dens);
+                printf("ghost_temp = %f\n", st_tmp_ghost.temp);
+                printf("ghost_engy = %f\n", st_tmp_ghost.engy);
+                printf("ghost_momn = %f %f %f\n",
+                    st_tmp_ghost.momn[0],st_tmp_ghost.momn[1],st_tmp_ghost.momn[2]);
+                printf("ghost_vel = %f %f %f\n",
+                    st_tmp_ghost.vel[0],st_tmp_ghost.vel[1],st_tmp_ghost.vel[2]);
+            }
         }
         ////////////////////////////////////////////////////////////////
 

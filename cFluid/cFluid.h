@@ -632,6 +632,9 @@ protected:
     void setSlipBoundaryNIP(int* icoords, int idir, int nb, int comp,
             HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
 
+    void setPoroSlipBoundaryNIP(int* icoords, int idir, int nb, int comp,
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
+
 
     // -------------------------------------------------------
 	// 		initialization functions

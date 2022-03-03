@@ -254,6 +254,7 @@ void G_CARTESIAN::fillViscousFluxStencil2d_5pt(
         int idx_nb = d_index(vs->icoords,top_gmax,dim);
         vs->comp = top_comp[idx_nb];
         
+        //TODO: This will only see rigid body wall boundaries -- no porous walls etc.
         if (vs->comp != comp)
         {
             setViscousGhostState(icoords,comp,vs,m_vst);
