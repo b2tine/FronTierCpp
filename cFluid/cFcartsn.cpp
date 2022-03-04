@@ -297,7 +297,6 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	{
 	    if (b[i] != 0.0)
 	    {
-            //TODO: SHOULD NOT UPDATE MU HERE?
             addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
         }
 	}
@@ -312,7 +311,7 @@ void G_CARTESIAN::computeMeshFlux(
 	FSWEEP* m_flux,
 	double delta_t)
 {
-	if(eqn_params->tracked)
+	if (eqn_params->tracked)
 	{
 	    start_clock("get_ghost_state");
 	    get_ghost_state(m_vst, 2, 0);
@@ -338,50 +337,7 @@ void G_CARTESIAN::computeMeshFlux(
     }
 	
     addSourceTerm(&m_vst,m_flux,delta_t);
-
-    if (eqn_params->with_porosity == YES && 
-        eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
-    {
-        addErgunEquationSourceTerms(&m_vst,m_flux,delta_t);
-    }
-
 }	/* end computeMeshFlux */
-
-/*
-//TODO: Save temporarily while above code is tested.
-//          Does not appear to work correctly right now.
-//
-void G_CARTESIAN::computeMeshFlux(
-	SWEEP m_vst,
-	FSWEEP *m_flux,
-	double delta_t)
-{
-	if(eqn_params->tracked)
-	{
-	    start_clock("get_ghost_state");
-	    get_ghost_state(m_vst, 2, 0);
-	    get_ghost_state(m_vst, 3, 1);
-	    scatMeshGhost();
-	    stop_clock("get_ghost_state");
-	    start_clock("solve_exp_value");
-	    solve_exp_value();
-	    stop_clock("solve_exp_value");
-	}
-
-	resetFlux(m_flux);
-	for (int dir = 0; dir < dim; ++dir)
-	{
-	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
-	}
-    
-    //TODO: Use input file option instead of debugging string for viscous flux
-	if (!debugging("no_viscflux"))
-    {
-        addViscousFlux(&m_vst,m_flux,delta_t);
-    }
-	
-    addSourceTerm(m_vst,m_flux,delta_t);
-}*/	/* end computeMeshFlux */
 
 void G_CARTESIAN::resetFlux(FSWEEP *m_flux)
 {
@@ -668,182 +624,6 @@ void G_CARTESIAN::addSourceTerm(
         break;
 	}
 }	/* end addSourceTerm */
-
-
-void G_CARTESIAN::addErgunEquationSourceTerms(
-        SWEEP* m_vst,
-        FSWEEP *m_flux,
-        double delta_t)
-{
-    for (int k = imin[2]; k <= imax[2]; k++)
-    for (int j = imin[1]; j <= imax[1]; j++)
-    for (int i = imin[0]; i <= imax[0]; i++)
-    {
-        int icoords[MAXD] = {i,j,k};
-        int index = d_index(icoords,top_gmax,dim);
-        if (!gas_comp(top_comp[index])) continue;
-        
-        double alpha = eqn_params->porous_coeff[0];
-        double beta = eqn_params->porous_coeff[1];
-        std::vector<double> gradP = computeErgunEquationPressureJump(m_vst,icoords,alpha,beta);
-        
-        for (int l = 0; l < dim; ++l)
-        {
-            m_flux->momn_flux[l][index] += delta_t*gradP[l];
-            m_flux->engy_flux[index] += 
-                delta_t*m_vst->momn[l][index]/m_vst->dens[index]*gradP[l];
-        }
-    }
-}
-
-//TODO: PUT THIS LOGIC INSIDE A FUNCTION IN CFABRIC_CARTESIAN::setElasticStates()
-//
-//      ALSO FIGURE OUT CORRECT WAY TO ADD AS SOURCE TERM
-std::vector<double> G_CARTESIAN::computeErgunEquationPressureJump(
-        SWEEP* m_vst,
-        int* icoords,
-        double alpha,
-        double beta)
-{
-    int index_nb;
-    int top_gmin[MAXD], ipn[MAXD];
-    double crx_coords[MAXD], coords[MAXD], grad_phi[MAXD];
-    double vel_intfc[MAXD], vel_rel[MAXD], nor[MAXD], vec[MAXD];
-    double Un = 0.0, ans = 0.0, side = 0.0, d_p = 0.0;
-
-    GRID_DIRECTION dir[6] = {WEST,EAST,SOUTH,NORTH,LOWER,UPPER};
-    POINTER intfc_state;
-    HYPER_SURF* hs;
-    HYPER_SURF_ELEMENT* hse;
-    INTERFACE* grid_intfc = front->grid_intfc;
-        //RECT_GRID* rgr = &topological_grid(front->interf);
-    RECT_GRID* rgr = computational_grid(front->interf);
-    bool is_intfc = false;
-
-    POINTER sl, sr;
-
-    std::vector<double> gradP = {0,0,0};
-
-    top_gmin[0] = top_gmin[1] = top_gmin[2] = 0;
-    for (int i = 0; i < dim; i++)
-        coords[i] = top_L[i] + icoords[i]*top_h[i];
-    
-    int index = d_index(icoords,top_gmax,dim);
-    COMPONENT comp = top_comp[index];
-
-    //double dens_fluid = m_vst->dens[index];
-    //double visc_fluid = m_vst->mu[index] +  m_vst->mu_turb[index];
-
-    int max_nb = 6;
-    for (int nb = 0; nb < max_nb; nb++)
-    {
-        is_intfc = FT_NormalAtGridCrossing(front,icoords,dir[nb],
-                comp,nor,&hs,crx_coords);
-
-        if (is_intfc && is_bdry(Surface_of_hs(hs))) continue;
-        if (is_intfc && (wave_type(hs) == ELASTIC_BOUNDARY))
-        {
-            next_ip_in_dir(icoords,dir[nb],ipn,top_gmin,top_gmax);
-            index_nb = d_index(ipn,top_gmax,dim);
-
-            //get relative velocity
-            FT_StateStructsAtGridCrossing(front,grid_intfc,icoords,dir[nb],
-                    &sl,&sr,&hs,&hse,crx_coords);
-
-            FT_StateStructAtGridCrossing(front,grid_intfc,icoords,dir[nb],
-                            comp,&intfc_state,&hs,crx_coords);
-
-            if (!is_intfc) continue;
-            
-            double dens_fluid;
-            FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,
-                    m_vst->dens,getStateDens,&dens_fluid,nullptr);
-
-            double vel_fluid[MAXD] = {0.0};
-            double momn_fluid[MAXD] = {0.0};
-            
-            for (int k = 0; k < dim; k++)
-            {
-                vel_intfc[k] = (*getStateVel[k])(intfc_state);
-
-                FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,
-                                         m_vst->momn[k],getStateMom[k],
-                                         &momn_fluid[k],nullptr);
-                
-                vel_fluid[k] = momn_fluid[k]/dens_fluid;
-
-                vel_rel[k] = vel_fluid[k] - vel_intfc[k];
-            }
-
-            /*project to normal direction*/
-            Un = Dotd(nor,vel_rel,dim);
-
-            double Pin, Pout;
-            if (Un >= 0)
-            {
-                Pin = getStatePres(sl);
-                Pout = getStatePres(sr);
-            }
-            else
-            {
-                Pin = getStatePres(sr);
-                Pout = getStatePres(sl);
-            }
-            
-            //TODO: Should not build the fabric thickness into alpha and beta,
-            //      we should divide by thickness explicitly when computing d_P here.
-            //      Is confusing this way and values for alpha and beta do not match
-            //       those used in the literature since the units are different.
-            
-            //NOTE: alpha and beta include thickness factor
-            d_p = (alpha + fabs(Un)*beta)*Un;
-                //d_p = (alpha*visc_fluid + fabs(Un)*beta*dens_fluid)*Un;
-
-                
-            //double deltaP = d_p;
-            double deltaP = 2.0*d_p*Pout/(Pin + Pout);
-            
-            //TODO: need to remove viscosity from the alpha term provided as input
-            //      and multiply by the local viscosity instead of the constant visc
-            //      incorporated into alpha currently.
-
-            
-            for (int i = 0; i < dim; i++)
-                vec[i] = coords[i] - crx_coords[i];
-
-            side = Dotd(nor,vec,dim);
-            
-            //double Pin = getStatePres(sl);
-            //double Pout = getStatePres(sr);
-
-            // modify pressure gradient
-            if ((side <= 0 && nb%2 == 0) || (side > 0 && nb%2 == 1))
-            {
-                gradP[nb/2] += deltaP;
-                    //gradP[nb/2] += 0.5*deltaP/top_h[nb/2];
-                    //gradP[nb/2] += 0.5*d_p/top_h[nb/2];
-            }
-            else if ((side <= 0 && nb%2 == 1) || (side > 0 && nb%2 == 0))
-            {
-                gradP[nb/2] -= deltaP;
-                    //gradP[nb/2] -= 0.5*deltaP/top_h[nb/2];
-                    //gradP[nb/2] -= 0.5*d_p/top_h[nb/2];
-            }
-            
-            if (debugging("pressure_drop"))
-            {
-                printf("\ncomputeFieldPointPressureJump()\n");
-                printf("crds = [%f %f %f], crx = [%f %f %f],"
-                        " side = %f, nb = %d\n",coords[0],coords[1],coords[2],
-                        crx_coords[0],crx_coords[1],crx_coords[2],side,nb);
-                printf("vel_rel = [%f %f %f]",vel_rel[0],vel_rel[1],vel_rel[2]);
-                printf("d_p = %f, Un = %f\n", d_p, Un);
-            }
-        }
-    }
-
-    return gradP;
-}
 
 void G_CARTESIAN::solve(double dt)
 {
@@ -1626,10 +1406,11 @@ void G_CARTESIAN::setMaxTimestep()
         }
 
         visc_max_dt = 1.0/((mu_max/rho_min)*mesh_val);
-        
-            //OR: should mu_max/rho_min just be nu_max??
         */
     }
+
+    //TODO: TEST THIS BOUND
+    //double joint_max_dt = hmin*hmin/(max_speed*hmin + 2.0*mu_max);
 
 
     if (debugging("cfluid_dt"))
@@ -2024,6 +1805,14 @@ void G_CARTESIAN::initMovieVariables()
                 (void)printf("%s\n",string);
                 if (string[0] == 'Y' || string[0] == 'y')
                     FT_AddVtkScalarMovieVariable(front,"VISC",field.mu);
+            }
+	    if (CursorAfterStringOpt(infile,
+               "Type y to make scalar eddy viscosity field movie:"))
+            {
+                fscanf(infile,"%s",string);
+                (void)printf("%s\n",string);
+                if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkScalarMovieVariable(front,"EDDY_VISC",field.mu_turb);
             }
 	    if (CursorAfterStringOpt(infile,
                "Type y to make scalar temperature field movie:"))
@@ -3657,9 +3446,6 @@ void G_CARTESIAN::copyToMeshVst(
 	}
 }	/* end copyToMeshVst */
 
-//TODO: COPY MU AND TEMPERATURE?
-//
-//NOTE: DO NOT COPY MU_TURB!
 void G_CARTESIAN::copyFromMeshVst(
 	const SWEEP& m_vst)
 {
@@ -5916,6 +5702,7 @@ void G_CARTESIAN::setNeumannStates(
                 m_vst->k_turb,getStateKTurb,&st_tmp.k_turb,&m_vst->k_turb[index]);
 	    
         //TODO: for loop instead of if statements
+        /*
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->momn[0],getStateXmom,&st_tmp.momn[0],&m_vst->momn[0][index]);
 	    
@@ -5928,6 +5715,14 @@ void G_CARTESIAN::setNeumannStates(
 		    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
 			    m_vst->momn[2],getStateZmom,&st_tmp.momn[2],
 			    &m_vst->momn[2][index]);
+        */
+
+        for (int l = 0; l < dim; ++l)
+        {
+            FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                    m_vst->momn[l],getStateMom[l],&st_tmp.momn[l],
+                    &m_vst->momn[l][index]);
+        }
 
 		/* Galileo Transformation */
 	    vn = 0.0;
@@ -6297,6 +6092,7 @@ void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
         printf("\n\nWARNING checkCorrectForTolerance(): \
                 state->dens = %g < min_dens = %g\n",state->dens, min_dens);
         printf("setting to min_dens\n\n");
+        
         state->dens = min_dens;
     }
     
@@ -6305,9 +6101,11 @@ void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
         printf("\n\nWARNING checkCorrectForTolerance(): \
                 state->pres = %g < min_pres = %g\n",state->pres, min_pres);
         printf("setting to min_pres\n\n");
+        
         state->pres = min_pres;
     }
 
+    //TODO: put into separate function
     state->temp = EosTemperature(state);
     state->engy = EosEnergy(state);
     state->mu = EosViscosity(state);
@@ -6672,6 +6470,7 @@ void G_CARTESIAN::addImmersedForce()
     POINT *p;
 
     double* dens = field.dens;
+    double** momn = field.momn;
     double** vel = field.vel;
 
     int icoords[MAXD];
@@ -6702,28 +6501,32 @@ void G_CARTESIAN::addImmersedForce()
             for (int i = 0; i < 3; ++i)
                 ldir[i] /= length;
 
-            double vt = 0.0;
-            double vfluid[3], vrel[3];
             double* vel_intfc = state_intfc->vel;
 
             double dens_fluid;
             FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
                     dens,getStateDens,&dens_fluid,&dens[index]);
-            
-            //double momn_fluid[3];
-
+           
+            double vfluid[3];
+            double momn_fluid[3];
             for (int i = 0; i < 3; ++i)
             {
-                FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
-                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
-
                 /*
                 FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
-                        momn[i],getStateMom[i],&momn_fluid[i],nullptr);
-                
-                vfluid[i] = momn_fluid[i]/dens_fluid;
+                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
                 */
 
+                FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
+                        momn[i],getStateMom[i],&momn_fluid[i],&momn[i][index]);
+                
+                vfluid[i] = momn_fluid[i]/dens_fluid;
+            }
+
+            double vrel[3];
+            double vt = 0.0;
+            
+            for (int i = 0; i < 3; ++i)
+            {
                 vrel[i] = vfluid[i] - vel_intfc[i];
                 vt += vrel[i]*ldir[i];
             }
@@ -6778,18 +6581,13 @@ void G_CARTESIAN::addImmersedForce()
                 
                 double dist = distance_between_positions(Coords(p),coords,3);
 
-                //NOTE: This does not work with parallel runs
-                //
-                    //auto coords = cell_center[index].getCoords();
-                    //double dist = distance_between_positions(Coords(p),&coords[0],3);
-
-                //TODO: use smooth radial basis function e.g. smooothed dirac delta
                 double vec[MAXD];
                 for (int l = 0; l < dim; ++l)
                     vec[l] = (coords[l] - Coords(p)[l])/dist;
 
                 double dir_h = FT_GridSizeInDir(vec,front);
 
+                //TODO: use smooth radial basis function e.g. smooothed dirac delta
                 double alpha = (dir_h*4.0 - dist)/(dir_h*4.0);
 
                 if (alpha < 0) continue;

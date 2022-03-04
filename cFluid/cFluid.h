@@ -85,8 +85,7 @@ enum class PORO_SCHEME
     NORMAL_REFLECTION,
     REFLECTION,
     RIEMANN,
-    DARCY,
-    ERGUN
+    DARCY
 };
 
 //TODO:Add function addImmersedForce() for drag on parachute strings
@@ -556,9 +555,6 @@ protected:
 	void addSourceTerm(SWEEP*,FSWEEP*,double); //void addSourceTerm(const SWEEP&,FSWEEP*,double);
 	
     void addImmersedForce(); //for string fluid interaction, and potentially other forces
-
-    void addErgunEquationSourceTerms(SWEEP* m_vst, FSWEEP *m_flux, double delta_t);
-    std::vector<double> computeErgunEquationPressureJump(SWEEP* m_vst, int* icoords, double alpha, double beta);
 
 	/* Directional flux solver */
 	void resetFlux(FSWEEP*);
