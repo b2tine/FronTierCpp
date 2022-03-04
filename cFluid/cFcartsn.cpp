@@ -3446,6 +3446,9 @@ void G_CARTESIAN::copyToMeshVst(
 	}
 }	/* end copyToMeshVst */
 
+//DO NOT COPY mu_turb back to field.mu_turb !!!!!!!
+//
+//Not sure what is happening but it is not good when we do.
 void G_CARTESIAN::copyFromMeshVst(
 	const SWEEP& m_vst)
 {

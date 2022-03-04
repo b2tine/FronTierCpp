@@ -8,12 +8,6 @@ static double (*getStateMom[MAXD])(Locstate) =
                {getStateXmom,getStateYmom,getStateZmom};
 
 
-
-//TODO: Does this need to be done at the beginning of every time step?
-//      Can we just initialize the viscosity field once at start up, and
-//      then update it when the temperature gets updated after advancing
-//      the solution?
-//
 //TODO: Should rename to reflect that temperature and dynamic viscosity
 //      are being computed/updated.
 void G_CARTESIAN::computeDynamicViscosity()
@@ -32,9 +26,6 @@ void G_CARTESIAN::computeDynamicViscosity()
             printf("\t\t dim = %d\n\n",dim);
             LOC(); clean_up(EXIT_FAILURE);
     }
-
-    //FT_ParallelExchGridArrayBuffer(field.mu,front,NULL);
-    //FT_ParallelExchGridArrayBuffer(field.temp,front,NULL);
 }
 
 void G_CARTESIAN::computeDynamicViscosity2d()

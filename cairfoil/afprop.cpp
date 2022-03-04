@@ -423,20 +423,30 @@ static void string_curve_propagation(
     STATE *newsl,*newsr;
     COMPONENT base_comp = front->interf->default_comp;
 
+    INTERFACE* grid_intfc = front->grid_intfc;
+    RECT_GRID* top_grid = &topological_grid(grid_intfc);
+    int* top_gmax = top_grid->gmax;
+    int dim = top_grid->dim;
+
     double *dens = eqn_params->dens;
     double **vel = eqn_params->vel;
     double **momn = eqn_params->mom;
 
         //int count = 0;
 
+    int icoords[MAXD];
     for (oldb = oldc->first, newb = newc->first;
          oldb != oldc->last; oldb = oldb->next, newb = newb->next)
     {
         oldp = oldb->end;
         newp = newb->end;
 
+        rect_in_which(Coords(oldp),icoords,top_grid);
+        int index = d_index(icoords,top_gmax,dim);
+
         state_intfc = (STATE*)left_state(oldp);
         double* vel_intfc = state_intfc->vel;
+        
         //sl = (STATE*)left_state(oldp);
         //sr = (STATE*)right_state(oldp);
 
@@ -449,6 +459,7 @@ static void string_curve_propagation(
         for (int i = 0; i < 3; ++i)	
             ldir[i] = Coords(oldb->end)[i] - Coords(oldb->start)[i];
         double length = Mag3d(ldir);
+        
         if (length < MACH_EPS)
         {
             printf("BOND length < MACH_EPS\n");
@@ -460,19 +471,17 @@ static void string_curve_propagation(
 
         double dens_fluid;
         FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
-                dens,getStateDens,&dens_fluid,nullptr);
+                dens,getStateDens,&dens_fluid,&dens[index]);
 
         double vt = 0.0;
         double momn_fluid[3], vfluid[3], vrel[3];
         for (int i = 0; i < 3; ++i)
         {
-            //TODO: THIS SHOULD WORK
-            //
             /*FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
                     vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);*/
 
             FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
-                    momn[i],getStateMom[i],&momn_fluid[i],nullptr);
+                    momn[i],getStateMom[i],&momn_fluid[i],&momn[i][index]);
 
             vfluid[i] = momn_fluid[i]/dens_fluid;
 
