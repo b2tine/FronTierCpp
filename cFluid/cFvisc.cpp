@@ -267,6 +267,17 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         SWEEP* m_vst,
         VStencil3d* vsten)
 {
+    /*
+    GRID_DIRECTION dir[3][2] = {
+        {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
+    };
+
+    INTERFACE* grid_intfc = front->grid_intfc;
+    HYPER_SURF* hs;
+    STATE* state;
+    double crx_coords[MAXD];
+    */
+
     COMPONENT comp = vsten->comp;
 
     for (int k = 0; k < 3; ++k)
@@ -280,7 +291,22 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         
         int idx_nb = d_index(vs->icoords,top_gmax,dim);
         vs->comp = top_comp[idx_nb];
+
+        //TODO: Checking all the necessary crossings could be very expensive.
+        //      Better if we can find a way to have the index_coating algorithm
+        //      components persist for the fluid solver to use.
+        //
+        //TODO: Can try using this to check:
+        //
+        //      Table* T = front->interf->table;
+        //      if (T->compon3d[iz][iy][ix] == ONFRONT)
         
+        /*
+        int status = FT_StateStructAtGridCrossing(front,grid_intfc,
+                icoords,dir[idir][nb],comp,(POINTER*)&state,&hs,crx_coords);
+        */
+
+        //TODO: This will only see rigid body wall boundaries -- no porous walls etc.
         if (vs->comp != comp)
         {
             setViscousGhostState(icoords,comp,vs,m_vst);

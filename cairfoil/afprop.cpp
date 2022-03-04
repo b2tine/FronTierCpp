@@ -473,18 +473,23 @@ static void string_curve_propagation(
         FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
                 dens,getStateDens,&dens_fluid,&dens[index]);
 
-        double vt = 0.0;
         double momn_fluid[3], vfluid[3], vrel[3];
         for (int i = 0; i < 3; ++i)
         {
-            /*FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
-                    vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);*/
+            FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
+                    vel[i],getStateVel[i],&vfluid[i],&vel[i][index]);
 
+            /*
             FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(oldp),
                     momn[i],getStateMom[i],&momn_fluid[i],&momn[i][index]);
 
             vfluid[i] = momn_fluid[i]/dens_fluid;
+            */
+        }
 
+        double vt = 0.0;
+        for (int i = 0; i < 3; ++i)
+        {
             vrel[i] = vfluid[i] - vel_intfc[i];
             vt += vrel[i]*ldir[i];
         }
@@ -499,9 +504,9 @@ static void string_curve_propagation(
         }
         nor_speed = sqrt(nor_speed);
 
-        double A_ref = 2.0*PI*radius*length;
-        double Vol = PI*radius*radius*length;
-        double massCyl = rhoS*Vol;
+        double A_ref = 2.0*radius*length;
+            //double A_ref = 2.0*PI*radius*length;
+        double mass_str_bond = rhoS*length;
 
         double dragForce[MAXD] = {0.0};
         if (front->step > af_params->fsi_startstep)
@@ -516,7 +521,7 @@ static void string_curve_propagation(
         for (int i = 0; i < 3; ++i)
         {
             //Compute acceleration
-            newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce[i]/massCyl;
+            newsl->fluid_accel[i] = newsr->fluid_accel[i] = dragForce[i]/mass_str_bond;
             newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
             newsr->vel[i] = newsl->vel[i] = vel_intfc[i];
             newsr->impulse[i] = newsl->impulse[i] = state_intfc->impulse[i];

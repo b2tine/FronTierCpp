@@ -1219,7 +1219,7 @@ EXPORT 	boolean track_comp_through_crxings3d(
     {
         //TODO: Complete ramifications of this not fully understood
         //
-        //THIS ALLOWS PARALLEL FABRIC RUN
+        //THIS ALLOWS PARALLEL FABRIC RUN (WITHOUT FLUID)
         return fill_default_component(smin,smax,gmax,intfc);
     }
 

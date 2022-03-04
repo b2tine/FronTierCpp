@@ -539,44 +539,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                     break;
 
                 case ELASTIC_BOUNDARY:
-                    if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
-                    {
-                        ghost_st.dim = dim;
-                        ghost_st.eos = &(eqn_params->eos[comp]);
-                        
-                        int index_next = d_index(ic_next,top_gmax,dim);
-                        ghost_st.pres = m_vst->pres[index_next];
-                        
-                        ghost_st.dens = m_vst->dens[index];
-                            //ghost_st.dens = m_vst->dens[index_next];
-                        for (j = 0; j < 3; j++)
-                        {
-                            ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index];
-                            //ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index_next];
-                        }
-                        ghost_st.engy = EosEnergy(&ghost_st);
-                        //ghost_st.engy = m_vst->engy[index];
-
-                        for (k = i; k <= nrad; ++k)
-                        {
-                            vst->dens[nrad-k] = ghost_st.dens;
-                            vst->engy[nrad-k] = ghost_st.engy;
-                            vst->pres[nrad-k] = ghost_st.pres;
-
-                            for (j = 0; j < 3; j++)
-                                vst->momn[j][nrad-k] = 0.0;
-                            
-                            for (j = 0; j < 3; j++)
-                            {
-                                vst->momn[j][nrad-k] = ghost_st.momn[j]; //m_vst->momn[ind3[idir][j]][index];
-                            }
-                        }
-                        //LOC(); clean_up(EXIT_FAILURE);
-                    }
-                    else
-                    {
-                        setElasticStates(vst,m_vst,hs,state,ic_next,idir,nb,0,i,comp);
-                    }
+                    setElasticStates(vst,m_vst,hs,state,ic_next,idir,nb,0,i,comp);
                     break;
     
                 case DIRICHLET_BOUNDARY:
@@ -770,45 +733,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                     break;
 
                 case ELASTIC_BOUNDARY:
-                    if (eqn_params->poro_scheme == PORO_SCHEME::ERGUN)
-                    {
-                        ghost_st.dim = dim;
-                        ghost_st.eos = &(eqn_params->eos[comp]);
-                        
-                        int index_next = d_index(ic_next,top_gmax,dim);
-                        ghost_st.pres = m_vst->pres[index_next];
-
-                        ghost_st.dens = m_vst->dens[index];
-                            //ghost_st.dens = m_vst->dens[index_next];
-                        for (j = 0; j < 3; j++)
-                        {
-                            ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index];
-                                //ghost_st.momn[j] = m_vst->momn[ind3[idir][j]][index_next];
-                        }
-                        ghost_st.engy = EosEnergy(&ghost_st);
-                            //ghost_st.engy = m_vst->engy[index];
-
-                        for (k = i; k <= nrad; ++k)
-                        {
-                            vst->dens[n+nrad+k-1] = ghost_st.dens;
-                            vst->engy[n+nrad+k-1] = ghost_st.engy;
-                            vst->pres[n+nrad+k-1] = ghost_st.pres;
-                            
-                            for (j = 0; j < 3; j++)
-                                vst->momn[j][n+nrad+k-1] = 0.0;
-                            
-                            for (j = 0; j < 3; j++)
-                            {
-                                vst->momn[j][n+nrad+k-1] = ghost_st.momn[j]; //m_vst->momn[ind3[idir][j]][index];
-                            }
-                        }
-                        //LOC(); clean_up(EXIT_FAILURE);
-                    }
-                    else
-                    {
-                        setElasticStates(vst,m_vst,hs,state,ic_next,
-                                idir,nb,n,i,comp);
-                    }
+                    setElasticStates(vst,m_vst,hs,state,ic_next,idir,nb,n,i,comp);
                     break;
 
                 case DIRICHLET_BOUNDARY:
@@ -996,7 +921,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 
     //TODO: Can get rid of this loop.
     //      We compute a single ghost state and fill the entire stencil with it.
-	for (int i = istart; i < istart+1; ++i)
+	for (int i = istart; i < istart + 1; ++i)
 	{
 	    //ghost point icoords and index
 	    ic_ghost[idir] = (nb == 0) ?
@@ -1201,65 +1126,64 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 	    }
     }
 
-        for (int i = istart; i <= nrad; ++i)
+    for (int i = istart; i <= nrad; ++i)
+    {
+        if (nb == 0)
         {
-            if (nb == 0)
-            {
-                vst->dens[nrad-i] = st_tmp_ghost.dens;
-                vst->engy[nrad-i] = st_tmp_ghost.engy;
-                vst->pres[nrad-i] = st_tmp_ghost.pres;
-                for (int j = 0; j < 3; j++)
-                    vst->momn[j][nrad-i] = 0.0;
+            vst->dens[nrad-i] = st_tmp_ghost.dens;
+            vst->engy[nrad-i] = st_tmp_ghost.engy;
+            vst->pres[nrad-i] = st_tmp_ghost.pres;
+            for (int j = 0; j < 3; j++)
+                vst->momn[j][nrad-i] = 0.0;
 
-                if (dim == 3)
-                {
-                    for (int j = 0; j < 3; j++)
-                        vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind3[idir][j]];
-                }
-                else if (dim == 2)
-                {
-                    for (int j = 0; j < 2; j++)
-                        vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind2[idir][j]];
-                }
-                else
-                {
-                    vst->momn[0][nrad-i] = st_tmp_ghost.momn[0];
-                }
+            if (dim == 3)
+            {
+                for (int j = 0; j < 3; j++)
+                    vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind3[idir][j]];
+            }
+            else if (dim == 2)
+            {
+                for (int j = 0; j < 2; j++)
+                    vst->momn[j][nrad-i] = st_tmp_ghost.momn[ind2[idir][j]];
             }
             else
             {
-                /* Debug selectively!
-                if (debugging("crx_reflection"))
-                {
-                        sprintf(fname,"intfc-%d-%d",count,i);
-                        sprintf(fname,"intfc-xx");
-                        xgraph_2d_reflection(fname,front->grid_intfc,coords,
-                        crx_coords,coords_ref,nor);
-                }
-                */
-                vst->dens[n+nrad+i-1] = st_tmp_ghost.dens;
-                vst->engy[n+nrad+i-1] = st_tmp_ghost.engy;
-                vst->pres[n+nrad+i-1] = st_tmp_ghost.pres;
-                for (int j = 0; j < 3; j++)
-                    vst->momn[j][n+nrad+i-1] = 0.0;
-        
-                if (dim == 3)
-                {
-                    for (int j = 0; j < 3; j++)
-                        vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind3[idir][j]];
-                }
-                else if (dim == 2)
-                {
-                    for (int j = 0; j < 2; j++)
-                        vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind2[idir][j]];
-                }
-                else
-                {
-                    vst->momn[0][n+nrad+i-1] = st_tmp_ghost.momn[0];
-                }
+                vst->momn[0][nrad-i] = st_tmp_ghost.momn[0];
             }
         }
-    //}
+        else
+        {
+            /* Debug selectively!
+            if (debugging("crx_reflection"))
+            {
+                    sprintf(fname,"intfc-%d-%d",count,i);
+                    sprintf(fname,"intfc-xx");
+                    xgraph_2d_reflection(fname,front->grid_intfc,coords,
+                    crx_coords,coords_ref,nor);
+            }
+            */
+            vst->dens[n+nrad+i-1] = st_tmp_ghost.dens;
+            vst->engy[n+nrad+i-1] = st_tmp_ghost.engy;
+            vst->pres[n+nrad+i-1] = st_tmp_ghost.pres;
+            for (int j = 0; j < 3; j++)
+                vst->momn[j][n+nrad+i-1] = 0.0;
+    
+            if (dim == 3)
+            {
+                for (int j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind3[idir][j]];
+            }
+            else if (dim == 2)
+            {
+                for (int j = 0; j < 2; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp_ghost.momn[ind2[idir][j]];
+            }
+            else
+            {
+                vst->momn[0][n+nrad+i-1] = st_tmp_ghost.momn[0];
+            }
+        }
+    }
 
 	if (debugging("elastic_buffer"))
         (void) printf("Leaving setElasticStatesDarcy()\n");

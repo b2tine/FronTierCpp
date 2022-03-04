@@ -2742,7 +2742,9 @@ extern void InstallNewLoadNode(
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	
 	FILE *infile = fopen(InName(front),"r");
-	if (CursorAfterStringOpt(infile,"Enter new load position:"))
+	
+    /*
+    if (CursorAfterStringOpt(infile,"Enter new load position:"))
 	{
 	    fscanf(infile,"%lf %lf %lf",newload,newload+1,newload+2);
 	    (void) printf("%f %f %f\n",newload[0],newload[1],newload[2]);
@@ -2753,10 +2755,21 @@ extern void InstallNewLoadNode(
 	    return;
 	}
 
-    //TODO: Should the original load node just become the connection node?
 	CursorAfterString(infile,"Enter connection position:");
 	fscanf(infile,"%lf %lf %lf",connection,connection+1,connection+2);
 	(void) printf("%f %f %f\n",connection[0],connection[1],connection[2]);
+    */
+	
+    if (CursorAfterStringOpt(infile,"Enter connection position:"))
+    {
+	    fscanf(infile,"%lf %lf %lf",connection,connection+1,connection+2);
+	    (void) printf("%f %f %f\n",connection[0],connection[1],connection[2]);
+    }
+	else
+	{
+	    fclose(infile);
+	    return;
+	}
 
 	cur_intfc = current_interface();
 	set_current_interface(intfc);
@@ -2783,10 +2796,14 @@ extern void InstallNewLoadNode(
 	{
 	    extra = (AF_NODE_EXTRA*)((*n)->extra);
 	    if (extra == NULL) continue;
-	    if (extra->af_node_type != LOAD_NODE) continue;
+	    if (extra->af_node_type != LOAD_NODE &&
+            extra->af_node_type != PRESET_NODE) continue;
 
-        //Relabels the original load node
-	    extra->af_node_type = THR_LOAD_NODE;
+        if (extra->af_node_type != PRESET_NODE)
+        {
+            //Relabels the original load node
+	        extra->af_node_type = THR_LOAD_NODE;
+        }
 
         double hmin = std::min(h[0],h[1]);
         hmin = std::min(hmin,h[2]);
@@ -2822,6 +2839,9 @@ extern void InstallNewLoadNode(
         }
 	}
 
+	
+
+    /*
 	nload = make_node(Point(newload));
 	FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
 	extra->af_node_type = LOAD_NODE;
@@ -2835,7 +2855,7 @@ extern void InstallNewLoadNode(
     }
 	nload->extra = (POINTER)extra;
 	nload->size_of_extra = sizeof(AF_NODE_EXTRA);
-
+    */
             //DEBUG
             ///////////////////////////////////////////////////////
             /*
@@ -2847,8 +2867,12 @@ extern void InstallNewLoadNode(
             ///////////////////////////////////////////////////////
 
     //For multi-chute cluster and DGB parachute
+	/*
+    if (CursorAfterStringOpt(infile,
+            "Enter yes to install the multi-parachute to RGB:"))
+    */
 	if (CursorAfterStringOpt(infile,
-			"Enter yes to install the multi-parachute to RGB:"))
+			"Enter yes to connect to RGB:"))
 	{
 	    char string[100];
 	    fscanf(infile,"%s",string);
@@ -2871,7 +2895,7 @@ extern void InstallNewLoadNode(
                 }
             }
             connectStringtoRGB(front,*rg_surf,&sec_nload,1);
-            delete_node(nload);
+            //delete_node(nload);
             set_current_interface(cur_intfc);
             fclose(infile);
             
