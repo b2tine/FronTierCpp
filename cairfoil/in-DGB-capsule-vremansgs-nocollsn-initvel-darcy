@@ -216,11 +216,12 @@ Type y to make xy cross section movie: n
 Type y to make scalar density field movie: y
 Type y to make scalar pressure field movie: y
 Type y to make scalar viscosity field movie: y
+Type y to make scalar eddy viscosity field movie: y
 Type y to make scalar temperature field movie: y
 Type y to make scalar turb kinetic energy field movie: y
 
 Type y to make vector velocity field movie: y
-Type y to make vector vorticity field movie: y
+Type y to make vector vorticity field movie: n
 
 /////////////////////////////
 //////  Debugging   ////////

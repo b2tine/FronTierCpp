@@ -57,18 +57,18 @@ struct FABRIC_STATE
 //TODO: make EOS_PARAMS non pointer in structs?
 struct EOS_PARAMS
 {
-    double gamma;
+    double gamma {1.4};
     double pinf;
     double einf;
 
-    double R_specific;
-    double Pr;          //prandtl number
-    //double Pr_turb {0.9};
+    double R_specific {287.058};
+    double Pr {0.71};          //prandtl number
+    double Pr_turb {0.9};
 
     //Sutherland's Law Constants
-    double mu_ref;
-    double T_ref;
-    double S;
+    double mu_ref {1.716e-05};
+    double T_ref {273.15};
+    double S {110.4};
 };
 
 

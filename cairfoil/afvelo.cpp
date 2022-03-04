@@ -1712,8 +1712,6 @@ static void convert_to_point_mass(
                 }
             }
 
-
-    
             /*
             if (af_params->is_parachute_system == YES)
 	        	num_str_pts += 1; //load node

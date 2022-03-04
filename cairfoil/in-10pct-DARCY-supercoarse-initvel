@@ -36,7 +36,7 @@ Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 //////////////////////////////////////////////////////////
 
 Max time: 2.0
-Max step: 600
+Max step: 1000
 Print interval: 0.0005
 Movie frame interval: 0.00005
 CFL factor: 0.25
@@ -175,11 +175,12 @@ Type y to make xy cross section movie: n
 Type y to make scalar density field movie: y
 Type y to make scalar pressure field movie: y
 Type y to make scalar viscosity field movie: y
+Type y to make scalar eddy viscosity field movie: y
 Type y to make scalar temperature field movie: y
 Type y to make scalar turb kinetic energy field movie: n
 
 Type y to make vector velocity field movie: y
-Type y to make vector vorticity field movie: y
+Type y to make vector vorticity field movie: n
 
 *************************************************
 Enter yes for debugging: yes

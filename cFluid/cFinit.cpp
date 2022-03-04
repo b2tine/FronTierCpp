@@ -579,6 +579,14 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     (eqn_params->eos[GAS_COMP1]).Pr = Pr;
     (eqn_params->eos[GAS_COMP2]).Pr = Pr;
 
+    double Pr_turb = 0.9;
+    CursorAfterString(infile,"Enter the turbulent Prandtl number:");
+    fscanf(infile,"%lf",&Pr_turb);
+    (void) printf("%f\n",Pr_turb);
+	
+    (eqn_params->eos[GAS_COMP1]).Pr_turb = Pr_turb;
+    (eqn_params->eos[GAS_COMP2]).Pr_turb = Pr_turb;
+
     double mu_ref = 1.716e-05;
     CursorAfterString(infile,"Enter the reference molecular viscosity:");
     fscanf(infile,"%lf",&mu_ref);

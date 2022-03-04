@@ -991,12 +991,11 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
 	}
 
-	    //if nb = 0, the point is above the boundary, and we
-        //           select three points below the boundary
-	    //if nb = 1, the point is below the boundary, and we
-        //           select three points above the boundary
+    //if nb = 0, the point is above the boundary
+    //if nb = 1, the point is below the boundary
 
-	//for (int i = istart; i <= nrad; ++i)
+    //TODO: Can get rid of this loop.
+    //      We compute a single ghost state and fill the entire stencil with it.
 	for (int i = istart; i < istart+1; ++i)
 	{
 	    //ghost point icoords and index
