@@ -915,18 +915,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
     
     int index = d_index(icoords,top_gmax,dim);
     
-    /*
-    FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,m_vst->dens,
-            getStateDens,&st_tmp_ghost.dens,&m_vst->dens[index]);
-    
-    for (int j = 0; j < dim; ++j)
-    {
-        FT_IntrpStateVarAtCoords(front,NO_COMP,crx_coords,m_vst->momn[j],
-                getStateMom[j],&st_tmp_ghost.momn[j],&m_vst->momn[j][index]);
-        vel_fluid[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
-    }
-    */
-    
     double nor[MAXD];
 	FT_NormalAtGridCrossing(front,icoords,dir[idir][nb],NO_COMP,nor,&hs,crx_coords);
 	
@@ -1110,6 +1098,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 
         double Msqr = gamma/(gamma + 1.0)*std::abs(rhor*pr - rhol*pl);
 
+        //TODO: INPUT FILE OPTIONS
         double beta = 0.0;
         double poro = eqn_params->porosity;
         double iporo = 1.0/poro;
@@ -1118,21 +1107,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 
         double mdot = -2.0*sgn*Msqr/(iporo + std::sqrt(iporo*iporo + 4.0*beta*Msqr));
 
-        //double ghost_dens = rhol; double ghost_pres = pl;
-        //double real_dens = rhor; double real_pres = pr;
-        //double ghost_dens = rhor; double ghost_pres = pr;
-        //double real_dens = rhol; double real_pres = pl;
-
-        //st_tmp_ghost.dens = ghost_dens;
-
-        //double nor_vel = mdot/rhor;
-        //double nor_vel = mdot/rhol;
-        //double nor_vel = mdot/rhol - mdot/rhor;
-        //double nor_vel = mdot/rhor - mdot/rhol;
         double nor_vel = -1.0*sgn*std::abs(mdot/rhor - mdot/rhol);
-        
-        //double rho_mid = 0.5*(rhol + rhor);
-        //double nor_vel = mdot/rho_mid;
         
         double canopy_thickness = 0.001;
         double alpha = 1.0/poro/canopy_thickness;
@@ -1141,106 +1116,20 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         st_tmp_ghost.pres = pl + pres_drop;
 
         st_tmp_ghost.dens = rhol*std::pow(st_tmp_ghost.pres/pl,1.0/gamma);
-        //st_tmp_ghost.dens = rhor;
-        
-        
         
         double velo[MAXD] = {0.0};
         for (int j = 0; j < dim; ++j)
         {
-            //velo[j] = vel_rel_tan[j] + nor_vel*nor[j] + vel_intfc[j];
             velo[j] = vel_rel_real_tan[j] + nor_vel*nor[j] + vel_intfc[j];
-            //velo[j] = nor_vel*nor[j] + vel_intfc[j];
+                //velo[j] = nor_vel*nor[j] + vel_intfc[j];  //TODO: NEED TO HANDLE TANGENTIAL JUMP?
             st_tmp_ghost.vel[j] = velo[j];
-            //st_tmp_ghost.momn[j] = ghost_dens*velo[j];
             st_tmp_ghost.momn[j] = st_tmp_ghost.dens*velo[j];
         }
 
-        /*
-        double velo[MAXD] = {0.0};
-        for (int j = 0; j < dim; ++j)
-        {
-            velo[j] = mdot/ghost_dens*nor[j] + vel_intfc[j];
-            //velo[j] = mdot/real_dens*nor[j] + vel_intfc[j];
-        }
-
-        for (int j = 0; j < dim; ++j)
-        {
-            st_tmp_ghost.momn[j] -= mdot*nor[j] + ghost_dens*vel_intfc[j];
-            //st_tmp_ghost.momn[j] = mdot*nor[j] + ghost_dens*vel_intfc[j];
-            st_tmp_ghost.vel[j] = st_tmp_ghost.momn[j]/ghost_dens;
-        }
-        */
 
         st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
         
-        /*
-        double internal_engy = EosInternalEnergy(&st_tmp_ghost);
-        //st_tmp_ghost.engy = ghost_dens*internal_engy 
-        st_tmp_ghost.engy = internal_engy 
-            - 0.5*st_tmp_ghost.dens*Dotd(v_real,v_real,dim) 
-            + 0.5*st_tmp_ghost.dens*Dotd(velo,velo,dim);
-        */
-
-        /*
-        //double internal_engy = EosInternalEnergy(&st_tmp_ghost);
-        double internal_engy = EosInternalEnergy(&st_tmp_ghost)/ghost_dens;
-        
-        //st_tmp_ghost.engy = ghost_dens*internal_engy 
-        st_tmp_ghost.engy -= ghost_dens*internal_engy 
-            - 0.5*ghost_dens*Dotd(v_reflect,v_reflect,dim) 
-            + 0.5*ghost_dens*Dotd(velo,velo,dim);
-
-        //st_tmp_ghost.engy += ghost_dens*(real_pres/real_dens - ghost_pres/ghost_dens);
-
-        st_tmp_ghost.pres = EosPressure(&st_tmp_ghost);
-        */
-
-        //double nor_vel = mdot/st_tmp_ghost.dens;
-
-        /*
-        double vel_rel_new[MAXD] = {0.0};
-        for (int j = 0; j < dim; ++j)
-        {
-            vel_rel_new[j] = vel_rel_tan[j] + nor_vel*nor[j];
-            st_tmp_ghost.vel[j] = vel_rel_new[j] + vel_intfc[j];
-            st_tmp_ghost.momn[j] = rhol*st_tmp_ghost.vel[j];
-        }
-
-        st_tmp_ghost.engy = 0.0;
-        for (int j = 0; j < dim; ++j)
-            st_tmp_ghost.engy += 0.5*sqr(st_tmp_ghost.vel[j]);
-        st_tmp_ghost.engy += st_tmp_ghost.pres/(gamma - 1.0);
-        */
-
-
-
-	    //st_tmp_ghost.dens = st_tmp_real.dens;
-	    //st_tmp_ghost.dens = EosDensity(&st_tmp_ghost);
-        
-            //sgn = (mdot >= 0) ? 1.0 : -1.0;
-            //st_tmp_ghost.dens = (rhor*pr - sgn*(gamma + 1.0)/gamma*Msqr)/st_tmp_ghost.pres; 
-
-	    //st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
 	    
-	    
-        /*
-        double vel_intfc_poro[MAXD];
-        for (int j = 0; j < dim; ++j)
-        {
-            vel_intfc_poro[j] = mdot/rhol*nor[j];
-        }
-        */
-
-        /*
-        st_tmp_ghost.engy += rhol*(st_tmp_ghost.engy 
-                - 0.5*Dot3d(vel_rel_reflect,vel_rel_reflect) +
-                0.5*Dot3d(vel_intfc_poro,vel_intfc_poro));
-        */
-
-        //compute pressure after dens, momn, energy have been set?
-            //st_tmp_ghost.pres = EosPressure(&st_tmp_ghost);
-
         ////////////////////////////////////////////////////////////////
         if (debugging("darcy_debug_coords"))
         {
@@ -1264,7 +1153,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                 printf("nor = %f %f %f\n", nor[0],nor[1],nor[2]);
                 printf("nor_vel = %f\n", nor_vel);
                 printf("pres_drop = %f\n", pres_drop);
-                //printf("dens_drop = %f\n", dens_drop);
                 printf("ghost_pres = %f\n", st_tmp_ghost.pres);
                 printf("ghost_dens = %f\n", st_tmp_ghost.dens);
                 printf("ghost_temp = %f\n", st_tmp_ghost.temp);
@@ -1278,7 +1166,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         ////////////////////////////////////////////////////////////////
 
 
-	    /* debugging printout */
 	    if (st_tmp_ghost.engy < 0.0 || st_tmp_ghost.eos->gamma < 0.001)
 	    {
             printf("negative energy! \n");
