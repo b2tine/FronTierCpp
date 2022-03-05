@@ -973,6 +973,11 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                     getStateMom[j],&st_tmp_ghost.momn[j],&m_vst->momn[j][index]);
             v_reflect[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
         }
+
+        if (front->step < eqn_params->fsi_startstep)
+        {
+            break;
+        }
         
         //Compute relative normal velocity in frame of interface crossing.
         double vel_rel_reflect[MAXD] = {0.0};

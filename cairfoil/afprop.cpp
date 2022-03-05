@@ -235,7 +235,7 @@ static void elastic_point_propagate_fsi(
     for (int i = 0; i < dim; ++i)
 	{
 	    dv[i] = 0.0;
-	    if (front->step > af_params->fsi_startstep)
+	    if (front->step >= af_params->fsi_startstep)
         {
             dv[i] = dP*nor[i]/area_dens; //dv has units of acceleration
         }
@@ -395,6 +395,7 @@ static void string_curve_propagation(
     //      and A_ref is the cylinder enclosing the bond's surface area
     
         
+    if (front->step < af_params->fsi_startstep) return;
     if (!eqn_params->with_string_fsi) return;
     
     double radius = eqn_params->string_radius;
@@ -509,13 +510,10 @@ static void string_curve_propagation(
         double mass_str_bond = rhoS*length;
 
         double dragForce[MAXD] = {0.0};
-        if (front->step > af_params->fsi_startstep)
+        for (int i = 0; i < 3; ++i)
         {
-            for (int i = 0; i < 3; ++i)
-            {
-                dragForce[i] = 0.5*dens_fluid*c_drag*A_ref*nor_speed*vnor[i];
-                dragForce[i] *= ampFluidFactor;
-            }
+            dragForce[i] = 0.5*dens_fluid*c_drag*A_ref*nor_speed*vnor[i];
+            dragForce[i] *= ampFluidFactor;
         }
 
         for (int i = 0; i < 3; ++i)
@@ -679,7 +677,7 @@ static void gore_point_propagate(
         {
 	    dv = 0.0;
 
-	    if (front->step > af_params->fsi_startstep)
+	    if (front->step >= af_params->fsi_startstep)
 		    dv = (sl->pres - sr->pres)*nor[i]/area_dens; //dv has units of acceleration
 	    
         if (debugging("rigid_canopy"))

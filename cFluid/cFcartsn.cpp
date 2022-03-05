@@ -6443,6 +6443,7 @@ void G_CARTESIAN::addImmersedForce()
             f_surf[l][index] = 0.0;
     }
 
+    if (front->step < eqn_params->fsi_startstep) return;
     if (!eqn_params->with_string_fsi) return;
     
     double radius = eqn_params->string_radius;

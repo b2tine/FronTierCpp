@@ -113,6 +113,9 @@ Enter interior sub step number: 1
 Enter yes for collision substepping: no
 Enter nsub per collision step: 25
 
+Enter area density of canopy: 0.038989
+Enter timestep to activate FSI: 1
+
 Enter yes to use total mass: yes
 Enter fabric total mass: 0.0196
 

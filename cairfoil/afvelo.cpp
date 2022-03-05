@@ -341,27 +341,13 @@ void setFabricParams(Front* front)
 
         }
 
-        af_params->fsi_startstep = 5;
+        af_params->fsi_startstep = 1;
         if (CursorAfterStringOpt(infile,"Enter timestep to activate FSI:"))
         {
             fscanf(infile,"%d",&af_params->fsi_startstep);
             printf("%d\n",af_params->fsi_startstep);
         }
         eqn_params->fsi_startstep = af_params->fsi_startstep;
-
-        if (CursorAfterStringOpt(infile,"Enter yes to disable FSI:"))
-        {
-            fscanf(infile,"%s",string);
-            printf("%s\n",string);
-
-            if (string[0] == 'y' || string[0] == 'Y')
-            {
-                eqn_params->with_porosity = NO;
-                eqn_params->fsi_startstep = 100000000;
-                af_params->with_porosity = NO;
-                af_params->fsi_startstep = 100000000;
-            }
-        }
 
         for (int i = 0; i < dim; ++i)
             af_params->gravity[i] = eqn_params->gravity[i];

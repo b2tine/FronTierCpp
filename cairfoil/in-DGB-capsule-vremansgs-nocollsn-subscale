@@ -29,9 +29,9 @@ For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
 Start test time control parameters
-Max time: 0.08
+Max time: 1.0
 Max step: 35000
-Print interval: 0.00025
+Print interval: 0.0005
 Movie frame interval: 0.00001
 CFL factor: 0.25
 Redistribution interval: 10000000
@@ -173,6 +173,7 @@ Enter yes for collision substepping: no
 Enter nsub per collision step: 25
 
 Enter area density of canopy: 0.038989
+Enter timestep to activate FSI: 1
 
 Enter yes to use total mass: yes
 Enter fabric total mass: 0.029083

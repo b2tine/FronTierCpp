@@ -278,27 +278,8 @@ extern void compute_spring_accel1(
 
         double dL = len - sv->len0[j];
         
-        /*
         //zero compressive stress
         if (dL <= 0.0) continue;
-        */
-
-        if (dL <= 0.0)
-        {
-            if (!debugging("allow_compressive_stress"))
-            {
-                continue;
-            }
-        }
-
-        /*
-        double CTOL = 0.5;
-        if (dL < -1.0*CTOL*sv->len0[j]) continue;
-        
-        //TODO: Should allow some compressive stress, after allowing to compress
-        //      without resistance by some preset amount. Apply restoring force if
-        //      edge length is less than 0.75% of the original length for example.
-        */
 
 	    for (int k = 0; k < dim; ++k)
 	    {
