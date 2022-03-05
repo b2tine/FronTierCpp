@@ -795,6 +795,12 @@ void CFABRIC_CARTESIAN::setElasticStates(
 	int		istart,
 	COMPONENT	comp)
 {
+    if (eqn_params->porosity == 0 || !eqn_params->with_porosity)
+    {
+        setNeumannStates(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
+        return;
+    }
+
     switch (eqn_params->poro_scheme)
     {
         case PORO_SCHEME::DARCY:
@@ -850,12 +856,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
     double tri_crx_area = tri_area(tri_crx);
     */
 
-    /*
-    SURFACE* surf = Surface_of_hs(hs);
-    printf("\nDARCY\n");
-    printf("negative_component(surf) = %d\n", negative_component(surf));
-    printf("positive_component(surf) = %d\n", positive_component(surf));
-    */
     double* vel_intfc = state->vel;
     
 
@@ -1018,14 +1018,14 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         double pr = st_tmp_real.pres;
         double rhor = st_tmp_real.dens;
         
-        double gamma = 1.4;
+        double gamma = 1.4; //get from eqn_params->eos[comp]
 
         double Msqr = gamma/(gamma + 1.0)*std::abs(rhor*pr - rhol*pl);
 
         //TODO: INPUT FILE OPTIONS
-        double beta = 0.0;
         double poro = eqn_params->porosity;
         double iporo = 1.0/poro;
+        double beta = 0.0;
         
         double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
 
@@ -1133,6 +1133,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             vst->dens[nrad-i] = st_tmp_ghost.dens;
             vst->engy[nrad-i] = st_tmp_ghost.engy;
             vst->pres[nrad-i] = st_tmp_ghost.pres;
+            
             for (int j = 0; j < 3; j++)
                 vst->momn[j][nrad-i] = 0.0;
 
@@ -1162,9 +1163,11 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                     crx_coords,coords_ref,nor);
             }
             */
+            
             vst->dens[n+nrad+i-1] = st_tmp_ghost.dens;
             vst->engy[n+nrad+i-1] = st_tmp_ghost.engy;
             vst->pres[n+nrad+i-1] = st_tmp_ghost.pres;
+            
             for (int j = 0; j < 3; j++)
                 vst->momn[j][n+nrad+i-1] = 0.0;
     

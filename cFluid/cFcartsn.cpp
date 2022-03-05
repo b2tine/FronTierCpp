@@ -6514,15 +6514,14 @@ void G_CARTESIAN::addImmersedForce()
             double momn_fluid[3];
             for (int i = 0; i < 3; ++i)
             {
-                /*
                 FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
-                        vel[i],getStateVel[i],&vfluid[i],&state_intfc->vel[i]);
-                */
-
+                        vel[i],getStateVel[i],&vfluid[i],&vel[i][index]);
+                /*
                 FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
                         momn[i],getStateMom[i],&momn_fluid[i],&momn[i][index]);
                 
                 vfluid[i] = momn_fluid[i]/dens_fluid;
+                */
             }
 
             double vrel[3];
@@ -6544,18 +6543,15 @@ void G_CARTESIAN::addImmersedForce()
             }
             nor_speed = sqrt(nor_speed);
 
-            double A_ref = 2.0*PI*radius*length;
-            double Vol = PI*radius*radius*length;
-            double massCyl = rhoS*Vol;
+            double A_ref = 2.0*radius*length;
+                //double A_ref = 2.0*PI*radius*length;
+            double mass_str_bond = rhoS*length;
 
             double dragForce[MAXD] = {0.0};
-            if (front->step > eqn_params->fsi_startstep)
+            for (int i = 0; i < 3; ++i)
             {
-                for (int i = 0; i < 3; ++i)
-                {
-                    dragForce[i] = 0.5*dens_fluid*c_drag*A_ref*nor_speed*vnor[i];
-                    dragForce[i] *= ampFluidFactor;
-                }
+                dragForce[i] = 0.5*dens_fluid*c_drag*A_ref*nor_speed*vnor[i];
+                dragForce[i] *= ampFluidFactor;
             }
 
             if (debugging("string_fluid"))
@@ -6595,17 +6591,21 @@ void G_CARTESIAN::addImmersedForce()
 
                 if (alpha < 0) continue;
 
-                //TODO: NEED TO DIVIDE f_surf by dx * dy * dz  ?????
+                double dV = top_h[0]*top_h[1]*top_h[2];
+
                 for (int l = 0; l < dim; ++l)
                 {
                     f_surf[l][ic] -= alpha*dragForce[l];
+                    //f_surf[l][ic] -= alpha*dragForce[l]/dV;
                 }
 
-                /*
-                printf("crds = %f %f %f dist = %f alpha = %f f_surf -= %f %f %f\n",
-                    coords[0],coords[1],coords[2],dist,alpha,
-                    alpha*dragForce[0],alpha*dragForce[1],alpha*dragForce[2]);
-                */
+                if (debugging("f_surf"))
+                {
+                    printf("\nimmersed force at coords : %d %d %d\n",i,j,k);
+                    printf("crds = %f %f %f dist = %f alpha = %f f_surf -= %f %f %f\n",
+                        coords[0],coords[1],coords[2],dist,alpha,
+                        f_surf[0][ic],f_surf[1][ic],f_surf[2][ic]);
+                }
             }
         }
     }

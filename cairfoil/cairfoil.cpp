@@ -291,7 +291,10 @@ void airfoil_driver(Front *front,
         if (!af_params->no_fluid)
 	    {
 	    	coating_mono_hyper_surf(front);
-	    	g_cartesian->applicationSetStates();
+            /////////////////////////////////////
+            //g_cartesian->writeMeshComponentsVTK();
+            /////////////////////////////////////
+            g_cartesian->applicationSetStates();
 	    }
         
 	    if (!af_params->no_fluid)

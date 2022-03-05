@@ -36,7 +36,7 @@ Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 //////////////////////////////////////////////////////////
 
 Max time: 2.0
-Max step: 1200
+Max step: 1000
 Print interval: 0.0005
 Movie frame interval: 0.00001
 CFL factor: 0.25
@@ -119,8 +119,8 @@ Enter interior sub step number: 1
 Enter yes for collision substepping: no
 Enter nsub per collision step: 25
 
-Enter yes to use porosity: yes
-Enter fabric porosity: 0.1
+Enter yes to use porosity: no
+Enter fabric porosity: 0.0
 Enter porosity ghost fluid method: DARCY
 
 Enter viscous parameter: 0.00180696
