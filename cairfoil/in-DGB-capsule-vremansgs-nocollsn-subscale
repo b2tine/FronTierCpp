@@ -1,6 +1,6 @@
 Domain limit in 0-th dimension: -2 2
 Domain limit in 1-th dimension: -2 2
-Domain limit in 2-th dimension: 0 6
+Domain limit in 2-th dimension: 0.1565 6.1565
 Computational grid: 120 120 160
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY 
@@ -88,7 +88,7 @@ Available type of rigid body include:
         Human (H)
         Cylinder (C)
 Enter type of rigid body: O
-Enter nose of the capsule: 0 0 1.0
+Enter nose of the capsule: 0 0 1.0099854
 Enter radius of the capsule: 0.084
 Rigid body can be fixed (F) or Movable (M)
 The default is Movable (M)
