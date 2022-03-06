@@ -222,6 +222,17 @@ extern void read_cFluid_params(
 	    printf("Point propagator order %s not implemented!\n",string);
 	    clean_up(ERROR);
 	}
+    
+	eqn_params->is_inviscid = false;
+	if (CursorAfterStringOpt(infile,"Enter yes for inviscid solver:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            eqn_params->is_inviscid = true;
+        }
+    }
 
 	eqn_params->use_eddy_viscosity = false;
 	eqn_params->eddy_viscosity_model = EDDY_VISC_MODEL::NONE;
@@ -259,6 +270,9 @@ extern void read_cFluid_params(
             }
         }
 	}
+
+    if (eqn_params->is_inviscid)
+        eqn_params->use_eddy_viscosity = false;
 
 	eqn_params->use_base_soln = NO;
 	if (CursorAfterStringOpt(infile,

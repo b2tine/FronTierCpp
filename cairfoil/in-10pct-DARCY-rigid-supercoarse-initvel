@@ -123,8 +123,8 @@ Enter yes to use porosity: yes
 Enter fabric porosity: 0.1
 Enter porosity ghost fluid method: DARCY
 
-Enter viscous parameter: 0.00180696
-Enter inertial parameter: 0.230488
+Enter viscous parameter: 152.1645
+Enter inertial parameter: 168.1334
 
 
 Enter area density of canopy: 0.05

@@ -331,7 +331,8 @@ void G_CARTESIAN::computeMeshFlux(
 	}
     
     //TODO: Use input file option instead of debugging string for viscous flux
-	if (!debugging("no_viscflux"))
+	//if (!debugging("no_viscflux"))
+	if (!eqn_params->is_inviscid)
     {
         addViscousFlux(&m_vst,m_flux,delta_t);
     }
@@ -647,7 +648,8 @@ void G_CARTESIAN::solve(double dt)
     //            SHOULD CHANGE NAME TO REFLECT THIS.
      
     //TODO: USE A BOOLEAN FLAG FOR THIS SWITCH INSTEAD OF THE DEBUGGING STRING
-    if (!debugging("no_viscflux"))
+    //if (!debugging("no_viscflux"))
+    if (!eqn_params->is_inviscid)
     {
         static bool first = true;
         if (first)
@@ -6413,15 +6415,6 @@ void G_CARTESIAN::adjustGFMStates()
                      if (Gdens[ind][index] != 0) break;
                 }
 
-                //TODO: 
-                        //for (kk = 0; (k+kk) <= top_gmax[2]; kk++)
-                        //{
-                        //
-                        //}
-                        //for (kk = 0; (k+kk) >= 0; kk--)
-                        //{
-                        //
-                        //}
             }
        }
     }

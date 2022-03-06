@@ -163,8 +163,8 @@ void computeCurvatureBinormal(BOND* b1, BOND* b2)
     double cross12[MAXD];
     vector_product_on_bonds(b1,b2,3,cross12);//cross product
 
-    double len1 = bond_length(b1);
-    double len2 = bond_length(b2);
+    double len1 = separation(b1->start,b1->end,3);
+    double len2 = separation(b2->start,b2->end,3);
     double dot12 = scalar_product_on_bonds(b1,b2,3);
     double denom = len1*len2 + dot12;
 
@@ -195,8 +195,8 @@ void computeGradCurvatureBinormal(BOND* b1, BOND* b2)
     if (b1->prev != nullptr)
     {
         BOND* b0 = b1->prev;
-        double len0 = bond_length(b0);
-        double len1 = bond_length(b1);
+        double len0 = separation(b0->start,b0->end,3);
+        double len1 = separation(b1->start,b1->end,3);
         double dot01 = scalar_product_on_bonds(b0,b1,3);
         double denom01 = len0*len1 + dot01;
 
@@ -227,8 +227,8 @@ void computeGradCurvatureBinormal(BOND* b1, BOND* b2)
     if (b2->next != nullptr)
     {
         BOND* b3 = b2->next;
-        double len2 = bond_length(b2);
-        double len3 = bond_length(b3);
+        double len2 = separation(b2->start,b2->end,3);
+        double len3 = separation(b3->start,b3->end,3);
         double dot23 = scalar_product_on_bonds(b2,b3,3);
         double denom23 = len2*len3 + dot23;
 
@@ -256,8 +256,8 @@ void computeGradCurvatureBinormal(BOND* b1, BOND* b2)
     }
 
     //compute grad_{i}(kb[i])
-    double len1 = bond_length(b1);
-    double len2 = bond_length(b2);
+    double len1 = separation(b1->start,b1->end,3);
+    double len2 = separation(b2->start,b2->end,3);
     double dot12 = scalar_product_on_bonds(b1,b2,3);
     double denom12 = len1*len2 + dot12;
 

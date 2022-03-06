@@ -748,7 +748,7 @@ static void elastic_set_propagate_serial(
     (*newfront)->interf = pp_copy_interface(fr->interf);
     if ((*newfront)->interf == NULL)
     {
-        (void) printf("WARNING in fourth_order_elastic_set_propagate3d_serial(), "
+        (void) printf("WARNING in elastic_set_propagate_serial(), "
                       "unable to copy interface\n");
         LOC(); clean_up(EXIT_FAILURE);
             //return return_advance_front(fr,newfront,ERROR_IN_STEP,fname);
@@ -815,7 +815,7 @@ static void elastic_set_propagate_serial(
     //      final collision free position.
 
 
-    //setSpecialNodeForce((*newfront)->interf,geom_set.kl);
+    setSpecialNodeForce((*newfront)->interf,geom_set.kl);
     //compute_center_of_mass_velo(&geom_set);
 
 } /*end elastic_set_propagate_serial*/
@@ -852,7 +852,7 @@ static int elastic_set_propagate3d_serial(
 	static int break_strings_num = af_params->break_strings_num;
         
 	if (debugging("trace"))
-	    (void) printf("Entering fourth_order_elastic_set_propagate3d_serial()\n");
+	    (void) printf("Entering elastic_set_propagate3d_serial()\n");
 
     int status; //return status
 
@@ -863,7 +863,7 @@ static int elastic_set_propagate3d_serial(
     (*newfront)->interf = pp_copy_interface(fr->interf);
     if ((*newfront)->interf == NULL)
     {
-        (void) printf("WARNING in fourth_order_elastic_set_propagate3d_serial(), "
+        (void) printf("WARNING in elastic_set_propagate3d_serial(), "
                       "unable to copy interface\n");
         LOC(); clean_up(EXIT_FAILURE);
             //return return_advance_front(fr,newfront,ERROR_IN_STEP,fname);
@@ -968,9 +968,9 @@ static int elastic_set_propagate3d_serial(
 
     setCollisionFreePoints3d(elastic_intfc);
     
-    resetBendingForce(elastic_intfc);
     if (!debugging("bendforce_off"))
     {
+        resetBendingForce(elastic_intfc);
         double bends = af_params->kbs;
         double bendd = af_params->lambda_bs;
         computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic
@@ -1083,7 +1083,7 @@ static int elastic_set_propagate3d_serial(
     //TODO: What about the weight of the mass -- not accounted for in setSpecialNodeForce() ???
     //
     // Calculate the real force on load_node and rg_string_node
-    setSpecialNodeForce(elastic_intfc,geom_set->kl);
+    //setSpecialNodeForce(elastic_intfc,geom_set->kl);
 
 	set_vertex_impulse(geom_set,point_set);
 	set_geomset_velocity(geom_set,point_set);
@@ -1132,7 +1132,7 @@ static int elastic_set_propagate3d_serial(
         }
     }
     
-    setSpecialNodeForce(elastic_intfc,geom_set->kl);
+    //setSpecialNodeForce(elastic_intfc,geom_set->kl);
     //compute_center_of_mass_velo(geom_set);
 
 
@@ -1149,7 +1149,7 @@ static int elastic_set_propagate3d_serial(
     }
 
 	if (debugging("trace"))
-	    (void) printf("Leaving fourth_order_elastic_set_propagate3d_serial()\n");
+	    (void) printf("Leaving elastic_set_propagate3d_serial()\n");
 
     status = GOOD_STEP;
     return status;
@@ -1332,9 +1332,9 @@ static void fourth_order_elastic_set_propagate3d_serial(
     //      the previous time step. 
     setCollisionFreePoints3d(elastic_intfc);
     
-    resetBendingForce(elastic_intfc);
     if (!debugging("bendforce_off"))
     {
+        resetBendingForce(elastic_intfc);
         double bends = af_params->kbs;
         double bendd = af_params->lambda_bs;
         computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic
@@ -1483,11 +1483,12 @@ static void fourth_order_elastic_set_propagate3d_serial(
     put_point_set_to(&geom_set,point_set);
 	
     // Calculate the real force on load_node and rg_string_node
-    setSpecialNodeForce(elastic_intfc,geom_set.kl);
+    //setSpecialNodeForce(elastic_intfc,geom_set.kl);
 
 	set_vertex_impulse(&geom_set,point_set);
 	set_geomset_velocity(&geom_set,point_set);
-	compute_center_of_mass_velo(&geom_set);
+	
+    //compute_center_of_mass_velo(&geom_set);
 
 	if (!debugging("collision_off"))
     {
@@ -1498,9 +1499,12 @@ static void fourth_order_elastic_set_propagate3d_serial(
             delete collision_solver;
         }
         
-        setSpecialNodeForce(elastic_intfc,geom_set.kl);
-        compute_center_of_mass_velo(&geom_set);
+        //setSpecialNodeForce(elastic_intfc,geom_set.kl);
+        //compute_center_of_mass_velo(&geom_set);
     }
+        
+    setSpecialNodeForce(elastic_intfc,geom_set.kl);
+        //compute_center_of_mass_velo(&geom_set);
     
 
     //sync interfaces after collision handling?
@@ -2871,10 +2875,10 @@ static void setCurveVelocity(
                 
                 for (int j = 0; j < 3; ++j)
                 {
-                    //sl->vel[j] = vel[j];
-                    //sr->vel[j] = vel[j];
-                    sl->vel[j] = nor_speed*nor[j];
-                    sr->vel[j] = nor_speed*nor[j];
+                    sl->vel[j] = vel[j];
+                    sr->vel[j] = vel[j];
+                    //sl->vel[j] = nor_speed*nor[j];
+                    //sr->vel[j] = nor_speed*nor[j];
                 }
 
                 for (int j = 0; j < 3; ++j)
@@ -2969,10 +2973,10 @@ static void setNodeVelocity3d(
 
             for (int j = 0; j < 3; ++j)
             {
-                    //sl->vel[j] = vel[j];
-                    //sr->vel[j] = vel[j];
-                    sl->vel[j] = nor_speed*nor[j];
-                    sr->vel[j] = nor_speed*nor[j];
+                    sl->vel[j] = vel[j];
+                    sr->vel[j] = vel[j];
+                    //sl->vel[j] = nor_speed*nor[j];
+                    //sr->vel[j] = nor_speed*nor[j];
             }
 
             for (int j = 0; j < 3; ++j)
@@ -3027,10 +3031,10 @@ static void setNodeVelocity3d(
 
             for (int j = 0; j < 3; ++j)
             {
-                //sl->vel[j] = vel[j];
-                //sr->vel[j] = vel[j];
-                sl->vel[j] = nor_speed*nor[j];
-                sr->vel[j] = nor_speed*nor[j];
+                sl->vel[j] = vel[j];
+                sr->vel[j] = vel[j];
+                //sl->vel[j] = nor_speed*nor[j];
+                //sr->vel[j] = nor_speed*nor[j];
             }
 
             for (int j = 0; j < 3; ++j)

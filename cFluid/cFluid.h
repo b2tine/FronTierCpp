@@ -191,6 +191,8 @@ struct EQN_PARAMS
 	double ***Gvel;
 	double **Gpres;
 
+    bool is_inviscid {false}; //to revert to euler eqns
+
 	//LES Turbulence
     bool use_eddy_viscosity {false};
     EDDY_VISC_MODEL eddy_viscosity_model;

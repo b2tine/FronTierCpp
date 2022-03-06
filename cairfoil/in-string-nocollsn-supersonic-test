@@ -34,7 +34,7 @@ Max time: 1.0
 Max step: 1000
 Print interval: 0.00001
 Movie frame interval: 0.00015
-CFL factor: 0.5
+CFL factor: 0.25
 Redistribution interval: 100000
 Type yes to turn off auto-redistribution: y
 
@@ -132,6 +132,7 @@ Enter yes for string bending force: no
 
 Enter string spring constant: 23949.1
 Enter string damping constant: 0.01
+                                                                XEnter string damping constantX: 0.1
 Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.05
 Enter string total mass: 0.000859

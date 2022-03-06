@@ -23,7 +23,7 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 50.0
+Enter velocity: 0 0 150.0
 Enter pressure: 101325.0
 Enter temperature: 298
 
@@ -61,7 +61,7 @@ Enter the reference temperature: 273.15
 Enter the effective temperature: 110.4
 
 Enter yes to set initial velocity: yes
-Enter initial velocity: 0 0 50.0
+Enter initial velocity: 0 0 150.0
 
 Enter gravity: 0 0 0
 
@@ -123,15 +123,17 @@ Enter yes to use porosity: yes
 Enter fabric porosity: 0.1
 Enter porosity ghost fluid method: DARCY
 
-Enter viscous parameter: 0.00180696
-Enter inertial parameter: 0.230488
+Enter viscous parameter: 8.3516e+06
+                Enter viscous parameterXXX: 152.1645
+Enter inertial parameter: 168.1334
 
 
 Enter area density of canopy: 0.05
 Enter yes to use total mass: yes
 
-Enter fabric spring constant: 25000
-Enter fabric damping constant: 0.01
+Enter fabric spring constant: 65000
+Enter fabric damping constant: 0.1
+                                                            Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.05
@@ -185,6 +187,7 @@ Type y to make vector vorticity field movie: n
 *************************************************
 Enter yes for debugging: yes
 
+Enter the debugging string: set_crossed_state
 Enter the debugging stringX: darcy_debug_coords
 
 Enter the debugging stringXXX: rigid_canopy
