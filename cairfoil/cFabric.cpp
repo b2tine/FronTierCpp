@@ -175,9 +175,6 @@ void CFABRIC_CARTESIAN::addFluxAlongGridLine(
 	double ldir_crx_coords[MAXD];
 	double rdir_crx_coords[MAXD];
     
-    //TODO: See the TODO needBufferFromIntfc() regarding gas_comp().
-    //      Need to make sure both work correctly with index coating
-    //      algorithm used for ELASTIC_BOUNDARYs
     
     seg_min = imin[idir];	
 	while (seg_min <= imax[idir])
@@ -192,9 +189,6 @@ void CFABRIC_CARTESIAN::addFluxAlongGridLine(
 
 	    if (seg_min > imax[idir]) break;
 	    
-        //TODO: is this good enough zeroing?
-        //      what about the +7 in size value in allocDirVstFlux()??
-        //      For now should be safe since allocating and freeing everytime.
         for (i = 0; i <= top_gmax[idir]; ++i)
 	    {
 	    	vst.dens[i] = 0.0; 
@@ -223,8 +217,6 @@ void CFABRIC_CARTESIAN::addFluxAlongGridLine(
         seg_max = i;
 	    n++;
 
-//	    printf("Component=%d\n",comp);
-
 	    for (i = seg_min + 1; i <= imax[idir]; i++)
 	    {
             icoords[idir] = i;
@@ -234,43 +226,24 @@ void CFABRIC_CARTESIAN::addFluxAlongGridLine(
                 icoords_next[ii] = icoords[ii];
             icoords_next[idir]++;
             
-            boolean status1, status2;
+            boolean status1;
             
             //TODO: use ldir_crx_coords and rdir_crx_coords to differentiate crossings
             status1 = FT_StateStructAtGridCrossing(front,grid_intfc,
                     icoords,rdir[idir],comp,(POINTER*)&state,
                     &hs,crx_coords);
 
+            /*
             //TODO: status2 never gets checked...
             //      Guessing is for case that fabric is folded, but the bugs never
             //      quite got worked out so it was disabled.
+            
+            boolean status2;
             status2 = FT_StateStructAtGridCrossing(front,grid_intfc,
                     icoords_next,ldir[idir],comp,(POINTER*)&state,
                     &hs,crx_coords);
-
-            //TODO: why did cxxu abandon/comment out these 2 blocks??
-            //      Dead code or unfinished code?
-
-//		For the following part, if needBufferFromIntfc is true, which means
-// 		it meets a boundary, we have a break. If needBufferFromIntfc is not true,
-// 		we check the two statuses. If one of them is true, we still have a break.
-// 		If all three of them are false, we assume that it does not meet a boundary
-   
-            //if (needBufferFromIntfc(comp,top_comp[index]))
-            //{
-            //    printf("get boundary \n");
-            //    break;
-		    //}
-//		if (status1){
-//		    
-//		    printf("Outside::: The wave_type is %d\n", wave_type(hs));
-//		    if (!needBufferFromIntfc(comp,top_comp[index])){
-//			seg_max=i;
-//			n++;
-//		    }
-//		    break;
-//		}
-//
+            */
+            
             if (needBufferFromIntfc(comp,top_comp[index]))
             {
                 printf("get boundary \n");
@@ -290,26 +263,6 @@ void CFABRIC_CARTESIAN::addFluxAlongGridLine(
                 n++;
                 if (status1)
                 {
-
-    //			printf("icoords[0]=%d icoords[1]=%d, icoords[2]=%d, wave_type=%d\n",icoords[0],icoords[1], icoords[2],wave_type(hs));
-
-   //			if (wave_type(hs)==7) //NOTE: 7 is NUEMANN_BOUNDARY
-   //  			{
-   //                 for (int ii=0;ii<dim;ii++)
-   //                 {
-   //                    printf("icoords[%d]=%d,",ii,icoords[ii]);
-   //                 }
-   //                 printf("    found\n");
-   //                 
-   //                 printf("crx_coords[0]=%f\n",crx_coords[0]);
-   //                 for (int ii=0;ii<dim;ii++)
-   //                 {
-   //                     printf("crx_coords[%d]=%f\n",ii,crx_coords[ii]);
-   //                 }
-
-   //             }
-   // 
-                    
                     seg_max = i++;
                     break;
                  }
@@ -401,9 +354,6 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
         {
             ic[idir] = icoords[idir] - i;
             index = d_index(ic,top_gmax,dim);
-
-            //The following is for debugging		    
-            boolean status;
             
             //check neighbor in ldir[idir] 
             for (k = 0; k < dim; ++k)
@@ -411,14 +361,10 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
             
             ic_next[idir]++;
             
+            boolean status;
             status = FT_StateStructAtGridCrossing(front,grid_intfc,
                 ic_next,ldir[idir],comp,(POINTER*)&state,
                 &hs,crx_coords);
-    /*
-            if (status)
-            if (status && wave_type(hs) != 6)
-                printf("HI,status=%d, wave_type(*hs)=%d\n",status,wave_type(hs));
-    */
 
             if (!needBufferFromIntfc(comp,cell_center[index].comp) && !status)
             {
@@ -606,18 +552,9 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                     icoords,rdir[idir],comp,(POINTER*)&state,
                     &hs,crx_coords);
 
-//For the needBufferFromIntfc function, if the two component are different,
-//YES is returned. Then for the following, the if statement is satisfied when 
-//the two component are the same, which means it does not meet the rectangle
-//boundary. It may meet the elastic boundary or does not meet any boundary.
-//Then !status exclude the possibility of meeting elastic boundary.
-
 
 		    if (!needBufferFromIntfc(comp,cell_center[index].comp) && !status )
             {
-                //if (status && wave_type(hs) == 13)
-                //		printf("233: target boundary found.\n");
-                
                 vst->dens[n+nrad+i-1] = m_vst->dens[index];
                 vst->engy[n+nrad+i-1] = m_vst->engy[index];
                 vst->pres[n+nrad+i-1] = m_vst->pres[index];
@@ -917,9 +854,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
 	}
 
-    //if nb = 0, the point is above the boundary
-    //if nb = 1, the point is below the boundary
-
     //TODO: Can get rid of this loop.
     //      We compute a single ghost state and fill the entire stencil with it.
 	for (int i = istart; i < istart + 1; ++i)
@@ -1179,16 +1113,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         }
         else
         {
-            /* Debug selectively!
-            if (debugging("crx_reflection"))
-            {
-                    sprintf(fname,"intfc-%d-%d",count,i);
-                    sprintf(fname,"intfc-xx");
-                    xgraph_2d_reflection(fname,front->grid_intfc,coords,
-                    crx_coords,coords_ref,nor);
-            }
-            */
-            
             vst->dens[n+nrad+i-1] = st_tmp_ghost.dens;
             vst->engy[n+nrad+i-1] = st_tmp_ghost.engy;
             vst->pres[n+nrad+i-1] = st_tmp_ghost.pres;
@@ -1414,15 +1338,6 @@ void CFABRIC_CARTESIAN::setElasticStatesRFB_normal(
 	    }
 	    else
 	    {
-            /* Debug selectively!
-            if (debugging("crx_reflection"))
-            {
-                    sprintf(fname,"intfc-%d-%d",count,i);
-                    sprintf(fname,"intfc-xx");
-                    xgraph_2d_reflection(fname,front->grid_intfc,coords,
-                    crx_coords,coords_ref,nor);
-            }
-            */
             vst->dens[n+nrad+i-1] = st_tmp_ghost.dens;
             vst->engy[n+nrad+i-1] = st_tmp_ghost.engy;
             vst->pres[n+nrad+i-1] = st_tmp_ghost.pres;
@@ -2109,10 +2024,8 @@ void CFABRIC_CARTESIAN::setViscousGhostState(
                     nip_coords,comp,intrp_coeffs,hse,hs);
             break;
         }
-        case ELASTIC_BOUNDARY:
+        case ELASTIC_BOUNDARY: //TODO: DOES THE SOLVER EVER SEE THIS BOUNDARY?
         {
-            /*setNeumannViscousGhostState(icoords,m_vst,vs,&ghost_coords[0],
-                    nip_coords,comp,intrp_coeffs,hse,hs);*/
             setElasticViscousGhostState(icoords,m_vst,vs,&ghost_coords[0],
                     nip_coords,comp,intrp_coeffs,hse,hs);
             break;
@@ -2241,10 +2154,6 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
 
     //Interpolate Density and Momentum at the reflected point and compute the velocity.
     double dens_reflect;
-    /*
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
-            getStateDens,&dens_reflect,nullptr);
-    */
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
             getStateDens,&dens_reflect,&m_vst->dens[index]);
 
@@ -2252,13 +2161,6 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
     double vel_reflect[MAXD];
     for (int j = 0; j < dim; ++j)
     {
-        //TODO: Make sure the interface value has been set in case it is
-        //      needed as the default value (since we are passing nullptr
-        //      as the defailt value). Same for above.
-        /*
-        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
-                getStateMom[j],&mom_reflect[j],nullptr);
-        */
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
                 getStateMom[j],&mom_reflect[j],&m_vst->momn[j][index]);
         
@@ -2347,8 +2249,6 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
     //TODO: How does the porosity effect the temperature across canopy?
     //      For now just use the reflected temperature (temp_reflect).
     
-        //double temp_poro = temp_ghost;
-
     vs->temp = temp_poro;
 
 

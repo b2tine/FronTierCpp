@@ -4,7 +4,6 @@
 void FabricManager::setCollisionTimeStep(double collsn_dt)
 {
     collision_solver->setTimeStepSize(collsn_dt);
-    //CollisionSolver3d::setTimeStepSize(collsn_dt);
 }
     
 void FabricManager::setCollisionParams(const FABRIC_COLLISION_PARAMS& params)
@@ -48,8 +47,6 @@ void FabricManager::initializeSystem()
 }
 
 //TODO: Can the action of setCollisionFreePoints() be performed in assembleFromInterface()?
-//
-    //void FabricManager::assembleHseListFromInterface(INTERFACE* intfc)
 void FabricManager::assembleHseListFromInterface()
 {
 	clearHseList();
@@ -120,7 +117,6 @@ void FabricManager::recordOriginalPositions()
             for (int j = 0; j < 3; ++j)
             {
                 sl->x_prevstep[j] = Coords(pt)[j];
-                    //sl->x_old[j] = Coords(pt)[j];
             
                 if (std::isnan(sl->x_prevstep[j]))
                 {

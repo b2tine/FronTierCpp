@@ -163,16 +163,6 @@ static void elastic_point_propagate_fsi(
 	    pm[i] = Coords(oldp)[i] - h*nor[i];
 	    pp[i] = Coords(oldp)[i] + h*nor[i];
 	}
-
-    /*
-    int ic_m[MAXD];
-    int ic_p[MAXD];
-    double vel_m[MAXD] = {0.0};
-    double vel_p[MAXD] = {0.0};
-    double mu_m;
-    double mu_p;
-    */
-
 	
     COMPONENT base_comp = positive_component(oldhs);
 	
@@ -182,56 +172,11 @@ static void elastic_point_propagate_fsi(
     FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
             getStatePres,&newsr->pres,&sr->pres);
 
-    /*
-    //Tangential stress (shear stress)
-    for (int l = 0; l < dim; ++l)
-    {
-        FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vel[l],
-                getStateVel[l],&vel_m[l],&sl->vel[l]);
-        FT_IntrpStateVarAtCoords(front,base_comp+1,pp,vel[l],
-                getStateVel[l],&vel_p[l],&sr->vel[l]);
-    }
-    rect_in_which(pm,ic_m,top_grid);
-    int index_m = d_index(ic_m,top_gmax,dim);
-    FT_IntrpStateVarAtCoords(front,base_comp-1,pm,mu,
-            getStateMu,&mu_m,&mu[index_m]);
-    rect_in_which(pp,ic_p,top_grid);
-    int index_p = d_index(ic_p,top_gmax,dim);
-    FT_IntrpStateVarAtCoords(front,base_comp+1,pp,mu,
-            getStateMu,&mu_p,&mu[index_p]);
-    */
-
-    
-    
-    /*
-    double* intfc_vel = sl->vel;
-    double rel_vel_m[MAXD] = {0.0};
-    double rel_vel_p[MAXD] = {0.0};
-    double vn_m = 0.0;
-    double vn_p = 0.0;
-
-    for (int l = 0; l < dim; ++l)
-    {
-        rel_vel_m[l] = vel_m[l] - intfc_vel[l];
-        vn_m += rel_vel_m[l]*nor[l];
-        rel_vel_p[l] = vel_p[l] - intfc_vel[l];
-        vn_p += rel_vel_p[l]*nor[l];
-    }
-
-    double vel_tan_m[MAXD] = {0.0};
-    double vel_tan_p[MAXD] = {0.0};
-
-    for (int l = 0; l < dim; ++l)
-    {
-        vel_tan_m[l] = rel_vel_m[l] - vn_m*nor[l];
-        vel_tan_p[l] = rel_vel_p[l] - vn_p*nor[l];
-    }
-    */
-
 
 	/* Impulse is incremented by the fluid pressure force */
-    
+
     double dP = sl->pres - sr->pres;
+   
     for (int i = 0; i < dim; ++i)
 	{
 	    dv[i] = 0.0;
@@ -412,14 +357,6 @@ static void string_curve_propagation(
     double ampFluidFactor = params->ampFluidFactor;
     */
     
-    /*
-    FINITE_STRING params = eqn_params->string_fsi_params;
-    double radius = params.radius;
-    double rhoS = params.dens;
-    double c_drag = params.c_drag;
-    double ampFluidFactor = params.ampFluidFactor;
-    */
-    
     STATE *state_intfc;
     STATE *newsl,*newsr;
     COMPONENT base_comp = front->interf->default_comp;
@@ -433,7 +370,6 @@ static void string_curve_propagation(
     double **vel = eqn_params->vel;
     double **momn = eqn_params->mom;
 
-        //int count = 0;
 
     int icoords[MAXD];
     for (oldb = oldc->first, newb = newc->first;
@@ -448,12 +384,8 @@ static void string_curve_propagation(
         state_intfc = (STATE*)left_state(oldp);
         double* vel_intfc = state_intfc->vel;
         
-        //sl = (STATE*)left_state(oldp);
-        //sr = (STATE*)right_state(oldp);
-
         newsl = (STATE*)left_state(newp);
         newsr = (STATE*)right_state(newp);
-            //count++;
 
         //tangential direction along string BOND
         double ldir[3];
@@ -1343,7 +1275,6 @@ static void rg_string_node_propagate(
             vec[i] = Coords(b->end)[i] - Coords(b->start)[i];
             vec[i] /= bond_length(b);
             f[i] += kl*dL*vec[i];
-                //f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
         }
     }
         
@@ -1359,7 +1290,6 @@ static void rg_string_node_propagate(
             vec[i] = Coords(b->start)[i] - Coords(b->end)[i];
             vec[i] /= bond_length(b);
             f[i] += kl*dL*vec[i];
-                //f[i] += kl*(bond_length(b) - bond_length0(b))*vec[i];
         }
     }
 
@@ -1457,21 +1387,6 @@ static void rg_string_node_propagate(
         newsl->impulse[i] = newsr->impulse[i] = sl->impulse[i];
         newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
         newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
-
-        /*
-        //TODO: Is below correct, or do we always divide the spring force by the mass???
-        //
-        if (Mag3d(af_params->gravity) > MACH_EPS)
-        {
-	        newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i] - f[i]/mass;
-	        newsr->other_accel[i] = newsl->other_accel[i] = f[i]/mass;
-        }
-        else
-        {
-	        newsl->fluid_accel[i] = newsr->fluid_accel[i] = accel[i];
-	        newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
-        }
-        */
 	}
 
     if (debugging("trace"))

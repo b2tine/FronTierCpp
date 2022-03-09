@@ -29,9 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "airfoil.h"
 
 static void airfoil_driver(Front*,CFABRIC_CARTESIAN*);
-static void zero_state(COMPONENT,double*,FIELD*,int,int,EQN_PARAMS*);
 static void xgraph_front(Front*,char*);
-//static void initFabricModule(Front* front);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
@@ -105,8 +103,6 @@ int main(int argc, char **argv)
     level_func_pack.pos_component = GAS_COMP2;
 	if (!RestartRun)
 	{
-        //g_cartesian.setInitialIntfc(&level_func_pack,in_name);
-
 	    FT_InitIntfc(&front,&level_func_pack);
         
         initFabricModules(&front);
@@ -377,56 +373,9 @@ void airfoil_driver(Front *front,
 }       /* end airfoil_driver */
 
 
-//TODO: cFluid FIELD
-void zero_state(
-    COMPONENT comp,
-    double *coords,
-	FIELD *field,
-	int index, int dim,
-    EQN_PARAMS *eqn_params)
-{
-    for (int i = 0; i < dim; ++i)
-    {
-        field->vel[i][index] = 0.0;
-    }
-    
-    field->pres[index] = 0.0;
-}
-
-
 void xgraph_front(Front *front,	char *outname)
 {
 	char fname[100];
 	sprintf(fname,"%s/intfc-%s",outname,right_flush(front->step,4));
 	xgraph_2d_intfc(fname,front->interf);
 }
-
-/*
-void initFabricModule(Front* front)
-{
-    FILE *infile = fopen(InName(front),"r");
-    
-    int num_canopy = 0;
-    if (CursorAfterStringOpt(infile,"Enter number of canopy surfaces:"))
-    {
-        fscanf(infile,"%d",&num_canopy);
-        printf("%d\n",num_canopy);
-    }
-
-    SURFACE *surf;
-    if (num_canopy >= 1)
-    {
-        if (num_canopy == 1)
-        {
-            CgalCanopySurface(infile,front,&surf);
-        }
-        else
-        {
-            printf("initFabricModule() ERROR: this feature not ready yet\n");
-            LOC(); clean_up(EXIT_FAILURE);
-        }
-    }
-    
-    fclose(infile);
-}
-*/
