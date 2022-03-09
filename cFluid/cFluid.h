@@ -574,6 +574,7 @@ protected:
 	
 	void setDirichletStates(STATE*,SWEEP*,SWEEP*,HYPER_SURF*,int*,int,int,int,int,int);
 	void setNeumannStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,int,int);
+	void setSymmetryStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,int,int);
     
 	/* Viscous flux */
     void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
