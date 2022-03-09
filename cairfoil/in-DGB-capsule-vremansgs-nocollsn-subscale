@@ -99,7 +99,7 @@ For rigid body 1
 Type yes if motion is preset: yes
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
-Enter the total mass for rigid body: 300
+Enter the total mass for rigid body: 1300
 Enter the initial center of mass for rigid body: 0 0 1.03267
 Enter the initial center of mass velocity: 0 0 0
 
@@ -177,17 +177,19 @@ Enter yes to use total mass: yes
 Enter fabric total mass: 0.029083
 Enter string total mass: 0.0328
 
-Enter fabric spring constant: 69691.3
-Enter fabric damping constant: 0.1
-                                                Enter fabric damping constantX: 0.01
+Enter fabric spring constant: 111506
+                                                XXXEnter fabric spring constantXXX: 69691.3
+Enter fabric damping constant: 0.05
+                                                XXXEnter fabric damping constantXXX: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.05
 Enter fabric thickness: 0.0000635
 Enter fabric rounding tolerance: 0.00001
 
-Enter string spring constant: 23949.1
-Enter string damping constant: 0.1
+Enter string spring constant: 24338.3
+Enter string damping constant: 0.05
+                                                XXXEnter string damping constantXXX: 0.1
 Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.05
 Enter string thickness: 0.00099
