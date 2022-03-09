@@ -66,6 +66,7 @@ void FabricManager::assembleHseListFromInterface()
             switch (wave_type(*s))
             {
                 case ELASTIC_BOUNDARY:
+                case ELASTIC_BAND_BOUNDARY:
                     tag = CD_HSE_TYPE::FABRIC_TRI;
                     break;
                 case NEUMANN_BOUNDARY:
@@ -90,7 +91,8 @@ void FabricManager::assembleHseListFromInterface()
 	intfc_curve_loop(intfc,c)
 	{
         if (is_bdry(*c)) continue;
-	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
+	    if (hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue; 
 
         CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
 	    curve_bond_loop(*c,b)

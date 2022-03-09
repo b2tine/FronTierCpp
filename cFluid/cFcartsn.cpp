@@ -4151,9 +4151,6 @@ void G_CARTESIAN::appendGhostBuffer(
                         }
 		    }
 
-        //TODO: Turn this switch block into a function called setGhostStates().
-        //      Then can override this base version in inherited calss CFABRIC_CARTESIAN
-        //      to add ELASTIC_BOUNDARY
 		    switch (wave_type(hs))
 		    {
 		    case NEUMANN_BOUNDARY:
@@ -4309,9 +4306,6 @@ void G_CARTESIAN::appendGhostBuffer(
 			}
 		    }
 
-        //TODO: Turn this switch block into a function called setGhostStates().
-        //      Then can override this base version in inherited calss CFABRIC_CARTESIAN
-        //      to add ELASTIC_BOUNDARY
 		    switch (wave_type(hs))
 		    {
 		    case NEUMANN_BOUNDARY:
@@ -6396,7 +6390,8 @@ void G_CARTESIAN::addImmersedForce()
     int icoords[MAXD];
     intfc_curve_loop(grid_intfc,c)
     {
-        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+        if (hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue;
 
         curve = *c;
         for (b = curve->first; b != curve->last; b = b->next)

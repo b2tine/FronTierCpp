@@ -249,6 +249,7 @@ extern void airfoil_point_propagate(
         double              *V)
 {
     if (wave_type(oldhs) == ELASTIC_BOUNDARY ||
+        wave_type(oldhs) == ELASTIC_BAND_BOUNDARY ||
         wave_type(oldhs) == ELASTIC_STRING)
     {
         return elastic_point_propagate(front,wave,oldp,newp,oldhse,oldhs,dt,V);
@@ -273,6 +274,7 @@ extern void airfoil_curve_propagate(
 	    switch (hsbdry_type(oldc))
 	    {
 		case STRING_HSBDRY:
+        case DISKGAP_STRING_HSBDRY:
             return string_curve_propagation(front,wave,oldc,newc,dt);
 		case MONO_COMP_HSBDRY:
             return mono_curve_propagation(front,wave,oldc,newc,dt);
@@ -690,19 +692,32 @@ extern int numOfGoreNodes(
 
 	intfc_node_loop(intfc,n)
 	{
-	    if ((*n)->extra == NULL)
-		continue;
+	    if ((*n)->extra == NULL) continue;
+
 	    is_string_node = NO;
 	    for (c = (*n)->in_curves; c && *c; ++c)
-		if (hsbdry_type(*c) == STRING_HSBDRY)
-		    is_string_node = YES;
-	    for (c = (*n)->out_curves; c && *c; ++c)
-		if (hsbdry_type(*c) == STRING_HSBDRY)
-		    is_string_node = YES;
+        {
+            if (hsbdry_type(*c) == STRING_HSBDRY ||
+                hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
+            {
+                is_string_node = YES;
+            }
+        }
+	    
+        for (c = (*n)->out_curves; c && *c; ++c)
+        {
+            if (hsbdry_type(*c) == STRING_HSBDRY ||
+                hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
+            {
+                is_string_node = YES;
+            }
+        }
+
 	    if (is_string_node) continue;
-	    extra = (AF_NODE_EXTRA*)(*n)->extra;
+	    
+        extra = (AF_NODE_EXTRA*)(*n)->extra;
 	    if (extra->af_node_type == GORE_NODE)
-		num_gore_nodes++;
+            num_gore_nodes++;
 	}
 	return num_gore_nodes;
 }	/* numOfGoreNodes */
@@ -738,15 +753,17 @@ extern boolean is_gore_node(
 	CURVE **c;
 	AF_NODE_EXTRA *extra;
 
-	if (node->extra == NULL)
-	    return NO;
+	if (node->extra == NULL) return NO;
+
 	for (c = node->in_curves; c && *c; ++c)
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
-		return NO;
-	for (c = node->out_curves; c && *c; ++c)
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
-		return NO;
-	extra = (AF_NODE_EXTRA*)(node)->extra;
+        if (hsbdry_type(*c) == STRING_HSBDRY ||
+            hsbdry_type(*c) == DISKGAP_STRING_HSBDRY) return NO;
+	
+    for (c = node->out_curves; c && *c; ++c)
+        if (hsbdry_type(*c) == STRING_HSBDRY ||
+            hsbdry_type(*c) == DISKGAP_STRING_HSBDRY) return NO;
+	
+    extra = (AF_NODE_EXTRA*)(node)->extra;
 	if (extra->af_node_type == GORE_NODE)
 	    return YES;
 	else 
@@ -758,7 +775,12 @@ extern boolean is_string_node(NODE *n)
         AF_NODE_EXTRA *af_node_extra;
         if (n->extra == NULL) return NO;
         af_node_extra = (AF_NODE_EXTRA*)n->extra;
-        if (af_node_extra->af_node_type == STRING_NODE) return YES;
+        if (af_node_extra->af_node_type == STRING_NODE ||
+            af_node_extra->af_node_type == CANOPY_STRING_NODE ||
+            af_node_extra->af_node_type == DISKGAP_STRING_NODE)
+        {
+            return YES;
+        }
         return NO;
 }       /* end is_load_node */
 
@@ -873,95 +895,15 @@ extern void coating_mono_hyper_surf(
 	int dim = front->rect_grid->dim;
 	switch (dim)
 	{
-	case 2:
-	    coating_mono_hyper_surf2d(front);
-	    return;
 	case 3:
 	    coating_mono_hyper_surf3d(front);
 	    return;
+    default:
+        printf("ERROR: dim must be equal to 3\n");
+        LOC(); clean_up(EXIT_FAILURE);
 	}
 }	/* end coating_mono_hyper_surf */
 
-static void coating_mono_hyper_surf2d(
-	Front *front)
-{
-	INTERFACE *grid_intfc = front->grid_intfc;
-	RECT_GRID *top_grid = &topological_grid(grid_intfc);
-	struct Table *T = table_of_interface(grid_intfc);
-	COMPONENT *top_comp = T->components;
-        COMPONENT          comp;
-        INTERFACE          *intfc = front->interf;
-	double 		   *L = top_grid->L;
-	double 		   *h = top_grid->h;
-	double             coords[MAXD];
-        double             t[MAXD],p[MAXD],vec[MAXD];
-	const double 	   *nor;
-	CURVE **c,*immersed_curve;
-        HYPER_SURF_ELEMENT *hse;
-        HYPER_SURF         *hs;
-	BOND *b;
-	COMPONENT base_comp;
-	int i,index,nb,index_nb,*top_gmax = top_grid->gmax;
-	int dim = top_grid->dim;
-	int icoords[MAXD],icn[MAXD],smin[MAXD],smax[MAXD];
-	GRID_DIRECTION dir[4] = {WEST,EAST,SOUTH,NORTH};
-
-	if (debugging("trace"))
-	    (void) printf("Entering coating_mono_hyper_surf2d()\n");
-
-	immersed_curve = NULL;
-	for (c = grid_intfc->curves; c && *c; ++c)
-	{
-	    if (wave_type(*c) == ELASTIC_BOUNDARY)
-	    {
-		immersed_curve = *c;
-		comp = base_comp = negative_component(*c);
-		hs = Hyper_surf(immersed_curve);
-		break;
-	    }
-	}
-	if (immersed_curve == NULL)
-	    return;
-
-	for (icoords[0] = 1; icoords[0] < top_gmax[0]; ++icoords[0])
-	for (icoords[1] = 1; icoords[1] < top_gmax[1]; ++icoords[1])
-	{
-	    index = d_index(icoords,top_gmax,dim);
-	    for (i = 0; i < dim; ++i)
-		coords[i] = L[i] + icoords[i]*h[i];
-	    if (nearest_interface_point_within_range(coords,comp,grid_intfc,
-			NO_BOUNDARIES,hs,p,t,&hse,&hs,3))
-	    {
-		if (wave_type(hs) != ELASTIC_BOUNDARY) 
-		    continue;
-		b = Bond_of_hse(hse);
-	    	t[1] = Coords(b->start)[0] - Coords(b->end)[0]; // t is normal
-	    	t[0] = Coords(b->end)[1] - Coords(b->start)[1];
-	    	for (i = 0; i < dim; ++i)
-		    vec[i] = coords[i] - p[i];
-	    	if (scalar_product(vec,t,dim) > 0.0)
-		    top_comp[index] = base_comp + 1;
-	    	else
-		    top_comp[index] = base_comp - 1;
-	    }
-	}
-	negative_component(immersed_curve) = base_comp - 1;
-	positive_component(immersed_curve) = base_comp + 1;
-	if (debugging("coat_comp"))
-	{
-	    for (icoords[1] = 1; icoords[1] < top_gmax[1]; ++icoords[1])
-	    {
-	    	for (icoords[0] = 1; icoords[0] < top_gmax[0]; ++icoords[0])
-	    	{
-		    index = d_index(icoords,top_gmax,dim);
-		    (void) printf("%d",top_comp[index]);
-	    	}
-	    	(void) printf("\n");
-	    }
-	}
-	if (debugging("trace"))
-	    (void) printf("Leaving coating_mono_hyper_surf2d()\n");
-}	/* end coating_mono_hyper_surf2d */
 
 static void coating_mono_hyper_surf3d(
 	Front *front)
@@ -992,7 +934,8 @@ static void coating_mono_hyper_surf3d(
     immersed_surf = NULL;
 	for (s = grid_intfc->surfaces; s && *s; ++s)
 	{
-	    if (wave_type(*s) == ELASTIC_BOUNDARY)
+	    if (wave_type(*s) == ELASTIC_BOUNDARY ||
+            wave_type(*s) == ELASTIC_BAND_BOUNDARY)
 	    {
             immersed_surf = *s;
             base_comp = negative_component(*s);
@@ -1015,7 +958,8 @@ static void coating_mono_hyper_surf3d(
 			NO_BOUNDARIES,NULL,p,t,&hse,&hs,3))
 	    {
 		
-            if (wave_type(hs) != ELASTIC_BOUNDARY) continue;
+            if (wave_type(hs) != ELASTIC_BOUNDARY &&
+                wave_type(hs) != ELASTIC_BAND_BOUNDARY) continue;
 	    	
             nor = Tri_normal(Tri_of_hse(hse));
 	    	for (i = 0; i < dim; ++i)
@@ -1030,7 +974,8 @@ static void coating_mono_hyper_surf3d(
 
 	for (s = grid_intfc->surfaces; s && *s; ++s)
 	{
-	    if (wave_type(*s) == ELASTIC_BOUNDARY)
+	    if (wave_type(*s) == ELASTIC_BOUNDARY ||
+            wave_type(*s) == ELASTIC_BAND_BOUNDARY)
 	    {
             if (base_comp == negative_component(*s))
             {

@@ -118,7 +118,8 @@ static void compute_total_canopy_force3d(
     next_tri(intfc,NULL,NULL);
 	while (next_tri(intfc,&tri,&surf))
 	{
-	    if (wave_type(surf) != ELASTIC_BOUNDARY) continue; 
+	    if (wave_type(surf) != ELASTIC_BOUNDARY &&
+            wave_type(surf) != ELASTIC_BAND_BOUNDARY) continue; 
 	    
         pres_p = 0.0;
         pres_m = 0.0;
@@ -905,8 +906,9 @@ static int elastic_set_propagate3d_serial(
 
 	    if (pp_numnodes() > 1)
 	    {
-            int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
-            elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,3);
+            int w_type[4] = {ELASTIC_BOUNDARY,ELASTIC_BAND_BOUNDARY,
+                                MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+            elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,4);
             collectNodeExtra(*newfront,elastic_intfc,owner_id);
 	    }
 	    else
@@ -1272,8 +1274,9 @@ static void fourth_order_elastic_set_propagate3d_serial(
 
 	    if (pp_numnodes() > 1)
 	    {
-            int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
-            elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,3);
+            int w_type[4] = {ELASTIC_BOUNDARY,ELASTIC_BAND_BOUNDARY,
+                                MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+            elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,4);
             collectNodeExtra(*newfront,elastic_intfc,owner_id);
 	    }
 	    else
@@ -1954,8 +1957,9 @@ void new_fourth_order_elastic_set_propagate3d_parallel_1(
 
 	    if (pp_numnodes() > 1)
 	    {
-            int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
-            elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,3);
+            int w_type[4] = {ELASTIC_BOUNDARY,ELASTIC_BAND_BOUNDARY,
+                MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+            elastic_intfc = collect_hyper_surfaces(*newfront,owner,w_type,4);
             collectNodeExtra(*newfront,elastic_intfc,owner_id);
 	    }
 	    else
@@ -2597,7 +2601,8 @@ static void print_max_fabric_speed(Front* fr)
 
     intfc_surface_loop(fr->interf,s)
     {
-        if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+        if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY) continue;
         surf_tri_loop(*s,tri)
         {
             for (int i = 0; i < 3; ++i)
@@ -2657,7 +2662,8 @@ static void print_max_string_speed(Front* fr)
 
     intfc_curve_loop(fr->interf,c)
     {
-        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+        if (hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue;
 
         //TODO: Add nodes etc. below is not traversing every point of the curve.
         curve = *c;
@@ -2814,7 +2820,8 @@ static void setCurveVelocity(
 
     double max_vel[3] = {0};
     
-    if (hsbdry_type(curve) == STRING_HSBDRY)
+    if (hsbdry_type(curve) == STRING_HSBDRY ||
+        hsbdry_type(curve) == DISKGAP_STRING_HSBDRY)
     {
         double max_speed = 0.0;
 
@@ -2875,10 +2882,10 @@ static void setCurveVelocity(
                 
                 for (int j = 0; j < 3; ++j)
                 {
-                    sl->vel[j] = vel[j];
-                    sr->vel[j] = vel[j];
-                    //sl->vel[j] = nor_speed*nor[j];
-                    //sr->vel[j] = nor_speed*nor[j];
+                    //sl->vel[j] = vel[j];
+                    //sr->vel[j] = vel[j];
+                    sl->vel[j] = nor_speed*nor[j];
+                    sr->vel[j] = nor_speed*nor[j];
                 }
 
                 for (int j = 0; j < 3; ++j)
@@ -3186,7 +3193,8 @@ static void setCollisionFreePoints3d(INTERFACE* intfc)
     intfc_curve_loop(intfc,c)
     {
         if (hsbdry_type(*c) != FIXED_HSBDRY &&
-            hsbdry_type(*c) != STRING_HSBDRY) continue;
+            hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue;
 
         b = (*c)->first;
         STATE* sl = (STATE*)left_state(b->start);

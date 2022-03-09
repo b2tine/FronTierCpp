@@ -135,6 +135,8 @@ Enter yes to install the strings to RGB: no
 Enter initial position of load: 0 0 1.42954
 Enter yes to fix the load node: yes
 
+Enter yes if connecting to disk gap band: yes
+
 Enter yes for string-fluid interaction: yes
 Enter string radius: 0.000495
 Enter string linear density: 0.000827
@@ -165,6 +167,7 @@ Enter porosity ghost fluid method: DARCY
 Enter viscous parameter: 8.3516e+06
                                     Enter viscous parameterX: 152.1645
 Enter inertial parameter: 168.1334
+Enter permeability: 7.6033e-12
 
 Enter interior propagator: p
 Enter interior sub step number: 1
@@ -188,6 +191,7 @@ Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.05
 Enter fabric thickness: 0.0000635
 Enter fabric rounding tolerance: 0.00001
+Enter fabric band spring constant: 460769
 
 Enter string spring constant: 24338.3
 Enter string damping constant: 0.05
@@ -215,7 +219,7 @@ Type y to make xy cross section movie: n
 Type y to make scalar density field movie: y
 Type y to make scalar pressure field movie: y
 Type y to make scalar viscosity field movie: y
-Type y to make scalar eddy viscosity field movie: y
+Type y to make scalar eddy viscosity field movie: n
 Type y to make scalar temperature field movie: y
 Type y to make scalar turb kinetic energy field movie: y
 

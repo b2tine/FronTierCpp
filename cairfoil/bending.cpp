@@ -39,7 +39,8 @@ void resetBendingForce(INTERFACE* intfc)
     intfc_surface_loop(intfc, surf)
     {
         if (is_bdry(*surf)) continue;
-        if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
+        if (wave_type(*surf) != ELASTIC_BOUNDARY &&
+            wave_type(*surf) != ELASTIC_BAND_BOUNDARY) continue;
 
         surf_tri_loop(*surf, tri)
         {
@@ -61,7 +62,8 @@ void resetBendingForce(INTERFACE* intfc)
     intfc_curve_loop(intfc,curve)
     {
         if (is_bdry(*curve)) continue;
-        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
+        if (hsbdry_type(*curve) != STRING_HSBDRY &&
+            hsbdry_type(*curve) != DISKGAP_STRING_HSBDRY) continue;
 
         curve_bond_loop(*curve,b)
         {
@@ -107,7 +109,8 @@ void addStringBenders(Front* front)
     intfc_curve_loop(intfc,curve)
     {
         if (is_bdry(*curve)) continue;
-        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
+        if (hsbdry_type(*curve) != STRING_HSBDRY && 
+            hsbdry_type(*curve) != DISKGAP_STRING_HSBDRY) continue;
 
         for (bond = (*curve)->first; bond != (*curve)->last; bond = bond->next)
         {
@@ -128,7 +131,8 @@ void computeStringBendingForce(INTERFACE* intfc)
     intfc_curve_loop(intfc,curve)
     {
         if (is_bdry(*curve)) continue;
-        if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
+        if (hsbdry_type(*curve) != STRING_HSBDRY &&
+            hsbdry_type(*curve) != DISKGAP_STRING_HSBDRY) continue;
 
         for (b = (*curve)->first; b != (*curve)->last; b = b->next)
         {
@@ -391,7 +395,8 @@ void computeSurfBendingForce(INTERFACE* intfc, const double bends, const double 
     intfc_surface_loop(intfc, surf)
     {
         if (is_bdry(*surf)) continue;
-        if (wave_type(*surf) != ELASTIC_BOUNDARY) continue;
+        if (wave_type(*surf) != ELASTIC_BOUNDARY &&
+            wave_type(*surf) != ELASTIC_BAND_BOUNDARY) continue;
         
         surf_tri_loop(*surf, tri)
         {

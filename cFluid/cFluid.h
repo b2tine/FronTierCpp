@@ -227,6 +227,7 @@ struct EQN_PARAMS
     double porosity;
     PORO_SCHEME poro_scheme;
     double porous_coeff[2];
+    double permeability {7.6033e-12};
 
     bool with_string_fsi {false};
     //FINITE_STRING* string_fsi_params;

@@ -835,7 +835,9 @@ extern void set_node_spring_vertex(
 	INTERFACE *intfc = front->interf;
 	int i,j,nn,dim = Dimension(intfc);
 	double ks = geom_set->ks;
+	double ks_band = geom_set->ks_band;
 	double kl = geom_set->kl;
+	double kl_band = geom_set->kl_band;
 	double kg = geom_set->kg;
 	double mass = 0.0;
 	double lambda_s = geom_set->lambda_s;
@@ -850,6 +852,7 @@ extern void set_node_spring_vertex(
 	if (af_params)
  	    g = af_params->gravity;
 
+    bool on_diskgap = false;
 	if (dim == 3)
 	{
 	    AF_NODE_EXTRA *extra = (AF_NODE_EXTRA*)node->extra;
@@ -875,14 +878,21 @@ extern void set_node_spring_vertex(
                     mass = af_params->payload/af_params->num_rg_string_nodes;
                 }
             }
-            else if (extra->af_node_type == GORE_NODE)
-                mass = geom_set->m_g;
             else if (extra->af_node_type == STRING_NODE)
                 mass = geom_set->m_l;
+            else if (extra->af_node_type == CANOPY_STRING_NODE ||
+                     extra->af_node_type == DISKGAP_STRING_NODE)
+            {
+                mass = geom_set->m_s;
+                if (extra->af_node_type == DISKGAP_STRING_NODE)
+                    on_diskgap = true;
+            }
             else if (extra->af_node_type == THR_LOAD_NODE)
                 mass = geom_set->m_l;
             else if (extra->af_node_type == SEC_LOAD_NODE)
                 mass = geom_set->m_l;
+            else if (extra->af_node_type == GORE_NODE)
+                mass = geom_set->m_g;
         }
 	    else
         {
@@ -890,7 +900,7 @@ extern void set_node_spring_vertex(
         }
 	}
 	else
-	{
+	{//dim == 2
         mass = geom_set->m_l;
 	    boolean on_canopy = NO;
 	    node_out_curve_loop(node, c)
@@ -958,8 +968,15 @@ extern void set_node_spring_vertex(
                 sv[*n].k[nn] = 0.0;
             else if (hsbdry_type(*c) == STRING_HSBDRY)
                 sv[*n].k[nn] = kl;
+            else if (hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
+                sv[*n].k[nn] = kl_band;
             else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-                sv[*n].k[nn] = ks;
+            {
+                if (on_diskgap)
+                    sv[*n].k[nn] = ks_band;
+                else
+                    sv[*n].k[nn] = ks;
+            }
             else if (hsbdry_type(*c) == GORE_HSBDRY)
                 sv[*n].k[nn] = kg;
             else if (hsbdry_type(*c) == FIXED_HSBDRY)
@@ -990,8 +1007,15 @@ extern void set_node_spring_vertex(
                 sv[*n].k[nn] = 0.0;
             else if (hsbdry_type(*c) == STRING_HSBDRY)
                 sv[*n].k[nn] = kl;
+            else if (hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
+                sv[*n].k[nn] = kl_band;
             else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
-                sv[*n].k[nn] = ks;
+            {
+                if (on_diskgap)
+                    sv[*n].k[nn] = ks_band;
+                else
+                    sv[*n].k[nn] = ks;
+            }
             else if (hsbdry_type(*c) == GORE_HSBDRY)
                 sv[*n].k[nn] = kg;
             else if (hsbdry_type(*c) == FIXED_HSBDRY)
@@ -1056,7 +1080,10 @@ extern void set_node_spring_vertex(
                     sv[*n].x_nb[nn] = point_set[gindex_nb]->x;
                     sv[*n].v_nb[nn] = point_set[gindex_nb]->v;
                     sv[*n].ix_nb[nn] = p_nb->indx;
-                    sv[*n].k[nn] = ks;
+                    if (on_diskgap)
+                        sv[*n].k[nn] = ks_band;
+                    else
+                        sv[*n].k[nn] = ks;
                     if (is_fixed) sv[*n].k[nn] = 0.0;
                     sv[*n].len0[nn] = tri->side_length0[side];
                     ++nn;
@@ -1122,6 +1149,12 @@ extern void set_curve_spring_vertex(
 	    	m_l = geom_set->m_l;
 	    	lambda_l = geom_set->lambda_l;
 	    }
+        else if (hsbdry_type(curve) == DISKGAP_STRING_HSBDRY)
+        {
+	    	kl = geom_set->kl_band;
+	    	m_l = geom_set->m_l;
+	    	lambda_l = geom_set->lambda_l;
+        }
 	    else if (hsbdry_type(curve) == GORE_HSBDRY)
 	    {
 	    	kl = geom_set->kg;
@@ -1139,6 +1172,12 @@ extern void set_curve_spring_vertex(
 	    	kl = geom_set->ks;
 	    	m_l = geom_set->m_s;
 	    	lambda_l = geom_set->lambda_s;
+
+            b = curve->first;
+            BOND_TRI **btris = Btris(b);
+            HYPER_SURF* hs = Hyper_surf((*btris)->surface);
+            if (wave_type(hs) == ELASTIC_BAND_BOUNDARY)
+                kl = geom_set->ks_band;
 	    }
 	}
 	else if (dim == 2)
@@ -1255,6 +1294,10 @@ extern void set_curve_spring_vertex(
             
             for (btris = Btris(b); btris && *btris; ++btris)
             {
+                HYPER_SURF* hs = Hyper_surf((*btris)->surface);
+                if (wave_type(hs) == ELASTIC_BAND_BOUNDARY)
+                    ks = geom_set->ks_band;
+
                 nt = I_FirstRingTrisAroundPoint(p,(*btris)->tri,&tris);
                 for (j = 0; j < nt; ++j)
                 {
@@ -1303,6 +1346,7 @@ extern void set_surf_spring_vertex(
 	TRI *tris[MAX_NUM_RING1];
 	POINT *p,*p_nb;
 	double ks = geom_set->ks;
+	double ks_band = geom_set->ks_band;
 	double m_s = geom_set->m_s;
 	double lambda_s = geom_set->lambda_s;
 	boolean is_stationary_point;
@@ -1316,6 +1360,11 @@ extern void set_surf_spring_vertex(
 	double *g = nullptr;
 	if (af_params)
  	    g = af_params->gravity;
+
+    if (wave_type(surf) == ELASTIC_BAND_BOUNDARY)
+    {
+        ks = ks_band;
+    }
 
 	unsort_surf_point(surf);
 	i = *n;
@@ -1366,11 +1415,15 @@ extern void set_surf_spring_vertex(
 		    sv[i].x_nb[k] = point_set[gindex_nb]->x;
 		    sv[i].v_nb[k] = point_set[gindex_nb]->v;
 		    sv[i].ix_nb[k] = p_nb->indx;
+
 		    if (is_stationary_point == YES)
 		    	sv[i].k[k] = 0.0;
 		    else
-		    	sv[i].k[k] = ks;
-		    sv[i].len0[k] = tris[k]->side_length0[l];
+            {
+                sv[i].k[k] = ks;
+            }
+
+            sv[i].len0[k] = tris[k]->side_length0[l];
 		}
 		sorted(p) = YES;
 	    	++i;
@@ -1634,6 +1687,9 @@ extern void set_elastic_params(
     geom_set->lambda_g = af_params->lambda_g;
     geom_set->m_g = af_params->m_g;
 
+    geom_set->ks_band = af_params->ks_band;
+    geom_set->kl_band = af_params->kl_band;
+
 	/* Set elastic set time step */
 	double dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
     
@@ -1706,7 +1762,9 @@ static void assembleParachuteSet3d(
             rgb_surfs[nrgbs++] = *s;
         }
 
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY) continue;
+
 	    surfs[ns++] = *s;
 	    surf_pos_curve_loop(*s,c)
 	    {
@@ -1741,6 +1799,7 @@ static void assembleParachuteSet3d(
 	{
 	    if (pointer_in_list(*c,nc,(POINTER*)curves)) continue;
 	    if (hsbdry_type(*c) == STRING_HSBDRY ||
+            hsbdry_type(*c) == DISKGAP_STRING_HSBDRY ||
 	        hsbdry_type(*c) == MONO_COMP_HSBDRY ||
 	        hsbdry_type(*c) == GORE_HSBDRY)
 	    {
@@ -2061,85 +2120,15 @@ extern void set_equilibrium_mesh(
 {
 	switch (front->rect_grid->dim)
 	{
-	case 2:
-	    set_equilibrium_mesh2d(front);
-	    return;
 	case 3:
 	    set_equilibrium_mesh3d(front);
 	    return;
+    default:
+        printf("ERROR: dim must equal 3\n");
+        LOC(); clean_up(EXIT_FAILURE);
 	}
 }	/* end set_equilibrium_mesh */
 
-static void set_equilibrium_mesh2d(
-	Front *front)
-{
-	CURVE **c,*curve;
-	BOND *b;
-	short unsigned int seed[3] = {2,72,7172};
-	double len0,total_length = 0.0;
-	int i,n = 0;
-	INTERFACE *intfc = front->interf;
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
-	int dim = front->rect_grid->dim;
-
-	for (c = intfc->curves; c && *c; ++c)
-	{
-	    if (wave_type(*c) != ELASTIC_BOUNDARY &&
-		wave_type(*c) != ELASTIC_STRING) 
-		continue;
-	    curve = *c;
-	    for (b = curve->first; b != NULL; b = b->next)
-	    {
-		total_length +=  bond_length(b);
-		n++;
-	    }
-	    len0 = total_length/(double)n;
-	    for (b = curve->first; b != NULL; b = b->next)
-	    {
-		b->length0 = len0;
-		for (i = 0; i < dim; ++i)
-		    b->dir0[i] = (Coords(b->end)[i] - Coords(b->start)[i])
-				/b->length0;	
-	    }
-	    for (b = curve->first; b != curve->last; b = b->next)
-	    {
-		if (af_params->pert_params.pert_type == PARALLEL_RAND_PERT) 
-		{
-		    double dx_rand;
-		    double tan[MAXD];
-		    tangent(b->end,b,curve,tan,front); 
-		    dx_rand = (erand48(seed) - 0.5)*len0;
-		    for (i = 0; i < dim; ++i)
-		    	Coords(b->end)[i] += 0.2*dx_rand*tan[i];
-		}
-		else if (af_params->pert_params.pert_type == 
-				ORTHOGONAL_RAND_PERT)
-		{
-		    double dx_rand;
-		    double nor[MAXD];
-		    double amp = af_params->pert_params.pert_amp;
-		    FT_NormalAtPoint(b->end,front,nor,NO_COMP); 
-		    if (amp > 1.0) amp = 1.0;
-		    dx_rand = (erand48(seed) - 0.5)*amp*len0;
-		    for (i = 0; i < dim; ++i)
-		    	Coords(b->end)[i] += dx_rand*nor[i];
-		}
-		else if (af_params->pert_params.pert_type == SINE_PERT)
-		{
-		    /* This assumes the curve is horizontal */
-		    double amp = af_params->pert_params.pert_amp;
-		    double L = Coords(curve->start->posn)[0]; 
-		    double U = Coords(curve->end->posn)[0];
-		    double x = Coords(b->end)[0];
-		    for (i = 1; i < dim; ++i)
-		    	Coords(b->end)[i] += amp*sin(PI*(x-L)/(U-L));
-		}
-	    }
-	    for (b = curve->first; b != NULL; b = b->next)
-		set_bond_length(b,2);
-	    never_redistribute(Hyper_surf(curve)) = YES;
-	}
-}	/* end set_equilibrium_mesh2d */
 
 //TODO: Compare to set{Curve,Surf}ZeroMesh() functions in cgal.cpp
 //      Consolidate functionality if possible.
@@ -2163,8 +2152,20 @@ static void set_equilibrium_mesh3d(
 
 	for (c = intfc->curves; c && *c; ++c)
 	{
+        if ((hsbdry_type(*c) != STRING_HSBDRY && hsbdry_type(*c) != DISKGAP_STRING_HSBDRY)
+                || hsbdry_type(*c) != GORE_HSBDRY) continue;
+        
+        /*
         if (hsbdry_type(*c) != STRING_HSBDRY ||
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY ||
             hsbdry_type(*c) != GORE_HSBDRY) continue;
+        */
+
+        /*
+        if (hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY &&
+            hsbdry_type(*c) != GORE_HSBDRY) continue;
+        */
 
 	    for (b = (*c)->first; b != NULL; b = b->next)
 	    {
@@ -2186,7 +2187,8 @@ static void set_equilibrium_mesh3d(
 
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY) continue;
 	    surf = *s;
 	    ave_len = 0.0;
 	    max_len = 0.0;
@@ -2225,7 +2227,8 @@ static void set_equilibrium_mesh3d(
 
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    if (wave_type(*s) != ELASTIC_BOUNDARY && 
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY) continue;
 	    surf = *s;
 	    switch (af_params->pert_params.pert_type)
 	    {
@@ -2320,7 +2323,8 @@ static void set_equilibrium_mesh3d(
 	}
 	for (s = intfc->surfaces; s && *s; ++s)
 	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY) continue;
 	    surf = *s;
 	    ave_len = 0.0;
 	    max_len = 0.0;

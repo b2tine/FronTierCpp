@@ -326,9 +326,12 @@ void setFabricParams(Front* front)
                         CursorAfterString(infile,"Enter inertial parameter:");
                         fscanf(infile,"%lf",&af_params->porous_coeff[1]);
                         (void) printf("%f\n",af_params->porous_coeff[1]);
-                        eqn_params->porosity = af_params->porosity;
+                        CursorAfterString(infile,"Enter permeability:");
+                        fscanf(infile,"%lf",&af_params->permeability);
+                        (void) printf("%f\n",af_params->permeability);
                         eqn_params->porous_coeff[0] = af_params->porous_coeff[0];
                         eqn_params->porous_coeff[1] = af_params->porous_coeff[1];
+                        eqn_params->permeability = af_params->permeability;
                     }
                 
                     eqn_params->poro_scheme = af_params->poro_scheme;
@@ -429,6 +432,11 @@ void setFabricParams(Front* front)
                 fscanf(infile,"%lf",&af_params->m_s);
                 (void) printf("%f\n",af_params->m_s);
             }
+
+            af_params->ks_band = af_params->ks;
+	    CursorAfterStringOpt(infile,"Enter fabric band spring constant:");
+            fscanf(infile,"%lf",&af_params->ks_band);
+            (void) printf("%f\n",af_params->ks_band);
 	}
 
     af_params->m_l = 0.0;
@@ -718,7 +726,8 @@ static int countSurfPoints(INTERFACE* intfc)
 	
     for (SURFACE** s = intfc->surfaces; s && *s; ++s)
     {
-        if (wave_type(*s) == ELASTIC_BOUNDARY)
+        if (wave_type(*s) == ELASTIC_BOUNDARY ||
+            wave_type(*s) == ELASTIC_BAND_BOUNDARY)
         {
             num_fabric_pts += I_NumOfSurfPoints(*s);
             surf_count++;
@@ -735,8 +744,14 @@ static int countStringPoints(INTERFACE* intfc, boolean is_parachute_system)
 	int num_str_pts = 0;
     for (CURVE** c = intfc->curves; c && *c; ++c)
     {
-        if (FT_Dimension() == 3 && hsbdry_type(*c) == STRING_HSBDRY)
-            num_str_pts += I_NumOfCurvePoints(*c);
+        if (FT_Dimension() == 3)
+        { 
+            if (hsbdry_type(*c) == STRING_HSBDRY ||
+                hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
+            {
+                num_str_pts += I_NumOfCurvePoints(*c);
+            }
+        }
         else if (FT_Dimension() == 2 && wave_type(*c) == ELASTIC_STRING)
             num_str_pts += I_NumOfCurvePoints(*c);
         else
@@ -1221,6 +1236,7 @@ static void init_fixarea_params(
         intfc_surface_loop(intfc,s)
         {
             if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_BAND_BOUNDARY &&
                 wave_type(*s) != ELASTIC_STRING) continue;
 
             surf_tri_loop(*s,tri)
@@ -1249,6 +1265,7 @@ static void init_fixarea_params(
         intfc_surface_loop(intfc,s)
         {
             if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_BAND_BOUNDARY &&
                 wave_type(*s) != ELASTIC_STRING) continue;
         
             (*s)->extra = (POINTER)registered_pts;
@@ -1275,6 +1292,7 @@ static void init_fixarea_params(
         intfc_surface_loop(intfc,s)
         {
             if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_BAND_BOUNDARY &&
                 wave_type(*s) != ELASTIC_STRING) continue;
             if ((*s)->extra == NULL) continue;
             registered_pts = (REGISTERED_PTS*)(*s)->extra;
@@ -1306,6 +1324,7 @@ static void restart_fixarea_params(
     intfc_surface_loop(intfc,s)
     {
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY &&
             wave_type(*s) != ELASTIC_STRING) continue;
         
         if ((*s)->extra == NULL) continue;
@@ -1386,6 +1405,7 @@ static void init_fixarea_params(
     while (next_point(intfc,&p,&hse,&hs))
     {
         if (wave_type(hs) != ELASTIC_BOUNDARY &&
+            wave_type(hs) != ELASTIC_BAND_BOUNDARY &&
             wave_type(hs) != ELASTIC_STRING) continue;
         if (within_shape(sparams,Coords(p))) num_pts++;	
     }
@@ -1404,8 +1424,8 @@ static void init_fixarea_params(
             //TODO: Add hsbdry_type() == STRING_HSBDRY, GORE_HSBDRY etc.
             //      to facilitate other kinds initialization procedures.
             if (wave_type(hs) != ELASTIC_BOUNDARY &&
-		wave_type(hs) != ELASTIC_STRING) 
-		continue;
+                wave_type(hs) != ELASTIC_BAND_BOUNDARY &&
+                wave_type(hs) != ELASTIC_STRING) continue;
 	    if (within_shape(sparams,Coords(p)))
 	    {
 		fixarea_params->global_ids[num_pts] = Gindex(p);	
@@ -1481,8 +1501,8 @@ static void init_fixpoint_params(
         while (next_point(intfc,&p,&hse,&hs))
         {
             if (wave_type(hs) != ELASTIC_BOUNDARY &&
-		wave_type(hs) != ELASTIC_STRING) 
-		continue;
+                wave_type(hs) != ELASTIC_BAND_BOUNDARY &&
+                wave_type(hs) != ELASTIC_STRING) continue;
 	    dist = distance_between_positions(coords,Coords(p),dim);
 	    if (dist < min_dist)
 	    {
@@ -1667,13 +1687,17 @@ static void convert_to_point_mass(
             num_str_pts = num_fabric_pts = num_gore_pts = 0;
             for (s = intfc->surfaces; s && *s; ++s)
             {
-                if (wave_type(*s) == ELASTIC_BOUNDARY)
+                if (wave_type(*s) == ELASTIC_BOUNDARY ||
+                    wave_type(*s) == ELASTIC_BAND_BOUNDARY)
+                {
                     num_fabric_pts += I_NumOfSurfPoints(*s);
+                }
             }
             
             for (c = intfc->curves; c && *c; ++c)
             {
-                if (hsbdry_type(*c) == STRING_HSBDRY)
+                if (hsbdry_type(*c) == STRING_HSBDRY ||
+                    hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
                 {
                     num_str_pts += I_NumOfCurvePoints(*c); 
                     if (af_params->is_parachute_system == YES)
@@ -1741,13 +1765,13 @@ static void set_gore_node(
 	CURVE **c;
 
 	for (c = n->in_curves; c && *c; ++c)
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
-		return;
+	    if (hsbdry_type(*c) == STRING_HSBDRY ||
+            hsbdry_type(*c) == DISKGAP_STRING_HSBDRY) return;
 	    else if (hsbdry_type(*c) == GORE_HSBDRY)
 		is_gore_node = YES;
 	for (c = n->out_curves; c && *c; ++c)
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
-		return;
+	    if (hsbdry_type(*c) == STRING_HSBDRY ||
+            hsbdry_type(*c) == DISKGAP_STRING_HSBDRY) return;
 	    else if (hsbdry_type(*c) == GORE_HSBDRY)
 		is_gore_node = YES;
 	if (!is_gore_node) return;

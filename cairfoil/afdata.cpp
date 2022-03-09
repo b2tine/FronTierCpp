@@ -65,6 +65,7 @@ void printAfExtraData(
     intfc_surface_loop(intfc,s) 
     {
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY &&
             wave_type(*s) != ELASTIC_STRING) continue;
 
         int num_pts;
@@ -88,7 +89,8 @@ void printAfExtraData(
     fprintf(outfile,"\nCurve extra data:\n");
     intfc_curve_loop(intfc,c)
 	{
-        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+        if (hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue;
 
         /*
         if ((*c)->extra == nullptr)
@@ -243,6 +245,7 @@ void readAfExtraData(
     intfc_surface_loop(intfc,s)
     {
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY &&
             wave_type(*s) != ELASTIC_STRING) continue;
 
         int num_pts;
@@ -267,7 +270,8 @@ void readAfExtraData(
     next_output_line_containing_string(infile,"Curve extra data:");
 	for (c = intfc->curves; c && *c; ++c)
 	{
-        if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+        if (hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue;
 
         /*
         FINITE_STRING* s_params;
@@ -448,6 +452,7 @@ void clearRegisteredPoints(Front* front)
     intfc_surface_loop(front->interf,s)
     {
         if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY &&
             wave_type(*s) != ELASTIC_STRING) continue;
         
         if ((*s)->extra)
@@ -482,8 +487,8 @@ void printHyperSurfQuality(
 	    for (c = intfc->curves; c && *c; ++c)
 	    {
 		if (wave_type(*c) != ELASTIC_BOUNDARY &&
-		    wave_type(*c) != ELASTIC_STRING)
-		    continue;
+            wave_type(*c) != ELASTIC_BAND_BOUNDARY &&
+		    wave_type(*c) != ELASTIC_STRING) continue;
 		curve = *c;
 		for (bond = curve->first; bond != NULL; bond = bond->next)
 		{
@@ -523,8 +528,8 @@ void printHyperSurfQuality(
 	    min_length = HUGE;
 	    for (c = intfc->curves; c && *c; ++c)
 	    {
-		if (hsbdry_type(*c) != STRING_HSBDRY)
-		    continue;
+		if (hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue;
 		curve = *c;
 		for (bond = curve->first; bond != NULL; bond = bond->next)
 		{
@@ -542,8 +547,8 @@ void printHyperSurfQuality(
 	    min_area = min_length = HUGE;
 	    for (s = intfc->surfaces; s && *s; ++s)
 	    {
-		if (wave_type(*s) != ELASTIC_BOUNDARY)
-		    continue;
+		if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY) continue;
 		surf = *s;
 		for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
 				tri = tri->next)
@@ -623,11 +628,22 @@ void optimizeElasticMesh(
 
 	old_string_pts = old_canopy_pts = 0;
 	for (s = intfc->surfaces; s && *s; ++s)
-	    if (wave_type(*s) == ELASTIC_BOUNDARY)
-		old_canopy_pts += I_NumOfSurfPoints(*s);
-	for (c = intfc->curves; c && *c; ++c)
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
-		old_string_pts += I_NumOfCurvePoints(*c) - 2;
+    {
+	    if (wave_type(*s) == ELASTIC_BOUNDARY ||
+            wave_type(*s) == ELASTIC_BAND_BOUNDARY)
+        {
+            old_canopy_pts += I_NumOfSurfPoints(*s);
+        }
+    }
+	
+    for (c = intfc->curves; c && *c; ++c)
+    {
+	    if (hsbdry_type(*c) == STRING_HSBDRY ||
+            hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
+        {
+            old_string_pts += I_NumOfCurvePoints(*c) - 2;
+        }
+    }
 
 	printf("num_opt_round = %d\n\n",num_opt_round);
 	
@@ -639,8 +655,9 @@ void optimizeElasticMesh(
 	    for (c = intfc->curves; c && *c; ++c)
 	    {
 	    	if (hsbdry_type(*c) != MONO_COMP_HSBDRY &&
-		    hsbdry_type(*c) != STRING_HSBDRY &&
-		    hsbdry_type(*c) != GORE_HSBDRY)
+		        hsbdry_type(*c) != STRING_HSBDRY &&
+		        hsbdry_type(*c) != DISKGAP_STRING_HSBDRY &&
+		        hsbdry_type(*c) != GORE_HSBDRY)
 		    continue;
 	    	curve = *c;
 	    	nothing_done = FT_OptimizeCurveMesh(front,curve,
@@ -650,8 +667,8 @@ void optimizeElasticMesh(
 
 	    for (s = intfc->surfaces; s && *s; ++s)
 	    {
-	    	if (wave_type(*s) != ELASTIC_BOUNDARY)
-		    continue;
+	    	if (wave_type(*s) != ELASTIC_BOUNDARY &&
+                wave_type(*s) != ELASTIC_BAND_BOUNDARY) continue;
 	    	surf = *s;
 	    	nothing_done = FT_OptimizeSurfMesh(front,surf,
 				scaled_redist_params);
@@ -672,11 +689,22 @@ void optimizeElasticMesh(
 
 	new_string_pts = new_canopy_pts = 0;
 	for (s = intfc->surfaces; s && *s; ++s)
-	    if (wave_type(*s) == ELASTIC_BOUNDARY)
-		new_canopy_pts += I_NumOfSurfPoints(*s);
-	for (c = intfc->curves; c && *c; ++c)
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
-		new_string_pts += I_NumOfCurvePoints(*c) - 2;
+    {
+	    if (wave_type(*s) == ELASTIC_BOUNDARY ||
+            wave_type(*s) == ELASTIC_BOUNDARY)
+        {
+            new_canopy_pts += I_NumOfSurfPoints(*s);
+        }
+    }
+	
+    for (c = intfc->curves; c && *c; ++c)
+    {
+	    if (hsbdry_type(*c) == STRING_HSBDRY ||
+            hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
+        {
+		    new_string_pts += I_NumOfCurvePoints(*c) - 2;
+        }
+    }
 	if (debugging("optimize_intfc"))
 	{
         sprintf(gvdir,"%s/gview-after-optimize",OutName(front));
@@ -749,8 +777,11 @@ void optimizeElasticStrings(
 	old_string_pts = 0;
 	for (c = intfc->curves; c && *c; ++c)
     {
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
+	    if (hsbdry_type(*c) == STRING_HSBDRY ||
+            hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
+        {
             old_string_pts += I_NumOfCurvePoints(*c) - 2;
+        }
     }
 	printf("num_opt_round = %d\n\n",num_opt_round);
 	
@@ -766,7 +797,8 @@ void optimizeElasticStrings(
 		    hsbdry_type(*c) != STRING_HSBDRY &&
 		    hsbdry_type(*c) != GORE_HSBDRY) continue;
             */
-            if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+            if (hsbdry_type(*c) != STRING_HSBDRY &&
+                hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue;
 	    	curve = *c;
 	    	nothing_done = FT_OptimizeCurveMesh(front,curve,
 				scaled_redist_params);
@@ -808,8 +840,11 @@ void optimizeElasticStrings(
 	new_string_pts = 0;
     for (c = intfc->curves; c && *c; ++c)
     {
-	    if (hsbdry_type(*c) == STRING_HSBDRY)
+	    if (hsbdry_type(*c) == STRING_HSBDRY ||
+            hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
+        {
             new_string_pts += I_NumOfCurvePoints(*c) - 2;
+        }
     }
 
     if (debugging("optimize_intfc"))

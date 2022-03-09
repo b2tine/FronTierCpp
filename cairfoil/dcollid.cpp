@@ -259,7 +259,8 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	    {
             CD_HSE_TYPE tag;
 
-            if (wave_type(*s) == ELASTIC_BOUNDARY)
+            if (wave_type(*s) == ELASTIC_BOUNDARY ||
+                wave_type(*s) == ELASTIC_BAND_BOUNDARY)
             {
                 tag = CD_HSE_TYPE::FABRIC_TRI;
             }
@@ -289,7 +290,8 @@ void CollisionSolver3d::assembleFromInterface(INTERFACE* intfc)
 	intfc_curve_loop(intfc,c)
 	{
         if (is_bdry(*c)) continue;
-	    if (hsbdry_type(*c) != STRING_HSBDRY) continue; 
+	    if (hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue; 
 
         CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;
 	    curve_bond_loop(*c,b)
@@ -316,7 +318,8 @@ void CollisionSolver3d::assembleFromSurf(SURFACE* surf)
     {
         CD_HSE_TYPE tag;
 
-        if (wave_type(surf) == ELASTIC_BOUNDARY)
+        if (wave_type(surf) == ELASTIC_BOUNDARY ||
+            wave_type(surf) == ELASTIC_BAND_BOUNDARY)
         {
             tag = CD_HSE_TYPE::FABRIC_TRI;
         }
@@ -341,7 +344,8 @@ void CollisionSolver3d::assembleFromSurf(SURFACE* surf)
 
 void CollisionSolver3d::assembleFromCurve(CURVE* curve)
 {
-    if (hsbdry_type(curve) != STRING_HSBDRY) return; 
+    if (hsbdry_type(curve) != STRING_HSBDRY &&
+        hsbdry_type(curve) != DISKGAP_STRING_HSBDRY) return; 
     if (is_bdry(curve)) return;
 
     CD_HSE_TYPE tag = CD_HSE_TYPE::STRING_BOND;

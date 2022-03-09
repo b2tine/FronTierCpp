@@ -40,9 +40,9 @@ extern void print_airfoil_stat(
 	    int owner[MAXD] = {0};
 	    int owner_id = af_params->node_id[0];
 
-        int w_type[3] = {ELASTIC_BOUNDARY,MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
-        elastic_intfc = collect_hyper_surfaces(front,owner,w_type,3);
-	        //elastic_intfc = FT_CollectHypersurfFromSubdomains(front, owner, ELASTIC_BOUNDARY);
+        int w_type[4] = {ELASTIC_BOUNDARY,ELASTIC_BAND_BOUNDARY,
+            MOVABLE_BODY_BOUNDARY,NEUMANN_BOUNDARY};
+        elastic_intfc = collect_hyper_surfaces(front,owner,w_type,4);
 	    
         collectNodeExtra(front,elastic_intfc,owner_id);
 	    front->interf = elastic_intfc;
@@ -738,7 +738,8 @@ static void print_airfoil_stat3d_2(
 	STATE *st;
     for (s = intfc->surfaces; s && *s; ++s)
 	{
-	    if (wave_type(*s) != ELASTIC_BOUNDARY) continue;
+	    if (wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY) continue;
 
 	    surf = *s;
 	    zcom = center_of_mass(Hyper_surf(surf))[2];
@@ -796,10 +797,22 @@ static void print_airfoil_stat3d_2(
 	    	kl = af_params->kl;
         	m_l = af_params->m_l;
 	    }
+        else if (hsbdry_type(*c) == DISKGAP_STRING_HSBDRY)
+	    {
+	    	kl = af_params->kl_band;
+        	m_l = af_params->m_l;
+        }
 	    else if (hsbdry_type(*c) == MONO_COMP_HSBDRY)
 	    {
 		    kl = af_params->ks;
         	m_l = af_params->m_s;
+
+            b = (*c)->first;
+            BOND_TRI **btris = Btris(b);
+            HYPER_SURF* hs = Hyper_surf((*btris)->surface);
+            if (wave_type(hs) == ELASTIC_BAND_BOUNDARY)
+                kl = af_params->ks_band;
+
 	    }
 	    else if (hsbdry_type(*c) == GORE_HSBDRY)
 	    {
@@ -885,7 +898,8 @@ static void print_airfoil_stat3d_2(
 
     for (c = intfc->curves; c && *c; ++c)
 	{
-	    if (hsbdry_type(*c) != STRING_HSBDRY) continue;
+	    if (hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue;
 	    str_length += curve_length(*c);
 	    nc++;
 	}
@@ -925,8 +939,11 @@ static void print_strings(
     boolean status = NO;
     intfc_curve_loop(intfc, curve)
 	{
-        if (hsbdry_type(*curve) == STRING_HSBDRY)
+        if (hsbdry_type(*curve) == STRING_HSBDRY ||
+            hsbdry_type(*curve) == DISKGAP_STRING_HSBDRY)
+        {
             status = YES;
+        }
     }
     if (!status) return;
 
@@ -951,7 +968,8 @@ static void print_strings(
 	
     intfc_curve_loop(intfc, curve)
 	{
-	    if (hsbdry_type(*curve) != STRING_HSBDRY) continue;
+	    if (hsbdry_type(*curve) != STRING_HSBDRY &&
+            hsbdry_type(*curve) != DISKGAP_STRING_HSBDRY) continue;
 	    
         /* in the breaking strings case, one curve breaks into two. */
 	    boolean new_curve = NO;
@@ -1177,7 +1195,8 @@ static void print_drag3d(
     int fcount = 0;
     for (s = intfc->surfaces; s && *s; ++s)
     {
-        if (wave_type(*s) != ELASTIC_BOUNDARY || is_bdry(*s)) continue;
+        if ((wave_type(*s) != ELASTIC_BOUNDARY && 
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY) || is_bdry(*s)) continue;
 
         /* drag force */
         sprintf(fname,"%s/drag-%d.xg",OutName(front),fcount);

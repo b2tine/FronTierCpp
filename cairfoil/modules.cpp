@@ -39,12 +39,15 @@ static void setCanopyBodyIndex(Front *front)
 	intfc_surface_loop(front->interf, s)
 	{
 	    if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-		count++;
+            count++;
 	}
 	intfc_surface_loop(front->interf, s)
 	{
-	    if (wave_type(*s) == ELASTIC_BOUNDARY)
-		body_index(*s) = count++;
+	    if (wave_type(*s) == ELASTIC_BOUNDARY ||
+            wave_type(*s) == ELASTIC_BAND_BOUNDARY)
+        {
+            body_index(*s) = count++;
+        }
 	}
 }	/* end setCanopyBodyIndex */
 

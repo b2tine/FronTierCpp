@@ -448,14 +448,14 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                 int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
                 vel_nb[nb] = vel[l][index_nb];
             }
-            else if (wave_type(hs) == ELASTIC_BOUNDARY) //TODO: NEVER SEES THE BOUNDARY
+            else if (wave_type(hs) == ELASTIC_BOUNDARY || 
+                     wave_type(hs) == ELASTIC_BAND_BOUNDARY)
             {
+                //TODO: NEVER SEES THIS BOUNDARY
+                
                 double v_poro[MAXD] = {0.0};
                 setPoroSlipBoundaryNIP(icoords,m,nb,comp,hs,intfc_state,vel,v_poro);
                 vel_nb[nb] = v_poro[l];
-
-                //int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
-                //vel_nb[nb] = vel[l][index_nb];
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
                      wave_type(hs) == MOVABLE_BODY_BOUNDARY)
@@ -1162,20 +1162,9 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     double temp_reflect;
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.temp,
             getStateTemp,&temp_reflect,&field.temp[index]);
-
-        /*
-        double temp_wall = eqn_params->fixed_wall_temp;
-        if (!eqn_params->use_fixed_wall_temp)
-        {
-            //Interpolate the temperature at the reflected point
-            double temp_reflect;
-            FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.temp,
-                    getStateTemp,&temp_reflect,&field.temp[index]);
-
-            //Compute Wall Temperature
-            temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
-        }
-        */
+    
+    //Compute Wall Temperature
+    double temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
 
     //Interpolate the pressure at the reflected point
     double pres_reflect;
@@ -1186,19 +1175,30 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.dens,
             getStateDens,&dens_reflect,&field.dens[index]);
 
+    double mu_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
+            getStateMu,&mu_reflect,&field.mu[index]);
+
     double pl = pres_reflect;
     double rhol = dens_reflect;
     double pr = real_pres;
     double rhor = real_dens;
     double Msqr = gamma/(gamma + 1.0)*std::abs(rhor*pr - rhol*pl);
 
-    double beta = 0.0;
     double poro = eqn_params->porosity;
-    double iporo = 1.0/poro;
+    double perm = eqn_params->permeability;
+
+    double alpha = eqn_params->porous_coeff[0];
+    double beta = 0.0;
+    //double beta = eqn_params->porous_coeff[1];
+
+    double A = mu_reflect*alpha;
+    double B = beta;
+        //double B = rhol*beta;
 
     double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
 
-    double mdot = -2.0*sgn*Msqr/(iporo + std::sqrt(iporo*iporo + 4.0*beta*Msqr));
+    double mdot = -2.0*sgn*Msqr/(A + std::sqrt(A*A + 4.0*beta*Msqr));
     double nor_vel = -1.0*sgn*std::abs(mdot/rhor - mdot/rhol);
     
     double velo[MAXD] = {0.0};
@@ -1207,15 +1207,13 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
         vel_ghost_nor[j] = nor_vel*nor[j];
     }
 
-
+    double pres_drop = -1.0*(A*nor_vel + B*std::abs(nor_vel)*nor_vel);
+    double pres_wall = pr - pres_drop;
+    
     //Compute density near wall using the wall temperature and the pressure at the reflected point
-        //double dens_wall = pres_reflect/temp_wall/R_specific;
-    double dens_wall = dens_reflect; //ASSUME ADIABATIC
+    double dens_wall = pres_wall/temp_wall/R_specific;
+        //double dens_wall = dens_reflect; //ASSUME ADIABATIC
 
-    //Interpolate the viscosity at the reflected point
-    double mu_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-            getStateMu,&mu_reflect,&field.mu[index]);
 
     if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
     {
@@ -1226,20 +1224,21 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
 
     //TODO: Is it correct to use the total effective viscosity including the existing
     //      sgs viscosity to compute the new sgs viscosity?
-    //
-    //          i.e. Should we skip adding mu_turb_reflect?
-    double mu_turb_reflect = 0.0;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
-            getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);
-    mu_reflect += mu_turb_reflect;
+    
+        /*
+        double mu_turb_reflect = 0.0;
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
+                getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);
+        mu_reflect += mu_turb_reflect;
+        */
 
     //TODO: Need separate function for poro slip vel -- need to computed mdot etc.
     double dist_wall = dist_reflect;
     double Cw = 1.0; //get from eqn_params or similar
-    double h_canopy = 0.001;
+        //double h_canopy = 0.001;
         //double Kp = poro*h_canopy*mu_reflect;
         //double delta_y = Cw*std::sqrt(Kp/poro);
-    double delta_y = Cw*std::sqrt(h_canopy*mu_reflect);
+    double delta_y = Cw*std::sqrt(perm/poro);
     dist_wall += delta_y;
 
     double tau_wall[MAXD] = {0.0};

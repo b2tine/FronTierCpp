@@ -961,36 +961,28 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         double pr = st_tmp_real.pres;
         double rhor = st_tmp_real.dens;
         
-        double gamma = 1.4; //get from eqn_params->eos[comp]
+        double gamma = st_tmp_ghost.eos->gamma;
 
         double Msqr = gamma/(gamma + 1.0)*std::abs(rhor*pr - rhol*pl);
 
         //TODO: INPUT FILE OPTIONS
         double poro = eqn_params->porosity;
-        double iporo = 1.0/poro;
-        
         double alpha = eqn_params->porous_coeff[0];
         
         double beta = 0.0;
         //double beta = eqn_params->porous_coeff[1];
         
         double A = mu_total*alpha;
-        //double A = alpha;
+            //double A = alpha;
         double B = beta;
-        //double B = rhol*beta;
+            //double B = rhol*beta;
         
         double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
 
-        //double mdot = -2.0*sgn*Msqr/(iporo + std::sqrt(iporo*iporo + 4.0*beta*Msqr));
-        double mdot = -2.0*sgn*Msqr/(alpha + std::sqrt(alpha + 4.0*beta*Msqr));
+        double mdot = -2.0*sgn*Msqr/(A + std::sqrt(A*A + 4.0*beta*Msqr));
 
         double nor_vel = -1.0*sgn*std::abs(mdot/rhor - mdot/rhol);
         
-        double canopy_thickness = 0.0001;
-        //double alpha = 1.0/poro/canopy_thickness;
-        //double A = 1.0/poro/canopy_thickness;
-
-        //double pres_drop = -1.0*(alpha*nor_vel + beta*std::abs(nor_vel)*nor_vel)*canopy_thickness;
         double pres_drop = -1.0*(A*nor_vel + B*std::abs(nor_vel)*nor_vel);
         
         st_tmp_ghost.pres = pl + pres_drop;

@@ -82,7 +82,7 @@ static void findBeltNodePoints(SURFACE*,CURVE**,double*,POINT**,POINT**,int,
                     double);
 static void setNodePoints(CURVE*,double*,int,POINT**,double);
 static void installCircleBeltString(Front*,SURFACE*,SURFACE*,POINT**,POINT**,int);
-static void connectTwoStringNodes(Front*,NODE*,NODE*);
+static void connectTwoStringNodes(Front*,NODE*,NODE*,int);
 static void checkAndSeparateOverlappingPoints(SURFACE *surf);
 
 extern void CgalCanopySurface(
@@ -1734,6 +1734,16 @@ static void installStringsLoadNode(
     //create new nodes at the string_node_pts
 	FT_VectorMemoryAlloc((POINTER*)&string_nodes,num_strings,sizeof(NODE*));
 
+	AF_NODE_TYPE canopy_node_type = CANOPY_STRING_NODE;
+	if (CursorAfterStringOpt(infile,"Enter yes if connecting to disk gap band:"))
+    {
+	    char s[100];
+	    fscanf(infile,"%s",s);
+        (void) printf("%s\n",s);
+	    if (s[0] == 'Y' || s[0] == 'y')
+            canopy_node_type = DISKGAP_STRING_NODE;
+    }
+
 	node_moved = NO;
 	for (i = 0; i < num_strings; ++i)
 	{
@@ -1749,7 +1759,8 @@ static void installStringsLoadNode(
                     move_closed_loop_node(canopy_bdry,bond);
                     string_nodes[i] = I_NodeOfPoint(intfc,bond->start);
                     FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
-                    extra->af_node_type = STRING_NODE;
+                    extra->af_node_type = canopy_node_type;
+                        //extra->af_node_type = STRING_NODE;
                     string_nodes[i]->extra = (POINTER)extra;
                     string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
                     break;
@@ -1768,7 +1779,8 @@ static void installStringsLoadNode(
                 split_curve(bond->start,bond,canopy_bdry,0,0,0,0);
                 string_nodes[i] = I_NodeOfPoint(intfc,bond->start);
                 FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
-                extra->af_node_type = STRING_NODE;
+                extra->af_node_type = canopy_node_type;
+                    //extra->af_node_type = STRING_NODE;
                 string_nodes[i]->extra = (POINTER)extra;
                 string_nodes[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
                 break;
@@ -3191,7 +3203,9 @@ static void CgalCircleBelt(
         center[2] = height - 0.5*length - gap;
         FT_MakeCylinderShell(front,center,CirR[0],length,2,amb_comp,amb_comp,0,
                                     &belt);
+        
         wave_type(belt) = ELASTIC_BOUNDARY;
+
         FT_InstallSurfEdge(belt,MONO_COMP_HSBDRY);
 	setMonoCompBdryZeroLength(belt);
 
@@ -3245,8 +3259,7 @@ static void findBeltNodePoints(
             curves[n++] = *c;
 	surf_neg_curve_loop(surf,c)
             curves[n++] = *c;
-        if (Coords(curves[0]->start->posn)[2] < 
-            Coords(curves[1]->start->posn)[2])
+        if (Coords(curves[0]->start->posn)[2] < Coords(curves[1]->start->posn)[2])
         {
             /* make curves[0] the upper curve */
             CURVE *ctmp = curves[0];
@@ -3327,8 +3340,8 @@ static void installCircleBeltString(
         Front *front,
         SURFACE *surf1,
         SURFACE *surf2,
-        POINT **node_pts1,
-        POINT **node_pts2,
+        POINT **node_pts1, //circle node points
+        POINT **node_pts2, //ubelt node points
         int num_strings)
 {
         int i;
@@ -3349,7 +3362,8 @@ static void installCircleBeltString(
             move_closed_loop_node(c1,b1);
         nodes1[0] = I_NodeOfPoint(intfc,node_pts1[0]);
         FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
-        extra->af_node_type = STRING_NODE;
+        extra->af_node_type = CANOPY_STRING_NODE;
+        //extra->af_node_type = STRING_NODE;
         nodes1[0]->extra = (POINTER)extra;
         nodes1[0]->size_of_extra = sizeof(AF_NODE_EXTRA);
 
@@ -3358,7 +3372,8 @@ static void installCircleBeltString(
             move_closed_loop_node(c2,b2);
         nodes2[0] = I_NodeOfPoint(intfc,node_pts2[0]);
         FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
-        extra->af_node_type = STRING_NODE;
+        extra->af_node_type = DISKGAP_STRING_NODE;
+            //extra->af_node_type = STRING_NODE;
         nodes2[0]->extra = (POINTER)extra;
         nodes2[0]->size_of_extra = sizeof(AF_NODE_EXTRA);
 
@@ -3370,7 +3385,8 @@ static void installCircleBeltString(
                 split_curve(b1->start,b1,c1,0,0,0,0);
                 nodes1[i] = I_NodeOfPoint(intfc,node_pts1[i]);
                 FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
-                extra->af_node_type = STRING_NODE;
+                extra->af_node_type = CANOPY_STRING_NODE;
+                    //extra->af_node_type = STRING_NODE;
                 nodes1[i]->extra = (POINTER)extra;
                 nodes1[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
             }
@@ -3380,20 +3396,22 @@ static void installCircleBeltString(
                 split_curve(b2->start,b2,c2,0,0,0,0);
                 nodes2[i] = I_NodeOfPoint(intfc,node_pts2[i]);
                 FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
-                extra->af_node_type = STRING_NODE;
+                extra->af_node_type = DISKGAP_STRING_NODE;
+                    //extra->af_node_type = STRING_NODE;
                 nodes2[i]->extra = (POINTER)extra;
                 nodes2[i]->size_of_extra = sizeof(AF_NODE_EXTRA);
             }
         }
         for (i = 0; i < num_strings; ++i)
-            connectTwoStringNodes(front,nodes1[i],nodes2[i]); 
+            connectTwoStringNodes(front,nodes1[i],nodes2[i],DISKGAP_STRING_HSBDRY); 
         FT_FreeThese(2,nodes1,nodes2);
 }       /* end installCircleBeltString */
 
 static void connectTwoStringNodes(
         Front *front,
         NODE *start,
-        NODE *end)
+        NODE *end,
+        int hsbdry_type)
 {
         CURVE *string_curve;
         BOND *b;
@@ -3403,7 +3421,8 @@ static void connectTwoStringNodes(
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
 	string_curve = make_curve(0,0,start,end);
-	hsbdry_type(string_curve) = STRING_HSBDRY;
+	hsbdry_type(string_curve) = hsbdry_type;
+	    //hsbdry_type(string_curve) = STRING_HSBDRY;
 
     spacing = separation(start->posn,end->posn,3);
 

@@ -44,7 +44,9 @@ enum AF_NODE_TYPE {
 	STRING_NODE,
 	PRESET_NODE,
 	SEC_LOAD_NODE,
-    THR_LOAD_NODE
+    THR_LOAD_NODE,
+    CANOPY_STRING_NODE,
+	DISKGAP_STRING_NODE
 };
 
 enum SPRING_MODEL {
@@ -203,7 +205,9 @@ struct AF_PARAMS
 
     double kbs {0.0};    /* spring bending constant of surface */
 	double ks {5000.0};  /* spring constant of surface */
+	double ks_band {5000.0};  /* spring constant of disk gap band surface */
 	double kl {50000.0}; /* spring constant of string curves */
+	double kl_band {50000.0}; /* spring constant of disk gap string curves */
 	double kg {0.0};     /*(disabled) spring constant of gore curves */
     double mu_s {0.0};        /* fabric static friction consant */
     double mu_l {0.0};        /* string curves static friction consant */
@@ -226,6 +230,7 @@ struct AF_PARAMS
     PORO_SCHEME poro_scheme;
 	double porous_coeff[2];         /* viscous and inertial coefficients*/
 	double porosity {0.0};			/* canopy porosity */
+    double permeability {7.6033e-12};
 	
     double area_dens;		/* canopy area density */
 	int    n_sub;			/* number of sub-steps for tan prop */
@@ -291,6 +296,8 @@ struct ELASTIC_SET
 	int num_surfs;
 	int num_curves;
 	int num_nodes;
+	double ks_band;
+	double kl_band;
 	double ks;
 	double kl;
 	double kg;
