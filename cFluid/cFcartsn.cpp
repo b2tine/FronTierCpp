@@ -638,25 +638,25 @@ void G_CARTESIAN::solve(double dt)
     //appendOpenEndStates(); /* open boundary test */
 	
      
+    static bool first = true;
+    if (first)
+    {
+        computeDynamicViscosity();
+        first = false;
+    }
+
+    //TODO: Precompute wall shear stress magnitudes
+    //      (which are assumed to be constant over the time step)
+    //
+    //      Note that the wall shear stress  {\tau}_{wall} * (u_{T} / |u_{T}|)
+    //      will not remain constant since it is computed using the instantaneous
+    //      tangential velocity.
+    //
+    //      Just the magnitude of the wall stress is assumed to remain constant,
+    //      and it can be interpreted as an average value over the time step.
+
     if (!eqn_params->is_inviscid)
     {
-        static bool first = true;
-        if (first)
-        {
-            computeDynamicViscosity();
-            first = false;
-        }
-
-        //TODO: Precompute wall shear stress magnitudes
-        //      (which are assumed to be constant over the time step)
-        //
-        //      Note that the wall shear stress  {\tau}_{wall} * (u_{T} / |u_{T}|)
-        //      will not remain constant since it is computed using the instantaneous
-        //      tangential velocity.
-        //
-        //      Just the magnitude of the wall stress is assumed to remain constant,
-        //      and it can be interpreted as an average value over the time step.
-
         
         //TODO: implement this
         //
@@ -5526,6 +5526,15 @@ void G_CARTESIAN::setNeumannStates(
 		    vn += v[j]*nor[j];
 	    }
             
+        /*
+        // reflect normal component of velocity //
+        for (j = 0; j < dim; ++j)
+        {
+            v[j] = v[j] - 2.0*vn*nor[j];
+    		st_tmp.momn[j] = v[j]*st_tmp.dens;
+        }
+        */
+
         /* Only normal component is reflected, 
             relative tangent velocity is zero */
         for (j = 0; j < dim; j++)
