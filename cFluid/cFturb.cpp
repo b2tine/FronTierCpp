@@ -334,24 +334,9 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
     for (int i = 0; i < dim; ++i)
     for (int j = 0; j < dim; ++j)
     {
-        //TODO: For compressible flow S may be different ...
         S[i][j] = 0.5*(alpha[i][j] + alpha[j][i]);
     }
 
-    /////////////////////////////////////////////////////////////////////
-    //TODO: Is this what it should be instead for compressible flow?
-    //
-    //  for (int i = 0; i < dim; ++i)
-    //  for (int j = 0; j < dim; ++j)
-    //  {
-    //      S[i][j] = alpha[i][j] + alpha[j][i];
-    //  }
-    //
-    //  for (int i = 0; i < dim; ++i)
-    //  {
-    //      S[i][i] -= 2.0/3.0*alpha[i][i];
-    //  }
-    /////////////////////////////////////////////////////////////////////
     
     double NormFrobenius = 0.0;
     for (int i = 0; i < dim; ++i)
@@ -381,44 +366,6 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
 
 double G_CARTESIAN::computeEddyViscosityWALE(int* icoords)
 {
-    /*
-    auto alpha = computeVelocityGradient(icoords);
-
-    std::vector<std::vector<double>> S(dim,std::vector<double>(dim,0.0));
-    std::vector<std::vector<double>> g2(dim,std::vector<double>(dim,0.0));
-
-    for (int i = 0; i < dim; ++i)
-    for (int j = 0; j < dim; ++j)
-    {
-        S[i][j] = 0.5*(alpha[i][j] + alpha[j][i]);
-        
-        for (int k = 0; k < dim; ++j)
-        {
-            g2[i][j] += alpha[i][k]*alpha[k][j];
-        }
-    }
-
-    std::vector<std::vector<double>> Sd(dim,std::vector<double>(dim,0.0));
-
-    for (int i = 0; i < dim; ++i)
-    for (int j = 0; j < dim; ++j)
-    {
-        Sd[i][j] = 0.5*(g2[i][j] + g2[j][i]);
-    }
-
-    for (int k = 0; k < dim; ++k)
-    {
-        Sd[k][k] -= g2[k][k]/3.0;
-    }
-
-    for (int i = 0; i < dim; ++i)
-    for (int j = 0; j < dim; ++j)
-    {
-        sum_S = S[i][j]*S[i][j];
-        sum_Sd = Sd[i][j]*Sd[i][j];
-    }
-    */
-
     auto alpha = computeVelocityGradient(icoords);
 
     double sum_S = 0.0;
@@ -1119,14 +1066,6 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
             nor[i] *= -1.0;
 	}
 
-    /*
-    double nor_ghost[MAXD] = {0.0};
-    for (int j = 0; j < dim; ++j)
-    {
-        nor_ghost[j] = -1.0*nor[j];
-    }
-    */
-    
     //NOTE: must use unit-length vectors with FT_GridSizeInDir()
     double dist_reflect = FT_GridSizeInDir(nor,front);
     
@@ -1298,13 +1237,12 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     double dist_wall = dist_reflect;
     double Cw = 1.0; //get from eqn_params or similar
     double h_canopy = 0.001;
-    //double Kp = poro*h_canopy*mu_reflect;
-    //double delta_y = Cw*std::sqrt(Kp/poro);
+        //double Kp = poro*h_canopy*mu_reflect;
+        //double delta_y = Cw*std::sqrt(Kp/poro);
     double delta_y = Cw*std::sqrt(h_canopy*mu_reflect);
     dist_wall += delta_y;
 
     double tau_wall[MAXD] = {0.0};
-    //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,100.0);
     double mag_tau_wall = computeWallShearStress(mag_vtan,dist_wall,mu_reflect,dens_wall,100.0);
 
     if (mag_vtan > MACH_EPS)
@@ -1316,7 +1254,6 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
 
-    //TODO: OR WITH + SIGN (dist_reflect + dist_ghost)/mu_reflect ???
     double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
     
     for (int j = 0; j < dim; ++j)
@@ -1452,13 +1389,6 @@ void G_CARTESIAN::setSymmetryBoundaryNIP(
     }
 
 
-
-    //TODO: We should get the ring of tris around the nearest interface point,
-    //      and possible consider other nearby interface points that are within
-    //      range. For a complex interface such as the human vtk model, there appears
-    //      to be some error in the fluid region between the head and the hands.
-    //      Excessively large velocities -- maybe not enough drag from the other
-    //      nearby interface points that aren't being taken into account.
 
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
     

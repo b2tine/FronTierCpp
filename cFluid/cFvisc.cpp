@@ -128,18 +128,6 @@ void G_CARTESIAN::addViscousFlux(
                 VFLUX v_flux;
                 computeViscousFlux2d(icoords,m_vst,&v_flux,delta_t,&vsten);
 
-                /*
-                //TODO: Need to deal with stencil at domain boundary for this to work.
-                //      Can we just use the i+-1 state for the i+-2 state beyond the domain?
-                //      Or can use a 3pt stencil near the domain boundary ???
-
-                VStencil2d_5pt vsten;
-                fillViscousFluxStencil2d_5pt(icoords,m_vst,&vsten);
-                
-                VFLUX v_flux;
-                computeViscousFlux2d_5pt(icoords,m_vst,&v_flux,delta_t,&vsten);
-                */
-
                 for (int k = 0; k < dim; ++k)
                 {
                     m_flux->momn_flux[k][index] += v_flux.momn_flux[k];
@@ -566,22 +554,11 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double dens_reflect;
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
             getStateDens,&dens_reflect,&m_vst->dens[index]);
-    /*
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
-            getStateDens,&dens_reflect,nullptr);
-    */
 
     double mom_reflect[MAXD];
     double vel_reflect[MAXD];
     for (int j = 0; j < dim; ++j)
     {
-        //TODO: Make sure the interface value has been set in case it is
-        //      needed as the default value (since we are passing nullptr
-        //      as the defailt value). Same for above.
-        /*
-        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
-                getStateMom[j],&mom_reflect[j],nullptr);
-        */
         FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[j],
                 getStateMom[j],&mom_reflect[j],&m_vst->momn[j][index]);
         
@@ -650,8 +627,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double mu_reflect;
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu,
             getStateMu,&mu_reflect,&m_vst->mu[index]);
-    /*FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu,
-            getStateMu,&mu_reflect,nullptr);*/
     
     if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
     {
@@ -659,12 +634,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,m_vst->mu[index]);
        LOC(); clean_up(EXIT_FAILURE);
     }
-    
-    /*
-        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
-                    getStateMu,&mu_reflect,nullptr);
-        if (mu_reflect < MACH_EPS) mu_reflect = field.mu[index]; //TODO: Need this?
-    */
     
     double mu_turb_reflect = 0.0;
     if (eqn_params->use_eddy_viscosity)
@@ -676,9 +645,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     
     double tau_wall[MAXD] = {0.0};
     
-    //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_l,rho_l,45.0);
     double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,100.0);
-        //double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_reflect,45.0);
     
     if (mag_vtan > MACH_EPS)
     {
@@ -705,11 +672,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     {
         vel_ghost_tan[j] = slip*vel_rel_tan[j] - coeff_tau*tau_wall[j];
 
-        /*
-        vel_ghost_tan[j] = vel_rel_tan[j]
-            - (dist_reflect + dist_ghost)/mu_reflect*tau_wall[j];
-        */
-
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
@@ -726,9 +688,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
 
     vs->temp = temp_ghost;
-
-    //TODO: COMPUTE GHOST DENSITY WITH EQUATION OF STATE?
-        //vs->dens = pres_reflect/temp_ghost/R_specific;
 
     
     if (std::isnan(v_slip[0]) || std::isinf(v_slip[0]) ||
@@ -995,7 +954,7 @@ void G_CARTESIAN::computeViscousFlux2d(
     
     int index = d_index(icoords,top_gmax,dim);
     double mu = m_vst->mu[index] + m_vst->mu_turb[index];
-    //double mu = m_vst->mu[index] + field.mu_turb[index];
+        //double mu = m_vst->mu[index] + field.mu_turb[index];
     
     double tauxx = 2.0/3.0*mu*(2.0*u_x - v_y);
     double tauyy = 2.0/3.0*mu*(2.0*v_y - u_x);
@@ -1014,9 +973,6 @@ void G_CARTESIAN::computeViscousFlux2d(
 
     //if (debugging("no_heatflux")) return;
     
-    //double T_x = 0.5*(sten[1][2].temp - sten[1][0].temp)/top_h[0];
-    //double T_y = 0.5*(sten[2][1].temp - sten[0][1].temp)/top_h[1];
-
     double T_xx = (sten[1][2].temp - 2.0*sten[1][1].temp
             + sten[1][0].temp)/sqr(top_h[0]);
     double T_yy = (sten[2][1].temp - 2.0*sten[1][1].temp 
@@ -1252,7 +1208,7 @@ void G_CARTESIAN::computeViscousFlux3d(
     
     int index = d_index(icoords,top_gmax,dim);
     double mu = m_vst->mu[index] + m_vst->mu_turb[index];
-    //double mu = m_vst->mu[index] + field.mu_turb[index];
+        //double mu = m_vst->mu[index] + field.mu_turb[index];
     
     double tauxx = 2.0/3.0*mu*(2.0*u_x - v_y - w_z);
     double tauyy = 2.0/3.0*mu*(2.0*v_y - u_x - w_z);
@@ -1286,12 +1242,6 @@ void G_CARTESIAN::computeViscousFlux3d(
     //if (debugging("no_heatflux")) return;
     /////////////////////////////////////////////////////////////////////////////////////
     
-    /*
-    double T_x = 0.5*(sten[1][1][2].temp - sten[1][1][0].temp)/top_h[0];
-    double T_y = 0.5*(sten[1][2][1].temp - sten[1][0][1].temp)/top_h[1];
-    double T_z = 0.5*(sten[2][1][1].temp - sten[0][1][1].temp)/top_h[2];
-    */
-
     double T_xx = (sten[1][1][2].temp - 2.0*sten[1][1][1].temp
             + sten[1][1][0].temp)/sqr(top_h[0]);
     double T_yy = (sten[1][2][1].temp - 2.0*sten[1][1][1].temp
