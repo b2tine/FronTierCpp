@@ -482,6 +482,11 @@ void setFabricParams(Front* front)
                 (void) printf("%f\n",af_params->m_l);
             }
 
+                af_params->kl_band = af_params->kl;
+            CursorAfterString(infile,"Enter diskgap string spring constant:");
+                fscanf(infile,"%lf",&af_params->kl_band);
+                (void) printf("%f\n",af_params->kl_band);
+
             eqn_params->with_string_fsi = false;
             if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))
             {
