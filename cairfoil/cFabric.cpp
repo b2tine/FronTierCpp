@@ -146,9 +146,6 @@ void CFABRIC_CARTESIAN::addFluxAlongGridLine(
     GRID_DIRECTION	ldir[3]={WEST,SOUTH,LOWER};
 	GRID_DIRECTION 	rdir[3]={EAST,NORTH,UPPER};
 
-//	printf("icoords={%d,%d,%d}\n",icoords[0],icoords[1],icoords[2]);
-//	printf("icoords=%d,%d,%d, wave_type=%d\n",grid_icoords[0],grid_icoords[1],grid_icoords[2],wave_type(hs));
-	
     SWEEP vst;
     FSWEEP vflux;
     allocDirVstFlux(&vst,&vflux);
