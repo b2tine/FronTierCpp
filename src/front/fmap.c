@@ -4305,6 +4305,7 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	    wave_type(hs) != GROWING_BODY_BOUNDARY &&
 	    wave_type(hs) != ICE_PARTICLE_BOUNDARY &&
 	    wave_type(hs) != ELASTIC_BOUNDARY &&
+	    wave_type(hs) != ELASTIC_BAND_BOUNDARY &&
 	    wave_type(hs) != ELASTIC_STRING)
 	    return NO;
 

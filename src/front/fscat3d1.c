@@ -4358,13 +4358,22 @@ EXPORT 	boolean surfaces_matched(
 	    if (wave_type(s) == ICE_PARTICLE_BOUNDARY ||
 		wave_type(as) == ICE_PARTICLE_BOUNDARY)
 	    {
-		return (body_index(s) == body_index(as)) ? YES : NO;
+		    return (body_index(s) == body_index(as)) ? YES : NO;
 	    }
-	    else if (wave_type(s) == ELASTIC_BOUNDARY && 
-		     wave_type(as) == ELASTIC_BOUNDARY)
-		return (body_index(s) == body_index(as)) ? YES : NO;
+	    else if (wave_type(s) == ELASTIC_BOUNDARY &&
+                wave_type(as) == ELASTIC_BOUNDARY)
+        {
+            return (body_index(s) == body_index(as)) ? YES : NO;
+        }
+	    else if (wave_type(s) == ELASTIC_BAND_BOUNDARY && 
+                wave_type(as) == ELASTIC_BAND_BOUNDARY)
+        {
+            return (body_index(s) == body_index(as)) ? YES : NO;
+        }
 	    else
+        {
 	    	return YES;
+        }
 	}
 	else
 	    return NO;
