@@ -86,6 +86,8 @@ cAirfoil/cfabric_Cplus
 cairfoil/cairfoil
 FrontWrapper/example00
 CGAL_Interface/cgal_intfc_test
+CGAL_Interface/cgal_capsule_intfc_test
+CGAL_Interface/cgal_cylindrical_shell
 *Tests
 *.txt
 *.xg
