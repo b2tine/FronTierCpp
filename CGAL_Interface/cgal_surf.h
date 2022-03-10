@@ -248,10 +248,14 @@ extern void CGAL_MakeCylindricalShellSurf(
         int refinement_level,
         SURFACE** surf)
 {
-    double height_cylinder = 1.5*height;
-    //double height_cylinder = 1.25*height;
+    COMPONENT save_comp = pos_comp;
+    if (pos_comp == neg_comp) pos_comp += 1;
+    
+    double height_cylinder = 1.25*height;
     CGAL_MakeCylindricalSurf(front,center,radius,height_cylinder,idir,
             neg_comp,pos_comp,w_type,1,surf);
+
+    positive_component(*surf) = save_comp;
 
     PLANE_PARAMS plane_params;
     plane_params.N[0] = plane_params.N[1] = plane_params.N[2] = 0.0;
