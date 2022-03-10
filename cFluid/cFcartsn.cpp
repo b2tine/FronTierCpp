@@ -1402,18 +1402,21 @@ void G_CARTESIAN::setMaxTimestep()
     //      See Birken Habilitation paper on numerical methods for unsteady
     //      compressible navier stokes (page 73) for this time step restriction.
     //TODO: TEST THIS BOUND
-    //double joint_max_dt = hmin*hmin/(max_speed*hmin + 2.0*mu_max);
+    
+    double joint_max_dt = hmin*hmin/(max_speed*hmin + 2.0*mu_max);
 
 
     if (debugging("cfluid_dt"))
     {
 	    printf("In setMaxTimestep: \
-                adv_max_dt = %24.18g , visc_max_dt = %g\n",
-                max_dt, visc_max_dt);
-        printf("hmin = %g ,  mu_max = %g\n", hmin, mu_max); 
+                adv_max_dt = %24.18g , visc_max_dt = %24.18g , joint_max_dt = %24.18g\n",
+                max_dt, visc_max_dt, joint_max_dt);
+        printf("max_speed = %g , hmin = %g ,  mu_max = %g\n", max_speed, hmin, mu_max); 
     }
 
-    max_dt = std::min(max_dt,visc_max_dt);
+    //max_dt = std::min(max_dt,visc_max_dt);
+
+    max_dt = joint_max_dt;
 
 	
     if (debugging("max_dt"))
