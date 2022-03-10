@@ -548,7 +548,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     }
 
     int index = d_index(icoords,top_gmax,dim);
-    //TODO: ADD DEBUG BLOCK HERE -- LIKE setSlipBoundaryNIP()
 
     //Interpolate Density and Momentum at the reflected point
     double dens_reflect;
@@ -657,9 +656,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double vel_ghost_rel[MAXD] = {0.0};
     double v_slip[MAXD] = {0.0};
     
-    //TODO: Should it be:
-    //                       (dist_reflect + dist_ghost)/mu_reflect;
-    //      instead?                 
     double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
 
     double slip = 1.0;
@@ -674,9 +670,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         
-        v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
-        
-        vs->vel[j] = v_slip[j]; //vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j];
+        vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j]; //v_slip
     }
     
     
@@ -953,8 +947,8 @@ void G_CARTESIAN::computeViscousFlux2d(
     //      use in the discretization (half indices most likely)
     
     int index = d_index(icoords,top_gmax,dim);
-    double mu = m_vst->mu[index] + m_vst->mu_turb[index];
-        //double mu = m_vst->mu[index] + field.mu_turb[index];
+        //double mu = m_vst->mu[index] + m_vst->mu_turb[index];
+    double mu = m_vst->mu[index] + field.mu_turb[index];
     
     double tauxx = 2.0/3.0*mu*(2.0*u_x - v_y);
     double tauyy = 2.0/3.0*mu*(2.0*v_y - u_x);
@@ -994,6 +988,9 @@ void G_CARTESIAN::computeViscousFlux2d(
 }
 
 //4th order centered difference
+//
+//TODO: NEED TO ADAPT STENCILS TO BOUNDARIES.
+//      EITHER BY USING ONE SIDED APPROXIMATIONS, OR REDUCING THE ORDER OF THE APPROXIMATION
 void G_CARTESIAN::computeViscousFlux2d_5pt(
         int* icoords,
         SWEEP* m_vst,
@@ -1075,8 +1072,8 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
     */
 
     int index = d_index(icoords,top_gmax,dim);
-    double mu = m_vst->mu[index] + m_vst->mu_turb[index];
-    //double mu = m_vst->mu[index] + field.mu_turb[index];
+    double mu = m_vst->mu[index] + field.mu_turb[index];
+        //double mu = m_vst->mu[index] + m_vst->mu_turb[index];
     
     double tauxx = 2.0/3.0*mu*(2.0*u_x - v_y);
     double tauyy = 2.0/3.0*mu*(2.0*v_y - u_x);
@@ -1133,8 +1130,6 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
     double lambda_turb = Cp*m_vst->mu_turb[index]/Pr_turb; //thermal conductivity
 
     v_flux->engy_flux += delta_t*(lambda + lambda_turb)*(T_xx + T_yy);
-    //v_flux->engy_flux += delta_t*lambda*(T_xx + T_yy);
-
     /////////////////////////////////////////////////////////////////////////////////////
 }
 
@@ -1207,8 +1202,8 @@ void G_CARTESIAN::computeViscousFlux3d(
 
     
     int index = d_index(icoords,top_gmax,dim);
-    double mu = m_vst->mu[index] + m_vst->mu_turb[index];
-        //double mu = m_vst->mu[index] + field.mu_turb[index];
+    double mu = m_vst->mu[index] + field.mu_turb[index];
+        //double mu = m_vst->mu[index] + m_vst->mu_turb[index];
     
     double tauxx = 2.0/3.0*mu*(2.0*u_x - v_y - w_z);
     double tauyy = 2.0/3.0*mu*(2.0*v_y - u_x - w_z);

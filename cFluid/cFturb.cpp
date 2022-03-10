@@ -134,8 +134,7 @@ double G_CARTESIAN::computeEddyViscosityVremanModel(int* icoords)
 {
     double **vel = field.vel;
 
-    double C_v = eqn_params->C_v;
-        //double C_v = 0.025;
+    double C_v = eqn_params->C_v; //double C_v = 0.025;
     
     int index[6], index0;
     double alpha[MAXD][MAXD] = {{0,0,0}, {0, 0, 0}, {0, 0, 0}};
@@ -337,6 +336,10 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
         S[i][j] = 0.5*(alpha[i][j] + alpha[j][i]);
     }
 
+    for (int k = 0; k < dim; ++k)
+    {
+        S[k][k] -= alpha[k][k]/3.0;
+    }
     
     double NormFrobenius = 0.0;
     for (int i = 0; i < dim; ++i)
@@ -346,7 +349,6 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
     }
     NormFrobenius = std::sqrt(2.0)*std::sqrt(NormFrobenius);
 
-    //NOTE: this is essential density*k_turb since using mu_t instead of nu_t
     field.k_turb[index] = 2.0*mu_t*NormFrobenius;
 
     //TODO: Is this the correct handling of turbulent kinetic energy here?
@@ -534,9 +536,11 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 	double* v_slip)
 {
     //TODO: dir is unused here
+    /*
     GRID_DIRECTION dir[3][2] = {
         {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
     };
+    */
 
     int ghost_ic[MAXD];
     double coords[MAXD], crx_coords[MAXD];
@@ -825,15 +829,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
        LOC(); clean_up(EXIT_FAILURE);
     }
 
-    //TODO: Is it correct to use the total effective viscosity including the existing
-    //      sgs viscosity to compute the new sgs viscosity?
-    //
-    //          i.e. Should we skip adding mu_turb_reflect?
-    double mu_turb_reflect = 0.0;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
-            getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);
-    mu_reflect += mu_turb_reflect;
-
     double tau_wall[MAXD] = {0.0};
     double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,100.0);
 
@@ -846,7 +841,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
 
-    //TODO: OR WITH + SIGN (dist_reflect + dist_ghost)/mu_reflect ???
     double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
     
     double slip = 1.0;
@@ -874,7 +868,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
         printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);
-        LOC(); //clean_up(EXIT_FAILURE);
+        LOC(); clean_up(EXIT_FAILURE);
     }
 
     if (debugging("slip_boundary"))
@@ -1216,22 +1210,11 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
 
     if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
     {
-       printf("\nsetSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
+       printf("\nsetPoroSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,field.mu[index]);
        LOC(); clean_up(EXIT_FAILURE);
     }
 
-    //TODO: Is it correct to use the total effective viscosity including the existing
-    //      sgs viscosity to compute the new sgs viscosity?
-    
-        /*
-        double mu_turb_reflect = 0.0;
-        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
-                getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);
-        mu_reflect += mu_turb_reflect;
-        */
-
-    //TODO: Need separate function for poro slip vel -- need to computed mdot etc.
     double dist_wall = dist_reflect;
     double Cw = 1.0; //get from eqn_params or similar
         //double h_canopy = 0.001;
@@ -1273,7 +1256,7 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
         fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
         printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);
-        LOC(); //clean_up(EXIT_FAILURE);
+        LOC(); clean_up(EXIT_FAILURE);
     }
 
     if (debugging("slip_boundary"))
