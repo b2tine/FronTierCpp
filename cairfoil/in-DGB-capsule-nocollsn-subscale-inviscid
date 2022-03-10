@@ -161,12 +161,13 @@ Enter yes to skip rg_nodes in y direction for 1: yes
 //////////////////////////////////////////////////////////
 
 Enter yes to use porosity: yes
-Enter fabric porosity: 0.10
+Enter fabric porosity: 0.08
 Enter porosity ghost fluid method: DARCY
 
 Enter viscous parameter: 8.3516e+06
-                                    Enter viscous parameterX: 152.1645
-Enter inertial parameter: 168.1334
+                                    XXXEnter viscous parameterXXX: 152.1645
+Enter inertial parameter: 0
+                                    XXXEnter inertial parameterXXX: 168.1334
 Enter permeability: 7.6033e-12
 
 Enter interior propagator: p
@@ -182,10 +183,9 @@ Enter yes to use total mass: yes
 Enter fabric total mass: 0.029083
 Enter string total mass: 0.0328
 
-Enter fabric spring constant: 111506
-                                                XXXEnter fabric spring constantXXX: 69691.3
-Enter fabric damping constant: 0.05
-                                                XXXEnter fabric damping constantXXX: 0.01
+Enter fabric spring constant: 55753
+Enter fabric damping constant: 0.01
+                                                XXXEnter fabric damping constantXXX: 0.05
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.05
@@ -194,8 +194,8 @@ Enter fabric rounding tolerance: 0.00001
 Enter fabric band spring constant: 460769
 
 Enter string spring constant: 24338.3
-Enter string damping constant: 0.05
-                                                XXXEnter string damping constantXXX: 0.1
+Enter string damping constant: 0.01
+                                                XXXEnter string damping constantXXX: 0.05
 Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.05
 Enter string thickness: 0.00099
@@ -222,7 +222,7 @@ Type y to make scalar pressure field movie: y
 Type y to make scalar viscosity field movie: y
 Type y to make scalar eddy viscosity field movie: n
 Type y to make scalar temperature field movie: y
-Type y to make scalar turb kinetic energy field movie: y
+Type y to make scalar turb kinetic energy field movie: n
 
 Type y to make vector velocity field movie: y
 Type y to make vector vorticity field movie: n

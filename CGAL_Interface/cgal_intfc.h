@@ -34,6 +34,7 @@ using Mesh = CGAL::Surface_mesh<cgalPoint3>;
 using Vertex_index = Mesh::Vertex_index;
 using Face_index = Mesh::Face_index;
 
+//cgal_surf.cpp
 extern void CGAL_MakeSphericalSurf(Front*,double*,double*,COMPONENT,COMPONENT,
                             int,int,SURFACE**);
 extern void CGAL_MakeEllipsoidalSurf(Front*,double*,double*,COMPONENT,COMPONENT,
@@ -41,16 +42,19 @@ extern void CGAL_MakeEllipsoidalSurf(Front*,double*,double*,COMPONENT,COMPONENT,
 extern void CGAL_MakeCuboidSurf(Front*,double*,double*,COMPONENT,COMPONENT,int,
                             int,SURFACE**);
 
-extern void CGAL_MakeCylindricalSurf(Front*,double*,double,double,int,COMPONENT,
-                            COMPONENT,int,int,SURFACE**);
-
 extern void CGAL_MakeConeSurf(Front*,double*,double,double,COMPONENT,COMPONENT,
                             int,int,SURFACE**);
 
 extern void CGAL_MakeCapsuleSurf(Front*,double*,double,COMPONENT,COMPONENT,
                             int,int,SURFACE**);
 
+extern void CGAL_MakeCylindricalSurf(Front*,double*,double,double,int,COMPONENT,
+                            COMPONENT,int,int,SURFACE**);
 
+extern void CGAL_MakeCylindricalShellSurf(Front*,double*,double,double,int,COMPONENT,
+                            COMPONENT,int,int,SURFACE**);
+
+//cgal_intfc.cpp
 template <typename CGAL_Surface,
           typename CGAL_MeshCriteria,
           typename CGAL_ManifoldTag>
@@ -189,7 +193,6 @@ struct capsule_function
     double upper_frustrum_height = lower_cone_height*1.672;
 
     double top_frustrum_height = lower_cone_height*0.25;
-    //double top_frustrum_height = lower_cone_height*0.73651;
     double radius_top_frustrum = (upper_cone_height - upper_frustrum_height)*std::tan(44.5*M_PI/180.0);
 
     FT operator()(Point_3 p) const
@@ -216,32 +219,11 @@ struct capsule_function
             return std::sqrt(sqr(x) + sqr(y))
                 - (radius_top_frustrum - 
                         1.0*(radius_top_frustrum/top_frustrum_height)*(z - lower_cone_height - mid_height - upper_frustrum_height));
-                        //1.0*(radius_top_frustrum/(upper_cone_height - upper_frustrum_height))*(z - lower_cone_height - mid_height - upper_frustrum_height));
         }
         else
         {
             return 1.0;
         }
-        
-        /*
-        if (z > 0 && z < lower_cone_height)
-        {
-            return sqr(lower_slope)*(sqr(x) + sqr(y)) - sqr(z);
-        }
-        else if (z > 0 && (z - lower_cone_height) < mid_height)
-        {
-            return sqr(x) + sqr(y) - sqr(radius);
-        }
-        else if (z > 0 && (z - lower_cone_height - mid_height) < upper_frustrum_height)
-        {
-            return (z - upper_cone_height - lower_cone_height - mid_height)
-                         + upper_slope*std::sqrt(sqr(upper_slope)*(sqr(x) + sqr(y)));
-        }
-        else
-        {
-            return 1.0;
-        }
-        */
     }
 };
 

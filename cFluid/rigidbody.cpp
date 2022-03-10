@@ -143,7 +143,6 @@ static void init_rigid_orion_space_capsule(
     CursorAfterString(infile,"Enter radius of the capsule:");
     fscanf(infile,"%lf",&radius);
     (void) printf("%f\n",radius);
-        //for (i = 0; i < dim; ++i) radii[i] = radius;
 
     (void) printf("Rigid body can be fixed (F) or Movable (M)\n");
     (void) printf("The default is Movable (M)\n");
@@ -158,17 +157,6 @@ static void init_rigid_orion_space_capsule(
             w_type = NEUMANN_BOUNDARY;
     }
 
-    /*
-    bool cgal_mesh = false;
-    if (CursorAfterStringOpt(infile,"Type yes to use CGAL for rigid body:"))
-    {
-        fscanf(infile,"%s",string);
-        (void) printf("%s\n",string);
-        if (string[0] == 'y' || string[0] == 'Y')
-            cgal_mesh = true;
-    }
-    */
-
     bool cgal_mesh = true;
     if (cgal_mesh)
     {
@@ -179,14 +167,6 @@ static void init_rigid_orion_space_capsule(
         CGAL_MakeCapsuleSurf(front,nose,radius,neg_comp,pos_comp,
                 w_type,refinement_level,&surf);
     }
-    /*
-    else
-    {
-        FT_MakeEllipticSurf(front,nose,radii,neg_comp,pos_comp,w_type,2,
-                                    &surf);
-    }
-    */
-
 }	/* end init_rigid_orion_space_capsule */
 
 static void init_rigid_sphere(

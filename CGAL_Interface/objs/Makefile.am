@@ -14,7 +14,8 @@ noinst_LTLIBRARIES = libCgalIntfc.la
 
 libCgalIntfc_la_SOURCES = \
 ../cgal_intfc.h \
-../cgal_intfc.cpp
+../cgal_intfc.cpp \
+../cgal_surf.h
 
 
 

@@ -899,6 +899,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     */
 }
 
+//TODO: THIS SHOULD BE A MEMBER FUNCTION OF CFABRIC_CARTESIAN
 void G_CARTESIAN::setPoroSlipBoundaryNIP(
 	int *icoords,
 	int idir,
@@ -1189,12 +1190,10 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     double perm = eqn_params->permeability;
 
     double alpha = eqn_params->porous_coeff[0];
-    double beta = 0.0;
-    //double beta = eqn_params->porous_coeff[1];
+    double beta = eqn_params->porous_coeff[1];
 
     double A = mu_reflect*alpha;
-    double B = beta;
-        //double B = rhol*beta;
+    double B = rhol*beta;
 
     double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
 

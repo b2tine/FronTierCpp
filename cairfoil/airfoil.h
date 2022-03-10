@@ -451,6 +451,11 @@ extern void poisson_ratio(Front*);
 extern void CgalCanopySurface(FILE*,Front*,SURFACE**);
 extern void InstallNewLoadNode(Front*,int);
 
+//dgb-cgal.cpp
+extern void CGAL_MakeDiskGapBandSurf(Front*,double*,
+        double,double,int,COMPONENT,COMPONENT,int,int,SURFACE**);
+
+
 // modules.cpp
 extern void initFabricDefault(Front*);
 extern void initFabricModules(Front*);

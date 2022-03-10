@@ -34,6 +34,7 @@ libcairfoil_la_SOURCES = \
 ../bending.h \
 ../bending.cpp \
 ../cgal.cpp \
+../dgb-cgal.cpp \
 ../modules.cpp \
 ../cFabric.h \
 ../cFabric.cpp

@@ -3201,8 +3201,9 @@ static void CgalCircleBelt(
         center[0] = CirCenter[0];
         center[1] = CirCenter[1];
         center[2] = height - 0.5*length - gap;
-        FT_MakeCylinderShell(front,center,CirR[0],length,2,amb_comp,amb_comp,0,
-                                    &belt);
+
+        CGAL_MakeDiskGapBandSurf(front,center,CirR[0],length,2,amb_comp,amb_comp,0,1,&belt);
+        //FT_MakeCylinderShell(front,center,CirR[0],length,2,amb_comp,amb_comp,0,&belt);
         
         wave_type(belt) = ELASTIC_BOUNDARY;
 
@@ -3338,8 +3339,8 @@ static void setNodePoints(
 
 static void installCircleBeltString(
         Front *front,
-        SURFACE *surf1,
-        SURFACE *surf2,
+        SURFACE *surf1,    //canopy
+        SURFACE *surf2,    //belt
         POINT **node_pts1, //circle node points
         POINT **node_pts2, //ubelt node points
         int num_strings)
@@ -3363,7 +3364,7 @@ static void installCircleBeltString(
         nodes1[0] = I_NodeOfPoint(intfc,node_pts1[0]);
         FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
         extra->af_node_type = CANOPY_STRING_NODE;
-        //extra->af_node_type = STRING_NODE;
+            //extra->af_node_type = STRING_NODE;
         nodes1[0]->extra = (POINTER)extra;
         nodes1[0]->size_of_extra = sizeof(AF_NODE_EXTRA);
 
@@ -3407,6 +3408,7 @@ static void installCircleBeltString(
         FT_FreeThese(2,nodes1,nodes2);
 }       /* end installCircleBeltString */
 
+//Only use for the disk gap strings
 static void connectTwoStringNodes(
         Front *front,
         NODE *start,
@@ -3425,20 +3427,22 @@ static void connectTwoStringNodes(
 	    //hsbdry_type(string_curve) = STRING_HSBDRY;
 
     spacing = separation(start->posn,end->posn,3);
-
-    double hmin = std::min(h[0],h[1]);
-    hmin = std::min(hmin,h[2]);
-
 	for (j = 0; j < 3; ++j)
 	    dir[j] = (Coords(end->posn)[j] - Coords(start->posn)[j])/spacing;
-	nb = rint(spacing/(0.40*hmin)) + 1;
+
+    double hmin = std::min(std::min(h[0],h[1]),h[2]);
+
+	//nb = rint(spacing/(0.40*hmin)) + 1;
+	nb = rint(spacing/(0.15*hmin)) + 1;
 	spacing /= (double)nb;
-	b = string_curve->first;
+	
+    b = string_curve->first;
 	for (i = 1; i < nb; ++i)
 	{
 	    for (j = 0; j < 3; ++j)
-		coords[j] = Coords(start->posn)[j] + i*dir[j]*spacing;
-	    insert_point_in_bond(Point(coords),b,string_curve);
+            coords[j] = Coords(start->posn)[j] + i*dir[j]*spacing;
+	    
+        insert_point_in_bond(Point(coords),b,string_curve);
 	    b->length0 = spacing;
 	    b = b->next;
 	}

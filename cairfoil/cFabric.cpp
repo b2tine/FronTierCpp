@@ -968,14 +968,10 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         //TODO: INPUT FILE OPTIONS
         double poro = eqn_params->porosity;
         double alpha = eqn_params->porous_coeff[0];
-        
-        double beta = 0.0;
-        //double beta = eqn_params->porous_coeff[1];
+        double beta = eqn_params->porous_coeff[1];
         
         double A = mu_total*alpha;
-            //double A = alpha;
-        double B = beta;
-            //double B = rhol*beta;
+        double B = rhol*beta;
         
         double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
 
