@@ -1,5 +1,5 @@
 Max time: 2.0
-Max step: 100000
+Max step: 70000
 Print interval: 0.0005
 Movie frame interval: 0.00005
 CFL factor: 0.5
@@ -97,7 +97,7 @@ Enter the reference molecular viscosity: 1.716e-05
 Enter the reference temperature: 273.15
 Enter the effective temperature: 110.4
 
-Enter gravity: 0 0
+Enter gravity: 0 -9.8
 
 Type yes to track the interface: no
 
@@ -111,12 +111,12 @@ Enter the turbulent Prandtl number: 0.9
 
 *******************************************************
 
-Type y to make movie of density: n
-Type y to make movie of pressure: n
-Type y to make movie of temperature: n
-Type y to make movie of viscosity: n
-Type y to make movie of velocity: n
-Type y to make movie of vorticity: n
+Type y to make movie of density: y
+Type y to make movie of pressure: y
+Type y to make movie of temperature: y
+Type y to make movie of viscosity: y
+Type y to make movie of velocity: y
+Type y to make movie of vorticity: y
 
 Type y to make movie of turb kinetic energy: y
 

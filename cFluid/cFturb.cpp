@@ -335,11 +335,6 @@ double G_CARTESIAN::computeEddyViscosityVremanModel_BdryAware(int* icoords)
     {
         S[i][j] = 0.5*(alpha[i][j] + alpha[j][i]);
     }
-
-    for (int k = 0; k < dim; ++k)
-    {
-        S[k][k] -= alpha[k][k]/3.0;
-    }
     
     double NormFrobenius = 0.0;
     for (int i = 0; i < dim; ++i)

@@ -46,3 +46,6 @@ echo "mpiexec -np 16 $DIR/$EXE -d 3 -p 2 2 4 -i $DIR/$INFILE -o $OUTDIR"
 mpiexec -np 16 $DIR/$EXE -d 3 -p 2 2 4 -i $DIR/$INFILE -o $OUTDIR
 
 
+STAT_FILE="$OUTDIR/mem_stats.txt"
+sstat -j $SLURM_JOB_ID.batch --format=JobID,MaxVMSize > $STAT_FILE
+

@@ -5508,11 +5508,6 @@ void G_CARTESIAN::setNeumannStates(
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
 	    
-        /*
-        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->temp,getStateTemp,&st_tmp.temp,&m_vst->temp[index]);
-	    */
-
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->k_turb,getStateKTurb,&st_tmp.k_turb,&m_vst->k_turb[index]);
 	    
@@ -5523,21 +5518,44 @@ void G_CARTESIAN::setNeumannStates(
                     &m_vst->momn[l][index]);
         }
 
-		/* Galileo Transformation */
+        double vel_reflect[MAXD] = {0.0};
+	    for (j = 0; j < dim; j++)
+	    {
+		    vel_reflect[j] = st_tmp.momn[j]/st_tmp.dens;
+        }
+		
+		/* relative velocity wrt intfc */
 	    vn = 0.0;
 	    for (j = 0; j < dim; j++)
 	    {
-		    v[j] = st_tmp.momn[j]/st_tmp.dens - vel_intfc[j];
+		    v[j] = vel_reflect[j] - vel_intfc[j];
 		    vn += v[j]*nor[j];
 	    }
 
-        /* Only normal component is reflected, 
-            relative tangent velocity is zero */
+	    if (!eqn_params->is_inviscid)
+        {
+            /* Only normal component is reflected, relative tangent velocity is zero */
+            for (j = 0; j < dim; j++)
+            {
+                v[j] = vel_intfc[j] - 1.0*vn*nor[j];
+                st_tmp.momn[j] = v[j]*st_tmp.dens;
+            }
+        }
+        else
+        {
+            // reflect normal component of velocity, relative tangent velocity unchanged//
+            for (j = 0; j < dim; ++j)
+            {
+                v[j] = vel_reflect[j] - 2.0*vn*nor[j];
+                st_tmp.momn[j] = v[j]*st_tmp.dens;
+            }
+        }
+        
+
         for (j = 0; j < dim; j++)
 	    {
-            v[j] = vel_intfc[j] - 1.0*vn*nor[j];
     		st_tmp.momn[j] = v[j]*st_tmp.dens;
-	    }
+        }
 
 	    st_tmp.engy = EosEnergy(&st_tmp);
 
@@ -5691,11 +5709,6 @@ void G_CARTESIAN::setSymmetryStates(
 	    
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
-	    
-        /*
-        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->temp,getStateTemp,&st_tmp.temp,&m_vst->temp[index]);
-        */
 	    
         FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->k_turb,getStateKTurb,&st_tmp.k_turb,&m_vst->k_turb[index]);
