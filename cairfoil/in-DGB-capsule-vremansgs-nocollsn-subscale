@@ -135,7 +135,7 @@ Enter yes to fix the load node: yes
 
 Enter yes if connecting to disk gap band: yes
 
-Enter yes for string-fluid interaction: yes
+Enter yes for string-fluid interaction: no
 Enter string radius: 0.000495
 Enter string linear density: 0.000827
 Enter drag coefficient: 0.5
@@ -149,8 +149,6 @@ Enter yes to connect to RGB: yes
 Enter the body index of the target RGB: 1
 Enter yes to skip rg_nodes in x direction for 1: yes
 Enter yes to skip rg_nodes in y direction for 1: yes
-    Enter yes to skip rg_nodes in x direction for 1XXX: no
-    Enter yes to skip rg_nodes in y direction for 1XXX: no
 
 
 
@@ -181,21 +179,21 @@ Enter yes to use total mass: yes
 Enter fabric total mass: 0.029083
 Enter string total mass: 0.0328
 
-Enter fabric spring constant: 55753
-Enter fabric damping constant: 0.01
-                                                XXXEnter fabric damping constantXXX: 0.05
+Enter fabric spring constant: 111506
+Enter fabric damping constant: 0.05
+                                                XXXEnter fabric damping constantXXX: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
-Enter fabric friction constant: 0.05
+Enter fabric friction constant: 0.0
 Enter fabric thickness: 0.0000635
 Enter fabric rounding tolerance: 0.00001
 Enter fabric band spring constant: 460769
 
 Enter string spring constant: 24338.3
-Enter string damping constant: 0.01
-                                                XXXEnter string damping constantXXX: 0.05
+Enter string damping constant: 0.05
+                                                XXXEnter string damping constantXXX: 0.01
 Enter string bending stiffness constant: 0.0001
-Enter string friction constant: 0.05
+Enter string friction constant: 0.0
 Enter string thickness: 0.00099
 Enter string rounding tolerance: 0.000004
 Enter diskgap string spring constant: 985120.709
