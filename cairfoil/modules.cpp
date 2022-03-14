@@ -242,6 +242,11 @@ static void initSingleModule(
 
     if (FT_FrontContainHsbdryType(front,STRING_HSBDRY))
         InstallNewLoadNode(front,1);
+
+    if (debugging("dgb_intfc"))
+    {
+        FT_Draw(front);
+    }
 }	/* end initSingleModule */
 
 static void initMultiModule(

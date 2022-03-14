@@ -2152,20 +2152,11 @@ static void set_equilibrium_mesh3d(
 
 	for (c = intfc->curves; c && *c; ++c)
 	{
+        //TODO: THIS MAKES NO SENSE
         if ((hsbdry_type(*c) != STRING_HSBDRY && hsbdry_type(*c) != DISKGAP_STRING_HSBDRY)
                 || hsbdry_type(*c) != GORE_HSBDRY) continue;
         
-        /*
-        if (hsbdry_type(*c) != STRING_HSBDRY ||
-            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY ||
-            hsbdry_type(*c) != GORE_HSBDRY) continue;
-        */
-
-        /*
-        if (hsbdry_type(*c) != STRING_HSBDRY &&
-            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY &&
-            hsbdry_type(*c) != GORE_HSBDRY) continue;
-        */
+        //printf("hsbdry_type(*c): %d\n",hsbdry_type(*c));
 
 	    for (b = (*c)->first; b != NULL; b = b->next)
 	    {
@@ -2182,6 +2173,7 @@ static void set_equilibrium_mesh3d(
             }
 	    }
     
+        //TODO: UNDEFINED IF DISKGAP_STRING_HSBDRY ...
         never_redistribute(Hyper_surf(*c)) = YES;
 	}
 

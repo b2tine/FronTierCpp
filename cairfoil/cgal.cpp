@@ -2295,11 +2295,6 @@ static void connectStringtoRGB(
 	findPointsonRGB(front, rg_surf, target);
     int num_target = target.size();
     
-    HYPER_SURF* hs = Hyper_surf(rg_surf);
-    num_string_nodes(hs) = num_target;
-    af_params->payload = total_mass(hs);
-    af_params->num_rg_string_nodes = num_target;
-    
     if (num_strings == 1)
     {
         printf("num_target = %d\n",num_target);
@@ -2330,6 +2325,12 @@ static void connectStringtoRGB(
 
     //TODO: probably need seperate "num_target" variable
 	num = target.size();
+
+    HYPER_SURF* hs = Hyper_surf(rg_surf);
+    num_string_nodes(hs) = num; //num_target;
+    af_params->payload = total_mass(hs);
+    af_params->num_rg_string_nodes = num; //num_target;
+    
 
 	FT_VectorMemoryAlloc((POINTER*)&rg_string_nodes, num, sizeof(NODE*));
 	for (i = 0; i < num; ++i)
@@ -2772,6 +2773,8 @@ extern void InstallNewLoadNode(
 	(void) printf("%f %f %f\n",connection[0],connection[1],connection[2]);
     */
 	
+        
+    /*
     if (CursorAfterStringOpt(infile,"Enter connection position:"))
     {
 	    fscanf(infile,"%lf %lf %lf",connection,connection+1,connection+2);
@@ -2782,15 +2785,16 @@ extern void InstallNewLoadNode(
 	    fclose(infile);
 	    return;
 	}
+    */
 
 	cur_intfc = current_interface();
 	set_current_interface(intfc);
 
-	sec_nload = make_node(Point(connection));
-	FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
-	extra->af_node_type = SEC_LOAD_NODE;
-	sec_nload->extra = (POINTER)extra;
-	sec_nload->size_of_extra = sizeof(AF_NODE_EXTRA);
+	//sec_nload = make_node(Point(connection));
+	//FT_ScalarMemoryAlloc((POINTER*)&extra,sizeof(AF_NODE_EXTRA));
+	//extra->af_node_type = SEC_LOAD_NODE;
+	//sec_nload->extra = (POINTER)extra;
+	//sec_nload->size_of_extra = sizeof(AF_NODE_EXTRA);
 
 
     //TODO: Seems that string_curve_onenode should always be 1.
@@ -2802,7 +2806,23 @@ extern void InstallNewLoadNode(
 	CURVE **string_curves;
 	FT_VectorMemoryAlloc((POINTER*)&string_curves,num_canopy+1,sizeof(CURVE*));
     
+    NODE* connecting_node;    
 
+	intfc_node_loop(intfc,n)
+	{
+	    extra = (AF_NODE_EXTRA*)((*n)->extra);
+	    if (extra == NULL) continue;
+	    
+        //if (extra->af_node_type != LOAD_NODE && extra->af_node_type != PRESET_NODE) continue;
+        if (extra->af_node_type == PRESET_NODE)
+        {
+            connecting_node = *n;
+        }
+
+
+    }
+
+    /*
 	int i = 0;
 	intfc_node_loop(intfc,n)
 	{
@@ -2850,6 +2870,7 @@ extern void InstallNewLoadNode(
             i++;
         }
 	}
+    */
 
 	
 
@@ -2906,7 +2927,8 @@ extern void InstallNewLoadNode(
                     if (body_index(*rg_surf) == rg_index) break;
                 }
             }
-            connectStringtoRGB(front,*rg_surf,&sec_nload,1);
+            connectStringtoRGB(front,*rg_surf,&connecting_node,1);
+            //connectStringtoRGB(front,*rg_surf,&sec_nload,1);
             //delete_node(nload);
             set_current_interface(cur_intfc);
             fclose(infile);
@@ -2918,6 +2940,7 @@ extern void InstallNewLoadNode(
 	}
     
  
+    /*
     //For pointmass run
     double hmin = std::min(h[0],h[1]);
     hmin = std::min(hmin,h[2]);
@@ -2954,7 +2977,8 @@ extern void InstallNewLoadNode(
 	
     set_current_interface(cur_intfc);
 	fclose(infile);
-	
+	*/
+
     FT_FreeThese(1,string_curves);
 
 }       /* end InstallNewLoadNode */
@@ -3432,8 +3456,8 @@ static void connectTwoStringNodes(
 
     double hmin = std::min(std::min(h[0],h[1]),h[2]);
 
-	//nb = rint(spacing/(0.40*hmin)) + 1;
-	nb = rint(spacing/(0.15*hmin)) + 1;
+	nb = rint(spacing/(0.40*hmin)) + 1;
+	    //nb = rint(spacing/(0.15*hmin)) + 1;
 	spacing /= (double)nb;
 	
     b = string_curve->first;
