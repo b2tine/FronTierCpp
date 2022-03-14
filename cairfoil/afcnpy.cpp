@@ -672,6 +672,8 @@ static FABRIC_COLLISION_PARAMS getFabricCollisionParams(Front* front)
 //
 void elastic_set_propagate(Front* fr, double fr_dt)
 {
+    if (debugging("rigid_canopy")) return;
+
     Front* newfront;
    
     if (pp_numnodes() > 1)
@@ -1161,6 +1163,8 @@ static int elastic_set_propagate3d_serial(
 
 void fourth_order_elastic_set_propagate(Front* fr, double fr_dt)
 {
+    if (debugging("rigid_canopy")) return;
+
     Front* newfront;
 
     if (pp_numnodes() > 1 && !debugging("collision_off"))
@@ -1255,7 +1259,7 @@ static void fourth_order_elastic_set_propagate3d_serial(
         n_sub = af_params->n_sub;
         dt = fr_dt/n_sub;
     }
-    printf("fr_dt = %f geom_set.dt_tol = %f n_sub = %d dt = %f\n",
+    printf("fr_dt = %g geom_set.dt_tol = %g n_sub = %d dt = %g\n",
             fr_dt,geom_set.dt_tol,n_sub,dt);
 
 	if (first)

@@ -448,10 +448,15 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             else if (wave_type(hs) == ELASTIC_BOUNDARY || 
                      wave_type(hs) == ELASTIC_BAND_BOUNDARY)
             {
-                //TODO: NEVER SEES THIS BOUNDARY
-                
                 double v_poro[MAXD] = {0.0};
-                setPoroSlipBoundaryNIP(icoords,m,nb,comp,hs,intfc_state,vel,v_poro);
+                if (eqn_params->porosity == 0 || !eqn_params->with_porosity)
+                {
+                    setSlipBoundary(icoords,m,nb,comp,hs,intfc_state,vel,v_poro);
+                }
+                else
+                {
+                    setPoroSlipBoundaryNIP(icoords,m,nb,comp,hs,intfc_state,vel,v_poro);
+                }
                 vel_nb[nb] = v_poro[l];
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
