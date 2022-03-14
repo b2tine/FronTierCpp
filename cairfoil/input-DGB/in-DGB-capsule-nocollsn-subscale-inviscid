@@ -66,7 +66,9 @@ Entering yes to turn off fluid solver: no
 
 /////////////////////////////////////////////////////
 
-Enter yes to use eddy viscosity: yes
+Enter yes for inviscid solver: yes
+
+Enter yes to use eddy viscosity: no
 Enter eddy viscosity model: Vreman
 Enter model constant: 0.025
 
@@ -187,8 +189,7 @@ Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.0
 Enter fabric thickness: 0.0000635
 Enter fabric rounding tolerance: 0.00001
-Enter fabric band spring constant: 111506
-        XXXEnter fabric band spring constantXXX: 460769
+Enter fabric band spring constant: 460769
 
 Enter string spring constant: 24338.3
 Enter string damping constant: 0.05
@@ -197,8 +198,7 @@ Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.0
 Enter string thickness: 0.00099
 Enter string rounding tolerance: 0.000004
-Enter diskgap string spring constant: 111506
-                XXXEnter diskgap string spring constantXXX: 985120.709
+Enter diskgap string spring constant: 985120.709
 
 Enter strain limit: 0.03
 Enter compressive strain limit: 0.01
@@ -218,9 +218,9 @@ Type y to make xy cross section movie: n
 Type y to make scalar density field movie: y
 Type y to make scalar pressure field movie: y
 Type y to make scalar viscosity field movie: y
-Type y to make scalar eddy viscosity field movie: y
+Type y to make scalar eddy viscosity field movie: n
 Type y to make scalar temperature field movie: y
-Type y to make scalar turb kinetic energy field movie: y
+Type y to make scalar turb kinetic energy field movie: n
 
 Type y to make vector velocity field movie: y
 Type y to make vector vorticity field movie: n

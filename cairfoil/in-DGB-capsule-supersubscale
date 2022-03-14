@@ -22,7 +22,8 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
-Enter velocity: 0 0 688.69
+Enter velocity: 0 0 100.69
+                        XXXEnter velocityXXX: 0 0 688.69
 Enter pressure: 1562.24
 Enter temperature: 294.93
 For upper boundary in 2-th dimension
@@ -33,7 +34,8 @@ Max time: 1.0
 Max step: 35000
 Print interval: 0.0005
 Movie frame interval: 0.00001
-CFL factor: 0.25
+CFL factor: 0.5
+                XXXCFL factorXX: 0.25
 Redistribution interval: 10000000
 type yes to turn off auto-redistribution: y
 
@@ -188,7 +190,7 @@ Enter fabric friction constant: 0.0
 Enter fabric thickness: 0.0000635
 Enter fabric rounding tolerance: 0.00001
 Enter fabric band spring constant: 111506
-        XXXEnter fabric band spring constantXXX: 460769
+    XXXEnter fabric band spring constantXXX: 460769
 
 Enter string spring constant: 24338.3
 Enter string damping constant: 0.05
@@ -197,8 +199,9 @@ Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.0
 Enter string thickness: 0.00099
 Enter string rounding tolerance: 0.000004
+
 Enter diskgap string spring constant: 111506
-                XXXEnter diskgap string spring constantXXX: 985120.709
+            XXXEnter diskgap string spring constantXXX: 985120.709
 
 Enter strain limit: 0.03
 Enter compressive strain limit: 0.01

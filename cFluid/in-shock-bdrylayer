@@ -25,8 +25,8 @@ Enter yes to insert boundary object: yes
 Enter boundary object type: SPLIT_STATE_NODE
 Enter number of node points: 2
 Enter coordinates of node points:
-0.0 1.05974
-0.2 0.0
+0.0 0.777142
+0.1 0.0
 
 For lower boundary in 0-th dimension
 Enter type of node 1: FIXED_NODE
