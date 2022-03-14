@@ -12,7 +12,7 @@ fixed time step: 0.001
 *******************************************************
 
 Domain limit in 0-th dimension: 0.0 2.0
-Domain limit in 1-th dimension: 0.0 1.2
+Domain limit in 1-th dimension: 0.0 1.0
 
 Computational grid: 286 131
 

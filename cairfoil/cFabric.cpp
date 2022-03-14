@@ -55,6 +55,8 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 	setDomain();
 	for (i = 0; i < size; i++)
     {
+        //cell_center[i].old_comp = top_comp[i];
+
         icoords = cell_center[i].icoords;
         if (cell_center[i].comp != -1 && cell_center[i].comp != top_comp[i])
         {

@@ -391,6 +391,7 @@ class L_RECTANGLE
 {
 public:
 	int comp {-1};
+	//int old_comp {-1};
 	int m_index {-1};
 	double m_coords[MAXD];
 	int icoords[MAXD];
