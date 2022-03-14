@@ -1,7 +1,7 @@
 Domain limit in 0-th dimension: -2 2
 Domain limit in 1-th dimension: -2 2
 Domain limit in 2-th dimension: 0.1565 6.1565
-Computational grid: 120 120 160
+Computational grid: 140 140 180
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY 
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
