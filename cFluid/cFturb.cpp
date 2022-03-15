@@ -950,17 +950,25 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     //      step scenario -- to what degree is it working?
     
     /*
-    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
-            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    */
-
     bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
+            NO_SUBDOMAIN,hs,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+    */
+    
+    //bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
+      //      NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+    
+    bool nip_found = nearest_interface_point(coords_ghost,comp,front->grid_intfc,
             NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
 
     if (!nip_found)
     {
         printf("ERROR G_CARTESIAN::setSlipBoundaryNIP(): "
                 "can't find nearest interface point\n");
+        printf("comp = %d\n", comp);
+        printf("ghost_comp = %d\n", ghost_comp);
+        printf("positive_component(hs) = %d\n",positive_component(hs));
+        printf("negative_component(hs) = %d\n",negative_component(hs));
+        printf("crx_coords = %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
         LOC(); clean_up(EXIT_FAILURE);
     }
 
@@ -1073,7 +1081,7 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     //      of the nor vector used in setSlipBoundaryNIP()
 
     
-    if (debugging("slip_boundary"))
+    if (debugging("poro_slip_boundary"))
     {
         printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
         printf("idir = %d nb = %d\n",idir,nb);
@@ -1136,7 +1144,7 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
-    if (debugging("slip_boundary"))
+    if (debugging("poro_slip_boundary"))
     {
         fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
         fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");

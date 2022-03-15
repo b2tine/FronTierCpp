@@ -288,14 +288,19 @@ void airfoil_driver(Front *front,
 	    {
 	    	coating_mono_hyper_surf(front);
             /////////////////////////////////////
-            //g_cartesian->writeMeshComponentsVTK();
+                //g_cartesian->writeMeshComponentsVTK();
             /////////////////////////////////////
             g_cartesian->applicationSetStates();
 	    }
         
 	    if (!af_params->no_fluid)
 	    {
+	    	coating_mono_hyper_surf(front);
+
             g_cartesian->solve(front->dt);
+            
+            FT_FreeGridIntfc(front);
+	        FT_MakeGridIntfc(front);
 	    }
 	    else
         {
@@ -350,6 +355,7 @@ void airfoil_driver(Front *front,
         if (FT_IsDrawTime(front))
 	    {
             FT_Draw(front);
+            g_cartesian->writeMeshComponentsVTK();
 	    }
 
         if (FT_TimeLimitReached(front))

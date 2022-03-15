@@ -108,6 +108,8 @@ void G_CARTESIAN::addViscousFlux(
         FSWEEP *m_flux,
         double delta_t)
 {
+    if (front->step < 1) return;
+
     switch (dim)
     {
     case 2:
@@ -295,7 +297,9 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         */
 
         //TODO: This will only see rigid body wall boundaries -- no porous walls etc.
-        if (vs->comp != comp)
+        //if (vs->comp != comp)
+        //if (comp !=3 && vs->comp != 3 && vs->comp != comp)
+        if (comp != vs->comp && std::abs(comp - vs->comp) != 1)
         {
             setViscousGhostState(icoords,comp,vs,m_vst);
         }

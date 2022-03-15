@@ -78,7 +78,7 @@ Entering yes to turn off fluid solver: no
 
 /////////////////////////////////////////////////////
 
-Enter yes for inviscid solver: yes
+Enter yes for inviscid solver: no
 
 Enter yes to use eddy viscosity: no
 Enter eddy viscosity model: Vreman
@@ -199,6 +199,7 @@ Type y to make vector vorticity field movie: n
 *************************************************
 Enter yes for debugging: yes
 
+Enter the debugging string: viscous_ghost
 Enter the debugging stringXXX: darcy_debug_coords
 
 Enter the debugging string: rigid_canopy

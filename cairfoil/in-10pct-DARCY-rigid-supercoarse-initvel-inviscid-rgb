@@ -91,8 +91,15 @@ Enter the turbulent Prandtl number: 0.9
 /////////     Start parameters for modules    ////////////
 //////////////////////////////////////////////////////////
 
-Enter yes to add rigid body: n
-Enter the number of rigid bodies: 0
+Enter yes to add rigid body: y
+Enter the number of rigid bodies: 1
+
+Enter type of rigid body: S
+Enter center of the sphere: 0.6 0.6 0.4
+Enter radius of the sphere: 0.1 0.1 0.1
+Type yes if the rigid body is fixed: yes
+Type yes to use CGAL for rigid body: yes
+
 
 Enter yes for parachute system: no
 Enter the number of fabric optimization rounds: 0
@@ -112,7 +119,7 @@ Available types of canopy boundaries are:
         Cross (X)
         Circular with belt (S)
 Enter type of canopy boundary: R
-Enter the height of the plane: 0.42354
+Enter the height of the plane: 0.72354
 Enter lower bounds of the rectangle: 0.29 0.29
 Enter upper bounds of the rectangle: 0.91 0.91
 Enter yes for fixed boundary: yes
@@ -199,6 +206,7 @@ Type y to make vector vorticity field movie: n
 *************************************************
 Enter yes for debugging: yes
 
+Enter the debugging stringXXX: init_intfc
 Enter the debugging stringXXX: darcy_debug_coords
 
 Enter the debugging string: rigid_canopy

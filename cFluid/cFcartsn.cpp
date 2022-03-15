@@ -672,7 +672,7 @@ void G_CARTESIAN::solve(double dt)
     scatMeshStates();
 
 	adjustGFMStates();
-	
+    
     setComponent();
 
 	if (debugging("trace"))

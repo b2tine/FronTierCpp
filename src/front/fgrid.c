@@ -986,7 +986,8 @@ EXPORT	INTERFACE *make_grid_intfc(
 	   add this function to ensure interface topology 
 	   does not break down due to tolerance 
 	*/
-	    adjust_grid_intfc_points(grid_intfc);
+	    
+    //adjust_grid_intfc_points(grid_intfc);
     //////////////////////////////////////////////////////
 
 

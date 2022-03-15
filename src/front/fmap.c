@@ -952,8 +952,19 @@ EXPORT	boolean FT_StateStructAtGridCrossing(
 	else
 	{
 	    *state = NULL;
-	    screen("ERROR: In FT_StateVarAtGridCrossing(),"
+	    /*screen("ERROR: In FT_StateVarAtGridCrossing(),"
+			"component does not match\n");*/
+	    printf("ERROR: In FT_StateVarAtGridCrossing(),"
 			"component does not match\n");
+        printf("comp = %d\n",comp);
+        printf("positive_component(*hs) = %d\n",positive_component(*hs));
+        printf("negative_component(*hs) = %d\n",negative_component(*hs));
+        printf("wave_type(*hs) = %d\n",wave_type(*hs));
+        printf("crx_coords = %f %f %f\n",
+                Coords(crxs[crx_index]->pt)[0],
+                Coords(crxs[crx_index]->pt)[1],
+                Coords(crxs[crx_index]->pt)[2]);
+
 	    return NO;
 	}
 	

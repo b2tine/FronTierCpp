@@ -123,7 +123,7 @@ void G_CARTESIAN::writeMeshComponentsVTK()
 {
     if (pp_numnodes() > 1)
     {
-        printf("\n\tWARNING writeMeshComponentsVTK() not implemented in parallel yet\n\n");
+        //printf("\n\tWARNING writeMeshComponentsVTK() not implemented in parallel yet\n\n");
         return;
     }
 
