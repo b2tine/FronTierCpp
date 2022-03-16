@@ -1,7 +1,7 @@
-Domain limit in 0-th dimension: -2 2
-Domain limit in 1-th dimension: -2 2
-Domain limit in 2-th dimension: 0.1565 6.1565
-Computational grid: 140 140 180
+Domain limit in 0-th dimension: -1 1
+Domain limit in 1-th dimension: -1 1
+Domain limit in 2-th dimension:  -0.5 5.5
+Computational grid: 250 250 625
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY 
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -89,7 +89,7 @@ Available type of rigid body include:
         Cylinder (C)
 Enter type of rigid body: O
 Enter nose of the capsule: 0 0 1.0099854
-Enter radius of the capsule: 0.084
+Enter radius of the capsule: 0.052
 Rigid body can be fixed (F) or Movable (M)
 The default is Movable (M)
 Type yes if the rigid body is fixed: yes
@@ -100,7 +100,7 @@ Type yes if motion is preset: yes
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 1300
-Enter the initial center of mass for rigid body: 0 0 1.03267
+Enter the initial center of mass for rigid body: 0 0 1.031
 Enter the initial center of mass velocity: 0 0 0
 
 Enter number of canopy surfaces: 1
@@ -117,20 +117,20 @@ Available types of canopy boundaries are:
         Cross (X)
         Circular with belt (S)
 Enter type of canopy boundary: S
-Enter the height of the plane: 2.9487
+Enter the height of the plane: 2.19867
 Enter circle center: 0 0
-Enter circle radius: 0.4
+Enter circle radius: 0.201
 Enter yes to attach gores to canopy: no
 Enter yes to cut a vent on canopy: yes
-Enter radius of the vent: 0.028044
+Enter radius of the vent: 0.01422
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 24
 
-Enter the length of the drape: 0.0968
-Enter the gap between canopy and drape: 0.0336
+Enter the length of the drape: 0.0484
+Enter the gap between canopy and drape: 0.0168
 
 Enter yes to install the strings to RGB: no
-Enter initial position of load: 0 0 1.42954
+Enter initial position of load: 0 0 1.22706
 Enter yes to fix the load node: yes
 
 Enter yes if connecting to disk gap band: yes
@@ -143,7 +143,6 @@ Enter fluid force scaling factor: 1.0
 
 Enter yes for string bending force: no
 
-Enter connection position: 0 0 1.26154
 Enter yes to fix new load node: no
 Enter yes to connect to RGB: yes
 Enter the body index of the target RGB: 1
@@ -179,7 +178,7 @@ Enter yes to use total mass: yes
 Enter fabric total mass: 0.029083
 Enter string total mass: 0.0328
 
-Enter fabric spring constant: 111506
+Enter fabric spring constant: 79164
 Enter fabric damping constant: 0.05
                                                 XXXEnter fabric damping constantXXX: 0.01
 Enter fabric bending stiffness constant: 0.0001
@@ -187,17 +186,17 @@ Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.0
 Enter fabric thickness: 0.0000635
 Enter fabric rounding tolerance: 0.00001
-Enter fabric band spring constant: 111506
+Enter fabric band spring constant: 79164
         XXXEnter fabric band spring constantXXX: 460769
 
-Enter string spring constant: 24338.3
+Enter string spring constant: 35661
 Enter string damping constant: 0.05
                                                 XXXEnter string damping constantXXX: 0.01
 Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.0
 Enter string thickness: 0.00099
 Enter string rounding tolerance: 0.000004
-Enter diskgap string spring constant: 80000
+Enter diskgap string spring constant: 85000
     XXXEnter diskgap string spring constantXXX: 111506
                 XXXEnter diskgap string spring constantXXX: 985120.709
 
