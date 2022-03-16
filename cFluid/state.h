@@ -15,6 +15,7 @@ struct FABRIC_STATE
     double shear_force[MAXD];    /* force resulting from tangential stress of fluid on wall computed from
                                     turb model + wall functions (IS ACTUALLY FORCE)*/
 
+    double local_fluid_vel[MAXD];
     
     /* Fabric Configuration */
     double bendforce[MAXD];       /* bending force */

@@ -97,7 +97,7 @@ static void elastic_point_propagate_const_dP(
     
     for (int i = 0; i < dim; ++i)
 	{
-        dv[i] = delta_pres*nor[i]/area_dens;
+        dv[i] = -1.0*delta_pres*nor[i]/area_dens;
         newsr->fluid_accel[i] = newsl->fluid_accel[i] = dv[i];
 	    newsr->other_accel[i] = newsl->other_accel[i] = 0.0;
 	    
@@ -131,8 +131,13 @@ static void elastic_point_propagate_fsi(
     int* top_gmax = top_grid->gmax;
     double* top_h = top_grid->h;
 
+    int icoords[MAXD];
+    rect_in_which(Coords(oldp),icoords,top_grid);
+    int index = d_index(icoords,top_gmax,dim);
+
 	double *mu = eqn_params->mu;
 	double **vel = eqn_params->vel;
+	double **momn = eqn_params->mom;
 	double *vort = eqn_params->vort;
 	double *pres = eqn_params->pres;
 
@@ -172,6 +177,24 @@ static void elastic_point_propagate_fsi(
     FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
             getStatePres,&newsr->pres,&sr->pres);
 
+    /*
+    for (int i = 0; i < dim; ++i)
+    {
+        FT_IntrpStateVarAtCoords(front,base_comp-1,pm,momn[i],
+                getStateMom[i],&newsl->momn[i],&momn[i][index]);
+        FT_IntrpStateVarAtCoords(front,base_comp+1,pp,momn[i],
+                getStateMom[i],&newsr->momn[i],&momn[i][index]);
+    }
+    */
+    /*
+    for (int i = 0; i < dim; ++i)
+    {
+        FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vel[i],
+                getStateVel[i],&newsl->local_fluid_vel[i],&vel[i][index]);
+        FT_IntrpStateVarAtCoords(front,base_comp+1,pp,vel[i],
+                getStateVel[i],&newsr->local_fluid_vel[i],&vel[i][index]);
+    }
+    */
 
 	/* Impulse is incremented by the fluid pressure force */
 

@@ -41,7 +41,7 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 {
 	double coords[MAXD];
 	int *icoords;
-	int i,j,size = (int)cell_center.size();
+	int size = (int)cell_center.size();
 	int id;
 	STATE state;
 	int ave_comp;
@@ -50,15 +50,17 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 	HYPER_SURF *hs;
 	double dist;
 	double **vel = field.vel;
+	double **momn = field.momn;
 	double *pres = field.pres;
+	double *dens = field.dens;
 	
 	setDomain();
-	for (i = 0; i < size; i++)
+	for (int i = 0; i < size; i++)
     {
         icoords = cell_center[i].icoords;
         if (cell_center[i].comp != -1 && cell_center[i].comp != top_comp[i])
         {
-            for (j = 0; j < dim; ++j)
+            for (int j = 0; j < dim; ++j)
                 coords[j] = top_L[j] + icoords[j]*top_h[j];
     
             id = d_index(icoords,top_gmax,dim);
@@ -66,75 +68,328 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 
             if (debugging("set_crossed_state"))
             {
-                //double r;
                 printf("\n");
                 printf("Shifted component:\n");
                 printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
                 printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
                 printf("old comp = %d  new comp = %d\n",cell_center[i].comp,top_comp[i]);
-                //r = sqrt(sqr(coords[0] - 7.0) + sqr(coords[1] - 7.0));
-                //printf("Radius = %f\n",r);
                 printf("\n");
             }
 
+            
+            double intrp_coeffs[MAXD] = {0.0};
+
             ave_comp = (cell_center[i].comp + top_comp[i])/2;
             if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
-                        coords,NO_BOUNDARIES,p_intfc,t,&hse,&hs,2)) continue;
-    
+                        coords,NO_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
+            
             /*
-            COMPONENT comp = top_comp[i];
-            if (!nearest_interface_point_within_range(coords,comp,
+            if (!nearest_interface_point_within_range(coords,top_comp[i],
                         front->grid_intfc,NO_BOUNDARIES,nullptr,
-                        p_intfc,t,&hse,&hs,2))
+                        p_intfc,intrp_coeffs,&hse,&hs,2))
             {
                 continue;
             }
             */
 
+            double vec_pintfc[MAXD] = {0.};
+            for (int j = 0; j < dim; ++j)
+                vec_pintfc[j] = coords[j] - p_intfc[j];
+            double mag_vp = Mag3d(vec_pintfc);
+            for (int j = 0; j < dim; ++j)
+                vec_pintfc[j] /= mag_vp;
+
+            double hdir = FT_GridSizeInDir(vec_pintfc,front);
+            //double dist = mag_vp;
+
+            double idist[MAXD];
+            idist[0] = std::abs(vec_pintfc[0]);
+            idist[1] = std::abs(vec_pintfc[1]);
+            idist[2] = std::abs(vec_pintfc[2]);
+            
+            double max_idist = std::max(std::max(idist[0],idist[1]),idist[2]);
+            double dist = std::min(max_idist,mag_vp);
+
+            /*
             dist = 0.0;
-            for (j = 0; j < dim; ++j)
+            for (int j = 0; j < dim; ++j)
                 dist += sqr(coords[j] - p_intfc[j]);
             dist = sqrt(dist);
             
+            double hmin_hyp = std::sqrt(3.0*sqr(hmin));
+
+            double dist_adj = dist - 0.40*hmin_hyp;
+            */
+
             if (debugging("set_crossed_state"))
             {
                 printf("coords  = %f %f %f\n",coords[0],coords[1],coords[2]);
                 printf("p_intfc = %f %f %f\n",p_intfc[0],p_intfc[1],p_intfc[2]);
+                printf("dist = %f\n",dist);
+                printf("1.4*hdir*Time_step_factor(front) = %f\n",
+                        1.4*hdir*Time_step_factor(front));
+                //printf("dist_nor = %f dist_nor_adj = %f\n",dist_nor, dist_nor_adj);
+                //printf("dist = %f dist_adj = %f\n",dist, dist_adj);
             }
 
-            if (dist > hmin*Time_step_factor(front))
+            //if (dist_nor_adj > hmin*Time_step_factor(front))
+            //if (dist > hmin*Time_step_factor(front))
+            //if (dist > hmin*Time_step_factor(front))
+            if (dist > 1.4*hdir*Time_step_factor(front))
             {
                 if (debugging("set_crossed_state"))
+                {
                     printf("external point: dist = %f\n",dist);
+                    //printf("hmin*Time_step_factor(front) = %f\n",
+                        //   hmin*Time_step_factor(front));
+
+                    //printf("external point: dist = %f\n",dist);
+                    //printf("external point: dist_nor = %f\n",dist_nor);
+                }
+                
                 continue;
             }
+            
+            
+            //nearest_intfc_state(coords,comp,front->interf,state,NULL,NULL);
+            
+            /*
+            if (!nearest_interface_point_within_range(coords,top_comp[i],
+                        front->old_grid_intfc,NO_BOUNDARIES,nullptr,
+                        p_intfc,intrp_coeffs,&hse,&hs,2))
+            {
+                continue;
+            }
+            */
 
-            FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
-            //nearest_intfc_state(coords,comp,front->grid_intfc,(POINTER)&state,NULL,NULL);
+            /*
+            bool status = FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
+            
+            double pres_intfc = state.pres;
+            double vel_local[MAXD];
+            for (int j = 0; j < dim; ++j)
+            {
+                vel_local[j] = state.local_fluid_vel[j];
+            }
+            */
+            
+            /*
+            TRI* nearTri = Tri_of_hse(hse);
+            const double* tnor = Tri_normal(nearTri);
+            double nor[MAXD] = {0.0};
+            for (int j = 0; j < dim; ++j) nor[j] = tnor[j];
+            double mag_tnor = Mag3d(nor);
+            for (int j = 0; j < dim; ++j) nor[j] /= mag_tnor;
+            
+            double dh = FT_GridSizeInDir(nor,front);
+            if (top_comp[i] == negative_component(hs))
+            {
+                for (int j = 0; j < dim; ++j) 
+                    nor[j] *= -1.0;
+            }
+            */
+
+            /*
+            double p_comp[MAXD];
+            for (int j = 0; j < dim; ++j)
+            {
+                p_comp[j] = p_intfc[j] + dh*nor[j];
+            }
+
+            for (int j = 0; j < dim; ++j)
+            {
+
+            }
+            */
+            
+           
+
+            /*
+            TRI* nearTri = Tri_of_hse(hse);
+            STATE* st[3];
+            
+            if (top_comp[i] == negative_component(hs))
+            {
+                for (int j = 0; j < 3; ++j)
+                    st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+            }
+            else if (top_comp[i] == positive_component(hs))
+            {
+                for (int j = 0; j < 3; ++j)
+                    st[j] = (STATE*)right_state(Point_of_tri(nearTri)[j]);
+            }
+
+            double pres_intfc = 0.0;
+            for (int j = 0; j < dim; ++j)
+            {
+                pres_intfc += intrp_coeffs[j]*st[j]->pres;
+            }
+            */
+
+            /*
+            double vel_local[MAXD] = {0.0};
+            for (int k = 0; k < dim; ++k)
+            {
+                vel_local[k] = 0.0;
+                for (int j = 0; j < 3; ++j)
+                {
+                    vel_local[k] += intrp_coeffs[j]*st[j]->local_fluid_vel[k];
+                }
+            }
+            */
+            
+            /*
+            double momn_local[MAXD] = {0.0};
+            for (int k = 0; k < dim; ++k)
+            {
+                for (int j = 0; j < 3; ++j)
+                {
+                    momn_local[k] += intrp_coeffs[j]*st[j]->momn[k];
+                }
+            }
+
+            if (debugging("set_crossed_state"))
+            {
+                printf("\nFRESH POINT:\n");
+                printf("Old pressure   = %f  \n", pres[i]);
+                printf("Intfc pressure = %f  \n", pres_intfc);
+
+                printf("Old momentum  : %f %f %f\n", 
+                        momn[0][i], momn[1][i], momn[2][i]);
+                printf("Local momentum: %f %f %f\n",
+                        momn_local[0], momn_local[1], momn_local[2]);
+            }
+            */
+                /*
+                printf("Old velocity  : %f %f %f\n", 
+                        vel[0][i], vel[1][i], vel[2][i]);
+                printf("Local velocity: %f %f %f\n",
+                        vel_local[0], vel_local[1], vel_local[2]);
+                */
+            //}
+
+
+            /*
+            pres[i] = pres_intfc;
+            for (int j = 0; j < dim; ++j)
+            {
+                momn[j][i] = momn_local[j];
+                //vel[j][i] = vel_local[j];
+                //vel[j][i] = vel_intfc[j] + vel[j][i];
+            }
+            */
+
+
+
+            int range = 2;
+            double old_pres;
+            bool oldpres_status = FT_NearestOldRectGridVarInRange(front,
+                    top_comp[i],coords,pres,range,&old_pres);
+
+            double old_dens;
+            bool olddens_status = FT_NearestOldRectGridVarInRange(front,
+                    top_comp[i],coords,dens,range,&old_dens);
+
+            double old_momn[MAXD] = {0.0};
+            bool oldmomn_status0 = FT_NearestOldRectGridVarInRange(front,
+                    top_comp[i],coords,momn[0],range,&old_momn[0]);
+            bool oldmomn_status1 = FT_NearestOldRectGridVarInRange(front,
+                    top_comp[i],coords,momn[1],range,&old_momn[1]);
+            bool oldmomn_status2 = FT_NearestOldRectGridVarInRange(front,
+                    top_comp[i],coords,momn[2],range,&old_momn[2]);
+
+
+            if (debugging("set_crossed_state"))
+            {
+                printf("\nFRESH POINT:\n");
+                printf("Old pressure   = %f  \n", pres[i]);
+                printf("Intfc pressure = %f  \n", old_pres);
+
+                printf("Old density   = %f  \n", dens[i]);
+                printf("Intfc density = %f  \n", old_dens);
+
+                printf("Old momentum  : %f %f %f\n", 
+                        momn[0][i], momn[1][i], momn[2][i]);
+                printf("Local momentum: %f %f %f\n",
+                        old_momn[0], old_momn[1], old_momn[2]);
+            }
+            
+            pres[i] = old_pres;
+            dens[i] = old_dens;
+            for (int j = 0; j < dim; ++j)
+            {
+                momn[j][i] = old_momn[j];
+            }
+
+
+            //FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
+            /*
+            nearest_intfc_state(coords,cell_center[i].comp,
+                    front->old_grid_intfc,(POINTER)&state,NULL,NULL);
+            */
+            
+            /*
+            double old_pres;
+            bool oldpres_status = FT_NearestOldRectGridVarInRange(front,
+                    top_comp[i],coords,pres,2,&old_pres);
+
+            double old_vel[MAXD] = {0.0};
+            bool oldvel_status0 = FT_NearestOldRectGridVarInRange(front,
+                    top_comp[i],coords,vel[0],2,&old_vel[0]);
+            bool oldvel_status1 = FT_NearestOldRectGridVarInRange(front,
+                    top_comp[i],coords,vel[1],2,&old_vel[1]);
+            bool oldvel_status2 = FT_NearestOldRectGridVarInRange(front,
+                    top_comp[i],coords,vel[2],2,&old_vel[2]);
 
             if (debugging("set_crossed_state"))
             {
                 printf("Old velocity  : %f %f %f\n",vel[0][id],
-                    vel[1][id],vel[2][id]);
+                        vel[1][id],vel[2][id]);
+                printf("Intfc velocity (old_grid): %f %f %f\n",old_vel[0],
+                        old_vel[1],old_vel[2]);
                 printf("Intfc velocity: %f %f %f\n",state.vel[0],
-                state.vel[1],state.vel[2]);
-                printf("Old pressure   = %f  \n",
-                    pres[id]);
-                printf("Intfc pressure = %f  \n",
-                    state.pres);
+                            state.vel[1],state.vel[2]);
+                
+                printf("Old pressure   = %f  \n", pres[id]);
+                printf("Intfc pressure (old_grid) = %f  \n", old_pres);
+                printf("Intfc pressure = %f  \n", state.pres);
             }
             
-            /*
             for (j = 0; j < dim; ++j)
-                vel[j][id] = state.vel[j];
+                vel[j][i] = state.vel[j];
+
+            if (oldvel_status0) vel[0][i] = old_vel[0];
+            if (oldvel_status1) vel[1][i] = old_vel[1];
+            if (oldvel_status2) vel[2][i] = old_vel[2];
+
+            pres[i] = state.pres; //pres[id] = state.pres;
             */
+
+            /*
+            if (oldvel_status2)
+            {
+                for (j = 0; j < dim; ++j)
+                    vel[j][i] = old_vel[j];
+                        //vel[j][id] = old_vel[j];
+            }
+            else
+            {
+                for (j = 0; j < dim; ++j)
+                    vel[j][i] = state.vel[j];
+                        //vel[j][id] = state.vel[j];
+            }
             
-            pres[id] = state.pres;
+            if (oldpres_status)
+                pres[i] = old_pres;// pres[id] = old_pres;
+            else
+                pres[i] = state.pres; //pres[id] = state.pres;
+            */
         }
     }
 	
     FT_FreeGridIntfc(front);
 	FT_MakeGridIntfc(front);
+
 }	/* end applicationSetStates */
 
 void CFABRIC_CARTESIAN::addFluxAlongGridLine(
@@ -339,7 +594,7 @@ void CFABRIC_CARTESIAN::addFluxAlongGridLine(
 	    icoords[idir] = seg_max;
 	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,1);
 	    
-	    eos = &(eqn_params->eos[comp]);
+	    eos = &(eqn_params->eos[GAS_COMP2]);
 	    EosSetTVDParams(&scheme_params, eos);
 
 	    numericalFlux((POINTER)&scheme_params,&vst,&vflux,n);
@@ -1024,7 +1279,8 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         for (int j = 0; j < dim; ++j)
 		    coords_ref[j] = crx_coords[j] + v[j];
 
-        if (debugging("elastic_buffer"))
+        /*
+        if (debugging("trace"))
         {
             (void) printf("\nEntered setElasticStatesDarcy():\n");
             (void) printf("comp = %d\n",comp);
@@ -1037,6 +1293,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             (void) print_general_vector("nor = ",nor,dim,"\n");
             (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
         }
+        */
 
         /* Interpolate the state at the reflected point */ 
         
@@ -1175,13 +1432,14 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         
 	    
         ////////////////////////////////////////////////////////////////
-        if (debugging("darcy_debug_coords"))
+        if (debugging("elastic_buffer"))
         {
-            double debug_coords[MAXD] = {0.312,0.312,0.42354};
+            double debug_coords[MAXD] = {0.6,0.6,0.42354};
             for (int j = 0; j < dim; ++j)
             {
                 debug_coords[j] -= crx_coords[j];
             }
+            debug_coords[2] = 0.0;
             if (Mag3d(debug_coords) < 3.0e-01)
             {
                 printf("\nDARCY_DEBUG\n");
@@ -1299,8 +1557,10 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         }
     }
 
-	if (debugging("elastic_buffer"))
-        (void) printf("Leaving setElasticStatesDarcy()\n");
+    /*
+	if (debugging("trace"))
+        (void) printf("Leaving setElasticStatesDarcy()\n\n");
+    */
 }	/* end setElasticStatesDarcy */
 
 

@@ -768,6 +768,26 @@ IMPORT  boolean FT_StateStructsAtGridCrossing(Front *front,
 				int range,
 				double *ans);
 
+/*! \fn boolean FT_NearestOldRectGridVarInRange(Front *front, int comp, double *coords, double *var_array, int range, double *ans)
+ *  \ingroup GRIDINTFC
+    \brief Find the state variable on old grid intfc rectangular grid point which
+     has the same component as the input and is nearest to the input
+     coordinate. Return YES if such point is found, and NO if no such point 
+     is found. In the latter case, the value of the ans is set to zero.
+    \param front @b in	Pointer to Front.
+    \param comp @b in	Component in which the state should be interpolated.
+    \param var_array @b in	Array of the variable on the expanded dual grid.
+    \param range @b in	Rnage of search in number of grid cells.
+    \param ans @b out	Address of the interpolated variable.
+ */
+
+   IMPORT  boolean FT_NearestOldRectGridVarInRange(Front *front ,
+   				int comp , 
+				double *coords , 
+				double *var_array , 
+				int range,
+				double *ans);
+
 /*! \fn boolean FT_FindNearestIntfcPointInRange(Front *front, int comp, double *coords, double *intfc_point, double *t, HYPER_SURF_ELEMENT **hse, HYPER_SURF **hs, int range)
  *  \ingroup GRIDINTFC
     \brief Given a space coordinate coords, this function tries to find the

@@ -209,6 +209,8 @@ void airfoil_driver(Front *front,
 
     CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
+    
+    TwoStepIntfc(front) = YES;
 
 	(void) printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",
 		Frequency_of_redistribution(front,GENERAL_WAVE));
