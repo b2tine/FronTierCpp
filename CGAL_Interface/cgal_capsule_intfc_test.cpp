@@ -62,17 +62,17 @@ int main(int argc, char **argv)
     double capsule_nose[3] = {0.0, 0.0, -0.5};
     double capsule_radius = 0.5;
 
+    int refinement_level = 2;
+
     CGAL_MakeCapsuleSurf(&front,capsule_nose,capsule_radius,
-            neg_comp,pos_comp,w_type,1,&capsule_surf);
+            neg_comp,pos_comp,w_type,refinement_level,&capsule_surf);
     
 	//sprintf(dname,"%s/CGAL_capsule_intfc",out_name);
 	//gview_plot_interface(dname,front.interf);
 
     FT_Draw(&front);
 
-    //FT_FreeFront(&front);
     delete_interface(front.interf);
-
 
 	clean_up(0);
 }

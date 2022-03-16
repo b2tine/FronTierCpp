@@ -2601,7 +2601,8 @@ static void print_max_fabric_speed(Front* fr)
     double max_speed = -HUGE;
     POINT* max_pt = nullptr;
 
-    if (!FT_FrontContainWaveType(fr,ELASTIC_BOUNDARY)) return;
+    if (!FT_FrontContainWaveType(fr,ELASTIC_BOUNDARY) &&
+        !FT_FrontContainWaveType(fr,ELASTIC_BAND_BOUNDARY)) return;
 
     intfc_surface_loop(fr->interf,s)
     {

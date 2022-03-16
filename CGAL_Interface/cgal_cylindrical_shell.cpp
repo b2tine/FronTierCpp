@@ -68,16 +68,17 @@ int main(int argc, char **argv)
         1,&cylindrical_surf);
     */
 
+
+    int refinement_level = 2;
+
     CGAL_MakeCylindricalShellSurf(&front,cylinder_center,cylinder_radius,
         cylinder_height,cylinder_axis,neg_comp,pos_comp,w_type,
-        1,&cylindrical_surf);
+        refinement_level,&cylindrical_surf);
 
 
     FT_Draw(&front);
 
     delete_interface(front.interf);
-    //FT_FreeFront(&front);
-
 
 	clean_up(0);
 }

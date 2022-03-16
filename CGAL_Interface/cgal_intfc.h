@@ -69,7 +69,6 @@ void CGAL_C2T3_to_FronTier(Front*,SURFACE**,COMPONENT,COMPONENT,C2T3*);
 void GenerateCgalSurface_OLD(Front*,SURFACE**,COMPONENT,COMPONENT,C2T3*,double*);
 
 
-//TODO: any downside to moving these to cgal_intfc.cpp?
 struct ellipsoid_function
 {
     double* center;
@@ -183,6 +182,8 @@ struct capsule_function
     double lower_cone_height = radius/std::tan(70.0*M_PI/180.0);
     double lower_slope = lower_cone_height/radius;
     
+    //TODO: Add spherical nose section
+    //
     //double nose_radius = 0.05;
     
     double mid_height = lower_cone_height*0.1374;

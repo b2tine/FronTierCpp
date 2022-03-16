@@ -182,6 +182,10 @@ extern void CGAL_MakeCapsuleSurf(
         //TODO: provide justification for this value of epsilon.
         double epsilon = 0.0425;
         double max_lfs = max_dist;
+        
+        epsilon /= (double)refinement_level;
+            //max_lfs *= (double)refinement_level;
+
         CGAL::Surface_mesh_default_criteria_3<Tr>
             cgal_mesh_criteria = CGAL_GenerateMeshCriteria(epsilon,max_lfs);
 
@@ -223,6 +227,11 @@ extern void CGAL_MakeCylindricalSurf(
         //TODO: provide justification for this value of epsilon.
         double epsilon = 0.0425;
         double max_lfs = max_radius;
+        
+        epsilon /= (double)refinement_level;
+            //max_lfs *= (double)refinement_level;
+
+        
         CGAL::Surface_mesh_default_criteria_3<Tr>
             cgal_mesh_criteria = CGAL_GenerateMeshCriteria(epsilon,max_lfs);
 
@@ -250,7 +259,7 @@ extern void CGAL_MakeCylindricalShellSurf(
 {
     double height_cylinder = 2.0*height;
     CGAL_MakeCylindricalSurf(front,center,radius,height_cylinder,idir,
-            neg_comp,pos_comp,w_type,1,surf);
+            neg_comp,pos_comp,w_type,refinement_level,surf);
 
     interface_reconstructed(front->interf) = YES;
 

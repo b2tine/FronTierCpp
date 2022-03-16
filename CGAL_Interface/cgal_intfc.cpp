@@ -103,7 +103,7 @@ void CGAL_C2T3_to_FronTier(
     std::map<Vertex_index,int> vmap;
     Mesh::Vertex_range vrange = mesh.vertices();
     Mesh::Vertex_range::iterator vit = vrange.begin();
-    for( int i = 0; i < num_vtx; i++ )
+    for (int i = 0; i < num_vtx; i++)
     {
         double vcoords[3];
         cgalPoint3 p = mesh.point(*vit);
@@ -125,7 +125,7 @@ void CGAL_C2T3_to_FronTier(
     //read in the mesh triangles
     Mesh::Face_range frange = mesh.faces();
     Mesh::Face_range::iterator fit = frange.begin();
-    for( int i = 0; i < num_faces; i++ )
+    for (int i = 0; i < num_faces; i++)
     { 
         CGAL::Vertex_around_face_circulator<Mesh> vb(mesh.halfedge(*fit),mesh); 
         CGAL::Vertex_around_face_circulator<Mesh> ve(vb);
@@ -134,7 +134,7 @@ void CGAL_C2T3_to_FronTier(
         do {
             vidx.push_back(*vb);
             vb++;
-        } while( vb != ve );
+        } while(vb != ve);
 
         int i0 = vmap[vidx[0]];
         int i1 = vmap[vidx[1]];
@@ -154,7 +154,7 @@ void CGAL_C2T3_to_FronTier(
 
     //distribute the storage to the points
     TRI** ptris = intfc->point_tri_store;
-    for( int i = 0; i < num_vtx; i++ )
+    for (int i = 0; i < num_vtx; i++)
     {
         points[i]->tris = ptris;
         ptris += points[i]->num_tris;
@@ -163,7 +163,7 @@ void CGAL_C2T3_to_FronTier(
 
     //build the DCEL corresponding to the surface mesh
     POINT* p;
-    for( int j = 0; j < 3; j++ )
+    for (int j = 0; j < 3; j++)
     {
         p = Point_of_tri(tris[0])[j];
         p->tris[p->num_tris++] = tris[0];
@@ -180,22 +180,21 @@ void CGAL_C2T3_to_FronTier(
         }
     }
 
-    for( int i = 0; i < num_vtx; i++ )
+    for (int i = 0; i < num_vtx; i++)
     {
         ptris = points[i]->tris;
         int num_ptris = points[i]->num_tris;
-        for( int j = 0; j < num_ptris; j++ )
+        for (int j = 0; j < num_ptris; j++)
         {
-            for( int k = 0; k < j; k++ )
+            for (int k = 0; k < j; k++)
             {
                 TRI* tri1 = ptris[j];
                 TRI* tri2 = ptris[k];
-                for( int m = 0; m < 3; m++ )
-                for( int l = 0; l < 3; l++ )
+                for (int m = 0; m < 3; m++)
+                for (int l = 0; l < 3; l++)
                 {
-                    if (Point_of_tri(tri1)[m] == Point_of_tri(tri2)[(l+1)%3]
-                       &&
-                       Point_of_tri(tri2)[l] == Point_of_tri(tri1)[(m+1)%3])
+                    if (Point_of_tri(tri1)[m] == Point_of_tri(tri2)[(l+1)%3] &&
+                        Point_of_tri(tri2)[l] == Point_of_tri(tri1)[(m+1)%3])
                     {
                         Tri_on_side(tri1,m) = tri2;
                         Tri_on_side(tri2,l) = tri1;
