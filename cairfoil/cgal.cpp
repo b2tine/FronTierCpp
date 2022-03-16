@@ -3226,7 +3226,9 @@ static void CgalCircleBelt(
         center[1] = CirCenter[1];
         center[2] = height - 0.5*length - gap;
 
-        CGAL_MakeDiskGapBandSurf(front,center,CirR[0],length,2,amb_comp,amb_comp,0,1,&belt);
+        double refinement_lvl = 2.0;
+        CGAL_MakeDiskGapBandSurf(front,center,CirR[0],length,2,
+                amb_comp,amb_comp,0,refinement_lvl,&belt);
         //FT_MakeCylinderShell(front,center,CirR[0],length,2,amb_comp,amb_comp,0,&belt);
         
         wave_type(belt) = ELASTIC_BOUNDARY;
