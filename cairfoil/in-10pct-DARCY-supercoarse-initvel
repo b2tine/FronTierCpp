@@ -106,7 +106,7 @@ Available types of canopy boundaries are:
         Cross (X)
         Circular with belt (S)
 Enter type of canopy boundary: R
-Enter the height of the plane: 0.42354
+Enter the height of the plane: 0.33754
 Enter lower bounds of the rectangle: 0.19 0.19
 Enter upper bounds of the rectangle: 0.61 0.61
 Enter yes for fixed boundary: yes
@@ -117,7 +117,7 @@ Enter yes to install boundary on each side: no
 //////////////////////////////////////////////////////////
 
 Enter interior propagator: p
-Enter interior sub step number: 1
+Enter interior sub step number: 3
 
 Enter yes for collision substepping: no
 Enter nsub per collision step: 25
@@ -153,7 +153,7 @@ Enter compressive strain limit: 0.01
 Enter strain rate limit: 0.075
 Enter strain velocity constraint tolerance: 0.25
 
-Enter timestep to activate FSI: 20
+Enter timestep to activate FSI: 5
 
 Type yes to perturb the surface: n
 
