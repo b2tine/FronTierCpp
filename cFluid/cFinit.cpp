@@ -577,6 +577,10 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 	(eqn_params->eos[GAS_COMP2]).pinf = pinf;
 	(eqn_params->eos[GAS_COMP2]).einf = einf;
 	
+    (eqn_params->eos[GAS_COMP3]).gamma = gamma;
+	(eqn_params->eos[GAS_COMP3]).pinf = pinf;
+	(eqn_params->eos[GAS_COMP3]).einf = einf;
+	
     double R_specific = 287.058;
     CursorAfterString(infile,"Enter the specific gas constant:");
     fscanf(infile,"%lf",&R_specific);
@@ -584,6 +588,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 
     (eqn_params->eos[GAS_COMP1]).R_specific = R_specific;
     (eqn_params->eos[GAS_COMP2]).R_specific = R_specific;
+    (eqn_params->eos[GAS_COMP3]).R_specific = R_specific;
 
     double Pr = 0.71;
     CursorAfterString(infile,"Enter the Prandtl number:");
@@ -592,6 +597,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 	
     (eqn_params->eos[GAS_COMP1]).Pr = Pr;
     (eqn_params->eos[GAS_COMP2]).Pr = Pr;
+    (eqn_params->eos[GAS_COMP3]).Pr = Pr;
 
     double Pr_turb = 0.9;
     CursorAfterString(infile,"Enter the turbulent Prandtl number:");
@@ -600,6 +606,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 	
     (eqn_params->eos[GAS_COMP1]).Pr_turb = Pr_turb;
     (eqn_params->eos[GAS_COMP2]).Pr_turb = Pr_turb;
+    (eqn_params->eos[GAS_COMP3]).Pr_turb = Pr_turb;
 
     double mu_ref = 1.716e-05;
     CursorAfterString(infile,"Enter the reference molecular viscosity:");
@@ -608,6 +615,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     
     (eqn_params->eos[GAS_COMP1]).mu_ref = mu_ref;
     (eqn_params->eos[GAS_COMP2]).mu_ref = mu_ref;
+    (eqn_params->eos[GAS_COMP3]).mu_ref = mu_ref;
 
     double T_ref = 273.15;
     CursorAfterString(infile,"Enter the reference temperature:");
@@ -616,14 +624,16 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
 
     (eqn_params->eos[GAS_COMP1]).T_ref = T_ref;
     (eqn_params->eos[GAS_COMP2]).T_ref = T_ref;
+    (eqn_params->eos[GAS_COMP3]).T_ref = T_ref;
 
-    double S = 111.0;
+    double S = 110.4;
     CursorAfterString(infile,"Enter the effective temperature:");
     fscanf(infile,"%lf",&S);
     (void) printf("%f\n",S);
 
     (eqn_params->eos[GAS_COMP1]).S = S;
     (eqn_params->eos[GAS_COMP2]).S = S;
+    (eqn_params->eos[GAS_COMP3]).S = S;
 
     //TODO: Need to specify the static/gauge pressure and
     //      the operating pressure separately.

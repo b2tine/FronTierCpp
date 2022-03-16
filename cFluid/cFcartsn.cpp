@@ -627,7 +627,6 @@ void G_CARTESIAN::addSourceTerm(
 void G_CARTESIAN::solve(double dt)
 {
 	m_dt = dt;
-	
     max_speed = 0.0;
 
 	if (debugging("trace")) printf("Entering solve()\n");
@@ -669,13 +668,11 @@ void G_CARTESIAN::solve(double dt)
     }
     ///////////////////////////////////////////////////////////////////////////
 
-    addImmersedForce();
-
     scatMeshStates();
-
 	adjustGFMStates();
-    
     setComponent();
+
+    addImmersedForce();
 
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");

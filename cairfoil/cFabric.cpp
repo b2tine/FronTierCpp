@@ -95,12 +95,12 @@ void CFABRIC_CARTESIAN::applicationSetStates()
             double vec_pintfc[MAXD] = {0.};
             for (int j = 0; j < dim; ++j)
                 vec_pintfc[j] = coords[j] - p_intfc[j];
+            
             double mag_vp = Mag3d(vec_pintfc);
             for (int j = 0; j < dim; ++j)
                 vec_pintfc[j] /= mag_vp;
 
             double hdir = FT_GridSizeInDir(vec_pintfc,front);
-            //double dist = mag_vp;
 
             double idist[MAXD];
             idist[0] = std::abs(vec_pintfc[0]);
@@ -115,10 +115,6 @@ void CFABRIC_CARTESIAN::applicationSetStates()
             for (int j = 0; j < dim; ++j)
                 dist += sqr(coords[j] - p_intfc[j]);
             dist = sqrt(dist);
-            
-            double hmin_hyp = std::sqrt(3.0*sqr(hmin));
-
-            double dist_adj = dist - 0.40*hmin_hyp;
             */
 
             if (debugging("set_crossed_state"))
@@ -128,8 +124,6 @@ void CFABRIC_CARTESIAN::applicationSetStates()
                 printf("dist = %f\n",dist);
                 printf("1.4*hdir*Time_step_factor(front) = %f\n",
                         1.4*hdir*Time_step_factor(front));
-                //printf("dist_nor = %f dist_nor_adj = %f\n",dist_nor, dist_nor_adj);
-                //printf("dist = %f dist_adj = %f\n",dist, dist_adj);
             }
 
             //if (dist_nor_adj > hmin*Time_step_factor(front))
@@ -154,136 +148,6 @@ void CFABRIC_CARTESIAN::applicationSetStates()
             if (dist < min_dist) continue;
             
             
-            //nearest_intfc_state(coords,comp,front->interf,state,NULL,NULL);
-            
-            /*
-            if (!nearest_interface_point_within_range(coords,top_comp[i],
-                        front->old_grid_intfc,NO_BOUNDARIES,nullptr,
-                        p_intfc,intrp_coeffs,&hse,&hs,2))
-            {
-                continue;
-            }
-            */
-
-            /*
-            bool status = FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
-            
-            double pres_intfc = state.pres;
-            double vel_local[MAXD];
-            for (int j = 0; j < dim; ++j)
-            {
-                vel_local[j] = state.local_fluid_vel[j];
-            }
-            */
-            
-            /*
-            TRI* nearTri = Tri_of_hse(hse);
-            const double* tnor = Tri_normal(nearTri);
-            double nor[MAXD] = {0.0};
-            for (int j = 0; j < dim; ++j) nor[j] = tnor[j];
-            double mag_tnor = Mag3d(nor);
-            for (int j = 0; j < dim; ++j) nor[j] /= mag_tnor;
-            
-            double dh = FT_GridSizeInDir(nor,front);
-            if (top_comp[i] == negative_component(hs))
-            {
-                for (int j = 0; j < dim; ++j) 
-                    nor[j] *= -1.0;
-            }
-            */
-
-            /*
-            double p_comp[MAXD];
-            for (int j = 0; j < dim; ++j)
-            {
-                p_comp[j] = p_intfc[j] + dh*nor[j];
-            }
-
-            for (int j = 0; j < dim; ++j)
-            {
-
-            }
-            */
-            
-           
-
-            /*
-            TRI* nearTri = Tri_of_hse(hse);
-            STATE* st[3];
-            
-            if (top_comp[i] == negative_component(hs))
-            {
-                for (int j = 0; j < 3; ++j)
-                    st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
-            }
-            else if (top_comp[i] == positive_component(hs))
-            {
-                for (int j = 0; j < 3; ++j)
-                    st[j] = (STATE*)right_state(Point_of_tri(nearTri)[j]);
-            }
-
-            double pres_intfc = 0.0;
-            for (int j = 0; j < dim; ++j)
-            {
-                pres_intfc += intrp_coeffs[j]*st[j]->pres;
-            }
-            */
-
-            /*
-            double vel_local[MAXD] = {0.0};
-            for (int k = 0; k < dim; ++k)
-            {
-                vel_local[k] = 0.0;
-                for (int j = 0; j < 3; ++j)
-                {
-                    vel_local[k] += intrp_coeffs[j]*st[j]->local_fluid_vel[k];
-                }
-            }
-            */
-            
-            /*
-            double momn_local[MAXD] = {0.0};
-            for (int k = 0; k < dim; ++k)
-            {
-                for (int j = 0; j < 3; ++j)
-                {
-                    momn_local[k] += intrp_coeffs[j]*st[j]->momn[k];
-                }
-            }
-
-            if (debugging("set_crossed_state"))
-            {
-                printf("\nFRESH POINT:\n");
-                printf("Old pressure   = %f  \n", pres[i]);
-                printf("Intfc pressure = %f  \n", pres_intfc);
-
-                printf("Old momentum  : %f %f %f\n", 
-                        momn[0][i], momn[1][i], momn[2][i]);
-                printf("Local momentum: %f %f %f\n",
-                        momn_local[0], momn_local[1], momn_local[2]);
-            }
-            */
-                /*
-                printf("Old velocity  : %f %f %f\n", 
-                        vel[0][i], vel[1][i], vel[2][i]);
-                printf("Local velocity: %f %f %f\n",
-                        vel_local[0], vel_local[1], vel_local[2]);
-                */
-            //}
-
-
-            /*
-            pres[i] = pres_intfc;
-            for (int j = 0; j < dim; ++j)
-            {
-                momn[j][i] = momn_local[j];
-                //vel[j][i] = vel_local[j];
-                //vel[j][i] = vel_intfc[j] + vel[j][i];
-            }
-            */
-
-
-
             int range = 2;
             double old_pres;
             bool oldpres_status = FT_NearestOldRectGridVarInRange(front,
@@ -323,75 +187,11 @@ void CFABRIC_CARTESIAN::applicationSetStates()
             {
                 momn[j][i] = old_momn[j];
             }
-
-
-            //FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
-            /*
-            nearest_intfc_state(coords,cell_center[i].comp,
-                    front->old_grid_intfc,(POINTER)&state,NULL,NULL);
-            */
-            
-            /*
-            double old_pres;
-            bool oldpres_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,pres,2,&old_pres);
-
-            double old_vel[MAXD] = {0.0};
-            bool oldvel_status0 = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,vel[0],2,&old_vel[0]);
-            bool oldvel_status1 = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,vel[1],2,&old_vel[1]);
-            bool oldvel_status2 = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,vel[2],2,&old_vel[2]);
-
-            if (debugging("set_crossed_state"))
-            {
-                printf("Old velocity  : %f %f %f\n",vel[0][id],
-                        vel[1][id],vel[2][id]);
-                printf("Intfc velocity (old_grid): %f %f %f\n",old_vel[0],
-                        old_vel[1],old_vel[2]);
-                printf("Intfc velocity: %f %f %f\n",state.vel[0],
-                            state.vel[1],state.vel[2]);
-                
-                printf("Old pressure   = %f  \n", pres[id]);
-                printf("Intfc pressure (old_grid) = %f  \n", old_pres);
-                printf("Intfc pressure = %f  \n", state.pres);
-            }
-            
-            for (j = 0; j < dim; ++j)
-                vel[j][i] = state.vel[j];
-
-            if (oldvel_status0) vel[0][i] = old_vel[0];
-            if (oldvel_status1) vel[1][i] = old_vel[1];
-            if (oldvel_status2) vel[2][i] = old_vel[2];
-
-            pres[i] = state.pres; //pres[id] = state.pres;
-            */
-
-            /*
-            if (oldvel_status2)
-            {
-                for (j = 0; j < dim; ++j)
-                    vel[j][i] = old_vel[j];
-                        //vel[j][id] = old_vel[j];
-            }
-            else
-            {
-                for (j = 0; j < dim; ++j)
-                    vel[j][i] = state.vel[j];
-                        //vel[j][id] = state.vel[j];
-            }
-            
-            if (oldpres_status)
-                pres[i] = old_pres;// pres[id] = old_pres;
-            else
-                pres[i] = state.pres; //pres[id] = state.pres;
-            */
         }
     }
 	
-    FT_FreeGridIntfc(front);
-	FT_MakeGridIntfc(front);
+    //FT_FreeGridIntfc(front);
+	//FT_MakeGridIntfc(front);
 
 }	/* end applicationSetStates */
 

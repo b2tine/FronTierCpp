@@ -188,7 +188,6 @@ int main(int argc, char **argv)
     g_cartesian.initMovieVariables();
     initMovieStress(in_name,&front);
 
-    //TODO: NEED TO ZERO OUT OTHER FIELDS IN resetFronVelocity()?
 	if (!RestartRun || ReSetTime)
 	    resetFrontVelocity(&front);
 
@@ -276,7 +275,6 @@ void airfoil_driver(Front *front,
 	    {
 	    	coating_mono_hyper_surf(front);
 	    	g_cartesian->applicationSetComponent();
-            //g_cartesian->writeMeshComponentsVTK();
 	    }
 
 	    break_strings(front);
@@ -292,15 +290,12 @@ void airfoil_driver(Front *front,
         if (!af_params->no_fluid)
 	    {
 	    	coating_mono_hyper_surf(front);
-            /////////////////////////////////////
-                //g_cartesian->writeMeshComponentsVTK();
-            /////////////////////////////////////
             g_cartesian->applicationSetStates();
 	    }
         
 	    if (!af_params->no_fluid)
 	    {
-	    	coating_mono_hyper_surf(front);
+	    	//coating_mono_hyper_surf(front);
 
             g_cartesian->solve(front->dt);
             
