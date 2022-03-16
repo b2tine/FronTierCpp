@@ -635,8 +635,7 @@ void G_CARTESIAN::solve(double dt)
     setDomain();
 
     //TODO: Need to communicate newly colored components?
-    //
-    //FT_ParallelExchGridIntArrayBuffer(top_comp);
+    FT_ParallelExchGridIntArrayBuffer(top_comp,front);
 	
      
     static bool first = true;

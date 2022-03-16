@@ -4825,6 +4825,7 @@ EXPORT 	int insert_grid_intfc_crossings3d(
 	    t = T->tris[k][j][i];
 	    s = T->surfaces[k][j][i];
             icrds[0] = i; icrds[1] = j; icrds[2] = k;
+
 	    insert_block_crossings(grid_intfc,rgr,crx_store,seg_crx_lists,
 			seg_crx_count,t,s,nt,icrds,&crx_index);
 	}

@@ -6,11 +6,11 @@ struct SpaldingWallLaw
 public:
 
     SpaldingWallLaw(double u_tan, double dist, double nu_lam)
-        : u(u_tan), y(dist), nu(nu_lam)
+        : u{u_tan}, y{dist}, nu{nu_lam}
     {}
 
     SpaldingWallLaw(double u_tan, double dist, double nu_lam, double b)
-        : u(u_tan), y(dist), nu(nu_lam), B(b)
+        : u{u_tan}, y{dist}, nu{nu_lam}, B{b}
     {}
 
     ~SpaldingWallLaw() = default;
@@ -25,6 +25,7 @@ public:
     const int MAXITER = 5000;
     const double TOL = 1.0e-08;
         
+    //Newton's method to solve for friction velocity
     double solve(double u0)
     {
         if (u < TOL) return 0.0;

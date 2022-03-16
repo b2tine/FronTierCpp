@@ -53,6 +53,7 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 	double **momn = field.momn;
 	double *pres = field.pres;
 	double *dens = field.dens;
+	double *temp = field.temp;
 	
 	setDomain();
 	for (int i = 0; i < size; i++)
@@ -91,6 +92,16 @@ void CFABRIC_CARTESIAN::applicationSetStates()
                 continue;
             }
             */
+
+            /*
+            //TODO: Or should we be using this after getting the nearest
+            //      interface point???
+            state_along_hypersurface_element(comp,intrp_coeffs,hse,hs,state);
+            */
+
+            //TODO: SEE add_to_crx() in fgb3dutil.c for interpolating state
+            //      when components have crossed ... it is in the call stack
+            //      of FT_MakeGridIntfc()
 
             double vec_pintfc[MAXD] = {0.};
             for (int j = 0; j < dim; ++j)
@@ -157,6 +168,10 @@ void CFABRIC_CARTESIAN::applicationSetStates()
             bool olddens_status = FT_NearestOldRectGridVarInRange(front,
                     top_comp[i],coords,dens,range,&old_dens);
 
+            double old_temp;
+            bool oldtemp_status = FT_NearestOldRectGridVarInRange(front,
+                    top_comp[i],coords,temp,range,&old_temp);
+
             double old_momn[MAXD] = {0.0};
             bool oldmomn_status0 = FT_NearestOldRectGridVarInRange(front,
                     top_comp[i],coords,momn[0],range,&old_momn[0]);
@@ -175,6 +190,9 @@ void CFABRIC_CARTESIAN::applicationSetStates()
                 printf("Old density   = %f  \n", dens[i]);
                 printf("Intfc density = %f  \n", old_dens);
 
+                printf("Old temperature   = %f  \n", temp[i]);
+                printf("Intfc temperature = %f  \n", old_temp);
+
                 printf("Old momentum  : %f %f %f\n", 
                         momn[0][i], momn[1][i], momn[2][i]);
                 printf("Local momentum: %f %f %f\n",
@@ -183,6 +201,7 @@ void CFABRIC_CARTESIAN::applicationSetStates()
             
             pres[i] = old_pres;
             dens[i] = old_dens;
+            temp[i] = old_temp;
             for (int j = 0; j < dim; ++j)
             {
                 momn[j][i] = old_momn[j];
@@ -194,6 +213,94 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 	//FT_MakeGridIntfc(front);
 
 }	/* end applicationSetStates */
+
+void CFABRIC_CARTESIAN::applicationSetStatesOLD()
+{
+	double coords[MAXD];
+	int *icoords;
+	int i,j,size = (int)cell_center.size();
+	int id;
+	STATE state;
+	int ave_comp;
+	double p_intfc[MAXD],t[MAXD];
+	HYPER_SURF_ELEMENT *hse;
+	HYPER_SURF *hs;
+	double dist;
+	double **vel = field.vel;
+	double *pres = field.pres;
+	
+	setDomain();
+	for (i = 0; i < size; i++)
+    {
+        icoords = cell_center[i].icoords;
+        if (cell_center[i].comp != -1 && cell_center[i].comp != top_comp[i])
+        {
+            for (j = 0; j < dim; ++j)
+                coords[j] = top_L[j] + icoords[j]*top_h[j];
+    
+            id = d_index(icoords,top_gmax,dim);
+            if (fabs(cell_center[i].comp - top_comp[i]) != 2) continue;
+
+            if (debugging("set_crossed_state"))
+            {
+                double r;
+                printf("\n");
+                printf("Shifted component:\n");
+                printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
+                printf("old comp = %d  new comp = %d\n",cell_center[i].comp,top_comp[i]);
+                r = sqrt(sqr(coords[0] - 7.0) + sqr(coords[1] - 7.0));
+                printf("Radius = %f\n",r);
+            }
+
+            ave_comp = (cell_center[i].comp + top_comp[i])/2;
+            if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
+                        coords,NO_BOUNDARIES,p_intfc,t,&hse,&hs,2)) continue;
+
+            dist = 0.0;
+            for (j = 0; j < dim; ++j)
+                dist += sqr(coords[j] - p_intfc[j]);
+            dist = sqrt(dist);
+            
+            if (debugging("set_crossed_state"))
+            {
+                printf("coords  = %f %f %f\n",coords[0],coords[1],coords[2]);
+                printf("p_intfc = %f %f %f\n",p_intfc[0],p_intfc[1],p_intfc[2]);
+                printf("dist = %f\n",dist);
+                printf("hmin*Time_step_factor(front) = %f\n",
+                        hmin*Time_step_factor(front));
+            }
+
+            if (dist > hmin*Time_step_factor(front))
+            {
+                if (debugging("set_crossed_state"))
+                    printf("external point: dist = %f\n",dist);
+                continue;
+            }
+
+            FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
+
+            if (debugging("set_crossed_state"))
+            {
+                printf("\nFRESH POINT:\n");
+                printf("Old velocity  : %f %f %f\n",vel[0][id],
+                    vel[1][id],vel[2][id]);
+                printf("Intfc velocity: %f %f %f\n",state.vel[0],
+                state.vel[1],state.vel[2]);
+                printf("Old pressure   = %f  \n",
+                    pres[id]);
+                printf("Intfc pressure = %f  \n",
+                    state.pres);
+            }
+            
+            pres[id] = state.pres;
+            for (j = 0; j < dim; ++j)
+                vel[j][id] = state.vel[j];
+        }
+    }
+	
+    FT_FreeGridIntfc(front);
+	FT_MakeGridIntfc(front);
+}	/* end applicationSetStatesOLD() */
 
 void CFABRIC_CARTESIAN::addFluxAlongGridLine(
 	int idir,
@@ -364,7 +471,7 @@ void CFABRIC_CARTESIAN::addFluxAlongGridLine(
             //if (!gas_comp(top_comp[index]))
             if (needBufferFromIntfc(comp,top_comp[index]))
             {
-                printf("get boundary \n");
+                //printf("get boundary \n");
                 break;
             }
 		    else
@@ -1118,6 +1225,10 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                 m_vst->mu_turb,getStateMuTurb,&st_tmp_ghost.mu_turb,&m_vst->mu_turb[index]);
         */
 
+        
+        //TODO: My expectation was that we need the state from the real comp
+        //      side of the interface, but that is not correct apparently.
+        
         FT_IntrpStateVarAtCoords(front,ghost_comp,coords_ref,
                 m_vst->dens,getStateDens,&st_tmp_ghost.dens,&m_vst->dens[index]);
 	    FT_IntrpStateVarAtCoords(front,ghost_comp,coords_ref,
@@ -1199,7 +1310,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 
         double Msqr = gamma/(gamma + 1.0)*std::abs(rhor*pr - rhol*pl);
 
-        //TODO: INPUT FILE OPTIONS
         double poro = eqn_params->porosity;
         double alpha = eqn_params->porous_coeff[0];
         double beta = eqn_params->porous_coeff[1];
@@ -1214,10 +1324,8 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         double nor_vel = -1.0*sgn*std::abs(mdot/rhor - mdot/rhol);
         
         double pres_drop = -1.0*(A*nor_vel + B*std::abs(nor_vel)*nor_vel);
-            //double pres_drop = -1.0*(A*nor_vel + B*nor_vel*nor_vel);
         
         st_tmp_ghost.pres = pl + pres_drop;
-
         st_tmp_ghost.dens = rhol*std::pow(st_tmp_ghost.pres/pl,1.0/gamma);
         
         double velo[MAXD] = {0.0};

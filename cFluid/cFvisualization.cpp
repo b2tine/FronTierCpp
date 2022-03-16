@@ -130,6 +130,7 @@ void G_CARTESIAN::writeMeshComponentsVTK()
     serialWriteMeshComponentsVTK();
 }
 
+//Replaced by writeMeshFileVTK() which can handle parallel domains
 void G_CARTESIAN::serialWriteMeshFileVTK()
 {
     if (pp_numnodes() > 1)
@@ -188,6 +189,7 @@ void G_CARTESIAN::serialWriteMeshFileVTK()
     fclose(file);
 }
 
+//Replaced by writeCompGridMeshFileVTK() which can handle parallel domain
 void G_CARTESIAN::serialWriteCompGridMeshFileVTK()
 {
     if (pp_numnodes() > 1)
@@ -259,7 +261,7 @@ void G_CARTESIAN::serialWriteCompGridMeshFileVTK()
 //      and increasing the point size, the computational grid cells will appear
 //      to be colored by their component as intended.
 
-//TODO: Write parallel version
+//TODO: parallelized version
 void G_CARTESIAN::serialWriteMeshComponentsVTK()
 {
     if (pp_numnodes() > 1)

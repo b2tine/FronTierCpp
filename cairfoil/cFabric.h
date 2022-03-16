@@ -18,6 +18,8 @@ public:
 
     void applicationSetStates();
 
+    void applicationSetStatesOLD();
+
 protected:
 
     void addFluxAlongGridLine(int,int*,double,SWEEP*,FSWEEP*) override;

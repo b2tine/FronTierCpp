@@ -663,10 +663,7 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
 
     double slip = 1.0;
-    if (eqn_params->no_slip_wall)
-    {
-        slip = 0.0;
-    }
+    if (eqn_params->no_slip_wall) slip = 0.0;
 
     for (int j = 0; j < dim; ++j)
     {
@@ -748,7 +745,7 @@ void G_CARTESIAN::setSymmetryViscousGhostState(
             }
             else
             {
-                printf("setNeumannViscousGhostState() ERROR: "
+                printf("setSymmetryViscousGhostState() ERROR: "
                         "no gas component on hypersurface\n");
                 LOC(); clean_up(EXIT_FAILURE);
             }

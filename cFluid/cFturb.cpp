@@ -468,7 +468,6 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             }
             else if (wave_type(hs) == SYMMETRY_BOUNDARY)
             {
-                //TODO: Should use grid aligned version instead of NIP for this boundary type
                 double v_sym[MAXD] = {0.0};
                 setSymmetryBoundaryNIP(icoords,m,nb,comp,hs,intfc_state,vel,v_sym);
                 vel_nb[nb] = v_sym[l];
@@ -932,6 +931,7 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
         coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
     }
 
+    /*
     double real_dens = field.dens[ghost_index];
     double real_pres = field.pres[ghost_index];
     double real_vel[MAXD] = {0.0};
@@ -939,6 +939,7 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     {
         real_vel[j] = field.vel[j][ghost_index];
     }
+    */
 
     double intrp_coeffs[MAXD] = {0.0};
     HYPER_SURF_ELEMENT* hsurf_elem;
@@ -1083,7 +1084,7 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     
     if (debugging("poro_slip_boundary"))
     {
-        printf("\nsetSlipBoundaryNIP() DEBUGGING\n");
+        printf("\nsetPoroSlipBoundaryNIP() DEBUGGING\n");
         printf("idir = %d nb = %d\n",idir,nb);
         fprint_int_vector(stdout,"icoords",icoords,dim,", ");
         fprint_int_vector(stdout,"ghost_ic",ghost_ic,dim,"\n");
@@ -1139,8 +1140,8 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     {
 	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
 	    vel_rel_nor[j] = vn*nor[j];
-        //TODO: Need to use mdot for vel_ghost_nor
-	        //vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
+        vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
+        //TODO: Need to use mdot for vel_ghost_nor ?
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
@@ -1174,14 +1175,17 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.pres,
             getStatePres,&pres_reflect,&field.pres[index]);
 
-    double dens_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.dens,
-            getStateDens,&dens_reflect,&field.dens[index]);
-
     double mu_reflect;
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
             getStateMu,&mu_reflect,&field.mu[index]);
 
+    /*
+    double dens_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.dens,
+            getStateDens,&dens_reflect,&field.dens[index]);
+    */
+
+    /*
     double pl = pres_reflect;
     double rhol = dens_reflect;
     double pr = real_pres;
@@ -1210,10 +1214,12 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
 
     double pres_drop = -1.0*(A*nor_vel + B*std::abs(nor_vel)*nor_vel);
     double pres_wall = pr - pres_drop;
+
+        //double dens_wall = dens_reflect; //ASSUME ADIABATIC
+    */
     
     //Compute density near wall using the wall temperature and the pressure at the reflected point
-    double dens_wall = pres_wall/temp_wall/R_specific;
-        //double dens_wall = dens_reflect; //ASSUME ADIABATIC
+    double dens_wall = pres_reflect/temp_wall/R_specific;
 
 
     if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
@@ -1223,13 +1229,13 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
        LOC(); clean_up(EXIT_FAILURE);
     }
 
-    double dist_wall = dist_reflect;
-    double Cw = 1.0; //get from eqn_params or similar
-        //double h_canopy = 0.001;
-        //double Kp = poro*h_canopy*mu_reflect;
-        //double delta_y = Cw*std::sqrt(Kp/poro);
+    double poro = eqn_params->porosity;
+    double perm = eqn_params->permeability;
+    double Cw = 1.0; //TODO: read into eqn_params from input file
+
+    //Use modified distance in wall law for porous interface
     double delta_y = Cw*std::sqrt(perm/poro);
-    dist_wall += delta_y;
+    double dist_wall = dist_reflect + delta_y;
 
     double tau_wall[MAXD] = {0.0};
     double mag_tau_wall = computeWallShearStress(mag_vtan,dist_wall,mu_reflect,dens_wall,100.0);
@@ -1267,7 +1273,7 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
         LOC(); clean_up(EXIT_FAILURE);
     }
 
-    if (debugging("slip_boundary"))
+    if (debugging("poro_slip_boundary"))
     {
         printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);
         printf("mag_tau_wall = %g\n",mag_tau_wall);
