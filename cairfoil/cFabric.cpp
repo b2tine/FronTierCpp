@@ -149,6 +149,9 @@ void CFABRIC_CARTESIAN::applicationSetStates()
                 
                 continue;
             }
+
+            double min_dist = 0.6*hdir*Time_step_factor(front);
+            if (dist < min_dist) continue;
             
             
             //nearest_intfc_state(coords,comp,front->interf,state,NULL,NULL);

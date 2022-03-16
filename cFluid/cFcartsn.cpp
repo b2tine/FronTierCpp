@@ -634,8 +634,10 @@ void G_CARTESIAN::solve(double dt)
 	start_clock("solve");
 	
     setDomain();
-	
-    //appendOpenEndStates(); /* open boundary test */
+
+    //TODO: Need to communicate newly colored components?
+    //
+    //FT_ParallelExchGridIntArrayBuffer(top_comp);
 	
      
     static bool first = true;
