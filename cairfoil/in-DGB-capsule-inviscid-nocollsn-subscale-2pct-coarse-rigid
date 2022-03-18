@@ -1,7 +1,7 @@
 Domain limit in 0-th dimension: -1 1
 Domain limit in 1-th dimension: -1 1
 Domain limit in 2-th dimension:  -0.5 5.5
-Computational grid: 250 250 625
+Computational grid: 140 140 180
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY 
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -66,7 +66,7 @@ Entering yes to turn off fluid solver: no
 
 /////////////////////////////////////////////////////
 
-Enter yes for inviscid solver: no
+Enter yes for inviscid solver: yes
 
 Enter yes to use eddy viscosity: yes
 Enter eddy viscosity model: Vreman
@@ -233,6 +233,8 @@ Type y to make vector vorticity field movie: n
 ///////////////////////////
 
 Enter yes for debugging: yes
+
+Enter the debugging string: rigid_canopy
 
 Enter the debugging stringXXX: rigid_body_intfc
 
