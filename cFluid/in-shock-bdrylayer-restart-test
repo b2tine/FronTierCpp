@@ -1,5 +1,5 @@
 Max time: 2.0
-Max step: 300000
+Max step: 3
 Print interval: 0.0005
 Movie frame interval: 0.00005
 CFL factor: 0.5

@@ -119,4 +119,8 @@ extern double getStateYimp(POINTER);
 extern double getStateZimp(POINTER);
 
 
+extern void print_cFstate(POINTER);
+extern void print_cFstate(STATE* state);
+
+
 #endif

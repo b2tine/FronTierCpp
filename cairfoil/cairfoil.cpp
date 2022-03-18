@@ -291,8 +291,6 @@ void airfoil_driver(Front *front,
         
 	    if (!af_params->no_fluid)
 	    {
-	    	//coating_mono_hyper_surf(front);
-
             g_cartesian->solve(front->dt);
             
             FT_FreeGridIntfc(front);

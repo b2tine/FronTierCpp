@@ -622,6 +622,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 
     double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
     
+    
     //compute the normal and velocity vectors at the interface point
     double vel_intfc[MAXD] = {0.0};
     switch (dim)

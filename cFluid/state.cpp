@@ -104,3 +104,30 @@ extern double getStateZimp(POINTER state)
     return fstate->impulse[2];
 }   /* end getStateZimp */
 
+
+extern void print_cFstate(POINTER state)
+{
+    STATE* fstate = (STATE*)state;
+    print_cFstate(fstate);
+}
+
+extern void print_cFstate(STATE* state)
+{
+    if (!state)
+    {
+        printf("null state\n");
+        return;
+    }
+
+    printf("state->dens = %f\n",state->dens);
+    printf("state->momn = %f\n",
+            state->momn[0],state->momn[1],state->momn[2]);
+    printf("state->vel = %f\n",
+            state->vel[0],state->vel[1],state->vel[2]);
+    printf("state->pres = %f\n",state->pres);
+    printf("state->temp = %f\n",state->temp);
+    printf("state->mu = %f\n",state->mu);
+    printf("\n");
+}
+
+
