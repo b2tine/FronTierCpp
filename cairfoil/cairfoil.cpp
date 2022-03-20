@@ -178,7 +178,7 @@ int main(int argc, char **argv)
                 FT_MakeGridIntfc(&front);
                 coating_mono_hyper_surf(&front);
                 g_cartesian.applicationSetComponent();
-                FT_FreeGridIntfc(front);
+                FT_FreeGridIntfc(&front);
             }
 
             readFrontStates(&front,restart_state_name);
