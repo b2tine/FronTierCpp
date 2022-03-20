@@ -312,6 +312,8 @@ void CFABRIC_CARTESIAN::applicationSetStatesNEW()
 	double *temp = field.temp;
 	double *mu = field.mu;
 	
+    bool fresh_cleared_point = false;
+
 	setDomain();
 	for (i = 0; i < size; i++)
     {
@@ -407,7 +409,14 @@ void CFABRIC_CARTESIAN::applicationSetStatesNEW()
             pres[id] = state.pres;
             temp[id] = state.temp;
             mu[id] = state.mu;
+
+            fresh_cleared_point = true;
         }
+    }
+
+    if (fresh_cleared_point)
+    {
+        copyMeshStates();
     }
 	
     //FT_FreeGridIntfc(front);

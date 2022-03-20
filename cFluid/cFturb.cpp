@@ -436,10 +436,6 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     grid_intfc,icoords,dir[m][nb],comp,
                     (POINTER*)&intfc_state,&hs,crx_coords);
 
-            //TODO: Never see ELASTIC_BOUNDARY since the components set by the
-            //      index coating algorithm get reset to the ambient component
-            //      before the solver is called in the driver.
-            
             if (!fr_crx_grid_seg)
             {
                 int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
