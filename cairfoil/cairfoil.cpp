@@ -173,6 +173,14 @@ int main(int argc, char **argv)
 	    }
 	    else
 	    {
+            if (!af_params.no_fluid)
+            {
+                FT_MakeGridIntfc(&front);
+                coating_mono_hyper_surf(&front);
+                g_cartesian.applicationSetComponent();
+                FT_FreeGridIntfc(front);
+            }
+
             readFrontStates(&front,restart_state_name);
             g_cartesian.readInteriorStates(restart_state_name);
 	    	readAfExtraData(&front,restart_state_name);

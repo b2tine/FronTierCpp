@@ -1086,7 +1086,7 @@ void G_CARTESIAN::computeViscousFlux2d_5pt(
     double Cp = gamma/(gamma - 1.0)*R_specific;
     
     double lambda = Cp*m_vst->mu[index]/Pr; //thermal conductivity
-    double lambda_turb = Cp*m_vst->mu_turb[index]/Pr_turb; //thermal conductivity
+    double lambda_turb = Cp*field.mu_turb[index]/Pr_turb; //thermal conductivity
 
     v_flux->engy_flux += delta_t*(lambda + lambda_turb)*(T_xx + T_yy);
     /////////////////////////////////////////////////////////////////////////////////////
@@ -1212,7 +1212,7 @@ void G_CARTESIAN::computeViscousFlux3d(
     double Cp = gamma/(gamma - 1.0)*R_specific;
     
     double lambda = Cp*m_vst->mu[index]/Pr; //thermal conductivity
-    double lambda_turb = Cp*m_vst->mu_turb[index]/Pr_turb; //thermal conductivity
+    double lambda_turb = Cp*field.mu_turb[index]/Pr_turb; //thermal conductivity
 
     v_flux->engy_flux += delta_t*(lambda + lambda_turb)*(T_xx + T_yy + T_zz);
     /////////////////////////////////////////////////////////////////////////////////////

@@ -338,10 +338,10 @@ void CFABRIC_CARTESIAN::applicationSetStatesNEW()
             }
 
             ave_comp = (cell_center[i].comp + top_comp[i])/2;
-            //if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
-              //      coords,NO_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
             if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
-                    coords,INCLUDE_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
+                    coords,NO_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
+            //if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
+              //      coords,INCLUDE_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
 
             dist = 0.0;
             for (j = 0; j < dim; ++j)
@@ -1469,8 +1469,10 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 	    
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
                 m_vst->mu,getStateMu,&st_tmp_ghost.mu,&m_vst->mu[index]);
+	    //FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+          //      m_vst->mu_turb,getStateMuTurb,&st_tmp_ghost.mu_turb,&m_vst->mu_turb[index]);
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-                m_vst->mu_turb,getStateMuTurb,&st_tmp_ghost.mu_turb,&m_vst->mu_turb[index]);
+                field.mu_turb,getStateMuTurb,&st_tmp_ghost.mu_turb,&field.mu_turb[index]);
 
         
         double mu_total = st_tmp_ghost.mu + st_tmp_ghost.mu_turb;
@@ -1493,7 +1495,8 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 	    st_tmp_real.pres = m_vst->pres[index_ghost];
 	    st_tmp_real.temp = m_vst->temp[index_ghost];
 
-        double mu_total_real = m_vst->mu[index_ghost] + m_vst->mu_turb[index_ghost];
+        double mu_total_real = m_vst->mu[index_ghost] + field.mu_turb[index_ghost];
+        //double mu_total_real = m_vst->mu[index_ghost] + m_vst->mu_turb[index_ghost];
         
         double v_real[MAXD];
         for (int j = 0; j < dim; j++)
@@ -2757,8 +2760,10 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
             getStateMu,&mu_reflect,&m_vst->mu[index]);
     
     double mu_turb_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu_turb,
-            getStateMuTurb,&mu_turb_reflect,&m_vst->mu_turb[index]);
+    //FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu_turb,
+      //      getStateMuTurb,&mu_turb_reflect,&m_vst->mu_turb[index]);
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
+            getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);
 
     double mu_total_reflect = mu_reflect + mu_turb_reflect;
     
@@ -2802,7 +2807,8 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
         //TODO: OR SHOULD INTERPOLATE TEMPERATURES AND USE TO COMPUTE VISCOSITIES
 
     double mu_ghost =  m_vst->mu[ghost_index];
-    double mu_total_ghost = m_vst->mu[ghost_index] + m_vst->mu_turb[ghost_index];
+    double mu_total_ghost = m_vst->mu[ghost_index] + field.mu_turb[ghost_index];
+    //double mu_total_ghost = m_vst->mu[ghost_index] + m_vst->mu_turb[ghost_index];
     
     double A = 0.5*(sqr(mu_ghost) - sqr(mu_reflect))*alpha;
     //double A = 0.5*(sqr(mu_total_ghost) - sqr(mu_total_reflect))*alpha;

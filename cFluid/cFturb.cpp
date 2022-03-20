@@ -501,6 +501,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                      strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
                 {
                     vel_nb[nb] = vel[l][index];
+                    printf("Boundary State Func\n");
                     
                     //FLOW_THROUGH_PARAMS params;
                     //POINT *oldp = ft_params->oldp;
@@ -516,6 +517,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     //INLET
                     STATE* state = (STATE*)boundary_state(hs);
                     vel_nb[nb] = state->vel[l];
+                    printf("Boundary State\n");
                 }
             }
             else
