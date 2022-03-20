@@ -338,8 +338,10 @@ void CFABRIC_CARTESIAN::applicationSetStatesNEW()
             }
 
             ave_comp = (cell_center[i].comp + top_comp[i])/2;
+            //if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
+              //      coords,NO_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
             if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
-                    coords,NO_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
+                    coords,INCLUDE_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
 
             dist = 0.0;
             for (j = 0; j < dim; ++j)
