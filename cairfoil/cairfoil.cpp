@@ -173,14 +173,6 @@ int main(int argc, char **argv)
 	    }
 	    else
 	    {
-            if (!af_params.no_fluid)
-            {
-                FT_MakeGridIntfc(&front);
-                coating_mono_hyper_surf(&front);
-                g_cartesian.applicationSetComponent();
-                FT_FreeGridIntfc(&front);
-            }
-
             readFrontStates(&front,restart_state_name);
             g_cartesian.readInteriorStates(restart_state_name);
 	    	readAfExtraData(&front,restart_state_name);
@@ -216,8 +208,6 @@ void airfoil_driver(Front *front,
     CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
     
-        //TwoStepIntfc(front) = YES;
-
 	(void) printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",
 		Frequency_of_redistribution(front,GENERAL_WAVE));
 
@@ -294,15 +284,12 @@ void airfoil_driver(Front *front,
         if (!af_params->no_fluid)
 	    {
 	    	coating_mono_hyper_surf(front);
-            g_cartesian->applicationSetStatesNEW();
+            g_cartesian->applicationSetStates();
 	    }
         
 	    if (!af_params->no_fluid)
 	    {
             g_cartesian->solve(front->dt);
-            FT_FreeGridIntfc(front);
-	        FT_MakeGridIntfc(front);
-            FT_ParallelExchIntfcBuffer(front);
 	    }
 	    else
         {
@@ -357,7 +344,6 @@ void airfoil_driver(Front *front,
         if (FT_IsDrawTime(front))
 	    {
             FT_Draw(front);
-            g_cartesian->writeMeshComponentsVTK();
 	    }
 
         if (FT_TimeLimitReached(front))

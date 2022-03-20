@@ -200,7 +200,7 @@ Enter yes for debugging: yes
 Enter the debugging stringXXX: init_intfc
 Enter the debugging stringXXX: darcy_debug_coords
 
-Enter the debugging string: rigid_canopy
+Enter the debugging stringXXX: rigid_canopy
 Enter the debugging stringXXX: coat_comp
 
 Enter the debugging string: collision_off

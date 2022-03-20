@@ -15,12 +15,13 @@ AM_LDFLAGS = @CGAL_LIBS@ \
 
 
 
-noinst_PROGRAMS = cairfoil \
-				  cairfoil-coatintfc-dev
+noinst_PROGRAMS = cairfoil
 
 cairfoil_SOURCES = cairfoil.cpp
 cairfoil_LDADD = $(builddir)/objs/libcairfoil.la
 
+
+noinst_PROGRAMS += cairfoil-coatintfc-dev
 
 cairfoil_coatintfc_dev_SOURCES = cairfoil-coatintfc-dev.cpp
 cairfoil_coatintfc_dev_LDADD = $(builddir)/objs/libcairfoil.la

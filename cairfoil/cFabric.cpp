@@ -41,7 +41,7 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 {
 	double coords[MAXD];
 	int *icoords;
-	int size = (int)cell_center.size();
+	int i,j,size = (int)cell_center.size();
 	int id;
 	STATE state;
 	int ave_comp;
@@ -50,21 +50,15 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 	HYPER_SURF *hs;
 	double dist;
 	double **vel = field.vel;
-	double **momn = field.momn;
 	double *pres = field.pres;
-	double *dens = field.dens;
-	double *temp = field.temp;
-	double *engy = field.engy;
-	double *mu = field.mu;
-	double *mu_turb = field.mu_turb;
 	
 	setDomain();
-	for (int i = 0; i < size; i++)
+	for (i = 0; i < size; i++)
     {
         icoords = cell_center[i].icoords;
         if (cell_center[i].comp != -1 && cell_center[i].comp != top_comp[i])
         {
-            for (int j = 0; j < dim; ++j)
+            for (j = 0; j < dim; ++j)
                 coords[j] = top_L[j] + icoords[j]*top_h[j];
     
             id = d_index(icoords,top_gmax,dim);
@@ -72,486 +66,60 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 
             if (debugging("set_crossed_state"))
             {
+                double r;
                 printf("\n");
                 printf("Shifted component:\n");
                 printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
-                printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
                 printf("old comp = %d  new comp = %d\n",cell_center[i].comp,top_comp[i]);
-                printf("\n");
+                r = sqrt(sqr(coords[0] - 7.0) + sqr(coords[1] - 7.0));
+                printf("Radius = %f\n",r);
             }
-
-            
-            double intrp_coeffs[MAXD] = {0.0};
 
             ave_comp = (cell_center[i].comp + top_comp[i])/2;
             if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
-                        coords,NO_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
-            
-            /*
-            if (!nearest_interface_point_within_range(coords,top_comp[i],
-                        front->grid_intfc,NO_BOUNDARIES,nullptr,
-                        p_intfc,intrp_coeffs,&hse,&hs,2))
-            {
-                continue;
-            }
-            */
-            
-            TRI* nearTri = Tri_of_hse(hse);
-            const double* tnor = Tri_normal(nearTri);
-            double nor[MAXD];
-            for (int j = 0; j < dim; ++j)
-                nor[j] = tnor[j];
-
-            double mag_tnor = Mag3d(nor);
-            for (int j = 0; j < dim; ++j)
-                nor[j] /= mag_tnor;
-
-            if (top_comp[i] == 2)
-            {
-                for (int j = 0; j < dim; ++j)
-                    nor[j] *= -1.0;
-            }
-
-            /*
-            //TODO: Or should we be using this after getting the nearest
-            //      interface point???
-            state_along_hypersurface_element(comp,intrp_coeffs,hse,hs,state);
-            */
-
-            //TODO: SEE add_to_crx_list() in fgb3dutil.c for interpolating state
-            //      when components have crossed ... it is in the call stack
-            //      of FT_MakeGridIntfc()
-
-            double vec_pintfc[MAXD] = {0.0};
-            for (int j = 0; j < dim; ++j)
-                vec_pintfc[j] = coords[j] - p_intfc[j];
-            
-            double mag_vp = Mag3d(vec_pintfc);
-            for (int j = 0; j < dim; ++j)
-                vec_pintfc[j] /= mag_vp;
-
-            double hdir = FT_GridSizeInDir(vec_pintfc,front);
-
-            double intrp_coords[MAXD];
-            for (int j = 0; j < dim; ++j)
-            {
-                intrp_coords[j] = coords[j] + 1.5*hdir*nor[j];
-            }
-
-
-            double idist[MAXD];
-            idist[0] = std::abs(vec_pintfc[0]);
-            idist[1] = std::abs(vec_pintfc[1]);
-            idist[2] = std::abs(vec_pintfc[2]);
-            
-            double max_idist = std::max(std::max(idist[0],idist[1]),idist[2]);
-            //double dist = std::min(max_idist,mag_vp);
+                        coords,NO_BOUNDARIES,p_intfc,t,&hse,&hs,2)) continue;
 
             dist = 0.0;
-            for (int j = 0; j < dim; ++j)
+            for (j = 0; j < dim; ++j)
                 dist += sqr(coords[j] - p_intfc[j]);
             dist = sqrt(dist);
-
+            
             if (debugging("set_crossed_state"))
             {
                 printf("coords  = %f %f %f\n",coords[0],coords[1],coords[2]);
                 printf("p_intfc = %f %f %f\n",p_intfc[0],p_intfc[1],p_intfc[2]);
-                printf("dist = %f\n",dist);
-                printf("hmin*Time_step_factor(front) = %f\n",
-                        hmin*Time_step_factor(front));
-                //printf("1.4*hdir*Time_step_factor(front) = %f\n",
-                  //      1.4*hdir*Time_step_factor(front));
             }
 
-            //if (dist_nor_adj > hmin*Time_step_factor(front))
-            //if (dist > hmin*Time_step_factor(front))
-            //if (dist > hmin*Time_step_factor(front))
-            //if (dist > 1.4*hdir*Time_step_factor(front))
-            //if (dist > hmin*Time_step_factor(front))
+            //if (dist > top_h[0]*Time_step_factor(front))
             if (dist > hmin*Time_step_factor(front))
             {
                 if (debugging("set_crossed_state"))
-                {
                     printf("external point: dist = %f\n",dist);
-                    //printf("hmin*Time_step_factor(front) = %f\n",
-                        //   hmin*Time_step_factor(front));
-
-                    //printf("external point: dist = %f\n",dist);
-                    //printf("external point: dist_nor = %f\n",dist_nor);
-                }
-                
                 continue;
             }
 
-            //double min_dist = 0.25*hmin*Time_step_factor(front);
-            //if (dist < min_dist) continue;
-            
-            
-            /*
-            int range = 2;
-            double old_pres;
-            bool oldpres_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,pres,range,&old_pres);
-
-            double old_dens;
-            bool olddens_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,dens,range,&old_dens);
-
-            double old_temp;
-            bool oldtemp_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,temp,range,&old_temp);
-
-            double old_engy;
-            bool oldengy_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,engy,range,&old_engy);
-
-            double old_mu;
-            bool oldmu_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,engy,range,&old_mu);
-
-            double old_mu_turb;
-            bool oldmuturb_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,engy,range,&old_mu_turb);
-
-            double old_momn[MAXD] = {0.0};
-            bool oldmomn_status0 = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,momn[0],range,&old_momn[0]);
-            bool oldmomn_status1 = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,momn[1],range,&old_momn[1]);
-            bool oldmomn_status2 = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],coords,momn[2],range,&old_momn[2]);
-            */
-
-            int range = 2;
-            double old_pres;
-            bool oldpres_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],intrp_coords,pres,range,&old_pres);
-
-            double old_dens;
-            bool olddens_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],intrp_coords,dens,range,&old_dens);
-
-            double old_temp;
-            bool oldtemp_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],intrp_coords,temp,range,&old_temp);
-
-            double old_engy;
-            bool oldengy_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],intrp_coords,engy,range,&old_engy);
-
-            double old_mu;
-            bool oldmu_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],intrp_coords,engy,range,&old_mu);
-
-            double old_mu_turb;
-            bool oldmuturb_status = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],intrp_coords,engy,range,&old_mu_turb);
-
-            double old_momn[MAXD] = {0.0};
-            bool oldmomn_status0 = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],intrp_coords,momn[0],range,&old_momn[0]);
-            bool oldmomn_status1 = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],intrp_coords,momn[1],range,&old_momn[1]);
-            bool oldmomn_status2 = FT_NearestOldRectGridVarInRange(front,
-                    top_comp[i],intrp_coords,momn[2],range,&old_momn[2]);
-
-            if (debugging("set_crossed_state"))
-            {
-                printf("\nFRESH POINT:\n");
-                printf("Old pressure   = %f  \n", pres[i]);
-                printf("Intfc pressure = %f  \n", old_pres);
-
-                printf("Old density   = %f  \n", dens[i]);
-                printf("Intfc density = %f  \n", old_dens);
-
-                printf("Old temperature   = %f  \n", temp[i]);
-                printf("Intfc temperature = %f  \n", old_temp);
-
-                printf("Old momentum  : %f %f %f\n", 
-                        momn[0][i], momn[1][i], momn[2][i]);
-                printf("Local momentum: %f %f %f\n",
-                        old_momn[0], old_momn[1], old_momn[2]);
-            }
-            
-            pres[i] = old_pres;
-            dens[i] = old_dens;
-            temp[i] = old_temp;
-            engy[i] = old_engy;
-            mu[i] = old_mu;
-            mu_turb[i] = old_mu_turb;
-            for (int j = 0; j < dim; ++j)
-            {
-                momn[j][i] = old_momn[j];
-            }
-        }
-    }
-	
-    //FT_FreeGridIntfc(front);
-	//FT_MakeGridIntfc(front);
-
-}	/* end applicationSetStates */
-
-void CFABRIC_CARTESIAN::applicationSetStatesNEW()
-{
-	double coords[MAXD];
-	int *icoords;
-	int i,j,size = (int)cell_center.size();
-	int id;
-	STATE state;
-	int ave_comp;
-	double p_intfc[MAXD];
-    double intrp_coeffs[MAXD];
-	HYPER_SURF_ELEMENT *hse;
-	HYPER_SURF *hs;
-	double dist;
-	double **vel = field.vel;
-	double **momn = field.momn;
-	double *pres = field.pres;
-	double *dens = field.dens;
-	double *engy = field.engy;
-	double *temp = field.temp;
-	double *mu = field.mu;
-	double *mu_turb = field.mu_turb;
-	
-    boolean fresh_cleared_point = NO;
-
-	setDomain();
-	for (i = 0; i < size; i++)
-    {
-        icoords = cell_center[i].icoords;
-        if (cell_center[i].comp != -1 && cell_center[i].comp != top_comp[i])
-        {
-            for (j = 0; j < dim; ++j)
-                coords[j] = top_L[j] + icoords[j]*top_h[j];
-    
-            id = d_index(icoords,top_gmax,dim);
-            if (id != i) printf("id != i --> id = %d , i = %d\n",id,i);
-
-            if (fabs(cell_center[i].comp - top_comp[i]) != 2) continue;
-
-            if (debugging("set_crossed_state"))
-            {
-                printf("\n");
-                printf("Shifted component:\n");
-                printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
-                printf("old comp = %d  new comp = %d\n",cell_center[i].comp,top_comp[i]);
-            }
-
-            ave_comp = (cell_center[i].comp + top_comp[i])/2;
-            if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
-                    coords,NO_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
-            //if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
-              //      coords,INCLUDE_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
-
-            dist = 0.0;
-            for (j = 0; j < dim; ++j)
-                dist += sqr(coords[j] - p_intfc[j]);
-            dist = sqrt(dist);
-            
-            if (debugging("set_crossed_state"))
-            {
-                printf("coords  = %f %f %f\n",coords[0],coords[1],coords[2]);
-                printf("p_intfc = %f %f %f\n",p_intfc[0],p_intfc[1],p_intfc[2]);
-                printf("dist = %f\n",dist);
-                printf("hmin*Time_step_factor(front) = %f\n\n",
-                        hmin*Time_step_factor(front));
-            }
-
-            if (dist > hmin*Time_step_factor(front))
-            {
-                if (debugging("set_crossed_state"))
-                    printf("external point: dist = %f\n\n",dist);
-                continue;
-            }
-
-            //TODO: BUILD INTERPOLATION STENCIL!!!!!!!!!
-            //
-            //
-            //
-            //
-            //FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
-            
-            /*
-            if (!nearest_interface_point_within_range(coords,top_comp[i],
-                        front->old_grid_intfc,NO_BOUNDARIES,nullptr,
-                        p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
-            */
-            
-            double* coords_on;
-            HYPER_SURF* hs_on;
-            nearest_intfc_state(coords,top_comp[i],front->grid_intfc,(POINTER)&state,coords_on,&hs_on);
-            
-            //TRI* tri = Tri_of_hse(hse);
-            //POINT** pt = Point_of_tri(tri);
-            //SURFACE* surf = Surface_of_hs(hs);
-            //INTERFACE* grid_intfc = front->grid_intfc;
-            //interpolate_crx_pt_states_on_tri(grid_intfc,*pt,tri,surf);
-
-            //state_along_hypersurface_element(top_comp[i], intrp_coeffs,hse,hs,(POINTER)&state);
-
-
-            if (debugging("set_crossed_state"))
-            {
-                printf("\nFRESH POINT:\n");
-                printf("Old State:\n");
-                printf("dens = %f\n",dens[id]);
-                printf("momn = %f %f %f\n", momn[0][id], momn[1][id], momn[2][id]);
-                printf("vel = %f %f %f\n", vel[0][id], vel[1][id], vel[2][id]);
-                printf("pres = %f\n",pres[id]);
-                printf("temp = %f\n",temp[id]);
-                printf("mu = %f\n",mu[id]);
-                
-                printf("\nInterpolated Interface State:\n");
-                print_cFstate(&state);
-            }
-            
-            dens[id] = state.dens;
-            for (j = 0; j < dim; ++j) momn[j][id] = state.momn[j];
-            for (j = 0; j < dim; ++j) vel[j][id] = state.momn[j]/dens[id];
-            engy[id] = state.engy;
-            pres[id] = state.pres;
-            temp[id] = state.temp;
-            mu[id] = state.mu;
-            mu_turb[id] = state.mu_turb;
-
-            fresh_cleared_point = YES;
-        }
-    }
-
-
-    if (pp_max_status(fresh_cleared_point) == YES)
-    {
-        copyMeshStates();
-    }
-	
-    //FT_FreeGridIntfc(front);
-	//FT_MakeGridIntfc(front);
-
-}	/* end applicationSetStatesNEW() */
-
-void CFABRIC_CARTESIAN::applicationSetStatesOLD()
-{
-	double coords[MAXD];
-	int *icoords;
-	int i,j,size = (int)cell_center.size();
-	int id;
-	STATE state;
-	int ave_comp;
-	double p_intfc[MAXD];
-    double intrp_coeffs[MAXD];
-	HYPER_SURF_ELEMENT *hse;
-	HYPER_SURF *hs;
-	double dist;
-	double **vel = field.vel;
-	double **momn = field.momn;
-	double *pres = field.pres;
-	double *dens = field.dens;
-	double *engy = field.engy;
-	double *temp = field.temp;
-	double *mu = field.mu;
-	
-	setDomain();
-	for (i = 0; i < size; i++)
-    {
-        icoords = cell_center[i].icoords;
-        if (cell_center[i].comp != -1 && cell_center[i].comp != top_comp[i])
-        {
-            for (j = 0; j < dim; ++j)
-                coords[j] = top_L[j] + icoords[j]*top_h[j];
-    
-            id = d_index(icoords,top_gmax,dim);
-            if (id != i) printf("id != i --> id = %d , i = %d\n",id,i);
-
-            if (fabs(cell_center[i].comp - top_comp[i]) != 2) continue;
-
-            if (debugging("set_crossed_state"))
-            {
-                printf("\n");
-                printf("Shifted component:\n");
-                printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
-                printf("old comp = %d  new comp = %d\n",cell_center[i].comp,top_comp[i]);
-            }
-
-            ave_comp = (cell_center[i].comp + top_comp[i])/2;
-            if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
-                    coords,NO_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
-
-            dist = 0.0;
-            for (j = 0; j < dim; ++j)
-                dist += sqr(coords[j] - p_intfc[j]);
-            dist = sqrt(dist);
-            
-            if (debugging("set_crossed_state"))
-            {
-                printf("coords  = %f %f %f\n",coords[0],coords[1],coords[2]);
-                printf("p_intfc = %f %f %f\n",p_intfc[0],p_intfc[1],p_intfc[2]);
-                printf("dist = %f\n",dist);
-                printf("hmin*Time_step_factor(front) = %f\n\n",
-                        hmin*Time_step_factor(front));
-            }
-
-            if (dist > hmin*Time_step_factor(front))
-            {
-                if (debugging("set_crossed_state"))
-                    printf("external point: dist = %f\n\n",dist);
-                continue;
-            }
-
-            //TODO: BUILD INTERPOLATION STENCIL!!!!!!!!!
-            //
-            //
-            //
-            //
             FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
-            
-            /*
-            if (!nearest_interface_point_within_range(coords,top_comp[i],
-                        front->old_grid_intfc,NO_BOUNDARIES,nullptr,
-                        p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
-            */
-            
-            //FrontNearestIntfcState(front,coords,top_comp[i],(POINTER)&state);
-
-            //double* coords_on;
-            //HYPER_SURF* hs_on;
-            //nearest_intfc_state(coords,top_comp[i],front->grid_intfc,(POINTER)&state,coords_on,&hs_on);
-            
-            //TRI* tri = Tri_of_hse(hse);
-            //POINT** pt = Point_of_tri(tri);
-            //SURFACE* surf = Surface_of_hs(hs);
-            //INTERFACE* grid_intfc = front->grid_intfc;
-            //interpolate_crx_pt_states_on_tri(grid_intfc,*pt,tri,surf);
-
-            //state_along_hypersurface_element(top_comp[i], intrp_coeffs,hse,hs,(POINTER)&state);
-
 
             if (debugging("set_crossed_state"))
             {
-                printf("\nFRESH POINT:\n");
-                printf("Old velocity  : %f %f %f\n",vel[0][id],vel[1][id],vel[2][id]);
-                printf("Old pressure   = %f  \n", pres[id]);
-
-                printf("Interpolated Interface States:\n");
-                print_cFstate(&state);
-                
-                //printf("Intfc pressure = %f  \n", state.pres);
-                //printf("Intfc velocity: %f %f %f\n",state.vel[0],state.vel[1],state.vel[2]);
+                printf("Old velocity  : %f %f %f\n",vel[0][id],
+                    vel[1][id],vel[2][id]);
+                printf("Intfc velocity: %f %f %f\n",state.vel[0],
+                state.vel[1],state.vel[2]);
+                printf("Old pressure   = %f  \n",
+                    pres[id]);
+                printf("Intfc pressure = %f  \n",
+                    state.pres);
             }
             
-            dens[id] = state.dens;
-            for (j = 0; j < dim; ++j) momn[j][id] = state.momn[j];
-            for (j = 0; j < dim; ++j) vel[j][id] = state.momn[j]/dens[id];
-            engy[id] = state.engy;
-            pres[id] = state.pres;
-            temp[id] = state.temp;
-            mu[id] = state.mu;
+            //for (j = 0; j < dim; ++j)
+                //vel[j][id] = state.vel[j];
         }
     }
 	
     FT_FreeGridIntfc(front);
 	FT_MakeGridIntfc(front);
-
-}	/* end applicationSetStatesOLD() */
+}	/* end applicationSetStates */
 
 void CFABRIC_CARTESIAN::addFluxAlongGridLine(
 	int idir,

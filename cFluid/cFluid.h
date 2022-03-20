@@ -585,6 +585,7 @@ protected:
     void fillViscousFluxStencil2d_5pt(int* icoords, SWEEP* m_vst, VStencil2d_5pt* vsten);
 
     void fillViscousFluxStencil3d(int* icoords, SWEEP* m_vst, VStencil3d* vsten);
+    void fillViscousFluxStencil3dNEW(int* icoords, SWEEP* m_vst, VStencil3d* vsten);
         //void fillViscousFluxStencil3d_5pt(int* icoords, SWEEP* m_vst, VStencil3d_5pt* vsten);
     
     virtual void setViscousGhostState(int* icoords, COMPONENT comp, VSWEEP* vs, SWEEP* m_vst);

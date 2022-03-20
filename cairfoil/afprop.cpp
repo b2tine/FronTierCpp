@@ -181,6 +181,7 @@ static void elastic_point_propagate_fsi(
     FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
             getStatePres,&newsr->pres,&sr->pres);
 
+    /*
     for (int i = 0; i < dim; ++i)
     {
         FT_IntrpStateVarAtCoords(front,base_comp-1,pm,momn[i],
@@ -214,7 +215,7 @@ static void elastic_point_propagate_fsi(
             getStateMuTurb,&newsl->mu_turb,&mu_turb[index]);
     FT_IntrpStateVarAtCoords(front,base_comp+1,pp,mu_turb,
             getStateMuTurb,&newsr->mu_turb,&mu_turb[index]);
-
+    */
 
 
 	/* Impulse is incremented by the fluid pressure force */

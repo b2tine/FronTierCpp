@@ -250,12 +250,12 @@ void G_CARTESIAN::fillViscousFluxStencil2d_5pt(
     }
 }
 
-void G_CARTESIAN::fillViscousFluxStencil3d(
+/*
+void G_CARTESIAN::fillViscousFluxStencil3dNEW(
         int* icoords,
         SWEEP* m_vst,
         VStencil3d* vsten)
 {
-    /*
     GRID_DIRECTION dir[3][2] = {
         {WEST,EAST},{SOUTH,NORTH},{LOWER,UPPER}
     };
@@ -264,7 +264,6 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
     HYPER_SURF* hs;
     STATE* state;
     double crx_coords[MAXD];
-    */
 
     COMPONENT comp = vsten->comp;
 
@@ -280,10 +279,44 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         int idx_nb = d_index(vs->icoords,top_gmax,dim);
         vs->comp = top_comp[idx_nb];
 
-        /*
-        int status = FT_StateStructAtGridCrossing(front,grid_intfc,
-                icoords,dir[idir][nb],comp,(POINTER*)&state,&hs,crx_coords);
-        */
+        //int status = FT_StateStructAtGridCrossing(front,grid_intfc,
+          //      icoords,dir[idir][nb],comp,(POINTER*)&state,&hs,crx_coords);
+
+        if (comp != vs->comp && std::abs(comp - vs->comp) != 1)
+        {
+            setViscousGhostState(icoords,comp,vs,m_vst);
+        }
+        else
+        {
+            for (int l = 0; l < dim; ++l)
+            {
+                vs->vel[l] = m_vst->momn[l][idx_nb]/m_vst->dens[idx_nb];
+            }
+
+            vs->temp = m_vst->temp[idx_nb];
+        }
+    }
+}
+*/
+
+void G_CARTESIAN::fillViscousFluxStencil3d(
+        int* icoords,
+        SWEEP* m_vst,
+        VStencil3d* vsten)
+{
+    COMPONENT comp = vsten->comp;
+
+    for (int k = 0; k < 3; ++k)
+    for (int j = 0; j < 3; ++j)
+    for (int i = 0; i < 3; ++i)
+    {
+        VSWEEP* vs = &vsten->st[k][j][i];
+        vs->icoords[0] = icoords[0] + i - 1;
+        vs->icoords[1] = icoords[1] + j - 1;
+        vs->icoords[2] = icoords[2] + k - 1;
+        
+        int idx_nb = d_index(vs->icoords,top_gmax,dim);
+        vs->comp = top_comp[idx_nb];
 
         //if (comp !=3 && vs->comp != 3 && vs->comp != comp)
         if (comp != vs->comp && std::abs(comp - vs->comp) != 1)
