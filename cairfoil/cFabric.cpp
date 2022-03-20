@@ -312,7 +312,7 @@ void CFABRIC_CARTESIAN::applicationSetStatesNEW()
 	double *temp = field.temp;
 	double *mu = field.mu;
 	
-    bool fresh_cleared_point = false;
+    boolean fresh_cleared_point = NO;
 
 	setDomain();
 	for (i = 0; i < size; i++)
@@ -410,11 +410,12 @@ void CFABRIC_CARTESIAN::applicationSetStatesNEW()
             temp[id] = state.temp;
             mu[id] = state.mu;
 
-            fresh_cleared_point = true;
+            fresh_cleared_point = YES;
         }
     }
 
-    if (fresh_cleared_point)
+
+    if (pp_max_status(fresh_cleared_point) == YES)
     {
         copyMeshStates();
     }
