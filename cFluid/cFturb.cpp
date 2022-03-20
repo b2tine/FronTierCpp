@@ -416,6 +416,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
     boolean fr_crx_grid_seg;
     INTERFACE *grid_intfc = front->grid_intfc;
     STATE* intfc_state;
+    HYPER_SURF_ELEMENT *hse;
     HYPER_SURF *hs;
     double crx_coords[MAXD];
 
@@ -476,6 +477,11 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                         (POINTER*)&intfc_state,&hs,crx_coords);
                         */
 
+                double intrp_coeffs[MAXD];
+                bool nip_found = nearest_interface_point(&ghost_coords[0],
+                            comp,front->interf,NO_SUBDOMAIN,nullptr,
+                            crx_coords,intrp_coeffs,&hse,&hs);
+
                 if (boundary_state_function(hs))
                 {
                     //FLOW_THROUGH_PARAMS params;
@@ -484,12 +490,14 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     //EQN_PARAMS *eqn_params = ft_params->eqn_params;
 
                     //OUTLET
+                    state_along_hypersurface_element(comp,intrp_coeffs,hse,hs,(POINTER)intfc_state);
                     vel_nb[nb] = intfc_state->vel[l];
                 }
                 else
                 {
                     //INLET
-                    vel_nb[nb] = intfc_state->vel[l];
+                    vel_nb[nb] = boundary_state(hs)->vel[l];
+                        //vel_nb[nb] = intfc_state->vel[l];
                 }
 
                 if (std::isnan(vel_nb[nb]))

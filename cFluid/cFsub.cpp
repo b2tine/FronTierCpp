@@ -1275,19 +1275,12 @@ extern void cF_flowThroughBoundaryState3d(
 	POINTER sl, sr;
     FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
     
-    /*
     if (comp == negative_component(hs))  
         oldst = (STATE*)sl;
     else
         oldst = (STATE*)sr;
-    */
 
-    if (GAS_COMP2 == negative_component(hs))  
-        oldst = (STATE*)sl;
-    else
-        oldst = (STATE*)sr;
-
-    newst->eos = &eqn_params->eos[GAS_COMP2]; 
+    newst->eos = &eqn_params->eos[comp]; 
     for (i = 0; i < dim; ++i)
     {
         newst->vel[i] = oldst->vel[i];
