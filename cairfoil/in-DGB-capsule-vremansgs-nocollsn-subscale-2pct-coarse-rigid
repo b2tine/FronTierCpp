@@ -1,7 +1,7 @@
 Domain limit in 0-th dimension: -1 1
 Domain limit in 1-th dimension: -1 1
-Domain limit in 2-th dimension:  -0.5 5.5
-Computational grid: 140 140 180
+Domain limit in 2-th dimension:  -0.75 5.25
+Computational grid: 100 100 180
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY 
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -162,14 +162,12 @@ Enter fabric porosity: 0.08
 Enter porosity ghost fluid method: DARCY
 
 Enter viscous parameter: 1.3152e+11
-                                    XXXEnter viscous parameterXXX: 8.3516e+06
-                                    XXXEnter viscous parameterXXX: 152.1645
-Enter inertial parameter: 0
-                                    XXXEnter inertial parameterXXX: 168.1334
+Enter inertial parameter: 168.1334
+                                    XXXEnter inertial parameterXXX: 0
 Enter permeability: 7.6033e-12
 
 Enter interior propagator: p
-Enter interior sub step number: 2
+Enter interior sub step number: 1
 
 Enter yes for collision substepping: no
 Enter nsub per collision step: 25
@@ -235,8 +233,6 @@ Type y to make vector vorticity field movie: n
 Enter yes for debugging: yes
 
 Enter the debugging string: rigid_canopy
-
-Enter the debugging stringXXX: rigid_body_intfc
 
 Enter the debugging string: max_speed
 Enter the debugging string: cfluid_dt
