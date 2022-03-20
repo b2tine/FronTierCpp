@@ -101,22 +101,6 @@ EXPORT	void FT_InteriorPropagate(
     {
         interior_advance_front(front);
 
-        /*
-	    if (TwoStepIntfc(front) == YES)
-	    {
-            if (front->old_grid_intfc != NULL)
-                FT_FreeOldGridIntfc(front);
-		
-            front->old_grid_intfc = front->grid_intfc;
-	    	FT_MakeGridIntfc(front);
-	    }
-	    else
-	    {
-	    	FT_FreeGridIntfc(front);
-	    	FT_MakeGridIntfc(front);
-	    }
-        */
-        
         if (front->grid_intfc != NULL)
         {
             FT_FreeGridIntfc(front);

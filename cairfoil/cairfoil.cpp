@@ -208,7 +208,7 @@ void airfoil_driver(Front *front,
     CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
     
-    TwoStepIntfc(front) = YES;
+        //TwoStepIntfc(front) = YES;
 
 	(void) printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",
 		Frequency_of_redistribution(front,GENERAL_WAVE));
@@ -286,13 +286,12 @@ void airfoil_driver(Front *front,
         if (!af_params->no_fluid)
 	    {
 	    	coating_mono_hyper_surf(front);
-            g_cartesian->applicationSetStates();
+            g_cartesian->applicationSetStatesNEW();
 	    }
         
 	    if (!af_params->no_fluid)
 	    {
             g_cartesian->solve(front->dt);
-            
             FT_FreeGridIntfc(front);
 	        FT_MakeGridIntfc(front);
 	    }

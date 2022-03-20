@@ -18,6 +18,7 @@ public:
 
     void applicationSetStates();
 
+    void applicationSetStatesNEW();
     void applicationSetStatesOLD();
 
 protected:

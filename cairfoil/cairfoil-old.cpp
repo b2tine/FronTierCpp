@@ -28,8 +28,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "airfoil.h"
 
-static void set_intfc_initial_velocity(Front* front);
-
 static void airfoil_driver(Front*,CFABRIC_CARTESIAN*);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
@@ -191,8 +189,6 @@ int main(int argc, char **argv)
 	if (!RestartRun || ReSetTime)
 	    resetFrontVelocity(&front);
 
-    set_intfc_initial_velocity(&front);
-
     if (debugging("trace"))
         (void) printf("Passed state initialization()\n");
 
@@ -212,7 +208,7 @@ void airfoil_driver(Front *front,
     CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
     
-        //TwoStepIntfc(front) = YES;
+    TwoStepIntfc(front) = YES;
 
 	(void) printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",
 		Frequency_of_redistribution(front,GENERAL_WAVE));
@@ -290,17 +286,16 @@ void airfoil_driver(Front *front,
         if (!af_params->no_fluid)
 	    {
 	    	coating_mono_hyper_surf(front);
-            g_cartesian->applicationSetStatesNEW();
             //g_cartesian->applicationSetStates();
-            //g_cartesian->applicationSetStatesOLD();
+            g_cartesian->applicationSetStatesOLD();
 	    }
         
 	    if (!af_params->no_fluid)
 	    {
             g_cartesian->solve(front->dt);
             
-            FT_FreeGridIntfc(front);
-	        FT_MakeGridIntfc(front);
+            //FT_FreeGridIntfc(front);
+	        //FT_MakeGridIntfc(front);
 	    }
 	    else
         {
@@ -378,41 +373,3 @@ void airfoil_driver(Front *front,
     FT_FreeMainIntfc(front);
 }       /* end airfoil_driver */
 
-static void set_intfc_initial_velocity(Front *front)
-{
-    INTERFACE *intfc = front->interf;
-    POINT *p;
-    HYPER_SURF_ELEMENT *hse;
-    HYPER_SURF *hs;
-    STATE *sl,*sr;
-    int dim = front->rect_grid->dim;
-    CURVE **c;
-    BOND *b;
-
-    double U = 200.0;
-    double r = 0.125;
-    double r2 = r*r;
-
-    double center[MAXD] = {0.4, 0.4, 0.33754};
-    
-    double* coords;
-
-    next_point(intfc,NULL,NULL,NULL);
-    while (next_point(intfc,&p,&hse,&hs))
-    {
-        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-        if (wave_type(hs) != ELASTIC_BOUNDARY) continue;
-
-        coords = Coords(p);
-        
-        double R2 = sqr(center[0] - coords[0]) + sqr(center[1] - coords[1]);
-        if (R2 >= r2)
-        {
-            p->vel[2] = 0.0;
-        }
-        else
-        {
-            p->vel[2] = U - U*R2/r2;
-        }
-    }
-}

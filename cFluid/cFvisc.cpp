@@ -108,8 +108,6 @@ void G_CARTESIAN::addViscousFlux(
         FSWEEP *m_flux,
         double delta_t)
 {
-    if (front->step < 1) return;
-
     switch (dim)
     {
     case 2:
@@ -282,22 +280,11 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         int idx_nb = d_index(vs->icoords,top_gmax,dim);
         vs->comp = top_comp[idx_nb];
 
-        //TODO: Checking all the necessary crossings could be very expensive.
-        //      Better if we can find a way to have the index_coating algorithm
-        //      components persist for the fluid solver to use.
-        //
-        //TODO: Can try using this to check:
-        //
-        //      Table* T = front->interf->table;
-        //      if (T->compon3d[iz][iy][ix] == ONFRONT)
-        
         /*
         int status = FT_StateStructAtGridCrossing(front,grid_intfc,
                 icoords,dir[idir][nb],comp,(POINTER*)&state,&hs,crx_coords);
         */
 
-        //TODO: This will only see rigid body wall boundaries -- no porous walls etc.
-        //if (vs->comp != comp)
         //if (comp !=3 && vs->comp != 3 && vs->comp != comp)
         if (comp != vs->comp && std::abs(comp - vs->comp) != 1)
         {
@@ -330,39 +317,10 @@ void G_CARTESIAN::setViscousGhostState(
     auto ghost_coords = cell_center[ghost_index].getCoords();
     COMPONENT ghost_comp = vs->comp;
 
-    //TODO: Why can't we use nearest_intfc_point_in_range()???
-    int range = 2;
-    //int range = 3;
-    
-
-    /*
-    bool nip_found =
-    FT_FindNearestIntfcPointInRange(front,ghost_comp,&ghost_coords[0],
-            INCLUDE_BOUNDARIES,nip_coords,intrp_coeffs,&hse,&hs,range);
-    */
-
-
-    /*
-    bool nip_found = nearest_interface_point_within_range(&ghost_coords[0],
-                comp,front->interf,NO_BOUNDARIES,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs,3);
-    */
-
-    /*
-    bool nip_found = nearest_interface_point_within_range(&ghost_coords[0],
-                comp,front->interf,NO_SUBDOMAIN,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs,3);
-    */
     
     /*
     bool nip_found = nearest_interface_point(&ghost_coords[0],
-                comp,front->interf,NO_BOUNDARIES,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);
-    */
-    
-    /*
-    bool nip_found = nearest_interface_point(&ghost_coords[0],
-                comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
+                comp,front->grid_intfc,NO_SUBDOMAIN,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);
     */
     

@@ -120,13 +120,14 @@ extern void print_cFstate(STATE* state)
     }
 
     printf("state->dens = %f\n",state->dens);
-    printf("state->momn = %f\n",
+    printf("state->momn = %f %f %f\n",
             state->momn[0],state->momn[1],state->momn[2]);
-    printf("state->vel = %f\n",
+    printf("state->vel = %f %f %f\n",
             state->vel[0],state->vel[1],state->vel[2]);
     printf("state->pres = %f\n",state->pres);
     printf("state->temp = %f\n",state->temp);
     printf("state->mu = %f\n",state->mu);
+    printf("state->engy = %f\n",state->engy);
     printf("\n");
 }
 

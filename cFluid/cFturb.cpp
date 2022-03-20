@@ -566,48 +566,8 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double intrp_coeffs[MAXD] = {0.0};
     HYPER_SURF_ELEMENT* hsurf_elem;
     HYPER_SURF* hsurf;
-    int range = 2;
 
-    //TODO: Why does this fail for INCLUDE_BOUNDARIES and NO_SUBDOMAIN values?
-    //      Conversely, why does it work with NO_BOUNDARIES in the backward facing
-    //      step scenario -- to what degree is it working?
-    //
-    //      nearest_intfc_point_in_range() etc. doesn't find NEUMANN_BOUNDARY
-    //      when it is domain (rect) boundary, but nearest_intfc_point() does.
-    //
-    //TODO: Is the above todo stil valid? Or did I just not understand what was happening?
-    //
     
-    /*
-    FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_BOUNDARIES,
-            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    */
-    /*
-    bool nip_found = 
-        FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
-            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    */
-    /*
-    bool nip_found = 
-        FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,INCLUDE_BOUNDARIES,
-            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    */
-    /*
-    bool nip_found = 
-        FT_FindNearestIntfcPointInRange(front,comp,coords_ghost,NO_SUBDOMAIN,
-            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    */
-    /*
-    bool nip_found = 
-        FT_FindNearestIntfcPointInRange(front, comp, coords_ghost,INCLUDE_BOUNDARIES,
-            crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-    */
-
-    //FT_FindNearestIntfcPointInRange(front,ghost_comp,coords_ghost,NO_SUBDOMAIN,
-      //      crx_coords,intrp_coeffs,&hsurf_elem,&hsurf,range);
-
-    //bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
-      //      INCLUDE_BOUNDARIES,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
 
     bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
             NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
@@ -1099,21 +1059,6 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
                 dist_ghost/dist_reflect, dist_reflect - dist_ghost);
     }
 
-    /*
-    double real_vel_rel[MAXD] = {0.0};
-    double vn_real = 0.0;
-    for (int j = 0; j < dim; ++j)
-    {
-        real_vel_rel[j] = real_vel[j] - vel_intfc[j];
-        vn_real += (real_vel[j] - vel_intfc[j])*nor[j];
-    }
-
-    double vel_rel_real_tan[MAXD] = {0.0};
-    for (int j = 0; j < dim; ++j)
-    {
-        vel_rel_real_tan[j] = real_vel_rel[j] - vn_real*nor[j];
-    }
-    */
     
     // Interpolate the velocity at the reflected point
     int index = d_index(icoords,top_gmax,dim);
@@ -1142,7 +1087,6 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
 	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
 	    vel_rel_nor[j] = vn*nor[j];
         vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
-        //TODO: Need to use mdot for vel_ghost_nor ?
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
@@ -1180,45 +1124,6 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
             getStateMu,&mu_reflect,&field.mu[index]);
 
-    /*
-    double dens_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.dens,
-            getStateDens,&dens_reflect,&field.dens[index]);
-    */
-
-    /*
-    double pl = pres_reflect;
-    double rhol = dens_reflect;
-    double pr = real_pres;
-    double rhor = real_dens;
-    double Msqr = gamma/(gamma + 1.0)*std::abs(rhor*pr - rhol*pl);
-
-    double poro = eqn_params->porosity;
-    double perm = eqn_params->permeability;
-
-    double alpha = eqn_params->porous_coeff[0];
-    double beta = eqn_params->porous_coeff[1];
-
-    double A = mu_reflect*alpha;
-    double B = rhol*beta;
-
-    double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
-
-    double mdot = -2.0*sgn*Msqr/(A + std::sqrt(A*A + 4.0*beta*Msqr));
-    double nor_vel = -1.0*sgn*std::abs(mdot/rhor - mdot/rhol);
-    
-    double velo[MAXD] = {0.0};
-    for (int j = 0; j < dim; ++j)
-    {
-        vel_ghost_nor[j] = nor_vel*nor[j];
-    }
-
-    double pres_drop = -1.0*(A*nor_vel + B*std::abs(nor_vel)*nor_vel);
-    double pres_wall = pr - pres_drop;
-
-        //double dens_wall = dens_reflect; //ASSUME ADIABATIC
-    */
-    
     //Compute density near wall using the wall temperature and the pressure at the reflected point
     double dens_wall = pres_reflect/temp_wall/R_specific;
 

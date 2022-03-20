@@ -136,10 +136,13 @@ static void elastic_point_propagate_fsi(
     int index = d_index(icoords,top_gmax,dim);
 
 	double *mu = eqn_params->mu;
+	double *temp = eqn_params->temp;
 	double **vel = eqn_params->vel;
 	double **momn = eqn_params->mom;
 	double *vort = eqn_params->vort;
 	double *pres = eqn_params->pres;
+	double *dens = eqn_params->dens;
+	double *engy = eqn_params->engy;
 
 	double pp[MAXD],pm[MAXD],nor[MAXD];
 	double left_nor_speed,right_nor_speed;
@@ -177,7 +180,6 @@ static void elastic_point_propagate_fsi(
     FT_IntrpStateVarAtCoords(front,base_comp+1,pp,pres,
             getStatePres,&newsr->pres,&sr->pres);
 
-    /*
     for (int i = 0; i < dim; ++i)
     {
         FT_IntrpStateVarAtCoords(front,base_comp-1,pm,momn[i],
@@ -185,16 +187,29 @@ static void elastic_point_propagate_fsi(
         FT_IntrpStateVarAtCoords(front,base_comp+1,pp,momn[i],
                 getStateMom[i],&newsr->momn[i],&momn[i][index]);
     }
-    */
-    /*
-    for (int i = 0; i < dim; ++i)
-    {
-        FT_IntrpStateVarAtCoords(front,base_comp-1,pm,vel[i],
-                getStateVel[i],&newsl->local_fluid_vel[i],&vel[i][index]);
-        FT_IntrpStateVarAtCoords(front,base_comp+1,pp,vel[i],
-                getStateVel[i],&newsr->local_fluid_vel[i],&vel[i][index]);
-    }
-    */
+
+    
+    FT_IntrpStateVarAtCoords(front,base_comp-1,pm,dens,
+            getStateDens,&newsl->dens,&dens[index]);
+    FT_IntrpStateVarAtCoords(front,base_comp+1,pp,dens,
+            getStateDens,&newsr->dens,&dens[index]);
+
+    FT_IntrpStateVarAtCoords(front,base_comp-1,pm,engy,
+            getStateEngy,&newsl->engy,&engy[index]);
+    FT_IntrpStateVarAtCoords(front,base_comp+1,pp,engy,
+            getStateEngy,&newsr->engy,&engy[index]);
+
+    FT_IntrpStateVarAtCoords(front,base_comp-1,pm,temp,
+            getStateTemp,&newsl->temp,&temp[index]);
+    FT_IntrpStateVarAtCoords(front,base_comp+1,pp,temp,
+            getStateTemp,&newsr->temp,&temp[index]);
+
+    FT_IntrpStateVarAtCoords(front,base_comp-1,pm,mu,
+            getStateMu,&newsl->mu,&mu[index]);
+    FT_IntrpStateVarAtCoords(front,base_comp+1,pp,mu,
+            getStateMu,&newsr->mu,&mu[index]);
+
+
 
 	/* Impulse is incremented by the fluid pressure force */
 

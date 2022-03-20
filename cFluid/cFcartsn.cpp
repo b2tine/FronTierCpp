@@ -5532,7 +5532,7 @@ void G_CARTESIAN::setNeumannStates(
 
 	    if (!eqn_params->is_inviscid)
         {
-            /* Only normal component is reflected, relative tangent velocity is zero */
+            // Only normal component is reflected, relative tangent velocity is zero
             for (j = 0; j < dim; j++)
             {
                 v[j] = vel_intfc[j] - 1.0*vn*nor[j];

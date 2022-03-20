@@ -291,7 +291,7 @@ void CFABRIC_CARTESIAN::applicationSetStates()
 
 }	/* end applicationSetStates */
 
-void CFABRIC_CARTESIAN::applicationSetStatesOLD()
+void CFABRIC_CARTESIAN::applicationSetStatesNEW()
 {
 	double coords[MAXD];
 	int *icoords;
@@ -328,13 +328,10 @@ void CFABRIC_CARTESIAN::applicationSetStatesOLD()
 
             if (debugging("set_crossed_state"))
             {
-                double r;
                 printf("\n");
                 printf("Shifted component:\n");
                 printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
                 printf("old comp = %d  new comp = %d\n",cell_center[i].comp,top_comp[i]);
-                r = sqrt(sqr(coords[0] - 7.0) + sqr(coords[1] - 7.0));
-                printf("Radius = %f\n",r);
             }
 
             ave_comp = (cell_center[i].comp + top_comp[i])/2;
@@ -375,11 +372,135 @@ void CFABRIC_CARTESIAN::applicationSetStatesOLD()
                         p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
             */
             
-            //FrontNearestIntfcState(front,coords,top_comp[i],(POINTER)&state);
-
             double* coords_on;
             HYPER_SURF* hs_on;
             nearest_intfc_state(coords,top_comp[i],front->grid_intfc,(POINTER)&state,coords_on,&hs_on);
+            
+            //TRI* tri = Tri_of_hse(hse);
+            //POINT** pt = Point_of_tri(tri);
+            //SURFACE* surf = Surface_of_hs(hs);
+            //INTERFACE* grid_intfc = front->grid_intfc;
+            //interpolate_crx_pt_states_on_tri(grid_intfc,*pt,tri,surf);
+
+            //state_along_hypersurface_element(top_comp[i], intrp_coeffs,hse,hs,(POINTER)&state);
+
+
+            if (debugging("set_crossed_state"))
+            {
+                printf("\nFRESH POINT:\n");
+                printf("Old State:\n");
+                printf("dens = %f\n",dens[id]);
+                printf("momn = %f %f %f\n", momn[0][id], momn[1][id], momn[2][id]);
+                printf("vel = %f %f %f\n", vel[0][id], vel[1][id], vel[2][id]);
+                printf("pres = %f\n",pres[id]);
+                printf("temp = %f\n",temp[id]);
+                printf("mu = %f\n",mu[id]);
+                
+                printf("\nInterpolated Interface State:\n");
+                print_cFstate(&state);
+            }
+            
+            dens[id] = state.dens;
+            for (j = 0; j < dim; ++j) momn[j][id] = state.momn[j];
+            for (j = 0; j < dim; ++j) vel[j][id] = state.momn[j]/dens[id];
+            engy[id] = state.engy;
+            pres[id] = state.pres;
+            temp[id] = state.temp;
+            mu[id] = state.mu;
+        }
+    }
+	
+    //FT_FreeGridIntfc(front);
+	//FT_MakeGridIntfc(front);
+
+}	/* end applicationSetStatesNEW() */
+
+void CFABRIC_CARTESIAN::applicationSetStatesOLD()
+{
+	double coords[MAXD];
+	int *icoords;
+	int i,j,size = (int)cell_center.size();
+	int id;
+	STATE state;
+	int ave_comp;
+	double p_intfc[MAXD];
+    double intrp_coeffs[MAXD];
+	HYPER_SURF_ELEMENT *hse;
+	HYPER_SURF *hs;
+	double dist;
+	double **vel = field.vel;
+	double **momn = field.momn;
+	double *pres = field.pres;
+	double *dens = field.dens;
+	double *engy = field.engy;
+	double *temp = field.temp;
+	double *mu = field.mu;
+	
+	setDomain();
+	for (i = 0; i < size; i++)
+    {
+        icoords = cell_center[i].icoords;
+        if (cell_center[i].comp != -1 && cell_center[i].comp != top_comp[i])
+        {
+            for (j = 0; j < dim; ++j)
+                coords[j] = top_L[j] + icoords[j]*top_h[j];
+    
+            id = d_index(icoords,top_gmax,dim);
+            if (id != i) printf("id != i --> id = %d , i = %d\n",id,i);
+
+            if (fabs(cell_center[i].comp - top_comp[i]) != 2) continue;
+
+            if (debugging("set_crossed_state"))
+            {
+                printf("\n");
+                printf("Shifted component:\n");
+                printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
+                printf("old comp = %d  new comp = %d\n",cell_center[i].comp,top_comp[i]);
+            }
+
+            ave_comp = (cell_center[i].comp + top_comp[i])/2;
+            if (!FT_FindNearestIntfcPointInRange(front,ave_comp,
+                    coords,NO_BOUNDARIES,p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
+
+            dist = 0.0;
+            for (j = 0; j < dim; ++j)
+                dist += sqr(coords[j] - p_intfc[j]);
+            dist = sqrt(dist);
+            
+            if (debugging("set_crossed_state"))
+            {
+                printf("coords  = %f %f %f\n",coords[0],coords[1],coords[2]);
+                printf("p_intfc = %f %f %f\n",p_intfc[0],p_intfc[1],p_intfc[2]);
+                printf("dist = %f\n",dist);
+                printf("hmin*Time_step_factor(front) = %f\n\n",
+                        hmin*Time_step_factor(front));
+            }
+
+            if (dist > hmin*Time_step_factor(front))
+            {
+                if (debugging("set_crossed_state"))
+                    printf("external point: dist = %f\n\n",dist);
+                continue;
+            }
+
+            //TODO: BUILD INTERPOLATION STENCIL!!!!!!!!!
+            //
+            //
+            //
+            //
+            FrontNearestIntfcState(front,coords,ave_comp,(POINTER)&state);
+            
+            /*
+            if (!nearest_interface_point_within_range(coords,top_comp[i],
+                        front->old_grid_intfc,NO_BOUNDARIES,nullptr,
+                        p_intfc,intrp_coeffs,&hse,&hs,2)) continue;
+            */
+            
+            //FrontNearestIntfcState(front,coords,top_comp[i],(POINTER)&state);
+
+            //double* coords_on;
+            //HYPER_SURF* hs_on;
+            //nearest_intfc_state(coords,top_comp[i],front->grid_intfc,(POINTER)&state,coords_on,&hs_on);
             
             //TRI* tri = Tri_of_hse(hse);
             //POINT** pt = Point_of_tri(tri);
@@ -413,8 +534,8 @@ void CFABRIC_CARTESIAN::applicationSetStatesOLD()
         }
     }
 	
-    //FT_FreeGridIntfc(front);
-	//FT_MakeGridIntfc(front);
+    FT_FreeGridIntfc(front);
+	FT_MakeGridIntfc(front);
 
 }	/* end applicationSetStatesOLD() */
 
@@ -598,10 +719,8 @@ void CFABRIC_CARTESIAN::addFluxAlongGridLine(
 
                 for (l = 0; l < dim; ++l)
                     vst.momn[l][n+nrad] = m_vst->momn[(l+idir)%dim][index];
-                /*
                 for (l = dim; l < 3; ++l)
                     vst.momn[l][n+nrad] = 0.0;
-                */
 
                 n++;
                 if (status1)
@@ -1228,7 +1347,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 	int ic_ghost[MAXD];
 
 	double	coords[MAXD],coords_ref[MAXD],coords_ghost[MAXD];
-	double	v[MAXD],v_ghost[MAXD],v_real[MAXD];
+	double	v[MAXD],v_ghost[MAXD];
 	
 	
 	st_tmp_real.dim = dim;
@@ -1340,26 +1459,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                 m_vst->mu_turb,getStateMuTurb,&st_tmp_ghost.mu_turb,&m_vst->mu_turb[index]);
 
         
-        //TODO: My expectation was that we need the state from the real comp
-        //      side of the interface, but that is not correct apparently.
-        
-        /*
-        FT_IntrpStateVarAtCoords(front,ghost_comp,coords_ref,
-                m_vst->dens,getStateDens,&st_tmp_ghost.dens,&m_vst->dens[index]);
-	    FT_IntrpStateVarAtCoords(front,ghost_comp,coords_ref,
-                m_vst->pres,getStatePres,&st_tmp_ghost.pres,&m_vst->pres[index]);
-	    
-        FT_IntrpStateVarAtCoords(front,ghost_comp,coords_ref,
-                m_vst->temp,getStateTemp,&st_tmp_ghost.temp,&m_vst->temp[index]);
-	    
-        FT_IntrpStateVarAtCoords(front,ghost_comp,coords_ref,
-                m_vst->engy,getStateEngy,&st_tmp_ghost.engy,&m_vst->engy[index]);
-	    
-	    FT_IntrpStateVarAtCoords(front,ghost_comp,coords_ref,
-                m_vst->mu,getStateMu,&st_tmp_ghost.mu,&m_vst->mu[index]);
-	    FT_IntrpStateVarAtCoords(front,ghost_comp,coords_ref,
-                m_vst->mu_turb,getStateMuTurb,&st_tmp_ghost.mu_turb,&m_vst->mu_turb[index]);
-        */
         double mu_total = st_tmp_ghost.mu + st_tmp_ghost.mu_turb;
         
         double v_reflect[3];
@@ -1367,8 +1466,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         {
             FT_IntrpStateVarAtCoords(front,comp,coords_ref,m_vst->momn[j],
                     getStateMom[j],&st_tmp_ghost.momn[j],&m_vst->momn[j][index]);
-            //FT_IntrpStateVarAtCoords(front,ghost_comp,coords_ref,m_vst->momn[j],
-             //       getStateMom[j],&st_tmp_ghost.momn[j],&m_vst->momn[j][index]);
             v_reflect[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
         }
 
@@ -1377,20 +1474,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             break;
         }
         
-        //Compute relative normal velocity in frame of interface crossing.
-        double vel_rel_reflect[MAXD] = {0.0};
-        double vn_reflect = 0.0;
-        for (int j = 0; j < dim; j++)
-	    {
-            vel_rel_reflect[j] = v_reflect[j] - vel_intfc[j];
-            vn_reflect += (v_reflect[j] - vel_intfc[j])*nor[j];
-	    }
-        
-        double vel_rel_tan[MAXD] = {0.0};
-        for (int j = 0; j < dim; j++)
-        {
-            vel_rel_tan[j] = vel_rel_reflect[j] - vn_reflect*nor[j];
-        }
 
 	    st_tmp_real.dens = m_vst->dens[index_ghost];
 	    st_tmp_real.pres = m_vst->pres[index_ghost];
@@ -1398,6 +1481,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 
         double mu_total_real = m_vst->mu[index_ghost] + m_vst->mu_turb[index_ghost];
         
+        double v_real[MAXD];
         for (int j = 0; j < dim; j++)
         {
             st_tmp_real.momn[j] = m_vst->momn[j][index_ghost];
@@ -1438,36 +1522,31 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 
         double A = 0.5*(sqr(m_vst->mu[index_ghost]) - sqr(st_tmp_ghost.mu))*alpha;
             //double A = 0.5*(sqr(mu_total_real) - sqr(mu_total))/k_perm;
-        double B = rhol*beta;
+        //double B = rhol*beta;
         
         double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
 
         double mdot = -2.0*sgn*Msqr/(A + std::sqrt(A*A + 4.0*beta*Msqr));
 
-        double nor_vel = -1.0*sgn*std::abs(mdot/rhor - mdot/rhol);
-        
-        double pres_drop = -1.0*(A*nor_vel + B*std::abs(nor_vel)*nor_vel);
-        
-        //st_tmp_ghost.pres = pl + pres_drop;
-        //st_tmp_ghost.dens = rhol*std::pow(st_tmp_ghost.pres/pl,1.0/gamma);
-        
-        double ghost_nor_vel = mdot/rhor;
+        double ghost_nor_vel = 0.0;
+        if (std::abs(mdot) > MACH_EPS)
+        {
+            ghost_nor_vel = mdot/rhor;
+        }
+
         st_tmp_ghost.dens = rhor;
         st_tmp_ghost.pres = pr;
 
         double velo[MAXD] = {0.0};
         for (int j = 0; j < dim; ++j)
         {
+            //TODO: NEED TO HANDLE TANGENTIAL JUMP?
             velo[j] = vel_rel_real_tan[j] + ghost_nor_vel*nor[j] + vel_intfc[j];
-            //velo[j] = vel_rel_real_tan[j] + nor_vel*nor[j] + vel_intfc[j];
-                //velo[j] = nor_vel*nor[j] + vel_intfc[j];  //TODO: NEED TO HANDLE TANGENTIAL JUMP?
             st_tmp_ghost.vel[j] = velo[j];
             st_tmp_ghost.momn[j] = st_tmp_ghost.dens*velo[j];
         }
 
         st_tmp_ghost.temp = st_tmp_real.temp;
-
-        //st_tmp_ghost.temp = EosTemperature(&st_tmp_ghost);
         st_tmp_ghost.engy = EosEnergy(&st_tmp_ghost);
         
 	    
@@ -1494,8 +1573,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
                 printf("rhor*pr - rhol*pl = %g \t sgn = %f\n",rhor*pr - rhol*pl,sgn);
                 printf("Msqr = %g \t mdot = %g\n", Msqr, mdot);
                 printf("nor = %f %f %f\n", nor[0],nor[1],nor[2]);
-                printf("nor_vel = %f\n", nor_vel);
-                printf("pres_drop = %f\n", pres_drop);
                 printf("ghost_pres = %f\n", st_tmp_ghost.pres);
                 printf("ghost_dens = %f\n", st_tmp_ghost.dens);
                 printf("ghost_temp = %f\n", st_tmp_ghost.temp);
@@ -1509,9 +1586,9 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         ////////////////////////////////////////////////////////////////
 
 
-	    if (st_tmp_ghost.engy < 0.0 || st_tmp_ghost.eos->gamma < 0.001)
+	    if (std::isnan(st_tmp_ghost.momn[0]))
 	    {
-            printf("negative energy! \n");
+            //printf("negative energy! \n");
             printf("icoords = %d %d %d \n",icoords[0],icoords[1],icoords[2]);
             printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
             printf("crx_coords = %f %f %f\n",crx_coords[0],crx_coords[1],crx_coords[2]);
@@ -1531,8 +1608,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             printf("rhor*pr - rhol*pl = %f \t sgn = %f\n",rhor*pr - rhol*pl,sgn);
             printf("Msqr = %f \t mdot = %f\n", Msqr, mdot);
             printf("nor = %f %f %f\n", nor[0],nor[1],nor[2]);
-            printf("nor_vel = %f\n", nor_vel);
-            printf("pres_drop = %f\n", pres_drop);
             printf("ghost_pres = %f\n", st_tmp_ghost.pres);
             printf("ghost_dens = %f\n", st_tmp_ghost.dens);
             printf("ghost_temp = %f\n", st_tmp_ghost.temp);
@@ -2444,30 +2519,30 @@ void CFABRIC_CARTESIAN::setViscousGhostState(
     auto ghost_coords = cell_center[ghost_index].getCoords();
     COMPONENT ghost_comp = vs->comp;
     
+    INTERFACE* intfc = front->grid_intfc;
+    if (!gas_comp(ghost_comp))
+    {
+        intfc = front->interf;
+    }
+
+
+    bool nip_found = nearest_interface_point(&ghost_coords[0],
+                comp,intfc,NO_SUBDOMAIN,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs);
+
     /*
-    //TODO: Can't find elastic interface -- why?
-    bool nip_found = nearest_interface_point_within_range(&ghost_coords[0],
-                comp,front->interf,NO_SUBDOMAIN,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs,3);
+    bool nip_found = nearest_interface_point(&ghost_coords[0],
+                ghost_comp,intfc,NO_SUBDOMAIN,nullptr,
+                nip_coords,intrp_coeffs,&hse,&hs);
     */
-    
-    
+
+
     /*
     bool nip_found = nearest_interface_point(&ghost_coords[0],
                 ghost_comp,front->grid_intfc,NO_SUBDOMAIN,nullptr,
                 nip_coords,intrp_coeffs,&hse,&hs);
     */
     
-    bool nip_found = nearest_interface_point(&ghost_coords[0],
-                comp,front->grid_intfc,NO_SUBDOMAIN,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);
-
-    /*
-    int avg_comp = (comp + ghost_comp)/2;
-    bool nip_found = nearest_interface_point(&ghost_coords[0],
-                ave_comp,front->interf,NO_SUBDOMAIN,nullptr,
-                nip_coords,intrp_coeffs,&hse,&hs);
-    */
 
     if (debugging("viscous_ghost"))
     {
@@ -2504,8 +2579,16 @@ void CFABRIC_CARTESIAN::setViscousGhostState(
         }
         case ELASTIC_BOUNDARY: //TODO: DOES THE SOLVER EVER SEE THIS BOUNDARY?
         {
-            setElasticViscousGhostState(icoords,m_vst,vs,&ghost_coords[0],
-                    nip_coords,comp,intrp_coeffs,hse,hs);
+            if (eqn_params->porosity == 0 || !eqn_params->with_porosity)
+            {
+                setNeumannViscousGhostState(icoords,m_vst,vs,&ghost_coords[0],
+                        nip_coords,comp,intrp_coeffs,hse,hs);
+            }
+            else
+            {
+                setElasticViscousGhostState(icoords,m_vst,vs,&ghost_coords[0],
+                        nip_coords,comp,intrp_coeffs,hse,hs);
+            }
             break;
         }
         default:
@@ -2528,6 +2611,10 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
         HYPER_SURF_ELEMENT* hse,
         HYPER_SURF* hs)
 {
+
+    int ghost_index = d_index(vs->icoords,top_gmax,dim);
+    COMPONENT ghost_comp = vs->comp;
+    
     double nor[MAXD] = {0.0};
     double vel_intfc[MAXD] = {0.0};
 
@@ -2574,13 +2661,11 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
             STATE* st[3];
             TRI* nearTri = Tri_of_hse(hse);
 
-            //if (gas_comp(negative_component(hs)))
             if (comp == negative_component(hs))
             {
                 for (int j = 0; j < 3; ++j)
                     st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
             }
-            //else if (gas_comp(positive_component(hs)))
             else if (comp == positive_component(hs))
             {
                 for (int j = 0; j < 3; ++j)
@@ -2621,15 +2706,7 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
     
     double dist_reflect = FT_GridSizeInDir(nor,front);
     
-    double vec_ghost[MAXD] = {0.0};
-    double nor_dist_ghost = 0.0;
-    for (int j = 0; j < dim; ++j)
-    {
-        vec_ghost[j] = ghost_coords[j] - crx_coords[j];
-        nor_dist_ghost += vec_ghost[j]*nor[j];
-    }
-    double dist_ghost = std::abs(nor_dist_ghost);
-    //double dist_ghost = distance_between_positions(ghost_coords,crx_coords,dim);
+    double dist_ghost = distance_between_positions(ghost_coords,crx_coords,dim);
     
     //The desired reflected point
     double coords_reflect[MAXD] = {0.0};
@@ -2640,6 +2717,7 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
 
     int index = d_index(icoords,top_gmax,dim);
     //TODO: ADD DEBUG BLOCK HERE -- LIKE setSlipBoundaryNIP()
+
 
     //Interpolate Density and Momentum at the reflected point and compute the velocity.
     double dens_reflect;
@@ -2656,111 +2734,112 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
         vel_reflect[j] = mom_reflect[j]/dens_reflect;
     }
 
-    double vel_rel[MAXD] = {0.0};
-    double vn = 0.0;
-
-    for (int j = 0; j < dim; ++j)
-    {
-        vel_rel[j] = vel_reflect[j] - vel_intfc[j];
-        vn += vel_rel[j]*nor[j];
-    }
-
-    double vel_rel_tan[MAXD] = {0.0};
-    double vel_rel_nor[MAXD] = {0.0};
-    double vel_ghost_nor[MAXD] = {0.0};
-
-    for (int j = 0; j < dim; ++j)
-    {
-	    vel_rel_nor[j] = vn*nor[j];
-	    vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
-        vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
-    }
-    double mag_vtan = Magd(vel_rel_tan,dim);
-
-    double vel_ghost[MAXD] = {0.0};
-    for (int j = 0; j < dim; ++j)
-    {
-        vel_ghost[j] = vel_intfc[j] + vel_ghost_nor[j];
-    }
-
-    //TODO: Try computing a tangential velocity with a
-    //      modified wall model for porous wall.
-
-    /*
-    //Interpolate Temperature
-    double temp_reflect;
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
-            getStateTemp,&temp_reflect,&m_vst->temp[index]);
-
-    double temp_ghost = temp_reflect;
-    */
-
-
-    //get the actual/real velocity on other side of the elastic boundary
-    //that is collocated with the ghost point
-    int ghost_index = d_index(vs->icoords,top_gmax,dim);
-        //int ghost_comp = vs->comp;
-
-    double mom_real[MAXD];
-    double vel_real[MAXD];
-    double dens_real = m_vst->dens[ghost_index];
-
-    for (int j = 0; j < dim; ++j)
-    {
-        mom_real[j] = m_vst->momn[j][ghost_index];
-        vel_real[j] = mom_real[j]/dens_real;
-    }
-    
-    //Take porosity weighted average of vel_ghost and vel_real
-	double poro = eqn_params->porosity;
-
-    double vel_poro[MAXD];
-    for (int j = 0; j < dim; ++j)
-    {
-        vel_poro[j] = (1.0 - poro)*vel_ghost[j] + poro*vel_real[j];
-        vs->vel[j] = vel_poro[j];
-    }
-
     double pres_reflect;
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->pres,
             getStatePres,&pres_reflect,&m_vst->pres[index]);
+    
+    double mu_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu,
+            getStateMu,&mu_reflect,&m_vst->mu[index]);
+    
+    double mu_turb_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu_turb,
+            getStateMuTurb,&mu_turb_reflect,&m_vst->mu_turb[index]);
 
-    double pres_real = m_vst->pres[ghost_index];
+    double mu_total_reflect = mu_reflect + mu_turb_reflect;
+    
+    double dens_real = m_vst->dens[ghost_index];
+    double v_real[MAXD];
+    for (int j = 0; j < dim; j++)
+    {
+        v_real[j] = m_vst->momn[j][ghost_index]/dens_real;
+    }
+    
+    double vel_rel_real[MAXD] = {0.0};
+    double vn_real = 0.0;
+    for (int j = 0; j < dim; j++)
+    {
+        vel_rel_real[j] = v_real[j] - vel_intfc[j];
+        vn_real += (v_real[j] - vel_intfc[j])*nor[j];
+    }
 
-    double pres_poro = (1.0 - poro)*pres_reflect + poro*pres_real;
-    double dens_poro = (1.0 - poro)*dens_reflect + poro*dens_real;
+    double vel_rel_real_tan[MAXD] = {0.0};
+    for (int j = 0; j < dim; j++)
+    {
+        vel_rel_real_tan[j] = vel_rel_real[j] - vn_real*nor[j];
+    }
+
+    
+    double pl = pres_reflect;
+    double rhol = dens_reflect;
+
+    double pr = m_vst->pres[ghost_index];
+    double rhor = m_vst->dens[ghost_index];
     
     EOS_PARAMS eos = eqn_params->eos[GAS_COMP2];
-    double R_specific = eos.R_specific;
+    double gamma = eos.gamma;
 
-    double temp_poro = pres_poro/dens_poro/R_specific;
+    double Msqr = gamma/(gamma + 1.0)*std::abs(rhor*pr - rhol*pl);
 
-    //TODO: How does the porosity effect the temperature across canopy?
-    //      For now just use the reflected temperature (temp_reflect).
+    double poro = eqn_params->porosity;
+    double alpha = eqn_params->porous_coeff[0];
+    double beta = eqn_params->porous_coeff[1];
+        
+        //TODO: OR SHOULD INTERPOLATE TEMPERATURES AND USE TO COMPUTE VISCOSITIES
+
+    double mu_ghost =  m_vst->mu[ghost_index];
+    double mu_total_ghost = m_vst->mu[ghost_index] + m_vst->mu_turb[ghost_index];
     
-    vs->temp = temp_poro;
+    double A = 0.5*(sqr(mu_ghost) - sqr(mu_reflect))*alpha;
+    //double A = 0.5*(sqr(mu_total_ghost) - sqr(mu_total_reflect))*alpha;
+        //double A = 0.5*(sqr(mu_total_real) - sqr(mu_total))/k_perm;
+    //double B = rhol*beta;
+        
+    double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
+
+    double mdot = -2.0*sgn*Msqr/(A + std::sqrt(A*A + 4.0*beta*Msqr));
+
+    double ghost_nor_vel = 0.0;
+    if (std::abs(mdot) > MACH_EPS)
+    {
+        ghost_nor_vel = mdot/rhor;
+    }
+
+    //if (front->step < fsi_startstep)
+
+    double velo[MAXD] = {0.0};
+    for (int j = 0; j < dim; ++j)
+    {
+        //TODO: NEED TO HANDLE TANGENTIAL JUMP?
+        velo[j] = vel_rel_real_tan[j] + ghost_nor_vel*nor[j] + vel_intfc[j];
+
+        vs->vel[j] = velo[j];
+    }
+
+    
+    vs->mu = m_vst->mu[ghost_index];
+    vs->dens = m_vst->dens[ghost_index];
+    vs->temp = m_vst->temp[ghost_index];
+        
 
     if (debugging("viscous_ghost"))
     {
-        //int index = d_index(icoords,top_gmax,dim);
-        //auto coords = cell_center[index].getCoords();
-        //printf("comp = %d ghost_comp = %d\n", comp,ghost_comp);
-        //fprint_general_vector(stdout,"coords",&coords[0],dim,"\n");
-        //fprint_general_vector(stdout,"ghost_coords",ghost_coords,dim,"\n");
-        //fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
+        printf("setElasticViscousGhostState():\n");
+        int index = d_index(icoords,top_gmax,dim);
+        auto coords = cell_center[index].getCoords();
+        printf("comp = %d ghost_comp = %d\n", comp,ghost_comp);
+        fprint_general_vector(stdout,"coords",&coords[0],dim,"\n");
+        fprint_general_vector(stdout,"ghost_coords",ghost_coords,dim,"\n");
+        fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");
         printf("\nsetElasticViscousGhostState() DEBUGGING\n");
         fprint_general_vector(stdout,"normal",nor,dim,"\n");
         fprint_general_vector(stdout,"coords_reflect",coords_reflect,dim,"\n");
         printf("dist_reflect = %f \t dist_ghost = %f\n",dist_reflect,dist_ghost);
-        printf("pres_reflect = %f \t pres_real = %f\n",pres_reflect,pres_real);
-        printf("dens_reflect = %f \t dens_real = %f\n",dens_reflect,dens_real);
+        printf("pres_reflect = %f \t pres_real = %f\n",pl,pr);
+        printf("dens_reflect = %f \t dens_real = %f\n",rhol,rhor);
+        printf("Msqr = %g \t mdot = %g\n", Msqr, mdot);
+        fprint_general_vector(stdout,"vel_ghost",velo,dim,"\n");
         fprint_general_vector(stdout,"vel_intfc",vel_intfc,dim,"\n");
-        fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
-        fprint_general_vector(stdout,"vel_ghost",vel_ghost,dim,"\n");
-        fprint_general_vector(stdout,"vel_real",vel_real,dim,"\n");
-        fprint_general_vector(stdout,"vel_poro",vel_poro,dim,"\n");
-        printf("pres_poro = %f\n",pres_poro);
-        printf("dens_poro = %f\n",dens_poro);
-        printf("temp_poro = %f\n",temp_poro);
     }
 }
+
