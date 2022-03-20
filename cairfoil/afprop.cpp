@@ -136,6 +136,7 @@ static void elastic_point_propagate_fsi(
     int index = d_index(icoords,top_gmax,dim);
 
 	double *mu = eqn_params->mu;
+	double *mu_turb = eqn_params->mu_turb;
 	double *temp = eqn_params->temp;
 	double **vel = eqn_params->vel;
 	double **momn = eqn_params->mom;
@@ -208,6 +209,11 @@ static void elastic_point_propagate_fsi(
             getStateMu,&newsl->mu,&mu[index]);
     FT_IntrpStateVarAtCoords(front,base_comp+1,pp,mu,
             getStateMu,&newsr->mu,&mu[index]);
+
+    FT_IntrpStateVarAtCoords(front,base_comp-1,pm,mu_turb,
+            getStateMuTurb,&newsl->mu_turb,&mu_turb[index]);
+    FT_IntrpStateVarAtCoords(front,base_comp+1,pp,mu_turb,
+            getStateMuTurb,&newsr->mu_turb,&mu_turb[index]);
 
 
 

@@ -785,10 +785,17 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
             getStateMu,&mu_reflect,&field.mu[index]);
 
-    if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
+    double mu_turb_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
+            getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);
+    
+    double mu_total_reflect = mu_reflect + mu_turb_reflect;
+
+    if (std::isnan(mu_total_reflect) || std::isinf(mu_total_reflect))
     {
        printf("\nsetSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,field.mu[index]);
+       printf("mu_turb = %g , mu_turb[%d] = %g\n",mu_turb_reflect,index,field.mu_turb[index]);
        LOC(); clean_up(EXIT_FAILURE);
     }
 
@@ -805,9 +812,9 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double vel_ghost_rel[MAXD] = {0.0};
 
     double coeff_tau = 0.0;
-    if (mu_reflect > MACH_EPS)
+    if (mu_total_reflect > MACH_EPS)
     {
-        coeff_tau = (dist_reflect - dist_ghost)/mu_reflect;
+        coeff_tau = (dist_reflect - dist_ghost)/mu_total_reflect;
     }
     
     double slip = 1.0;
@@ -1131,14 +1138,22 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu,
             getStateMu,&mu_reflect,&field.mu[index]);
 
+    double mu_turb_reflect;
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field.mu_turb,
+            getStateMuTurb,&mu_turb_reflect,&field.mu_turb[index]);
+    
+    double mu_total_reflect = mu_reflect + mu_turb_reflect;
+
     //Compute density near wall using the wall temperature and the pressure at the reflected point
     double dens_wall = pres_reflect/temp_wall/R_specific;
 
 
-    if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
+    if (std::isnan(mu_total_reflect) || std::isinf(mu_total_reflect))
     {
        printf("\nsetPoroSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,field.mu[index]);
+       printf("mu_turb_reflect = %g , mu_turb[%d] = %g\n",
+               mu_turb_reflect,index,field.mu_turb[index]);
        LOC(); clean_up(EXIT_FAILURE);
     }
 
@@ -1163,9 +1178,10 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     double vel_ghost_rel[MAXD] = {0.0};
 
     double coeff_tau = 0.0;
-    if (mu_reflect > MACH_EPS)
+    if (mu_total_reflect > MACH_EPS)
     {
-        coeff_tau = (dist_reflect - dist_ghost)/mu_reflect;
+        coeff_tau = (dist_wall - dist_ghost)/mu_total_reflect;
+            //coeff_tau = (dist_reflect - dist_ghost)/mu_total_reflect;
     }
     
     for (int j = 0; j < dim; ++j)

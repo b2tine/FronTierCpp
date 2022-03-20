@@ -311,6 +311,7 @@ void CFABRIC_CARTESIAN::applicationSetStatesNEW()
 	double *engy = field.engy;
 	double *temp = field.temp;
 	double *mu = field.mu;
+	double *mu_turb = field.mu_turb;
 	
     boolean fresh_cleared_point = NO;
 
@@ -409,6 +410,7 @@ void CFABRIC_CARTESIAN::applicationSetStatesNEW()
             pres[id] = state.pres;
             temp[id] = state.temp;
             mu[id] = state.mu;
+            mu_turb[id] = state.mu_turb;
 
             fresh_cleared_point = YES;
         }
