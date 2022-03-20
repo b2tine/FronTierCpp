@@ -499,6 +499,8 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             printf("\nicoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
             printf("vel component: %d , derivative direction: %d\n", l, m);
             printf("vel_nb[0] = %f , vel_nb[1] =%f\n",vel_nb[0],vel_nb[1]);
+            printf("comp =%d\n",comp);
+            printf("wave_type(hs) = %d\n",wave_type(hs));
             LOC(); clean_up(EXIT_FAILURE);
         }
     }

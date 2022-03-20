@@ -31,7 +31,7 @@ Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 Start test time control parameters
 Max time: 1.0
 Max step: 35000
-Print interval: 0.0005
+Print interval: 0.0001
 Movie frame interval: 0.00001
 CFL factor: 0.25
 Redistribution interval: 10000000
