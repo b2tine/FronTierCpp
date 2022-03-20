@@ -567,8 +567,13 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 
     
 
+    bool nip_found = nearest_interface_point(coords_ghost,comp,front->grid_intfc,
+            NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+
+    /*
     bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
             NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+    */
 
     if (!nip_found)
     {
@@ -747,7 +752,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     }
 
 
-    EOS_PARAMS eos = eqn_params->eos[comp];
+    EOS_PARAMS eos = eqn_params->eos[GAS_COMP2];
     double R_specific = eos.R_specific;
     double gamma = eos.gamma;
     double Pr = eos.Pr;
@@ -799,7 +804,11 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
 
-    double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
+    double coeff_tau = 0.0;
+    if (mu_reflect > MACH_EPS)
+    {
+        coeff_tau = (dist_reflect - dist_ghost)/mu_reflect;
+    }
     
     double slip = 1.0;
     if (eqn_params->no_slip_wall)
@@ -831,7 +840,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 
     if (debugging("slip_boundary"))
     {
-        printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);
+        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,field.mu[index]);
         printf("mag_tau_wall = %g\n",mag_tau_wall);
         fprint_general_vector(stdout,"tau_wall",tau_wall,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
@@ -1098,7 +1107,7 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     }
 
 
-    EOS_PARAMS eos = eqn_params->eos[comp];
+    EOS_PARAMS eos = eqn_params->eos[GAS_COMP2];
     double R_specific = eos.R_specific;
     double gamma = eos.gamma;
     double Pr = eos.Pr;
@@ -1153,7 +1162,11 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
 
-    double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
+    double coeff_tau = 0.0;
+    if (mu_reflect > MACH_EPS)
+    {
+        coeff_tau = (dist_reflect - dist_ghost)/mu_reflect;
+    }
     
     for (int j = 0; j < dim; ++j)
     {
@@ -1173,13 +1186,13 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
         fprint_general_vector(stdout,"v_slip",v_slip,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_nor",vel_ghost_nor,dim,"\n");
-        printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);
+        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,field.mu[index]);
         LOC(); clean_up(EXIT_FAILURE);
     }
 
     if (debugging("poro_slip_boundary"))
     {
-        printf("mu_reflect = %g , mu_[%d] = %g\n",mu_reflect,index,field.mu[index]);
+        printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,field.mu[index]);
         printf("mag_tau_wall = %g\n",mag_tau_wall);
         fprint_general_vector(stdout,"tau_wall",tau_wall,dim,"\n");
         fprint_general_vector(stdout,"vel_ghost_tan",vel_ghost_tan,dim,"\n");
