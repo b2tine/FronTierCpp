@@ -292,8 +292,8 @@ void airfoil_driver(Front *front,
 	    if (!af_params->no_fluid)
 	    {
             g_cartesian->solve(front->dt);
-            FT_FreeGridIntfc(front);
-	        FT_MakeGridIntfc(front);
+            //FT_FreeGridIntfc(front);
+	        //FT_MakeGridIntfc(front);
 	    }
 	    else
         {

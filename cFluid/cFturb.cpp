@@ -474,6 +474,11 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0)*/
                 if (boundary_state_function(hs))
                 {
+                    //FLOW_THROUGH_PARAMS params;
+                    //POINT *oldp = ft_params->oldp;
+                    //COMPONENT comp = ft_params->comp;
+                    //EQN_PARAMS *eqn_params = ft_params->eqn_params;
+
                     //OUTLET
                     vel_nb[nb] = intfc_state->vel[l];
                 }
