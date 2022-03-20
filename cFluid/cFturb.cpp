@@ -493,8 +493,8 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                 else
                 {
                     //INLET
-                    vel_nb[nb] = boundary_state(hs)->vel[l];
-                        //vel_nb[nb] = intfc_state->vel[l];
+                    intfc_state = (STATE*)boundary_state(hs);
+                    vel_nb[nb] = intfc_state->vel[l];
                 }
 
                 if (std::isnan(vel_nb[nb]))
