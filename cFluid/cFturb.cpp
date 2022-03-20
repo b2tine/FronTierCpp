@@ -422,8 +422,8 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
     double intrp_coeffs[MAXD];
     double crx_coords[MAXD];
 
-    double vel_nb[2];
     double d_h[2];
+    double vel_nb[2] = {0.0};
     
     double** vel = field.vel;
 
@@ -515,6 +515,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
         {
             printf("\ncomputeVelocityGradient() ERROR: nan/inf vel\n");
             printf("\nicoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
+            printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
             printf("vel component: %d , derivative direction: %d\n", l, m);
             printf("vel_nb[0] = %f , vel_nb[1] =%f\n",vel_nb[0],vel_nb[1]);
             printf("comp =%d\n",comp);
