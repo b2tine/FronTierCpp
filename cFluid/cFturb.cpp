@@ -470,8 +470,13 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                if (boundary_state_function(hs) &&
-                    strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0)
+                fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
+                        front->interf,icoords,dir[m][nb],comp,
+                        (POINTER*)&intfc_state,&hs,crx_coords);
+
+                /*if (boundary_state_function(hs) &&
+                    strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0)*/
+                if (boundary_state_function(hs))
                 {
                     //OUTLET
                     vel_nb[nb] = intfc_state->vel[l];
@@ -481,6 +486,9 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     //INLET
                     vel_nb[nb] = intfc_state->vel[l];
                 }
+
+                if (std::isnan(vel_nb[nb]))
+                    vel_nb[nb] = vel[l][index];
             }
             else
             {
