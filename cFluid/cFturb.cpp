@@ -18,7 +18,7 @@ void G_CARTESIAN::computeEddyViscosity()
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
     if (!eqn_params->use_eddy_viscosity) return;
 
-    //FT_ParallelExchGridVectorArrayBuffer(field.vel,front);
+    //FT_ParallelExchGridArrayBuffer(field.vel,front);
 
     switch (dim)
     {
@@ -537,7 +537,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             printf("vel[][%d] = %f %f %f\n",index,vel[0][index],vel[1][index],vel[2][index]);
             printf("vel component: %d , derivative direction: %d\n", l, m);
             printf("vel_nb[0] = %f , vel_nb[1] =%f\n",vel_nb[0],vel_nb[1]);
-            printf("comp =%d \n",comp);
+            printf("comp =%d cell_center[%d].comp = %d\n",comp,cell_center[index].comp);
             printf("wave_type(hs) = %d\n",wave_type(hs));
             print_cFstate(intfc_state);
             LOC(); clean_up(EXIT_FAILURE);
