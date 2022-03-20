@@ -498,7 +498,9 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                 }
                 */
 
-                vel_nb[nb] = vel[l][index];
+                //vel_nb[nb] = vel[l][index];
+                
+                vel_nb[nb] = intfc_state->vel[l];
             }
             else
             {
