@@ -409,6 +409,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
     std::vector<std::vector<double>> J(dim,std::vector<double>(dim,0.0));
 
     int index = d_index(icoords,top_gmax,dim);
+    auto coords = cell_center[index].getCoords();
     COMPONENT comp = top_comp[index];
     if (!gas_comp(comp)) return J;
 
@@ -418,6 +419,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
     STATE* intfc_state;
     HYPER_SURF_ELEMENT *hse;
     HYPER_SURF *hs;
+    double intrp_coeffs[MAXD];
     double crx_coords[MAXD];
 
     double vel_nb[2];
@@ -437,9 +439,10 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     grid_intfc,icoords,dir[m][nb],comp,
                     (POINTER*)&intfc_state,&hs,crx_coords);
 
+            int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
+            
             if (!fr_crx_grid_seg)
             {
-                int index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
                 vel_nb[nb] = vel[l][index_nb];
             }
             else if (wave_type(hs) == ELASTIC_BOUNDARY || 
@@ -471,15 +474,9 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                /*
-                fr_crx_grid_seg = FT_StateStructAtGridCrossing(front,
-                        grid_intfc,icoords,dir[m][nb],GAS_COMP2,
-                        (POINTER*)&intfc_state,&hs,crx_coords);
-                        */
-
-                double intrp_coeffs[MAXD];
+                auto ghost_coords = cell_center[index_nb].getCoords();
                 bool nip_found = nearest_interface_point(&ghost_coords[0],
-                            comp,front->interf,NO_SUBDOMAIN,nullptr,
+                            GAS_COMP2,front->interf,NO_SUBDOMAIN,nullptr,
                             crx_coords,intrp_coeffs,&hse,&hs);
 
                 if (boundary_state_function(hs))
@@ -490,7 +487,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     //EQN_PARAMS *eqn_params = ft_params->eqn_params;
 
                     //OUTLET
-                    state_along_hypersurface_element(comp,intrp_coeffs,hse,hs,(POINTER)intfc_state);
+                    state_along_hypersurface_element(GAS_COMP2,intrp_coeffs,hse,hs,(POINTER)intfc_state);
                     vel_nb[nb] = intfc_state->vel[l];
                 }
                 else
