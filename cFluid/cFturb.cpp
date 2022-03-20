@@ -18,6 +18,8 @@ void G_CARTESIAN::computeEddyViscosity()
     EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
     if (!eqn_params->use_eddy_viscosity) return;
 
+    //FT_ParallelExchGridVectorArrayBuffer(field.vel,front);
+
     switch (dim)
     {
         case 2:
@@ -474,18 +476,27 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
+                /*
                 auto ghost_coords = cell_center[index_nb].getCoords();
                 bool nip_found = nearest_interface_point(&ghost_coords[0],
-                            comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
+                            comp,front->grid_intfc,NO_SUBDOMAIN,nullptr,
                             crx_coords,intrp_coeffs,&hse,&hs);
+                
                 if (!nip_found)
                 {
                     printf("nip not found!\n");
                     LOC(); clean_up(EXIT_FAILURE);
                 }
+                */
 
-                if (boundary_state_function(hs))
+                if (boundary_state_function(hs) &&
+                    (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
+                     strcmp(boundary_state_function_name(hs),"cF_constantWithWhiteNoise") == 0 ||
+                     strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
+                     strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
                 {
+                    vel_nb[nb] = vel[l][index];
+                    
                     //FLOW_THROUGH_PARAMS params;
                     //POINT *oldp = ft_params->oldp;
                     //COMPONENT comp = ft_params->comp;
@@ -495,11 +506,11 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     //state_along_hypersurface_element(GAS_COMP2,intrp_coeffs,hse,hs,(POINTER)intfc_state);
                     //vel_nb[nb] = intfc_state->vel[l];
                 }
-                else
+                else if (boundary_state(hs) != NULL)
                 {
                     //INLET
-                    //intfc_state = (STATE*)boundary_state(hs);
-                    //vel_nb[nb] = intfc_state->vel[l];
+                    STATE* state = (STATE*)boundary_state(hs);
+                    vel_nb[nb] = state->vel[l];
                 }
 
                 //vel_nb[nb] = vel[l][index];
