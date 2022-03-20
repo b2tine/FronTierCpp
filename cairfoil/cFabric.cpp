@@ -112,8 +112,8 @@ void CFABRIC_CARTESIAN::applicationSetStates()
                     state.pres);
             }
             
-            //for (j = 0; j < dim; ++j)
-                //vel[j][id] = state.vel[j];
+            for (j = 0; j < dim; ++j)
+                vel[j][id] = state.vel[j];
         }
     }
 	
