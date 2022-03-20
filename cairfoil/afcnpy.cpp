@@ -1515,7 +1515,7 @@ static void fourth_order_elastic_set_propagate3d_serial(
     
 
     //sync interfaces after collision handling?
-        scatter_front(*newfront);
+        //scatter_front(*newfront);
 
 
     if (debugging("max_speed"))

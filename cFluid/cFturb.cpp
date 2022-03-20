@@ -474,11 +474,16 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
-                /*
                 auto ghost_coords = cell_center[index_nb].getCoords();
                 bool nip_found = nearest_interface_point(&ghost_coords[0],
-                            GAS_COMP2,front->interf,NO_SUBDOMAIN,nullptr,
+                            comp,front->interf,INCLUDE_BOUNDARIES,nullptr,
                             crx_coords,intrp_coeffs,&hse,&hs);
+                if (!nip_found)
+                {
+                    printf("nip not found!\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
                 if (boundary_state_function(hs))
                 {
                     //FLOW_THROUGH_PARAMS params;
@@ -496,10 +501,23 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     //intfc_state = (STATE*)boundary_state(hs);
                     //vel_nb[nb] = intfc_state->vel[l];
                 }
-                */
 
                 //vel_nb[nb] = vel[l][index];
                 
+                TRI* nearTri = Tri_of_hse(hse);
+                if (gas_comp(negative_component(hs)))
+                {
+                    intfc_state = (STATE*)left_state(Point_of_tri(nearTri)[0]);
+                }
+                else if (gas_comp(positive_component(hs)))
+                {
+                    intfc_state = (STATE*)right_state(Point_of_tri(nearTri)[0]);
+                }
+                else
+                {
+                    printf("gas comp not found on hse!\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
                 vel_nb[nb] = intfc_state->vel[l];
             }
             else
