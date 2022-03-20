@@ -302,6 +302,7 @@ void airfoil_driver(Front *front,
             g_cartesian->solve(front->dt);
             FT_FreeGridIntfc(front);
 	        FT_MakeGridIntfc(front);
+            FT_ParallelExchIntfcBuffer(front);
 	    }
 	    else
         {
