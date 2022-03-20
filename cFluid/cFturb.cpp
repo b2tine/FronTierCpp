@@ -474,11 +474,11 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             }
             else if (wave_type(hs) == DIRICHLET_BOUNDARY)
             {
+                /*
                 auto ghost_coords = cell_center[index_nb].getCoords();
                 bool nip_found = nearest_interface_point(&ghost_coords[0],
                             GAS_COMP2,front->interf,NO_SUBDOMAIN,nullptr,
                             crx_coords,intrp_coeffs,&hse,&hs);
-
                 if (boundary_state_function(hs))
                 {
                     //FLOW_THROUGH_PARAMS params;
@@ -487,18 +487,18 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     //EQN_PARAMS *eqn_params = ft_params->eqn_params;
 
                     //OUTLET
-                    state_along_hypersurface_element(GAS_COMP2,intrp_coeffs,hse,hs,(POINTER)intfc_state);
-                    vel_nb[nb] = intfc_state->vel[l];
+                    //state_along_hypersurface_element(GAS_COMP2,intrp_coeffs,hse,hs,(POINTER)intfc_state);
+                    //vel_nb[nb] = intfc_state->vel[l];
                 }
                 else
                 {
                     //INLET
-                    intfc_state = (STATE*)boundary_state(hs);
-                    vel_nb[nb] = intfc_state->vel[l];
+                    //intfc_state = (STATE*)boundary_state(hs);
+                    //vel_nb[nb] = intfc_state->vel[l];
                 }
+                */
 
-                if (std::isnan(vel_nb[nb]))
-                    vel_nb[nb] = vel[l][index];
+                vel_nb[nb] = vel[l][index];
             }
             else
             {
