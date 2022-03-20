@@ -432,6 +432,9 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
     for (int l = 0; l < dim; ++l)
     for (int m = 0; m < dim; ++m)
     {
+        vel_nb[0] = 0.0;
+        vel_nb[1] = 0.0;
+
         //l derivatives in m direction
         for (int nb = 0; nb < 2; ++nb)
         {
@@ -489,6 +492,8 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                 }
                 */
 
+                vel_nb[nb] = vel[l][index];
+                
                 if (boundary_state_function(hs) &&
                     (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
                      strcmp(boundary_state_function_name(hs),"cF_constantWithWhiteNoise") == 0 ||
@@ -529,9 +534,10 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
             printf("\ncomputeVelocityGradient() ERROR: nan/inf vel\n");
             printf("\nicoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
             printf("coords = %f %f %f\n",coords[0],coords[1],coords[2]);
+            printf("vel[][%d] = %f %f %f\n",index,vel[0][index],vel[1][index],vel[2][index]);
             printf("vel component: %d , derivative direction: %d\n", l, m);
             printf("vel_nb[0] = %f , vel_nb[1] =%f\n",vel_nb[0],vel_nb[1]);
-            printf("comp =%d\n",comp);
+            printf("comp =%d \n",comp);
             printf("wave_type(hs) = %d\n",wave_type(hs));
             print_cFstate(intfc_state);
             LOC(); clean_up(EXIT_FAILURE);
