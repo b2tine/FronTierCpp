@@ -1484,17 +1484,32 @@ extern void cF_supersonicOutflowState(
 	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
 
 	int dim = front->rect_grid->dim;
-	for (int i = 0; i < dim; ++i)
-	{
-	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
-			eqn_params->vel[i],getStateVel[i],&newst->vel[i],&oldst->vel[i]);
-        //TODO: project out non-normal velocity components?
-	}
 
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->pres,
             getStatePres,&newst->pres,&oldst->pres);
 	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->dens,
             getStateDens,&newst->dens,&oldst->dens);
+    
+    double vel[MAXD] = {0.0};
+	for (int i = 0; i < dim; ++i)
+	{
+	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
+			eqn_params->vel[i],getStateVel[i],&vel[i],&oldst->vel[i]);
+	    //FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
+		//	eqn_params->vel[i],getStateVel[i],&newst->vel[i],&oldst->vel[i]);
+	}
+
+    double vn = 0.0;
+	for (int i = 0; i < dim; ++i)
+	{
+        vn += vel[i]*nor[i];
+    }
+
+	for (int i = 0; i < dim; ++i)
+	{
+        newst->vel[i] = vn*nor[i];
+        newst->momn[i] = newst->dens[i]*vel[i];
+    }
 
     newst->temp = EosTemperature(newst);
     newst->engy = EosEnergy(newst);
