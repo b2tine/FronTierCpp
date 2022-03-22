@@ -1482,6 +1482,7 @@ extern void cF_supersonicOutflowState(
     
     int nrad = 2;
 	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
+    double* nor = nsten->nor;
 
 	int dim = front->rect_grid->dim;
 
@@ -1508,7 +1509,7 @@ extern void cF_supersonicOutflowState(
 	for (int i = 0; i < dim; ++i)
 	{
         newst->vel[i] = vn*nor[i];
-        newst->momn[i] = newst->dens[i]*vel[i];
+        newst->momn[i] = newst->dens*vel[i];
     }
 
     newst->temp = EosTemperature(newst);
