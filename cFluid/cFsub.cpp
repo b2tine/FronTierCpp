@@ -1509,7 +1509,7 @@ extern void cF_supersonicOutflowState(
 	for (int i = 0; i < dim; ++i)
 	{
         newst->vel[i] = vn*nor[i];
-        newst->momn[i] = newst->dens*vel[i];
+        newst->momn[i] = newst->dens*newst->vel[i];
     }
 
     newst->temp = EosTemperature(newst);
