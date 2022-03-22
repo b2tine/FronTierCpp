@@ -2,7 +2,7 @@ Domain limit in 0-th dimension: 0 0.8
 Domain limit in 1-th dimension: 0 0.8
 Domain limit in 2-th dimension: 0 0.8
 
-Computational grid: 25 25 25
+Computational grid: 50 50 50
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -195,10 +195,7 @@ Type y to make vector vorticity field movie: n
 *************************************************
 Enter yes for debugging: yes
 
-Enter the debugging stringXXX: elastic_viscous_ghost
-Enter the debugging stringXXX: viscous_ghost
-Enter the debugging stringXXX: line_tri
-
+Enter the debugging string: viscous_ghost
 Enter the debugging stringXXX: set_crossed_state
 Enter the debugging stringXXX: darcy_debug_coords
 

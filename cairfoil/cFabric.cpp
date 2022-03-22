@@ -90,7 +90,6 @@ void CFABRIC_CARTESIAN::applicationSetStates()
                 printf("p_intfc = %f %f %f\n",p_intfc[0],p_intfc[1],p_intfc[2]);
             }
 
-            //if (dist > top_h[0]*Time_step_factor(front))
             if (dist > hmin*Time_step_factor(front))
             {
                 if (debugging("set_crossed_state"))
@@ -392,7 +391,8 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
         ic[i] = icoords[i];
 	
 	index = d_index(ic,top_gmax,dim);
-	comp = cell_center[index].comp;
+	//comp = cell_center[index].comp;
+	comp = top_comp[index];
 
     bool nobreak = false;
 
@@ -920,6 +920,11 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
     FT_NormalAtGridCrossing(front,icoords,dir[idir][nb],NO_COMP,nor,&hs,crx_coords);
 	    //FT_NormalAtGridCrossing(front,icoords,dir[idir][nb],comp,nor,&hs,crx_coords);
 
+    double nor_save[MAXD];
+    for (int i = 0; i < dim; ++i)
+        nor_save[i] = nor[i];
+
+
     double* vel_intfc = state->vel;
     
 
@@ -968,6 +973,16 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             nor[i] *= -1.0;
     }
 
+    index_ghost = d_index(icoords_ghost,top_gmax,dim);
+    if (side > 0)
+    {
+        cell_center[index_ghost].comp = 4;
+    }
+    else
+    {
+        cell_center[index_ghost].comp = 2;
+    }
+
 
     //TODO: Can get rid of this loop.
     //      We compute a single ghost state and fill the entire stencil with it.
@@ -978,7 +993,8 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
 
 	    index_ghost = d_index(ic_ghost,top_gmax,dim);
-        COMPONENT ghost_comp = cell_center[index_ghost].comp;
+        COMPONENT ghost_comp = top_comp[index_ghost];
+        //COMPONENT ghost_comp = cell_center[index_ghost].comp;
 
         //ghost point coords
 	    for (int j = 0; j < dim; ++j)
@@ -986,7 +1002,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             coords_ghost[j] = top_L[j] + ic_ghost[j]*top_h[j];
             coords_ref[j] = coords_ghost[j];
 	    }
-        
+
         /* Reflect ghost point through intfc-mirror at crossing */
         //first reflect across the grid line containing the intfc crossing 
 	    double vn = 0.0;
@@ -2410,12 +2426,14 @@ void CFABRIC_CARTESIAN::setElasticViscousGhostState(
     vs->temp = m_vst->temp[ghost_index];
         
 
-    if (debugging("viscous_ghost"))
+    if (debugging("elastic_viscous_ghost"))
     {
         printf("setElasticViscousGhostState():\n");
         int index = d_index(icoords,top_gmax,dim);
         auto coords = cell_center[index].getCoords();
         printf("comp = %d ghost_comp = %d\n", comp,ghost_comp);
+        printf("cc-comp = %d cc-ghost_comp = %d\n",
+                cell_center[index].comp,cell_center[ghost_index].comp);
         fprint_general_vector(stdout,"coords",&coords[0],dim,"\n");
         fprint_general_vector(stdout,"ghost_coords",ghost_coords,dim,"\n");
         fprint_general_vector(stdout,"coords_nip",crx_coords,dim,"\n");

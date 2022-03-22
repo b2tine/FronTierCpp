@@ -66,9 +66,9 @@ Entering yes to turn off fluid solver: no
 
 /////////////////////////////////////////////////////
 
-Enter yes for inviscid solver: no
+Enter yes for inviscid solver: yes
 
-Enter yes to use eddy viscosity: yes
+Enter yes to use eddy viscosity: no
 Enter eddy viscosity model: Vreman
 Enter model constant: 0.025
 

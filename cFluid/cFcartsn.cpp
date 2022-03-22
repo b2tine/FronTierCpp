@@ -751,8 +751,12 @@ void G_CARTESIAN::getRectangleCenter(
 
 double G_CARTESIAN::getDistance(double *c0, double *c1)
 {
-	return sqrt( (c0[0]-c1[0])*(c0[0]-c1[0])
-		    +(c0[1]-c1[1])*(c0[1]-c1[1]) );
+    double dist = 0.0;
+    for (int i = 0; i < dim; ++i)
+    {
+        dist += sqr(c0[i] - c1[i]);
+    }
+    return sqrt(dist);
 }
 
 

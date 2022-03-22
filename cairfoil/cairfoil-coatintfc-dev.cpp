@@ -350,7 +350,7 @@ void airfoil_driver(Front *front,
         if (FT_IsDrawTime(front))
 	    {
             FT_Draw(front);
-            //g_cartesian->writeMeshComponentsVTK();
+            g_cartesian->writeMeshComponentsVTK();
 	    }
 
         if (FT_TimeLimitReached(front))

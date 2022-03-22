@@ -304,6 +304,7 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         SWEEP* m_vst,
         VStencil3d* vsten)
 {
+    int index = d_index(icoords,top_gmax,dim);
     COMPONENT comp = vsten->comp;
 
     for (int k = 0; k < 3; ++k)
@@ -318,8 +319,13 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         int idx_nb = d_index(vs->icoords,top_gmax,dim);
         vs->comp = top_comp[idx_nb];
 
-        //if (comp !=3 && vs->comp != 3 && vs->comp != comp)
+        //if (comp != vs->comp)
         if (comp != vs->comp && std::abs(comp - vs->comp) != 1)
+        {
+            setViscousGhostState(icoords,comp,vs,m_vst);
+        }
+        else if (cell_center[index].comp != cell_center[idx_nb].comp
+                && std::abs(cell_center[index].comp - cell_center[idx_nb].comp) != 1)
         {
             setViscousGhostState(icoords,comp,vs,m_vst);
         }
@@ -334,7 +340,6 @@ void G_CARTESIAN::fillViscousFluxStencil3d(
         }
     }
 }
-
 void G_CARTESIAN::setViscousGhostState(
         int* icoords,
         COMPONENT comp,

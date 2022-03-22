@@ -1141,12 +1141,14 @@ static void print_drag3d(
         getStateXvel, getStateYvel, getStateZvel
     };
     
+    FILE* Cdfile;
     FILE* pafile;
     FILE *xforce, *yforce, *zforce;
 
     int dim = FT_Dimension();
     if (dim != 3) return;
 
+    EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
     if (af_params->no_fluid == YES) return;
     
@@ -1246,6 +1248,14 @@ static void print_drag3d(
         else
             zforce = fopen(fname,"a");
         
+        /* drag force */
+        sprintf(fname,"%s/canopy-Cd-%d.xg",OutName(front),fcount);
+        if (first)
+            Cdfile = fopen(fname,"w");
+        else
+            Cdfile = fopen(fname,"a");
+        
+
         fcount++;
         
         double parea = 0.0;
@@ -1319,6 +1329,12 @@ static void print_drag3d(
             lift[i] = force[i] - drag[i];
         }
 
+        double rho_fs = eqn_params->dens_freestream;
+        double vel_fs = eqn_params->vel_freestream;
+        
+        int freedir = eqn_params->dir_freestream;
+        double Cd = mag_drag/(0.5*rho_fs*vel_fs*vel_fs*parea);
+
         //TODO: put inside a if (debugging(...)) block
         /*
         printf("\t force = %g %g %g  |  drag = %g %g %g  |  lift = %g %g %g\n",
@@ -1347,6 +1363,8 @@ static void print_drag3d(
         fprintf(pafile,"%16.12f  %16.12f\n",front->time,parea);
         fclose(pafile);
 
+        fprintf(Cdfile,"%16.12f  %16.12f\n",front->time,Cd);
+        fclose(Cdfile);
     }
 
     first = NO;

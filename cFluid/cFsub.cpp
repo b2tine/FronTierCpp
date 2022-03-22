@@ -274,6 +274,8 @@ static void promptForDirichletBdryState(
                 printf("%d\n",eqn_params->dir_freestream);
             }
 
+            eqn_params->vel_freestream = state->vel[eqn_params->dir_freestream];
+
             eqn_params->alpha = 0.0;
             eqn_params->beta = 0.0;
             

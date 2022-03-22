@@ -212,6 +212,7 @@ struct EQN_PARAMS
     double c_freestream;    //freestream sound speed
     double dens_freestream; //freestream density
     double pres_freestream; //freestream pressure
+    double vel_freestream;  //freestream velocity
     ////////////////////////////////////////////////////////////////////////////
 
     bool no_slip_wall {false};
@@ -402,6 +403,12 @@ public:
     {
         for (int i = 0; i < dim; ++i)
             m_coords[i] = coords[i];
+    }
+
+    void getCoords(double* coords)
+    {
+        for (int i = 0; i < MAXD; ++i)
+            coords[i] = m_coords[i];
     }
 
     std::vector<double> getCoords()
