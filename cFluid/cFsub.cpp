@@ -1495,11 +1495,12 @@ extern void cF_supersonicOutflowState(
 	for (int i = 0; i < dim; ++i)
 	{
 	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
-			eqn_params->vel[i],getStateVel[i],&vel[i],&oldst->vel[i]);
+			eqn_params->vel[i],getStateVel[i],&newst->vel[i],&oldst->vel[i]);
 	    //FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
-		//	eqn_params->vel[i],getStateVel[i],&newst->vel[i],&oldst->vel[i]);
+		//	eqn_params->vel[i],getStateVel[i],&vel[i],&oldst->vel[i]);
 	}
 
+    /*
     double vn = 0.0;
 	for (int i = 0; i < dim; ++i)
 	{
@@ -1509,6 +1510,11 @@ extern void cF_supersonicOutflowState(
 	for (int i = 0; i < dim; ++i)
 	{
         newst->vel[i] = vn*nor[i];
+    }
+    */
+
+	for (int i = 0; i < dim; ++i)
+	{
         newst->momn[i] = newst->dens*newst->vel[i];
     }
 
