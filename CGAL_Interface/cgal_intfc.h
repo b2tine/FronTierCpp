@@ -180,21 +180,28 @@ struct capsule_function
     {}
 
     double lower_cone_height = radius/std::tan(70.0*M_PI/180.0);
-    double lower_slope = lower_cone_height/radius;
-    
-    //TODO: Add spherical nose section
-    //
-    //double nose_radius = 0.05;
-    
-    double mid_height = lower_cone_height*0.1374;
 
-    double upper_cone_height = radius*std::tan(44.5*M_PI/180.0);
-        //double upper_cone_height = radius*std::tan(47.0*M_PI/180.0);
-    double upper_slope = upper_cone_height/radius;
-    double upper_frustrum_height = lower_cone_height*1.672;
-
-    double top_frustrum_height = lower_cone_height*0.25;
-    double radius_top_frustrum = (upper_cone_height - upper_frustrum_height)*std::tan(44.5*M_PI/180.0);
+    // Add spherical nose section
+    double nose_radius = 2.0*radius/4.0;
+    double ztan = sqr(lower_cone_height)/radius*std::sqrt(sqr(nose_radius)/(sqr(radius) + sqr(lower_cone_height)));
+    double xytan = ztan*radius/lower_cone_height;
+    double cap_center_z = ztan + std::sqrt(sqr(nose_radius) - sqr(xytan));
+    double apex_z = cap_center_z - nose_radius;
+    double nose_z = nose[2] + apex_z;
+    
+    double cap_center[MAXD] = {nose[0],nose[1],cap_center_z};
+    double cap_nose[MAXD] = {nose[0],nose[1],nose_z};
+    
+    double cap_height = lower_cone_height - apex_z;
+    
+    double mid_height = cap_height*0.1374;
+    double upper_frustrum_height = cap_height*1.672;
+    double top_frustrum_height = cap_height*0.736515;
+    
+    double upper_cone_height = radius*std::tan(43.0*M_PI/180.0);
+    
+    double radius_top_frustrum = (upper_cone_height - upper_frustrum_height)*std::tan(43.0*M_PI/180.0);
+    double top_cone_height = radius_top_frustrum*std::tan(47.0*M_PI/180.0);
 
     FT operator()(Point_3 p) const
     {
@@ -202,7 +209,11 @@ struct capsule_function
         const FT y = p.y() - nose[1];
         const FT z = p.z() - nose[2];
 
-        if (z > 0 && z <= lower_cone_height)
+        if (z > 0 && z <= ztan)
+        {
+            return std::sqrt(sqr(x) + sqr(y) + sqr(z - cap_center_z)) - nose_radius;
+        }
+        else if (z > 0 && z <= lower_cone_height)
         {
             return std::sqrt(sqr(x) + sqr(y)) - (radius/lower_cone_height)*z;
         }
@@ -219,7 +230,7 @@ struct capsule_function
         {
             return std::sqrt(sqr(x) + sqr(y))
                 - (radius_top_frustrum - 
-                        1.0*(radius_top_frustrum/top_frustrum_height)*(z - lower_cone_height - mid_height - upper_frustrum_height));
+                        1.0*(radius_top_frustrum/top_cone_height)*(z - lower_cone_height - mid_height - upper_frustrum_height));
         }
         else
         {
