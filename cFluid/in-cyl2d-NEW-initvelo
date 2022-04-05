@@ -24,8 +24,8 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
 Enter velocity: 688.69 0
-Enter temperature: 294.93
 Enter pressure: 1562.24
+Enter temperature: 294.93
 
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
@@ -107,6 +107,9 @@ Type y to make scalar turb kinetic energy field movie: y
 
 ************Debugging options*****************
 Enter yes for debugging: yes
+
+Enter the debugging string: use_new_neumann
+
 Enter the debugging string: cfluid_dt
 
 

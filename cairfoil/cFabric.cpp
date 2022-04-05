@@ -994,7 +994,7 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 
 	    index_ghost = d_index(ic_ghost,top_gmax,dim);
         COMPONENT ghost_comp = top_comp[index_ghost];
-        //COMPONENT ghost_comp = cell_center[index_ghost].comp;
+            //COMPONENT ghost_comp = cell_center[index_ghost].comp;
 
         //ghost point coords
 	    for (int j = 0; j < dim; ++j)
@@ -1069,11 +1069,12 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             v_reflect[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
         }
 
+        /*
         if (front->step < eqn_params->fsi_startstep)
         {
             break;
         }
-        
+        */
 
 	    st_tmp_real.dens = m_vst->dens[index_ghost];
 	    st_tmp_real.pres = m_vst->pres[index_ghost];

@@ -2,14 +2,14 @@ Max time: 2.0
 Max step: 125000
 Print interval: 0.0005
 Movie frame interval: 0.00001
-CFL factor: 0.25
+CFL factor: 0.5
 Redistribution interval: 1000000000
 Type yes to turn off auto-redistribution: yes
 
 *******************************************************
 
 Domain limit in 0-th dimension: 0 2.0
-Domain limit in 1-th dimension: 0 1.2
+Domain limit in 1-th dimension: 0 0.732
 
 Computational grid: 286 131
 
@@ -20,19 +20,25 @@ Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
 For lower boundary in 0-th dimension
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 687.468 0
-Enter pressure: 334.686
-Enter temperature: 294
+Enter velocity: 692.161432 0
+Enter pressure: 756.613769
+Enter temperature: 298
 
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
 For upper boundary in 1-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
+Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
+    XXXEnter type of Dirichlet boundaryXXX: FLOW_THROUGH
 
-Enter freestream directionXXX: 0
-Enter angle of attackXXX: 0.0
-Enter sideslip angleXXX: 0.0
+Enter yes for no slip wall: no
+Enter yes to fix wall temperature: no
+    XXXEnter wall temperatureXXX: 298
+
+    
+XXXEnter freestream directionXXX: 0
+XXXEnter angle of attackXXX: 0.0
+XXXEnter sideslip angleXXX: 0.0
 
 *******************************************************
 Enter problem type: CHANNEL_FLOW
@@ -44,14 +50,15 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 0.0079314 669.372
+Enter density and pressure of ambient air: 0.008844 756.613769
 
-    XXXEnter the operating pressureXXX:
+Enter yes to set initial velocity: yes
+Enter initial velocity: 692.161432 0
 
 Enter yes for heat flux: yes
 
 Enter the specific gas constant: 287.058
-Enter the Prandtl number: 0.71
+Enter the Prandtl number: 0.72
 
 Enter the reference molecular viscosity: 1.716e-05
 Enter the reference temperature: 273.15
@@ -87,10 +94,13 @@ Type y to make scalar pressure field movie: y
 Type y to make scalar temperature field movie: y
 Type y to make scalar viscosity field movie: y
 
-Type y to make scalar turb kinetic energy field movie: n
+Type y to make scalar turb kinetic energy field movie: y
 
 ************Debugging options*****************
 Enter yes for debugging: yes
+
+Enter the debugging string: use_new_neumann
+
 Enter the debugging string: cfluid_dt
 
 

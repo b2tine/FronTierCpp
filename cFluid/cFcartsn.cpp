@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  * 		G_CARTESIAN.c
  *******************************************************************/
 #include "cFluid.h"
+#include "cFturb.h"
 
 
 struct ToFill
@@ -5439,6 +5440,440 @@ void G_CARTESIAN::setNeumannStates(
 	int		istart,
 	COMPONENT	comp)
 {
+    if (debugging("use_new_neumann"))
+    {
+        setNeumannStatesNEW(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
+    }
+    else
+    {
+        setNeumannStatesOLD(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
+    }
+}
+
+void G_CARTESIAN::setNeumannStatesNEW(
+	SWEEP		*vst,
+	SWEEP		*m_vst,
+	HYPER_SURF 	*hs,
+	STATE		*state,
+	int		*icoords,
+	int		idir,
+	int		nb,
+	int		n,
+	int		istart,
+	COMPONENT	comp)
+{
+	int index;
+	int ind2[2][2] = {{0,1},{1,0}};
+    int ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
+	int ghost_ic[MAXD];
+	double coords[MAXD], coords_reflect[MAXD], crx_coords[MAXD];
+	double nor[MAXD];
+	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
+	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
+	GRID_DIRECTION  dir;
+	STATE st_tmp;
+
+	st_tmp.eos = &eqn_params->eos[comp];
+	st_tmp.dim = dim;
+
+	index = d_index(icoords,top_gmax,dim);
+	for (int i = 0; i < dim; ++i)
+	{
+	    coords[i] = top_L[i] + icoords[i]*top_h[i];
+	    ghost_ic[i] = icoords[i];
+	}
+
+	//dir = (nb == 0) ? ldir[idir] : rdir[idir];
+	//FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+
+	if (debugging("neumann_buffer"))
+	{
+	    (void) printf("Entering setNeumannStatesNEW()\n");
+	    (void) printf("comp = %d\n",comp);
+	    (void) printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
+	    (void) printf("idir = %d nb = %d\n",idir,nb);
+	    (void) printf("istart = %d nrad = %d n = %d\n",istart,nrad,n);
+	    (void) print_general_vector("coords = ",coords,dim,"\n");
+	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
+	    (void) print_general_vector("nor = ",nor,dim,"\n");
+	        //(void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
+	}
+
+    double coords_ghost[MAXD];
+
+	//for (int i = istart; i <= nrad; ++i)
+	for (int i = istart; i < istart + 1; ++i)
+	{
+	    /* Find ghost point */
+	    ghost_ic[idir] = (nb == 0) ? 
+            icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
+	    
+        for (int j = 0; j < dim; ++j)
+            coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
+
+        double intrp_coeffs[MAXD] = {0.0};
+        HYPER_SURF_ELEMENT* hsurf_elem;
+        HYPER_SURF* hsurf;
+
+        bool nip_found = nearest_interface_point(coords_ghost,comp,front->grid_intfc,
+                NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+
+        /*
+        bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
+                NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+        */
+
+        if (!nip_found)
+        {
+            printf("ERROR G_CARTESIAN::setNeumannStatesNEW(): "
+                    "can't find nearest interface point\n");
+            LOC(); clean_up(EXIT_FAILURE);
+        }
+
+
+        double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+
+
+        //compute the normal and velocity vectors at the interface point
+        double vel_intfc[MAXD] = {0.0};
+        switch (dim)
+        {
+            case 2:
+                {
+                    double ns[MAXD] = {0.0};
+                    double ne[MAXD] = {0.0};
+                    
+                    normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
+                    normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
+
+                    STATE* ss;
+                    STATE* se;
+
+                    if (gas_comp(negative_component(hsurf)))
+                    {
+                        ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
+                        se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
+                    }
+                    else if (gas_comp(positive_component(hsurf)))
+                    {
+                        ss = (STATE*)right_state(Bond_of_hse(hsurf_elem)->start);
+                        se = (STATE*)right_state(Bond_of_hse(hsurf_elem)->end);
+                    }
+                    else
+                    {
+                        printf("ERROR setNeumannStatesNEW(): "
+                                "no fluid component on hypersurface\n");
+                        LOC(); clean_up(EXIT_FAILURE);
+                    }
+
+                    for (int i = 0; i < dim; ++i)
+                    {
+                        nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+                        vel_intfc[i] = (1.0 - intrp_coeffs[0])*ss->vel[i] + intrp_coeffs[0]*se->vel[i];
+                    }
+                }
+                break;
+
+            case 3:
+                {
+                    TRI* nearTri = Tri_of_hse(hsurf_elem);
+                    const double* tnor = Tri_normal(nearTri);
+                    
+                    STATE* st[3];
+
+                    if (gas_comp(negative_component(hsurf)))
+                    {
+                        for (int j = 0; j < 3; ++j)
+                            st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+                    }
+                    else if (gas_comp(positive_component(hsurf)))
+                    {
+                        for (int j = 0; j < 3; ++j)
+                            st[j] = (STATE*)right_state(Point_of_tri(nearTri)[j]);
+                    }
+                    else
+                    {
+                        printf("ERROR setNeumannStatesNEW(): "
+                                "no fluid component on hypersurface\n");
+                        LOC(); clean_up(EXIT_FAILURE);
+                    }
+
+                    for (int i = 0; i < dim; ++i)
+                    {
+                        nor[i] = tnor[i];
+
+                        vel_intfc[i] = 0.0;
+                        for (int j = 0; j < 3; ++j)
+                            vel_intfc[i] += intrp_coeffs[j]*st[j]->vel[i];
+                    }
+                }
+                break;
+        }
+
+        //NOTE: Tri_normal() does not return a unit vector
+        double mag_nor = Magd(nor,dim);
+        for (int i = 0; i < dim; ++i)
+            nor[i] /= mag_nor;
+            
+        if (comp == negative_component(hsurf))
+        {
+            for (int i = 0; i < dim; ++i)
+                nor[i] *= -1.0;
+        }
+        
+        //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+        double dist_reflect = FT_GridSizeInDir(nor,front);
+
+        //The desired reflected point
+        for (int j = 0; j < dim; ++j)
+        {
+            coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
+        }
+
+	    /* Interpolate the state at the reflected point */
+	    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
+                getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->pres,
+                getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->k_turb,
+                getStateKTurb,&st_tmp.k_turb,&m_vst->k_turb[index]);
+	    
+        for (int l = 0; l < dim; ++l)
+        {
+            FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[l],
+                    getStateMom[l],&st_tmp.momn[l],&m_vst->momn[l][index]);
+        }
+
+        double vel_reflect[MAXD] = {0.0};
+	    for (int j = 0; j < dim; j++)
+	    {
+		    vel_reflect[j] = st_tmp.momn[j]/st_tmp.dens;
+        }
+		
+		/* relative velocity wrt intfc */
+        double vel_rel[MAXD] = {0.0};
+	    double vn = 0.0;
+
+	    for (int j = 0; j < dim; j++)
+	    {
+		    vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+		    vn += vel_rel[j]*nor[j];
+	    }
+
+        double v_slip[MAXD] = {0.0};
+
+//////////////////////////////////////////////////////////////////////////////////////////
+        if (eqn_params->is_inviscid)
+        {
+            // reflect normal component of velocity, relative tangent velocity unchanged
+            for (int j = 0; j < dim; ++j)
+            {
+                v_slip[j] = vel_reflect[j] - 2.0*vn*nor[j];
+                st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
+            }
+
+            break;
+        }
+//////////////////////////////////////////////////////////////////////////////////////////
+        
+        double vel_rel_tan[MAXD] = {0.0};
+        double vel_rel_nor[MAXD] = {0.0};
+        double vel_ghost_nor[MAXD] = {0.0};
+
+        for (int j = 0; j < dim; ++j)
+        {
+            vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
+            vel_rel_nor[j] = vn*nor[j];
+            vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
+        }
+        double mag_vtan = Magd(vel_rel_tan,dim);
+
+        EOS_PARAMS eos = eqn_params->eos[GAS_COMP2];
+        double R_specific = eos.R_specific;
+        double gamma = eos.gamma;
+        double Pr = eos.Pr;
+
+        double Cp = gamma/(gamma - 1.0)*R_specific;
+        double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
+
+        double temp_wall;
+        if (!eqn_params->use_fixed_wall_temp)
+        {
+            //Interpolate the temperature at the reflected point
+            double temp_reflect;
+            FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
+                    getStateTemp,&temp_reflect,&m_vst->temp[index]);
+
+            //Compute Wall Temperature
+            temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
+        }
+        else
+        {
+            temp_wall = eqn_params->fixed_wall_temp;
+        }
+
+        //Compute density near wall using the wall temperature and the pressure at the reflected point
+        double dens_wall = st_tmp.pres/temp_wall/R_specific;
+            //double dens_wall = pres_reflect/temp_wall/R_specific;
+
+        //Interpolate the viscosity at the reflected point
+        double mu_reflect;
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu,
+                getStateMu,&mu_reflect,&m_vst->mu[index]);
+        
+        if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
+        {
+           printf("\nsetSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
+           printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,m_vst->mu[index]);
+           LOC(); clean_up(EXIT_FAILURE);
+        }
+        
+        double mu_turb_reflect = 0.0;
+        if (eqn_params->use_eddy_viscosity)
+        {
+            FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu_turb,
+                    getStateMuTurb,&mu_turb_reflect,&m_vst->mu_turb[index]);
+            mu_reflect += mu_turb_reflect;
+        }
+        
+        double tau_wall[MAXD] = {0.0};
+        
+        double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,100.0);
+        
+        if (mag_vtan > MACH_EPS)
+        {
+            for (int j = 0; j < dim; ++j)
+                tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
+        }
+
+        double vel_ghost_tan[MAXD] = {0.0};
+        double vel_ghost_rel[MAXD] = {0.0};
+        
+        double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
+
+        //if (eqn_params->no_slip_wall)
+        
+        for (int j = 0; j < dim; ++j)
+        {
+            vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
+            vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
+        }
+    
+        for (int j = 0; j < dim; ++j)
+        {
+            v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
+        }
+
+        /*
+        if (!eqn_params->is_inviscid)
+        {
+            // Only normal component is reflected, relative tangent velocity is zero
+            for (int j = 0; j < dim; j++)
+            {
+                v_slip[j] = vel_intfc[j] - 1.0*vn*nor[j];
+                st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
+            }
+        }
+        */
+        
+
+        for (int j = 0; j < dim; j++)
+	    {
+    		st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
+        }
+
+	    st_tmp.engy = EosEnergy(&st_tmp);
+
+        /* debugging printout */
+	    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
+	    {
+    		printf("negative energy! \n");
+	    	printf("icoords = %d %d %d \n", icoords[0],icoords[1],icoords[2]);
+		    printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],st_tmp.momn[1],
+                    st_tmp.momn[2],st_tmp.pres,st_tmp.engy);
+		    printf("st_tmp.dim = %d, idir = %d, nb = %d \n",st_tmp.dim,idir,nb);
+		    printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp.eos->gamma,
+                    st_tmp.eos->einf,st_tmp.eos->pinf);
+		
+            printf("coords_reflect = %f %f %f \n",
+                    coords_reflect[0],coords_reflect[1],coords_reflect[2]);
+            LOC(); clean_up(EXIT_FAILURE);
+	    }
+    }
+
+    for (int i = istart; i <= nrad; ++i)
+    {
+	    if (nb == 0)
+        {
+            vst->dens[nrad-i] = st_tmp.dens;
+            vst->engy[nrad-i] = st_tmp.engy;
+            vst->pres[nrad-i] = st_tmp.pres;
+            vst->k_turb[nrad-i] = st_tmp.k_turb;
+                
+            for (int j = 0; j < 3; j++)
+                vst->momn[j][nrad-i] = 0.0;
+            
+            if (dim == 1)
+            {
+                vst->momn[0][nrad-i] = st_tmp.momn[0];
+            }
+            else if (dim == 2)
+            {
+                for (int j = 0; j < 2; j++)
+                    vst->momn[j][nrad-i] = st_tmp.momn[ind2[idir][j]];
+            }
+            else if (dim == 3)
+            {
+                for (int j = 0; j < 3; j++)
+                    vst->momn[j][nrad-i] = st_tmp.momn[ind3[idir][j]];
+            }
+        }
+	    else
+        {
+            vst->dens[n+nrad+i-1] = st_tmp.dens;
+            vst->engy[n+nrad+i-1] = st_tmp.engy;
+            vst->pres[n+nrad+i-1] = st_tmp.pres;
+            vst->k_turb[n+nrad+i-1] = st_tmp.k_turb;
+        
+            for (int j = 0; j < 3; j++)
+                vst->momn[j][n+nrad+i-1] = 0.0;
+    
+            if (dim == 1)
+            {
+                vst->momn[0][n+nrad+i-1] = st_tmp.momn[0];
+            }
+            else if (dim == 2)
+            {
+                for (int j = 0; j < 2; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp.momn[ind2[idir][j]];
+            }
+            else if (dim == 3)
+            {
+                for (int j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp.momn[ind3[idir][j]];
+            }
+        }
+	}
+
+	if (debugging("neumann_buffer"))
+	    (void) printf("Leaving setNeumannStatesNEW()\n");
+}	/* end setNeumannStatesNEW */
+
+//void G_CARTESIAN::setNeumannStates(
+void G_CARTESIAN::setNeumannStatesOLD(
+	SWEEP		*vst,
+	SWEEP		*m_vst,
+	HYPER_SURF 	*hs,
+	STATE		*state,
+	int		*icoords,
+	int		idir,
+	int		nb,
+	int		n,
+	int		istart,
+	COMPONENT	comp)
+{
 	int 		i,j,index;
 	int             ind2[2][2] = {{0,1},{1,0}};
         int             ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
@@ -5542,7 +5977,7 @@ void G_CARTESIAN::setNeumannStates(
         }
         else
         {
-            // reflect normal component of velocity, relative tangent velocity unchanged//
+            // reflect normal component of velocity, relative tangent velocity unchanged
             for (j = 0; j < dim; ++j)
             {
                 v[j] = vel_reflect[j] - 2.0*vn*nor[j];
@@ -5550,6 +5985,16 @@ void G_CARTESIAN::setNeumannStates(
             }
         }
         
+        /*
+//////////////////////////////////////////////////////////////////////////////////////////
+        // reflect normal component of velocity, relative tangent velocity unchanged
+        for (j = 0; j < dim; ++j)
+        {
+            v[j] = vel_reflect[j] - 2.0*vn*nor[j];
+            st_tmp.momn[j] = v[j]*st_tmp.dens;
+        }
+//////////////////////////////////////////////////////////////////////////////////////////
+        */
 
         for (j = 0; j < dim; j++)
 	    {
@@ -5561,7 +6006,7 @@ void G_CARTESIAN::setNeumannStates(
         /* debugging printout */
 	    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
 	    {
-    		printf("negative engrgy! \n");
+    		printf("negative energy! \n");
 	    	printf("icoords = %d %d %d \n", icoords[0],icoords[1],icoords[2]);
 		    printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],st_tmp.momn[1],
                     st_tmp.momn[2],st_tmp.pres,st_tmp.engy);

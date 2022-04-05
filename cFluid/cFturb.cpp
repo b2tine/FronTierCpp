@@ -578,8 +578,6 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     HYPER_SURF_ELEMENT* hsurf_elem;
     HYPER_SURF* hsurf;
 
-    
-
     bool nip_found = nearest_interface_point(coords_ghost,comp,front->grid_intfc,
             NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
 
@@ -773,7 +771,7 @@ void G_CARTESIAN::setSlipBoundaryNIP(
     double Cp = gamma/(gamma - 1.0)*R_specific;
     double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
 
-    double temp_wall = eqn_params->fixed_wall_temp;
+    double temp_wall;
     if (!eqn_params->use_fixed_wall_temp)
     {
         //Interpolate the temperature at the reflected point
@@ -783,6 +781,10 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 
         //Compute Wall Temperature
         temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
+    }
+    else
+    {
+        temp_wall = eqn_params->fixed_wall_temp;
     }
 
     //Interpolate the pressure at the reflected point
@@ -843,9 +845,12 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         //vel_ghost_tan[j] = slip*vel_rel_tan[j] - coeff_tau*tau_wall[j];
         vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
-        v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
     }
 
+    for (int j = 0; j < dim; ++j)
+    {
+        v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
+    }
 
     if (std::isnan(v_slip[0]) || std::isinf(v_slip[0]) ||
         std::isnan(v_slip[1]) || std::isinf(v_slip[1]) ||

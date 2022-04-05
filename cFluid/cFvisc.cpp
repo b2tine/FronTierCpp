@@ -602,8 +602,8 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     double Cp = gamma/(gamma - 1.0)*R_specific;
     double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
 
+    double temp_wall;
     double temp_reflect;
-    double temp_wall = eqn_params->fixed_wall_temp;
     if (!eqn_params->use_fixed_wall_temp)
     {
         //Interpolate the temperature at the reflected point
@@ -612,6 +612,10 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
         //Compute Wall Temperature 
         temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
+    }
+    else
+    {
+        temp_wall = eqn_params->fixed_wall_temp;
     }
 
     //Interpolate the pressure at the reflected point
@@ -654,7 +658,6 @@ void G_CARTESIAN::setNeumannViscousGhostState(
 
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
-    double v_slip[MAXD] = {0.0};
     
     double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
 
@@ -670,16 +673,25 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
 
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
-        
-        vs->vel[j] = vel_ghost_rel[j] + vel_intfc[j]; //v_slip
+    }
+
+    double v_slip[MAXD] = {0.0};
+    for (int j = 0; j < dim; ++j)
+    {
+        v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
+        vs->vel[j] = v_slip[j];
     }
     
     
-    double temp_ghost = eqn_params->fixed_wall_temp;
+    double temp_ghost;
     if (!eqn_params->use_fixed_wall_temp)
     {
         double sqrmag_vel_ghost_tan = Dotd(vel_ghost_tan, vel_ghost_tan, dim);
         temp_ghost = temp_reflect + 0.5*pow(Pr,1.0/3.0)*(sqrmag_vel_tan - sqrmag_vel_ghost_tan)/Cp;
+    }
+    else
+    {
+        temp_ghost = eqn_params->fixed_wall_temp;
     }
 
     vs->temp = temp_ghost;
