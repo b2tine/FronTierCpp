@@ -1,5 +1,5 @@
 Max time: 2.0
-Max step: 350000
+Max step: 500000
 Print interval: 0.0005
 Movie frame interval: 0.00005
 CFL factor: 0.5
@@ -53,10 +53,10 @@ Enter type of node 1: FIXED_NODE
 Enter type of node 2: FIXED_NODE
 Enter type of node 3: FIXED_NODE
 
-Enter wave type of the curve between nodes 12: SYMMETRY_BOUNDARY
-
-            XXXEnter wave type of the curve between nodes 12XXX: DIRICHLET_BOUNDARY
-            XXXEnter type of Dirichlet boundaryXXX: FLOW_THROUGH
+Enter wave type of the curve between nodes 12: DIRICHLET_BOUNDARY
+Enter type of Dirichlet boundary: FLOW_THROUGH
+            
+            XXXEnter wave type of the curve between nodes 12XXX: SYMMETRY_BOUNDARY
 
 Enter wave type of the curve between nodes 23: NEUMANN_BOUNDARY
 Enter yes for no slip wall: yes

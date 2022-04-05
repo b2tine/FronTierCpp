@@ -916,21 +916,23 @@ extern double springCharTimeStep(
 	Front *fr)
 {
 	AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
-	double dt_tol = sqrt((af_params->m_s)/(af_params->ks));
+	double dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
     
     if (af_params->strings_present)
     {
         if (af_params->m_l != 0.0 &&
-            dt_tol > sqrt((af_params->m_l)/(af_params->kl)))
-            dt_tol = sqrt((af_params->m_l)/(af_params->kl));
+            dt_tol > sqrt((af_params->m_l)/(af_params->kl))/10.0)
+            dt_tol = sqrt((af_params->m_l)/(af_params->kl))/10.0;
     }
 
     if (af_params->gores_present)
     {
         if (af_params->m_g != 0.0 &&
-            dt_tol > sqrt((af_params->m_g)/(af_params->kg)))
-            dt_tol = sqrt((af_params->m_g)/(af_params->kg));
+            dt_tol > sqrt((af_params->m_g)/(af_params->kg))/10.0)
+            dt_tol = sqrt((af_params->m_g)/(af_params->kg))/10.0;
     }
+
+    pp_global_min(&dt_tol,1);
 	return dt_tol;
 }	/* end springCharTimeStep */
 
