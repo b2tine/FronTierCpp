@@ -5673,6 +5673,7 @@ void G_CARTESIAN::setNeumannStatesNEW(
                 v_slip[j] = vel_reflect[j] - 2.0*vn*nor[j];
                 st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
             }
+            st_tmp.engy = EosEnergy(&st_tmp);
 
             break;
         }
