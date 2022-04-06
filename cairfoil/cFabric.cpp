@@ -918,7 +918,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
     
     double nor[MAXD];
     FT_NormalAtGridCrossing(front,icoords,dir[idir][nb],NO_COMP,nor,&hs,crx_coords);
-	    //FT_NormalAtGridCrossing(front,icoords,dir[idir][nb],comp,nor,&hs,crx_coords);
 
     double nor_save[MAXD];
     for (int i = 0; i < dim; ++i)
@@ -939,11 +938,9 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 	
 	st_tmp_real.dim = dim;
 	st_tmp_real.eos = &eqn_params->eos[GAS_COMP2];
-	    //st_tmp_real.eos = &eqn_params->eos[comp];
 
     st_tmp_ghost.dim = dim;
     st_tmp_ghost.eos = &eqn_params->eos[GAS_COMP2];
-        //st_tmp_ghost.eos = &eqn_params->eos[comp];
 
     int icoords_ghost[MAXD] = {0.0};
 	for (int i = 0; i < dim; ++i)
@@ -1069,19 +1066,12 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
             v_reflect[j] = st_tmp_ghost.momn[j]/st_tmp_ghost.dens;
         }
 
-        /*
-        if (front->step < eqn_params->fsi_startstep)
-        {
-            break;
-        }
-        */
-
 	    st_tmp_real.dens = m_vst->dens[index_ghost];
 	    st_tmp_real.pres = m_vst->pres[index_ghost];
 	    st_tmp_real.temp = m_vst->temp[index_ghost];
 
         double mu_total_real = m_vst->mu[index_ghost] + field.mu_turb[index_ghost];
-        //double mu_total_real = m_vst->mu[index_ghost] + m_vst->mu_turb[index_ghost];
+            //double mu_total_real = m_vst->mu[index_ghost] + m_vst->mu_turb[index_ghost];
         
         double v_real[MAXD];
         for (int j = 0; j < dim; j++)
@@ -1124,7 +1114,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
 
         double A = 0.5*(sqr(m_vst->mu[index_ghost]) - sqr(st_tmp_ghost.mu))*alpha;
             //double A = 0.5*(sqr(mu_total_real) - sqr(mu_total))/k_perm;
-        //double B = rhol*beta;
         
         double sgn = (rhor*pr - rhol*pl >= 0) ? 1.0 : -1.0;
 
@@ -1274,10 +1263,6 @@ void CFABRIC_CARTESIAN::setElasticStatesDarcy(
         }
     }
 
-    /*
-	if (debugging("trace"))
-        (void) printf("Leaving setElasticStatesDarcy()\n\n");
-    */
 }	/* end setElasticStatesDarcy */
 
 

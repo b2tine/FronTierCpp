@@ -1,9 +1,7 @@
 Domain limit in 0-th dimension: -1 1
 Domain limit in 1-th dimension: -1 1
-Domain limit in 2-th dimension:  -0.15 2.85
-Computational grid: 100 100 100
-                                                XXXDomain limit in 2-th dimensionXXX:  -0.15 5.85
-                                                XXXComputational gridXXX: 100 100 180
+Domain limit in 2-th dimension:  0.5 6
+Computational grid: 100 100 180
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY 
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -35,7 +33,7 @@ Max time: 1.0
 Max step: 35000
 Print interval: 0.0001
 Movie frame interval: 0.000025
-CFL factor: 0.5
+CFL factor: 0.25
 Redistribution interval: 10000000
 type yes to turn off auto-redistribution: y
 
@@ -81,7 +79,7 @@ Enter the turbulent Prandtl number: 0.91
 /////////     Start parameters for modules    ////////////
 //////////////////////////////////////////////////////////
 
-Enter yes for parachute system: yes
+Enter yes for parachute system: no
 Enter the number of fabric optimization rounds: 0
 
 Enter yes to add rigid body: y
@@ -92,7 +90,7 @@ Available type of rigid body include:
         Human (H)
         Cylinder (C)
 Enter type of rigid body: O
-Enter nose of the capsule: 0 0 1.0099854
+Enter nose of the capsule: 0 0 1.16457
 Enter radius of the capsule: 0.052
 Rigid body can be fixed (F) or Movable (M)
 The default is Movable (M)
@@ -104,7 +102,7 @@ Type yes if motion is preset: yes
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 1300
-Enter the initial center of mass for rigid body: 0 0 1.031
+Enter the initial center of mass for rigid body: 0 0 1.185
 Enter the initial center of mass velocity: 0 0 0
 
 Enter number of canopy surfaces: 0
@@ -123,18 +121,19 @@ Available types of canopy boundaries are:
 Enter type of canopy boundary: S
 Enter the height of the plane: 2.19867
 Enter circle center: 0 0
-Enter circle radius: 0.201
+Enter circle radius: 0.2285
 Enter yes to attach gores to canopy: no
 Enter yes to cut a vent on canopy: yes
-Enter radius of the vent: 0.01422
+Enter radius of the vent: 0.038029
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 24
 
-Enter the length of the drape: 0.0484
-Enter the gap between canopy and drape: 0.0168
+Enter the length of the drape: 0.055297
+Enter the gap between canopy and drape: 0.01919
 
 Enter yes to install the strings to RGB: no
-Enter initial position of load: 0 0 1.22706
+Enter initial position of load: 0 0 1.38164
+        XXXEnter initial position of loadXXX: 0 0 1.22706
 Enter yes to fix the load node: yes
 
 Enter yes if connecting to disk gap band: yes
@@ -165,7 +164,6 @@ Enter porosity ghost fluid method: DARCY
 
 Enter viscous parameter: 1.3152e+11
 Enter inertial parameter: 168.1334
-                                    XXXEnter inertial parameterXXX: 0
 Enter permeability: 7.6033e-12
 
 Enter interior propagator: p
@@ -174,34 +172,34 @@ Enter interior sub step number: 1
 Enter yes for collision substepping: no
 Enter nsub per collision step: 25
 
-Enter area density of canopy: 0.038989
 Enter timestep to activate FSI: 1
 
-Enter yes to use total mass: yes
-Enter fabric total mass: 0.029083
-Enter string total mass: 0.0328
+Enter area density of canopy: 0.038989
 
-Enter fabric spring constant: 79164
-Enter fabric damping constant: 0.05
-                                                XXXEnter fabric damping constantXXX: 0.01
+Enter yes to use total mass: yes
+Enter fabric total mass: 0.009459
+Enter string total mass: 0.016098
+
+Enter fabric spring constant: 55753
+Enter fabric damping constant: 0.01
+        XXXEnter fabric damping constantXXX: 0.05
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.0
 Enter fabric thickness: 0.0000635
 Enter fabric rounding tolerance: 0.00001
-Enter fabric band spring constant: 79164
-        XXXEnter fabric band spring constantXXX: 460769
+Enter fabric band spring constant: 230384
+        XXXEnter fabric band spring constantXXX: 55753
 
-Enter string spring constant: 35661
-Enter string damping constant: 0.05
-                                                XXXEnter string damping constantXXX: 0.01
+Enter string spring constant: 13054.4
+Enter string damping constant: 0.02
+        XXXEnter string damping constantXXX: 0.05
 Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.0
 Enter string thickness: 0.00099
 Enter string rounding tolerance: 0.000004
-Enter diskgap string spring constant: 85000
-    XXXEnter diskgap string spring constantXXX: 111506
-                XXXEnter diskgap string spring constantXXX: 985120.709
+Enter diskgap string spring constant: 528393
+        XXXEnter diskgap string spring constantXXX: 85000
 
 Enter strain limit: 0.03
 Enter compressive strain limit: 0.01
