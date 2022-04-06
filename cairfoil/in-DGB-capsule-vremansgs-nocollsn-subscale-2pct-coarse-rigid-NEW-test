@@ -30,7 +30,8 @@ Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
 Start test time control parameters
 Max time: 1.0
-Max step: 35000
+Max step: 1
+    Max stepXXX: 35000
 Print interval: 0.0001
 Movie frame interval: 0.000025
 CFL factor: 0.25
@@ -66,9 +67,9 @@ Entering yes to turn off fluid solver: no
 
 /////////////////////////////////////////////////////
 
-Enter yes for inviscid solver: yes
+Enter yes for inviscid solver: no
 
-Enter yes to use eddy viscosity: no
+Enter yes to use eddy viscosity: yes
 Enter eddy viscosity model: Vreman
 Enter model constant: 0.025
 
@@ -91,6 +92,7 @@ Available type of rigid body include:
         Cylinder (C)
 Enter type of rigid body: O
 Enter nose of the capsule: 0 0 1.16457
+            Enter nose of the capsuleXXX: 0 0 1.0099854
 Enter radius of the capsule: 0.052
 Rigid body can be fixed (F) or Movable (M)
 The default is Movable (M)
@@ -103,6 +105,7 @@ Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 1300
 Enter the initial center of mass for rigid body: 0 0 1.185
+        Enter the initial center of mass for rigid bodyXXX: 0 0 1.031
 Enter the initial center of mass velocity: 0 0 0
 
 Enter number of canopy surfaces: 1
@@ -152,6 +155,8 @@ Enter the body index of the target RGB: 1
 Enter yes to skip rg_nodes in x direction for 1: yes
 Enter yes to skip rg_nodes in y direction for 1: yes
 
+    XXXEnter yes to skip rg_nodes in x direction for 1XXX: no
+    XXXEnter yes to skip rg_nodes in y direction for 1XXX: no
 
 
 //////////////////////////////////////////////////////////
@@ -219,9 +224,9 @@ Type y to make xy cross section movie: n
 Type y to make scalar density field movie: y
 Type y to make scalar pressure field movie: y
 Type y to make scalar viscosity field movie: y
-Type y to make scalar eddy viscosity field movie: n
+Type y to make scalar eddy viscosity field movie: y
 Type y to make scalar temperature field movie: y
-Type y to make scalar turb kinetic energy field movie: n
+Type y to make scalar turb kinetic energy field movie: y
 
 Type y to make vector velocity field movie: y
 Type y to make vector vorticity field movie: n
@@ -234,7 +239,7 @@ Enter yes for debugging: yes
 
 Enter the debugging string: use_new_neumann
 
-Enter the debugging stringXXX: rigid_canopy
+Enter the debugging string: rigid_canopy
 
 Enter the debugging string: max_speed
 Enter the debugging string: cfluid_dt

@@ -90,7 +90,7 @@ Available type of rigid body include:
         Human (H)
         Cylinder (C)
 Enter type of rigid body: O
-Enter nose of the capsule: 0 0 1.0099854
+Enter nose of the capsule: 0 0 1.16457
 Enter radius of the capsule: 0.052
 Rigid body can be fixed (F) or Movable (M)
 The default is Movable (M)
@@ -102,7 +102,7 @@ Type yes if motion is preset: yes
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 1300
-Enter the initial center of mass for rigid body: 0 0 1.031
+Enter the initial center of mass for rigid body: 0 0 1.185
 Enter the initial center of mass velocity: 0 0 0
 
 Enter number of canopy surfaces: 1
