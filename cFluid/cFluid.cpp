@@ -153,6 +153,7 @@ int main(int argc, char **argv)
 	}
 	else
     {
+	    //read_dirichlet_bdry_data(in_name,&front);
 	    restart_set_dirichlet_bdry_function(&front);
     }
 

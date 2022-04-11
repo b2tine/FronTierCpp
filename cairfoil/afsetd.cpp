@@ -1092,6 +1092,7 @@ extern void set_node_spring_vertex(
         }
 	    
         //TODO: should load_nodes and rg_string_nodes be handled differently than a fixed node?
+        sv[*n].lambda = lambda_s;
         if (is_fixed || is_load_node(node) || is_rg_string_node(node)) 
 	    {
 		    sv[*n].lambda = 0.0;

@@ -3231,7 +3231,7 @@ static void CgalCircleBelt(
                 amb_comp,amb_comp,0,refinement_lvl,&belt);
         //FT_MakeCylinderShell(front,center,CirR[0],length,2,amb_comp,amb_comp,0,&belt);
         
-        wave_type(belt) = ELASTIC_BOUNDARY;
+        wave_type(belt) = ELASTIC_BAND_BOUNDARY;
 
         FT_InstallSurfEdge(belt,MONO_COMP_HSBDRY);
 	setMonoCompBdryZeroLength(belt);
