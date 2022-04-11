@@ -246,36 +246,6 @@ struct capsule_function
         {
             return 1.0;
         }
-
-        /*
-        if (z > 0 && z <= ztan)
-        {
-            return std::sqrt(sqr(x) + sqr(y) + sqr(z - cap_center_z)) - nose_radius;
-        }
-        else if (z > 0 && z <= lower_cone_height)
-        {
-            return std::sqrt(sqr(x) + sqr(y)) - (radius/lower_cone_height)*z;
-        }
-        else if (z > 0 && (z - lower_cone_height) <= mid_height)
-        {
-            return std::sqrt(sqr(x) + sqr(y)) - radius;
-        }
-        else if (z > 0 && (z - lower_cone_height - mid_height) <= upper_frustrum_height)
-        {
-            return std::sqrt(sqr(x) + sqr(y))
-                - (radius - 1.0*(radius/upper_cone_height)*(z - lower_cone_height - mid_height));
-        }
-        else if (z > 0 && (z - lower_cone_height - mid_height - upper_frustrum_height) < top_frustrum_height)
-        {
-            return std::sqrt(sqr(x) + sqr(y))
-                - (radius_top_frustrum - 
-                        1.0*(radius_top_frustrum/top_cone_height)*(z - lower_cone_height - mid_height - upper_frustrum_height));
-        }
-        else
-        {
-            return 1.0;
-        }
-        */
     }
 };
 
