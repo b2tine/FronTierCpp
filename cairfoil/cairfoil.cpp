@@ -201,12 +201,12 @@ int main(int argc, char **argv)
 void airfoil_driver(Front *front,
         CFABRIC_CARTESIAN* g_cartesian)
 {
-    double CFL;
     int  dim = front->rect_grid->dim;
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
-    CFL = Time_step_factor(front);
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
+    double CFL = Time_step_factor(front);
+    double spring_char_timestep = springCharTimeStep(front);
     
 	(void) printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",
 		Frequency_of_redistribution(front,GENERAL_WAVE));
@@ -245,7 +245,7 @@ void airfoil_driver(Front *front,
 	    	front->dt = std::min(front->dt,CFL*g_cartesian->max_dt);
 	    }
 
-        front->dt = std::min(front->dt,springCharTimeStep(front));
+        front->dt = std::min(front->dt,spring_char_timestep);
 	}
 	else
 	{
@@ -314,6 +314,7 @@ void airfoil_driver(Front *front,
             printf("Time step from FrontHypTimeStep(): %f\n",front->dt);
         
         front->dt = std::min(front->dt,CFL*g_cartesian->max_dt);
+            //front->dt = std::min(front->dt,spring_char_timestep);
 
         if (debugging("step_size"))
             printf("Time step from g_cartesian->max_dt(): %f\n",front->dt);

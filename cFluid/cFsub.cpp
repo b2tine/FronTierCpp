@@ -374,11 +374,28 @@ static void promptForDirichletBdryState(
         case 's':
         case 'S':			// Supersonic outflow
         {
-            FT_InsertDirichletBoundary(front,cF_supersonicOutflowState,
-                    "cF_supersonicOutflowState",NULL,NULL,*hs,i_hs);
-            for (int i = 1; i < nhs; ++i)
+            if (s[1] == 'U' || s[1] == 'u')
             {
-                bstate_index(hs[i]) = bstate_index(hs[0]);
+                FT_InsertDirichletBoundary(front,cF_supersonicOutflowState,
+                        "cF_supersonicOutflowState",NULL,NULL,*hs,i_hs);
+                for (int i = 1; i < nhs; ++i)
+                {
+                    bstate_index(hs[i]) = bstate_index(hs[0]);
+                }
+            }
+            else if (s[1] == 'Y' || s[1] == 'y')
+            {
+                FT_InsertDirichletBoundary(front,cF_symmetryBoundaryState,
+                        "cF_symmetryBoundaryState",NULL,NULL,*hs,i_hs);
+                for (int i = 1; i < nhs; ++i)
+                {
+                    bstate_index(hs[i]) = bstate_index(hs[0]);
+                }
+            }
+            else
+            {
+                printf("ERROR\n");
+                LOC(); clean_up(EXIT_FAILURE);
             }
         }
         break;
@@ -1529,6 +1546,84 @@ extern void cF_supersonicOutflowState(
     if (debugging("outflow"))
 	{
 	    printf("supersonic outflow boundary state:\n");
+	    print_general_vector("Velocity: ",newst->vel,dim,"\n");
+	    printf("Pressure: %f\n",newst->pres);
+	    printf("Density: %f\n",newst->dens);
+	    printf("Energy: %f\n",newst->engy);
+	    printf("Temperature: %f\n",newst->temp);
+	    printf("Viscosity: %f\n",newst->mu);
+	}
+}
+
+extern void cF_symmetryBoundaryState(
+        double          *p0,
+        HYPER_SURF      *hs,
+        Front           *front,
+        POINTER         params,
+        POINTER         state)
+{
+	FLOW_THROUGH_PARAMS *ft_params = (FLOW_THROUGH_PARAMS*)params;
+	POINT *oldp = ft_params->oldp;
+	COMPONENT comp = ft_params->comp;
+	EQN_PARAMS *eqn_params = ft_params->eqn_params;
+
+	POINTER sl, sr;
+    FT_GetStatesAtPoint(oldp,oldp->hse,oldp->hs,&sl,&sr);
+    
+    STATE* oldst;
+    if (comp == negative_component(hs))  
+        oldst = (STATE*)sl;
+    else
+        oldst = (STATE*)sr;
+
+    STATE* newst = (STATE*)state;
+    newst->eos = &eqn_params->eos[comp]; 
+    
+    int nrad = 2;
+	Nor_stencil* nsten = FT_CreateNormalStencil(front,oldp,comp,nrad);
+    double* nor = nsten->nor;
+
+	int dim = front->rect_grid->dim;
+
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->pres,
+            getStatePres,&newst->pres,&oldst->pres);
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->dens,
+            getStateDens,&newst->dens,&oldst->dens);
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->engy,
+            getStateEngy,&newst->engy,&oldst->engy);
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->temp,
+            getStateTemp,&newst->temp,&oldst->temp);
+	FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],eqn_params->mu,
+            getStateMu,&newst->mu,&oldst->mu);
+    
+    double vel[MAXD] = {0.0};
+	for (int i = 0; i < dim; ++i)
+	{
+	    FT_IntrpStateVarAtCoords(front,comp,nsten->pts[1],
+			eqn_params->vel[i],getStateVel[i],&vel[i],&oldst->vel[i]);
+	}
+
+    double vn = 0.0;
+	for (int i = 0; i < dim; ++i)
+	{
+        vn += vel[i]*nor[i];
+    }
+
+	for (int i = 0; i < dim; ++i)
+	{
+        newst->vel[i] = vel[i] - 2.0*vn*nor[i];
+    }
+
+	for (int i = 0; i < dim; ++i)
+	{
+        newst->momn[i] = newst->dens*newst->vel[i];
+    }
+
+    set_state_max_speed(front,newst,p0);
+	
+    if (debugging("symmetry_bdry"))
+	{
+	    printf("symmetry boundary state:\n");
 	    print_general_vector("Velocity: ",newst->vel,dim,"\n");
 	    printf("Pressure: %f\n",newst->pres);
 	    printf("Density: %f\n",newst->dens);

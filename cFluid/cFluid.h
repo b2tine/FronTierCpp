@@ -765,6 +765,7 @@ extern void cF_variableBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER)
 
 extern void cF_farfieldBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 extern void cF_supersonicOutflowState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
+extern void cF_symmetryBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 
 extern void cF_flowThroughBoundaryState(double*,HYPER_SURF*,Front*,POINTER,POINTER);
 extern void cF_flowThroughBoundaryState2d(double*,HYPER_SURF*,Front*,POINTER,POINTER);

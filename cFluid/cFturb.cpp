@@ -481,6 +481,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                     (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
                      strcmp(boundary_state_function_name(hs),"cF_constantWithWhiteNoise") == 0 ||
                      strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
+                     strcmp(boundary_state_function_name(hs),"cF_symmetryBoundaryState") == 0 ||
                      strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
                 {
                     vel_nb[nb] = vel[l][index];

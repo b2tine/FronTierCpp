@@ -6282,6 +6282,7 @@ void G_CARTESIAN::setDirichletStates(
             (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
              strcmp(boundary_state_function_name(hs),"cF_constantWithWhiteNoise") == 0 ||
              strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_symmetryBoundaryState") == 0 ||
              strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
         {
             //TODO: Should the boundary_state_function be called here and then use the
@@ -6362,6 +6363,7 @@ void G_CARTESIAN::setDirichletStates(
             (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
              strcmp(boundary_state_function_name(hs),"cF_constantWithWhiteNoise") == 0 ||
              strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_symmetryBoundaryState") == 0 ||
              strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
         {
             //TODO: Should the boundary_state_function be called here and then use the
