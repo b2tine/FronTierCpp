@@ -314,7 +314,7 @@ void airfoil_driver(Front *front,
             printf("Time step from FrontHypTimeStep(): %f\n",front->dt);
         
         front->dt = std::min(front->dt,CFL*g_cartesian->max_dt);
-            //front->dt = std::min(front->dt,spring_char_timestep);
+        front->dt = std::min(front->dt,spring_char_timestep);
 
         if (debugging("step_size"))
             printf("Time step from g_cartesian->max_dt(): %f\n",front->dt);
