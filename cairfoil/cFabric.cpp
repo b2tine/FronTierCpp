@@ -576,6 +576,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                     break;
 
                 case ELASTIC_BOUNDARY:
+                case ELASTIC_BAND_BOUNDARY:
                     setElasticStates(vst,m_vst,hs,state,ic_next,idir,nb,0,i,comp);
                     break;
     
@@ -800,6 +801,7 @@ void CFABRIC_CARTESIAN::appendGhostBuffer(
                     break;
 
                 case ELASTIC_BOUNDARY:
+                case ELASTIC_BAND_BOUNDARY:
                     setElasticStates(vst,m_vst,hs,state,ic_next,idir,nb,n,i,comp);
                     break;
 
@@ -2164,7 +2166,8 @@ void CFABRIC_CARTESIAN::setViscousGhostState(
                     nip_coords,comp,intrp_coeffs,hse,hs);
             break;
         }
-        case ELASTIC_BOUNDARY: //TODO: DOES THE SOLVER EVER SEE THIS BOUNDARY?
+        case ELASTIC_BOUNDARY:
+        case ELASTIC_BAND_BOUNDARY:
         {
             if (eqn_params->porosity == 0 || !eqn_params->with_porosity)
             {
