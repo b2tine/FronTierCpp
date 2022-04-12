@@ -58,10 +58,8 @@ Enter type of node 2: FIXED_NODE
 Enter type of node 3: FIXED_NODE
 
 Enter wave type of the curve between nodes 12: DIRICHLET_BOUNDARY
-Enter type of Dirichlet boundary: FLOW_THROUGH
+Enter type of Dirichlet boundary: SYMMETRY
             
-            XXXEnter wave type of the curve between nodes 12XXX: SYMMETRY_BOUNDARY
-
 Enter wave type of the curve between nodes 23: NEUMANN_BOUNDARY
 Enter yes for no slip wall: no
 Enter yes to fix wall temperature: no

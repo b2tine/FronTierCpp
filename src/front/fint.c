@@ -890,8 +890,6 @@ EXPORT	int f_read_wave_type_from_string(
 	static struct { const char *name; int type; } wave_type_map[] = {
 	    {"PASSIVE_BOUNDARY",   PASSIVE_BOUNDARY},
 	    {"PA",                 PASSIVE_BOUNDARY},
-	    {"SYMMETRY_BOUNDARY",  SYMMETRY_BOUNDARY},
-	    {"SY",                 SYMMETRY_BOUNDARY},
 	    {"NEUMANN_BOUNDARY",   NEUMANN_BOUNDARY},
 	    {"N",                  NEUMANN_BOUNDARY},
 	    {"MOVABLE_BODY_BOUNDARY",   MOVABLE_BODY_BOUNDARY},

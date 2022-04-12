@@ -4211,10 +4211,6 @@ EXPORT void FT_PromptSetMixedTypeBoundary2d(
 		case 'n':
 		    wave_type(curve) = NEUMANN_BOUNDARY;
 		    break;
-		case 'S':
-		case 's':
-		    wave_type(curve) = SYMMETRY_BOUNDARY;
-		    break;
 		case 'P':
 		case 'p':
 		    wave_type(curve) = PASSIVE_BOUNDARY;

@@ -587,8 +587,6 @@ protected:
 	void setNeumannStatesNEW(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,int,int);
 	void setNeumannStatesOLD(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,int,int);
 	
-    void setSymmetryStates(SWEEP*,SWEEP*,HYPER_SURF*,STATE*,int*,int,int,int,int,int);
-    
 	/* Viscous flux */
     void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
     
@@ -605,10 +603,6 @@ protected:
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
 
     void setNeumannViscousGhostState(int* iccords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
-            double* crx_coords, COMPONENT comp, double* intrp_coeffs,
-            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
-    
-    void setSymmetryViscousGhostState(int* iccords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
             double* crx_coords, COMPONENT comp, double* intrp_coeffs,
             HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
     
@@ -640,9 +634,6 @@ protected:
     
     std::vector<std::vector<double>> computeVelocityGradient(int *icoords);
     
-    void setSymmetryBoundaryNIP(int* icoords, int idir, int nb, int comp,
-            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
-
     void setSlipBoundary(int* icoords, int idir, int nb, int comp,
             HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
 
