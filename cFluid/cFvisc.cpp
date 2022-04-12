@@ -526,6 +526,18 @@ void G_CARTESIAN::setNeumannViscousGhostState(
         break;
     }
 
+    if (eqn_params->no_slip_wall)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            vs->vel[j] = vel_intfc[j];
+        }
+        
+        vs->temp = eqn_params->fixed_wall_temp;
+
+        return;
+    }
+
     //NOTE: must use unit-length vectors with FT_GridSizeInDir()
     double mag_nor = Magd(nor,dim);
     for (int i = 0; i < dim; ++i)
@@ -661,17 +673,9 @@ void G_CARTESIAN::setNeumannViscousGhostState(
     
     double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
 
-    /*
-    double slip = 1.0;
-    if (eqn_params->no_slip_wall) slip = 0.0;
-    */
-
     for (int j = 0; j < dim; ++j)
     {
-        //vel_ghost_tan[j] = slip*vel_rel_tan[j] - coeff_tau*tau_wall[j];
-        
         vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
-
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
     }
 

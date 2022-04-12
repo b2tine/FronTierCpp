@@ -485,7 +485,7 @@ G_CARTESIAN::computeVelocityGradient(int *icoords)
                      strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
                 {
                     vel_nb[nb] = vel[l][index];
-                    //vel_nb[nb] = intfc_state->vel[l];
+                        //vel_nb[nb] = intfc_state->vel[l];
                 }
                 else if (boundary_state(hs) != NULL)
                 {
@@ -674,6 +674,17 @@ void G_CARTESIAN::setSlipBoundaryNIP(
             break;
 	}
 
+    if (eqn_params->no_slip_wall)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            v_slip[j] = vel_intfc[j];
+        }
+
+        return;
+    }
+
+
     //NOTE: Tri_normal() does not return a unit vector
     double mag_nor = Magd(nor,dim);
     for (int i = 0; i < dim; ++i)
@@ -833,17 +844,8 @@ void G_CARTESIAN::setSlipBoundaryNIP(
         coeff_tau = (dist_reflect - dist_ghost)/mu_total_reflect;
     }
     
-    /*
-    double slip = 1.0;
-    if (eqn_params->no_slip_wall)
-    {
-        slip = 0.0;
-    }
-    */
-
     for (int j = 0; j < dim; ++j)
     {
-        //vel_ghost_tan[j] = slip*vel_rel_tan[j] - coeff_tau*tau_wall[j];
         vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
     }

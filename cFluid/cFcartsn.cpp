@@ -5499,10 +5499,10 @@ void G_CARTESIAN::setNeumannStatesNEW(
 	        //(void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
 	}
 
+    double v_slip[MAXD] = {0.0};
     double coords_ghost[MAXD];
 
-	//for (int i = istart; i <= nrad; ++i)
-	for (int i = istart; i < istart + 1; ++i)
+	for (int i = istart; i < istart + 1; ++i) //for (int i = istart; i <= nrad; ++i)
 	{
 	    /* Find ghost point */
 	    ghost_ic[idir] = (nb == 0) ? 
@@ -5662,8 +5662,6 @@ void G_CARTESIAN::setNeumannStatesNEW(
 		    vn += vel_rel[j]*nor[j];
 	    }
 
-        double v_slip[MAXD] = {0.0};
-
 //////////////////////////////////////////////////////////////////////////////////////////
         if (eqn_params->is_inviscid)
         {
@@ -5671,9 +5669,18 @@ void G_CARTESIAN::setNeumannStatesNEW(
             for (int j = 0; j < dim; ++j)
             {
                 v_slip[j] = vel_reflect[j] - 2.0*vn*nor[j];
-                st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
+                    //st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
             }
-            st_tmp.engy = EosEnergy(&st_tmp);
+            //st_tmp.engy = EosEnergy(&st_tmp);
+
+            break;
+        }
+        else if (eqn_params->no_slip_wall)
+        {
+            for (int j = 0; j < dim; ++j)
+            {
+                v_slip[j] = vel_intfc[j];
+            }
 
             break;
         }
@@ -5753,8 +5760,6 @@ void G_CARTESIAN::setNeumannStatesNEW(
         double vel_ghost_rel[MAXD] = {0.0};
         
         double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
-
-        //if (eqn_params->no_slip_wall)
         
         for (int j = 0; j < dim; ++j)
         {
@@ -5779,30 +5784,32 @@ void G_CARTESIAN::setNeumannStatesNEW(
         }
         */
         
-
-        for (int j = 0; j < dim; j++)
-	    {
-    		st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
-        }
-
-	    st_tmp.engy = EosEnergy(&st_tmp);
-
-        /* debugging printout */
-	    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
-	    {
-    		printf("negative energy! \n");
-	    	printf("icoords = %d %d %d \n", icoords[0],icoords[1],icoords[2]);
-		    printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],st_tmp.momn[1],
-                    st_tmp.momn[2],st_tmp.pres,st_tmp.engy);
-		    printf("st_tmp.dim = %d, idir = %d, nb = %d \n",st_tmp.dim,idir,nb);
-		    printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp.eos->gamma,
-                    st_tmp.eos->einf,st_tmp.eos->pinf);
-		
-            printf("coords_reflect = %f %f %f \n",
-                    coords_reflect[0],coords_reflect[1],coords_reflect[2]);
-            LOC(); clean_up(EXIT_FAILURE);
-	    }
     }
+
+///////////////////////////////////////////////////////////////////////
+    for (int j = 0; j < dim; j++)
+    {
+        st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
+    }
+    st_tmp.engy = EosEnergy(&st_tmp);
+
+    /* debugging printout */
+    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
+    {
+        printf("negative energy! \n");
+        printf("icoords = %d %d %d \n", icoords[0],icoords[1],icoords[2]);
+        printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],st_tmp.momn[1],
+                st_tmp.momn[2],st_tmp.pres,st_tmp.engy);
+        printf("st_tmp.dim = %d, idir = %d, nb = %d \n",st_tmp.dim,idir,nb);
+        printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp.eos->gamma,
+                st_tmp.eos->einf,st_tmp.eos->pinf);
+    
+        printf("coords_reflect = %f %f %f \n",
+                coords_reflect[0],coords_reflect[1],coords_reflect[2]);
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+///////////////////////////////////////////////////////////////////////
+
 
     for (int i = istart; i <= nrad; ++i)
     {

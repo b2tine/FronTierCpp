@@ -730,6 +730,7 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
     }
 
     eqn_params->use_fixed_wall_temp = false;
+    eqn_params->fixed_wall_temp = eqn_params->T2;
     if (CursorAfterStringOpt(infile,"Enter yes to fix wall temperature:"))
     {
         char string[25];

@@ -975,10 +975,13 @@ static int elastic_set_propagate3d_serial(
     if (!debugging("bendforce_off"))
     {
         resetBendingForce(elastic_intfc);
+        
         double bends = af_params->kbs;
         double bendd = af_params->lambda_bs;
         computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic
-        computeStringBendingForce(elastic_intfc);
+        
+        if (pp_numnodes() == 1)
+            computeStringBendingForce(elastic_intfc);
     }
 
 	assembleParachuteSet(elastic_intfc,geom_set);
@@ -1342,10 +1345,13 @@ static void fourth_order_elastic_set_propagate3d_serial(
     if (!debugging("bendforce_off"))
     {
         resetBendingForce(elastic_intfc);
+    
         double bends = af_params->kbs;
         double bendd = af_params->lambda_bs;
         computeSurfBendingForce(elastic_intfc,bends,bendd);//TODO: make function monadic
-        computeStringBendingForce(elastic_intfc);
+    
+        if (pp_numnodes() == 1)
+            computeStringBendingForce(elastic_intfc);
     }
 
 	assembleParachuteSet(elastic_intfc,&geom_set);
