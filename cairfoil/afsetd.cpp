@@ -1642,6 +1642,9 @@ extern void set_elastic_params(
     geom_set->lambda_g = af_params->lambda_g;
     geom_set->m_g = af_params->m_g;
 
+    geom_set->ks_band = af_params->ks_band;
+    geom_set->kl_band = af_params->kl_band;
+
     if (debugging("rigid_canopy"))
     {
 	    geom_set->dt_tol = HUGE;
@@ -1666,6 +1669,13 @@ extern void set_elastic_params(
         dt_tol > sqrt((af_params->m_g)/(af_params->kg))/10.0)
     {
         dt_tol = sqrt((af_params->m_g)/(af_params->kg))/10.0;
+    }
+
+    if (af_params->disk_gap_band_present)
+    {
+        double dt_band_s = sqrt((af_params->m_s)/(af_params->ks_band))/10.0;
+        double dt_band_l = sqrt((af_params->m_l)/(af_params->kl_band))/10.0;
+        dt_tol = std::min(dt_tol,std::min(dt_band_s,dt_band_l));
     }
 
 	pp_global_min(&dt_tol,1);
@@ -1704,6 +1714,13 @@ extern void set_elastic_params(
         dt_tol > sqrt((af_params->m_g)/(af_params->kg))/10.0)
     {
         dt_tol = sqrt((af_params->m_g)/(af_params->kg))/10.0;
+    }
+
+    if (af_params->disk_gap_band_present)
+    {
+        double dt_band_s = sqrt((af_params->m_s)/(af_params->ks_band))/10.0;
+        double dt_band_l = sqrt((af_params->m_l)/(af_params->kl_band))/10.0;
+        dt_tol = std::min(dt_tol,std::min(dt_band_s,dt_band_l));
     }
 
 	pp_global_min(&dt_tol,1);

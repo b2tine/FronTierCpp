@@ -3042,9 +3042,10 @@ static void CgalCircleBelt(
 	char vent_bool[10], string_bool[10];
 	std::list<Cgal_Point> list_of_seeds;
 	double cri_dx = 0.6*computational_grid(front->interf)->h[0];
-	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	int i;
 	CURVE *cbdry,*curves[2];
+
+	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
         printf("Entering CgalCircleBelt()\n");
         CursorAfterString(infile,"Enter the height of the plane:");

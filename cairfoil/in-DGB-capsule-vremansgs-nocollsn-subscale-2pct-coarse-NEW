@@ -238,6 +238,7 @@ Enter the debugging stringXXX: rigid_canopy
 
 Enter the debugging string: max_speed
 Enter the debugging string: cfluid_dt
+Enter the debugging string: elastic_params
 Enter the debugging string: collision_off
 
 Enter the debugging string: skip_strainvel

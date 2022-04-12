@@ -932,6 +932,13 @@ extern double springCharTimeStep(
             dt_tol = sqrt((af_params->m_g)/(af_params->kg))/10.0;
     }
 
+    if (af_params->disk_gap_band_present)
+    {
+        double dt_band_s = sqrt((af_params->m_s)/(af_params->ks_band))/10.0;
+        double dt_band_l = sqrt((af_params->m_l)/(af_params->kl_band))/10.0;
+        dt_tol = std::min(dt_tol,std::min(dt_band_s,dt_band_l));
+    }
+
     pp_global_min(&dt_tol,1);
 	return dt_tol;
 }	/* end springCharTimeStep */

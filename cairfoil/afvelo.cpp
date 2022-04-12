@@ -434,14 +434,21 @@ void setFabricParams(Front* front)
             }
 
             af_params->ks_band = af_params->ks;
-	    CursorAfterStringOpt(infile,"Enter fabric band spring constant:");
-            fscanf(infile,"%lf",&af_params->ks_band);
-            (void) printf("%f\n",af_params->ks_band);
+	        if (CursorAfterStringOpt(infile,"Enter fabric band spring constant:"))
+            {
+                fscanf(infile,"%lf",&af_params->ks_band);
+                (void) printf("%f\n",af_params->ks_band);
+            }
 	}
 
+    if (FT_FrontContainWaveType(front,ELASTIC_BAND_BOUNDARY))
+    {
+        af_params->disk_gap_band_present = true;
+    }
+
     af_params->m_l = 0.0;
-	if ( (dim == 2 && FT_FrontContainWaveType(front,ELASTIC_STRING)) || 
-	     (dim == 3 && FT_FrontContainHsbdryType(front,STRING_HSBDRY)) )
+	if (FT_FrontContainHsbdryType(front,STRING_HSBDRY) ||
+        FT_FrontContainHsbdryType(front,DISKGAP_STRING_HSBDRY))
 	{
         af_params->strings_present = true;
 
@@ -482,10 +489,12 @@ void setFabricParams(Front* front)
                 (void) printf("%f\n",af_params->m_l);
             }
 
-                af_params->kl_band = af_params->kl;
-            CursorAfterString(infile,"Enter diskgap string spring constant:");
+            af_params->kl_band = af_params->kl;
+            if (CursorAfterStringOpt(infile,"Enter diskgap string spring constant:"))
+            {
                 fscanf(infile,"%lf",&af_params->kl_band);
                 (void) printf("%f\n",af_params->kl_band);
+            }
 
             eqn_params->with_string_fsi = false;
             if (CursorAfterStringOpt(infile,"Enter yes for string-fluid interaction:"))

@@ -314,12 +314,17 @@ void airfoil_driver(Front *front,
             printf("Time step from FrontHypTimeStep(): %f\n",front->dt);
         
         front->dt = std::min(front->dt,CFL*g_cartesian->max_dt);
-        front->dt = std::min(front->dt,spring_char_timestep);
 
         if (debugging("step_size"))
             printf("Time step from g_cartesian->max_dt(): %f\n",front->dt);
 
-	    /* Output section */
+        front->dt = std::min(front->dt,spring_char_timestep);
+
+        if (debugging("step_size"))
+            printf("Time step from spring_char_timestep(): %f\n",front->dt);
+
+	    
+        /* Output section */
 
 	    print_airfoil_stat(front,out_name);
 
@@ -345,7 +350,10 @@ void airfoil_driver(Front *front,
         if (FT_IsDrawTime(front))
 	    {
             FT_Draw(front);
-            g_cartesian->writeMeshComponentsVTK();
+            if (!af_params->no_fluid)
+            {
+                g_cartesian->writeMeshComponentsVTK();
+            }
 	    }
 
         if (FT_TimeLimitReached(front))

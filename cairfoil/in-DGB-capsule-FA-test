@@ -1,7 +1,8 @@
 Domain limit in 0-th dimension: -1 1
 Domain limit in 1-th dimension: -1 1
-Domain limit in 2-th dimension: -0.15 5.85
-Computational grid: 100 100 180
+Domain limit in 2-th dimension:  -0.05 5.95
+                                                XXXComputational gridXXX: 100 100 200
+Computational grid: 30 30 60
 
 Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY 
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -62,8 +63,6 @@ Enter gravity: 0 0 0
 
 Type yes to track the interface: no
 
-Entering yes to turn off fluid solver: no
-
 /////////////////////////////////////////////////////
 
 Enter yes for inviscid solver: yes
@@ -90,7 +89,7 @@ Available type of rigid body include:
         Human (H)
         Cylinder (C)
 Enter type of rigid body: O
-Enter nose of the capsule: 0 0 1.0099854
+Enter nose of the capsule: 0 0 1.16457
 Enter radius of the capsule: 0.052
 Rigid body can be fixed (F) or Movable (M)
 The default is Movable (M)
@@ -102,7 +101,7 @@ Type yes if motion is preset: yes
 Enter type of dynamic motion: COM_MOTION
 Enter the direction of motion: 0 0 1
 Enter the total mass for rigid body: 1300
-Enter the initial center of mass for rigid body: 0 0 1.031
+Enter the initial center of mass for rigid body: 0 0 1.185
 Enter the initial center of mass velocity: 0 0 0
 
 Enter number of canopy surfaces: 1
@@ -121,18 +120,18 @@ Available types of canopy boundaries are:
 Enter type of canopy boundary: S
 Enter the height of the plane: 2.19867
 Enter circle center: 0 0
-Enter circle radius: 0.201
+Enter circle radius: 0.2285
 Enter yes to attach gores to canopy: no
 Enter yes to cut a vent on canopy: yes
-Enter radius of the vent: 0.01422
+Enter radius of the vent: 0.038029
 Enter yes to attach strings to canopy: yes
 Enter number of chords: 24
 
-Enter the length of the drape: 0.0484
-Enter the gap between canopy and drape: 0.0168
+Enter the length of the drape: 0.055297
+Enter the gap between canopy and drape: 0.01919
 
 Enter yes to install the strings to RGB: no
-Enter initial position of load: 0 0 1.22706
+Enter initial position of load: 0 0 1.38164
 Enter yes to fix the load node: yes
 
 Enter yes if connecting to disk gap band: yes
@@ -157,49 +156,55 @@ Enter yes to skip rg_nodes in y direction for 1: yes
 //////  Start parameters for spring-mass system   ////////
 //////////////////////////////////////////////////////////
 
+Entering yes to turn off fluid solver: yes
+Enter velocity function: FA
+Enter initial shape of fixed area: Ellipse
+Enter center of ellipse: 0 0
+Enter radii of ellipse: 0.03803 0.03803
+    XXXEnter radii of ellipseXXX: 0.038029 0.038029
+Enter area velocity: 0 0 30.0
+
+Enter interior propagator: p
+Enter yes for collision substepping: no
+Enter nsub per collision step: 1
+Enter interior sub step number: 1
+Enter timestep to activate FSI: 1
+
+
 Enter yes to use porosity: yes
 Enter fabric porosity: 0.08
 Enter porosity ghost fluid method: DARCY
 
 Enter viscous parameter: 1.3152e+11
 Enter inertial parameter: 168.1334
-                                    XXXEnter inertial parameterXXX: 0
 Enter permeability: 7.6033e-12
 
-Enter interior propagator: p
-Enter interior sub step number: 1
-
-Enter yes for collision substepping: no
-Enter nsub per collision step: 25
-
 Enter area density of canopy: 0.038989
-Enter timestep to activate FSI: 1
 
 Enter yes to use total mass: yes
-Enter fabric total mass: 0.029083
-Enter string total mass: 0.0328
+Enter fabric total mass: 0.009459
+Enter string total mass: 0.016098
 
-Enter fabric spring constant: 79164
-Enter fabric damping constant: 0.05
-                                                XXXEnter fabric damping constantXXX: 0.01
+Enter fabric spring constant: 55753
+Enter fabric damping constant: 0.01
+        XXXEnter fabric damping constantXXX: 0.05
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
 Enter fabric friction constant: 0.0
 Enter fabric thickness: 0.0000635
 Enter fabric rounding tolerance: 0.00001
-Enter fabric band spring constant: 79164
-        XXXEnter fabric band spring constantXXX: 460769
+Enter fabric band spring constant: 230384
+        XXXEnter fabric band spring constantXXX: 55753
 
-Enter string spring constant: 35661
-Enter string damping constant: 0.05
-                                                XXXEnter string damping constantXXX: 0.01
+Enter string spring constant: 13054.4
+Enter string damping constant: 0.02
+        XXXEnter string damping constantXXX: 0.05
 Enter string bending stiffness constant: 0.0001
 Enter string friction constant: 0.0
 Enter string thickness: 0.00099
 Enter string rounding tolerance: 0.000004
-Enter diskgap string spring constant: 85000
-    XXXEnter diskgap string spring constantXXX: 111506
-                XXXEnter diskgap string spring constantXXX: 985120.709
+Enter diskgap string spring constant: 528393
+        XXXEnter diskgap string spring constantXXX: 85000
 
 Enter strain limit: 0.03
 Enter compressive strain limit: 0.01
@@ -216,14 +221,14 @@ Type y to make yz cross section movie: n
 Type y to make xz cross section movie: n
 Type y to make xy cross section movie: n
 
-Type y to make scalar density field movie: y
-Type y to make scalar pressure field movie: y
-Type y to make scalar viscosity field movie: y
-Type y to make scalar eddy viscosity field movie: y
-Type y to make scalar temperature field movie: y
-Type y to make scalar turb kinetic energy field movie: y
+Type y to make scalar density field movie: n
+Type y to make scalar pressure field movie: n
+Type y to make scalar viscosity field movie: n
+Type y to make scalar eddy viscosity field movie: n
+Type y to make scalar temperature field movie: n
+Type y to make scalar turb kinetic energy field movie: n
 
-Type y to make vector velocity field movie: y
+Type y to make vector velocity field movie: n
 Type y to make vector vorticity field movie: n
 
 /////////////////////////////
@@ -232,10 +237,12 @@ Type y to make vector vorticity field movie: n
 
 Enter yes for debugging: yes
 
+Enter the debugging string: use_new_neumann
+
 Enter the debugging stringXXX: rigid_canopy
 
-Enter the debugging string: max_speed
 Enter the debugging string: cfluid_dt
+Enter the debugging string: max_speed
 Enter the debugging string: elastic_params
 Enter the debugging string: collision_off
 

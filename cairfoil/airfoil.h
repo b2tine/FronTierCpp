@@ -194,6 +194,7 @@ struct AF_PARAMS
 	STRING_NODE_TYPE start_type;
 	STRING_NODE_TYPE end_type;
 	
+    bool disk_gap_band_present {false};
     bool strings_present {false};
     bool gores_present {false};
 	

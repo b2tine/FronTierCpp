@@ -589,12 +589,10 @@ static void reduce_high_freq_vel(
 static void print_elastic_params(
 	const ELASTIC_SET& geom_set)
 {
-	int i;
-	double *spfr;
-	Front *fr = geom_set.front;
+	Front* front = geom_set.front;
 
-	spfr = Spfr(fr);
-    for (i = 0; i <= 3; ++i)
+	double* spfr = Spfr(front);
+    for (int i = 0; i <= 3; ++i)
     {
         printf("Max front speed(%d) = %f\n",i,spfr[i]);
     }
@@ -617,8 +615,23 @@ static void print_elastic_params(
                     geom_set.m_g,
                     geom_set.lambda_g);
 	
+    AF_PARAMS* af_params = (AF_PARAMS*)front->extra2;
+    if (af_params->disk_gap_band_present)
+    {
+        (void) printf("Input disk gap band parameters:\n");
+        (void) printf("ks_band = %f  m_sband = %f  lambda_sband = %f\n",
+                        geom_set.ks_band,
+                        geom_set.m_s,
+                        geom_set.lambda_s);
+        (void) printf("kl_band = %f  m_lband = %f  lambda_lband = %f\n",
+                        geom_set.kl_band,
+                        geom_set.m_l,
+                        geom_set.lambda_l);
+    }
+
     (void) printf("\ndt_tol = %20.14f  dt = %20.14f\n",
                         geom_set.dt_tol,geom_set.dt);
+
 }	/* end print_elastic_params */
 
 static FABRIC_COLLISION_PARAMS getFabricCollisionParams(Front* front)
@@ -712,7 +725,7 @@ static void elastic_set_propagate_serial(
     {
         first = NO;
         set_elastic_params(&geom_set,af_params,fr_dt);
-        if (debugging("step_size"))
+        if (debugging("elastic_params"))
             print_elastic_params(geom_set);
     }
 
@@ -1248,7 +1261,7 @@ static void fourth_order_elastic_set_propagate3d_serial(
 	if (first)
     {
         set_elastic_params(&geom_set,fr_dt);
-        if (debugging("step_size"))
+        if (debugging("elastic_params"))
             print_elastic_params(geom_set);
     }
 
@@ -1580,7 +1593,7 @@ void fourth_order_elastic_set_propagate_serial(Front* fr, double fr_dt)
 	    if (first)
         {
             set_elastic_params(&geom_set,fr_dt);
-            if (debugging("step_size"))
+            if (debugging("elastic_params"))
                 print_elastic_params(geom_set);
         }
 
@@ -1932,7 +1945,7 @@ void new_fourth_order_elastic_set_propagate3d_parallel_1(
     if (first)
     {
         set_elastic_params(&geom_set,fr_dt);
-        if (debugging("step_size"))
+        if (debugging("elastic_params"))
             print_elastic_params(geom_set);
     }
 
@@ -2290,7 +2303,7 @@ void fourth_order_elastic_set_propagate_parallel(Front* fr, double fr_dt)
     if (first)
     {
         set_elastic_params(&geom_set,fr_dt);
-        if (debugging("step_size"))
+        if (debugging("elastic_params"))
             print_elastic_params(geom_set);
     }
 
