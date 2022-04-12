@@ -2918,6 +2918,8 @@ extern void restart_set_dirichlet_bdry_function(Front *front)
             bstate->_boundary_state_function = cF_constantWithWhiteNoise;
         else if (strcmp(s,"cF_supersonicOutflowState") == 0)
             bstate->_boundary_state_function = cF_supersonicOutflowState;
+        else if (strcmp(s,"cF_symmetryBoundaryState") == 0)
+            bstate->_boundary_state_function = cF_symmetryBoundaryState;
         else if (strcmp(s,"cF_farfieldBoundaryState") == 0)
             bstate->_boundary_state_function = cF_farfieldBoundaryState;
         else if (strcmp(s,"cF_variableBoundaryState") == 0)
