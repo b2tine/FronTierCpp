@@ -138,7 +138,7 @@ Enter yes to fix the load node: yes
 
 Enter yes if connecting to disk gap band: yes
 
-Enter yes for string-fluid interaction: yes
+Enter yes for string-fluid interaction: no
 Enter string radius: 0.000495
 Enter string linear density: 0.000827
 Enter drag coefficient: 0.5
@@ -236,7 +236,7 @@ Enter the debugging string: use_new_neumann
 
 Enter the debugging stringXXX: rigid_canopy
 
-Enter the debugging stringXXX: skip_dgb_dt
+Enter the debugging string: skip_dgb_dt
 
 Enter the debugging string: max_speed
 Enter the debugging string: cfluid_dt

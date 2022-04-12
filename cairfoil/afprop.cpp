@@ -915,7 +915,12 @@ static void mono_curve_propagation(
 extern double springCharTimeStep(
 	Front *fr)
 {
-	AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
+    if (debugging("rigid_canopy"))
+    {
+        return HUGE;
+    }
+	
+    AF_PARAMS *af_params = (AF_PARAMS*)fr->extra2;
 	double dt_tol = sqrt((af_params->m_s)/(af_params->ks))/10.0;
     
     if (af_params->strings_present)
@@ -934,9 +939,12 @@ extern double springCharTimeStep(
 
     if (af_params->disk_gap_band_present)
     {
-        double dt_band_s = sqrt((af_params->m_s)/(af_params->ks_band))/10.0;
-        double dt_band_l = sqrt((af_params->m_l)/(af_params->kl_band))/10.0;
-        dt_tol = std::min(dt_tol,std::min(dt_band_s,dt_band_l));
+        if (!debugging("skip_dgb_dt"))
+        {
+            double dt_band_s = sqrt((af_params->m_s)/(af_params->ks_band))/10.0;
+            double dt_band_l = sqrt((af_params->m_l)/(af_params->kl_band))/10.0;
+            dt_tol = std::min(dt_tol,std::min(dt_band_s,dt_band_l));
+        }
     }
 
     pp_global_min(&dt_tol,1);

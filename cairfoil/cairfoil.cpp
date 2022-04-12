@@ -205,8 +205,8 @@ void airfoil_driver(Front *front,
 	AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 
 	Tracking_algorithm(front) = STRUCTURE_TRACKING;
+    
     double CFL = Time_step_factor(front);
-    double spring_char_timestep = springCharTimeStep(front);
     
 	(void) printf("Frequency_of_redistribution(front,GENERAL_WAVE) = %d\n",
 		Frequency_of_redistribution(front,GENERAL_WAVE));
@@ -245,7 +245,7 @@ void airfoil_driver(Front *front,
 	    	front->dt = std::min(front->dt,CFL*g_cartesian->max_dt);
 	    }
 
-        front->dt = std::min(front->dt,spring_char_timestep);
+        front->dt = std::min(front->dt,springCharTimeStep(front));
 	}
 	else
 	{
@@ -255,6 +255,14 @@ void airfoil_driver(Front *front,
     FT_TimeControlFilter(front);
 	FT_PrintTimeStamp(front);
 
+    
+    double spring_char_timestep = HUGE;
+    if (!debugging("skip_springchar_dt"))
+    {
+        spring_char_timestep = springCharTimeStep(front);
+    }
+
+    
     for (;;)
     {
         /* Propagating interface for time step dt */
