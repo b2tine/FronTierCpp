@@ -24,9 +24,9 @@ Enter type of Dirichlet boundary: FLOW_THROUGH
 For lower boundary in 2-th dimension
 Enter type of Dirichlet boundary: CONSTANT_STATE
 
-Enter velocity: 0 0 688.69
-Enter pressure: 1562.24
-Enter temperature: 294.93
+Enter velocity: 0 0 10
+Enter pressure: 101325
+Enter temperature: 293
 
 For upper boundary in 2-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
@@ -37,10 +37,10 @@ Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 //////////////////////////////////////////////////////////
 
 Max time: 2.0
-Max step: 1200
+Max step: 25000
 Print interval: 0.00025
-Movie frame interval: 0.00001
-CFL factor: 0.25
+Movie frame interval: 0.00025
+CFL factor: 0.5
 type yes to turn off auto-redistribution: y
 
 //////////////////////////////////////////////////////////
@@ -52,7 +52,7 @@ Enter numerical scheme for interior solver: WENO_4th_ORDER
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 0.0184527 1562.24
+Enter density and pressure of ambient air: 1.29 101325
 
 Enter the specific gas constant: 287.058
 Enter the Prandtl number: 0.71
@@ -62,7 +62,7 @@ Enter the reference temperature: 273.15
 Enter the effective temperature: 110.4
 
 Enter yes to set initial velocity: yes
-Enter initial velocity: 0 0 688.69
+Enter initial velocity: 0 0 10
 
 Enter gravity: 0 0 0
 
@@ -127,19 +127,14 @@ Enter fabric porosity: 0.08
 Enter porosity ghost fluid method: DARCY
 
 Enter viscous parameter: 1.3152e+11
-
 Enter inertial parameter: 168.1334
-    XXXEnter inertial parameterXXX: 0
 Enter permeability: 7.6033e-12
-
-    XXXEnter viscous parameterXXX: 152.1645
-    XXXEnter inertial parameterXXX: 188.2509
 
 
 Enter area density of canopy: 0.05
 Enter yes to use total mass: yes
 
-Enter fabric spring constant: 25000
+Enter fabric spring constant: 5000
 Enter fabric damping constant: 0.01
 Enter fabric bending stiffness constant: 0.0001
 Enter fabric bending damping constant: 0.0000001
@@ -187,7 +182,7 @@ Type y to make scalar pressure field movie: y
 Type y to make scalar viscosity field movie: y
 Type y to make scalar eddy viscosity field movie: y
 Type y to make scalar temperature field movie: y
-Type y to make scalar turb kinetic energy field movie: n
+Type y to make scalar turb kinetic energy field movie: y
 
 Type y to make vector velocity field movie: y
 Type y to make vector vorticity field movie: n
