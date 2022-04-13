@@ -1,55 +1,75 @@
 Max time: 2.0
-Max step: 25000
-Print interval: 0.0015
-Movie frame interval: 0.00015
-CFL factor: 0.25
+Max step: 70000
+Print interval: 0.0005
+Movie frame interval: 0.00005
+CFL factor: 0.5
 Redistribution interval: 1000000000
 Type yes to turn off auto-redistribution: yes
 
+Enter yes to fix time step: no
+fixed time step: 0.001
+
 *******************************************************
 
-Domain limit in 0-th dimension: -1.075 7.45
-Domain limit in 1-th dimension: -0.95 3.7
+Domain limit in 0-th dimension: 0.0 2.0
+Domain limit in 1-th dimension: 0.0 1.2
 
-Computational grid: 165 125
-    Computational gridXXX: 330 250
-    Computational gridXXX: 660 500
-    Computational gridXXX: 1320 1000
+Computational grid: 286 131
 
-Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 0-th dimension: MIXED_TYPE_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
-Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 1-th dimension: MIXED_TYPE_BOUNDARY
 Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
 
+Enter yes to insert boundary object: yes
+Enter boundary object type: SPLIT_STATE_NODE
+Enter number of node points: 2
+Enter coordinates of node points:
+0.0 1.05974
+0.2 0.0
+
 For lower boundary in 0-th dimension
+Enter type of node 1: FIXED_NODE
+Enter type of node 2: FIXED_NODE
+Enter type of node 3: FIXED_NODE
+
+Enter wave type of the curve between nodes 12: DIRICHLET_BOUNDARY
 Enter type of Dirichlet boundary: CONSTANT
-Enter velocity: 576 0
-Enter pressure: 515000
-Enter temperature: 294
+Enter velocity: 692.161 0
+Enter pressure: 523.809
+Enter temperature: 298
+
+Enter wave type of the curve between nodes 23: DIRICHLET_BOUNDARY
+Enter type of Dirichlet boundary: CONSTANT
+Enter velocity: 644.3174 -67.7204
+Enter pressure: 726.5692
+Enter temperature: 327.5365
+
 For upper boundary in 0-th dimension
 Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
 For lower boundary in 1-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
-For upper boundary in 1-th dimension
-Enter type of Dirichlet boundary: FLOW_THROUGH
+Enter type of node 1: FIXED_NODE
+Enter type of node 2: FIXED_NODE
+Enter type of node 3: FIXED_NODE
 
-Enter freestream direction: 0
-Enter angle of attack: 0.0
-Enter sideslip angle: 0.0
+Enter wave type of the curve between nodes 12: DIRICHLET_BOUNDARY
+Enter type of Dirichlet boundary: SYMMETRY
+
+Enter wave type of the curve between nodes 23: NEUMANN_BOUNDARY
+Enter yes for no slip wall: yes
+Enter yes to fix wall temperature: yes
+Enter wall temperature: 298
+
+For upper boundary in 1-th dimension
+Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
+
+Enter freestream directionXXX: 0
+Enter angle of attackXXX: 0.0
+Enter sideslip angleXXX: 0.0
 
 *******************************************************
-Problem type can be
-	TWO_FLUID_BUBBLE
-	TWO_FLUID_RT
-	TWO_FLUID_BUBBLE
-	FLUID_SOLID_CIRCLE
-Enter problem type: FLUID_SOLID_CIRCLE
-
-Enter the center of the circle: 1.25 1.375
-Enter radius of the circle: 0.075
-Enter yes if the object is fixed: yes
-
+Enter problem type: CHANNEL_FLOW
 
 Numerical scheme for interior solver can be
         WENO_4th_ORDER
@@ -58,20 +78,24 @@ Point propagator order can be (1,2,4)
 Enter order of point propagator: 4
 
 Enter gamma, pinf, einf of ambient air: 1.4 0 0
-Enter density and pressure of ambient air: 1.29 101325.0
+Enter density and pressure of ambient air: 0.006123 523.809
 
     XXXEnter the operating pressureXXX:
+
+Enter yes to set initial velocity: yes
+Enter initial velocity: 692.161 0
+
 
 Enter yes for heat flux: yes
 
 Enter the specific gas constant: 287.058
-Enter the Prandtl number: 0.71
+Enter the Prandtl number: 0.72
 
 Enter the reference molecular viscosity: 1.716e-05
 Enter the reference temperature: 273.15
-Enter the effective temperature: 111.0
+Enter the effective temperature: 110.4
 
-Enter gravity: 0 0 
+Enter gravity: 0 -9.8
 
 Type yes to track the interface: no
 
@@ -92,7 +116,7 @@ Type y to make movie of viscosity: y
 Type y to make movie of velocity: y
 Type y to make movie of vorticity: y
 
-Type y to make movie of turb kinetic energy: n
+Type y to make movie of turb kinetic energy: y
 
 Type y to make vector velocity field movie: y
 Type y to make vector vorticity field movie: y
@@ -100,8 +124,9 @@ Type y to make scalar density field movie: y
 Type y to make scalar pressure field movie: y
 Type y to make scalar temperature field movie: y
 Type y to make scalar viscosity field movie: y
+Type y to make scalar eddy viscosity field movie: y
 
-Type y to make scalar turb kinetic energy field movie: n
+Type y to make scalar turb kinetic energy field movie: y
 
 ************Debugging options*****************
 Enter yes for debugging: yes
