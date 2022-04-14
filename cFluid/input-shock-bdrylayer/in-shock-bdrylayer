@@ -61,7 +61,7 @@ Enter type of Dirichlet boundary: SYMMETRY
 
 Enter wave type of the curve between nodes 23: NEUMANN_BOUNDARY
 Enter yes for no slip wall: no
-Enter yes to fix wall temperature: no
+Enter yes to fix wall temperature: yes
 Enter wall temperature: 298
 
 For upper boundary in 1-th dimension

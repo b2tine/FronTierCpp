@@ -326,10 +326,13 @@ void airfoil_driver(Front *front,
         if (debugging("step_size"))
             printf("Time step from g_cartesian->max_dt(): %f\n",front->dt);
 
-        front->dt = std::min(front->dt,spring_char_timestep);
+        if (!debugging("rigid_canopy"))
+        {
+            front->dt = std::min(front->dt,spring_char_timestep);
 
-        if (debugging("step_size"))
-            printf("Time step from spring_char_timestep(): %f\n",front->dt);
+            if (debugging("step_size"))
+                printf("Time step from spring_char_timestep(): %f\n",front->dt);
+        }
 
 	    
         /* Output section */
