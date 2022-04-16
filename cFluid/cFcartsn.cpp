@@ -5613,8 +5613,18 @@ void G_CARTESIAN::setNeumannStatesNEW(
                 nor[i] *= -1.0;
         }
         
-        //NOTE: must use unit-length vectors with FT_GridSizeInDir()
-        double dist_reflect = FT_GridSizeInDir(nor,front);
+
+        double dist_reflect;
+        if (eqn_params->use_preset_dist_reflect)
+        {
+            dist_reflect = eqn_params->dist_reflect;
+        }
+        else
+        {
+            //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+            dist_reflect = FT_GridSizeInDir(nor,front);
+        }
+
 
         //The desired reflected point
         for (int j = 0; j < dim; ++j)

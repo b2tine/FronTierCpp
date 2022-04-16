@@ -219,6 +219,9 @@ struct EQN_PARAMS
     bool use_fixed_wall_temp {false};
     double fixed_wall_temp {294.0};
 
+    bool use_preset_dist_reflect {false};
+    double dist_reflect;
+
 
     /////////////////////////////    
     bool no_fluid {false};

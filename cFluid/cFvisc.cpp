@@ -543,7 +543,18 @@ void G_CARTESIAN::setNeumannViscousGhostState(
             nor[i] *= -1.0;
 	}
     
-    double dist_reflect = FT_GridSizeInDir(nor,front);
+    double dist_reflect;
+    if (eqn_params->use_preset_dist_reflect)
+    {
+        dist_reflect = eqn_params->dist_reflect;
+    }
+    else
+    {
+        //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+        dist_reflect = FT_GridSizeInDir(nor,front);
+    }
+
+
     double dist_ghost = distance_between_positions(ghost_coords,crx_coords,dim);
     
     //The desired reflected point

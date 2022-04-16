@@ -745,6 +745,20 @@ static void setChannelFlowParams(FILE* infile, EQN_PARAMS* eqn_params)
         }
     }
 
+    eqn_params->use_preset_dist_reflect = false;
+    if (CursorAfterStringOpt(infile,"Enter yes for preset dist reflect:"))
+    {
+        char string[25];
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+        {
+            eqn_params->use_preset_dist_reflect = true;
+            CursorAfterString(infile,"Enter dist reflect:");
+	        fscanf(infile,"%lf",&eqn_params->dist_reflect);
+	        (void) printf("%f\n",eqn_params->dist_reflect);
+        }
+    }
 
     CursorAfterString(infile,"Enter gravity:");
 	for (int i = 0; i < dim; ++i)

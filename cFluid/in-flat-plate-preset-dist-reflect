@@ -32,11 +32,11 @@ Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
 
         XXXEnter type of Dirichlet boundaryXXX: FLOW_THROUGH
 
-Enter yes for no slip wall: yes
-Enter yes to fix wall temperature: yes
+Enter yes for no slip wall: no
+Enter yes to fix wall temperature: no
     XXXEnter wall temperatureXXX: 298
 
-Enter yes for preset dist reflect: no
+Enter yes for preset dist reflect: yes
 Enter dist reflect: 0.011176
     XXXEnter dist reflectXXX: 0.016763
 

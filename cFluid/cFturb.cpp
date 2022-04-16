@@ -691,7 +691,17 @@ void G_CARTESIAN::setSlipBoundaryNIP(
 	}
     
     //NOTE: must use unit-length vectors with FT_GridSizeInDir()
-    double dist_reflect = FT_GridSizeInDir(nor,front);
+    double dist_reflect;
+    if (eqn_params->use_preset_dist_reflect)
+    {
+        dist_reflect = eqn_params->dist_reflect;
+    }
+    else
+    {
+        //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+        dist_reflect = FT_GridSizeInDir(nor,front);
+    }
+
 
     //TODO: need to check if dist_reflect > dist_ghost ???
     
@@ -1063,8 +1073,23 @@ void G_CARTESIAN::setPoroSlipBoundaryNIP(
             nor[i] *= -1.0;
 	}
 
-    //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+
     double dist_reflect = FT_GridSizeInDir(nor,front);
+    
+    /*
+    //TODO: Wait and see if preset dist_reflect works with solid walls before considering porous walls
+    double dist_reflect;
+    if (eqn_params->use_preset_dist_reflect)
+    {
+        dist_reflect = eqn_params->dist_reflect;
+    }
+    else
+    {
+        //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+        dist_reflect = FT_GridSizeInDir(nor,front);
+    }
+    */
+
     
     //The desired reflected point
     for (int j = 0; j < dim; ++j)
