@@ -21,6 +21,7 @@ file_suffixes = tuple(script_suffixes + autotools_suffixes + src_suffixes)
 def createFileList(projdir):
     filelist = list()
     for (root, dirs, files) in os.walk(projdir):
+        dirs[:] = [d for d in dirs if not d.startswith('out-')]
         for filename in files:
             if (filename.endswith(file_suffixes)
                     or filename.startswith(file_prefixes)
