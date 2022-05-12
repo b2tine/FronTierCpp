@@ -14,7 +14,7 @@ fixed time step: 0.001
 Domain limit in 0-th dimension: 0.0 2.0
 Domain limit in 1-th dimension: 0.0 0.732
 
-Computational grid: 286 131
+Computational grid: 286 209
 
 Lower boundary in 0-th dimension: MIXED_TYPE_BOUNDARY
 Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
@@ -56,17 +56,13 @@ Enter type of node 3: FIXED_NODE
 Enter wave type of the curve between nodes 12: DIRICHLET_BOUNDARY
 Enter type of Dirichlet boundary: SYMMETRY
 
-        XXXEnter type of Dirichlet boundaryXXX: FLOW_THROUGH
-            
-
 Enter wave type of the curve between nodes 23: NEUMANN_BOUNDARY
 Enter yes for no slip wall: no
-Enter yes to fix wall temperature: yes
+Enter yes to fix wall temperature: no
 Enter wall temperature: 298
 
 Enter yes for preset dist reflect: yes
-Enter dist reflect: 0.011176
-    XXXEnter dist reflectXXX: 0.016763
+Enter dist reflect: 0.005254
 
 
 For upper boundary in 1-th dimension
@@ -108,7 +104,7 @@ Enter yes to use eddy viscosity: yes
 Enter eddy viscosity model: Vreman
 Enter model constant: 0.025
 
-Enter the turbulent Prandtl number: 0.91
+Enter the turbulent Prandtl number: 0.9
 
 *******************************************************
 
@@ -132,7 +128,7 @@ Type y to make scalar turb kinetic energy field movie: y
 ************Debugging options*****************
 Enter yes for debugging: yes
 
-Enter the debugging stringXXX: use_new_neumann
+Enter the debugging string: use_new_neumann
 
 Enter the debugging string: cfluid_dt
 

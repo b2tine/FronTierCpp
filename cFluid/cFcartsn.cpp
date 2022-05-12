@@ -5969,6 +5969,7 @@ void G_CARTESIAN::setNeumannStatesOLD(
         }
 		
 		/* relative velocity wrt intfc */
+        /*
 	    vn = 0.0;
 	    for (j = 0; j < dim; j++)
 	    {
@@ -5994,8 +5995,8 @@ void G_CARTESIAN::setNeumannStatesOLD(
                 st_tmp.momn[j] = v[j]*st_tmp.dens;
             }
         }
+        */
         
-        /*
 //////////////////////////////////////////////////////////////////////////////////////////
         // reflect normal component of velocity, relative tangent velocity unchanged
         for (j = 0; j < dim; ++j)
@@ -6004,7 +6005,6 @@ void G_CARTESIAN::setNeumannStatesOLD(
             st_tmp.momn[j] = v[j]*st_tmp.dens;
         }
 //////////////////////////////////////////////////////////////////////////////////////////
-        */
 
         for (j = 0; j < dim; j++)
 	    {
