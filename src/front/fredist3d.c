@@ -1280,7 +1280,7 @@ EXPORT boolean surface_redistribute(
 	    	    (wave_type(*s) >= FIRST_PHYSICS_WAVE_TYPE ||
 		     wave_type(*s) == GROWING_BODY_BOUNDARY) &&
 	    	    (wave_type(*s) < FIRST_VECTOR_PHYSICS_WAVE_TYPE) &&
-		    (wave_type(*s) != ELASTIC_BOUNDARY))
+		    (wave_type(*s) != ELASTIC_BOUNDARY) && (wave_type(*s) != ELASTIC_BAND_BOUNDARY))
 		{
 		    start_clock("redistribute_surface");
 		    if (!redistribute_surface(*s,fr))

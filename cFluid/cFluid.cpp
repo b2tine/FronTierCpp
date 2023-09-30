@@ -35,7 +35,6 @@ static void gas_driver(Front*,G_CARTESIAN&);
 static int g_cartesian_vel(POINTER,Front*,POINT*,HYPER_SURF_ELEMENT*,
                         HYPER_SURF*,double*);
 static boolean compare_with_base_data(Front *front);
-static void rgb_init(Front*,RG_PARAMS);
 
 char *in_name,*restart_state_name,*restart_name,*out_name;
 boolean RestartRun;
@@ -49,22 +48,18 @@ int main(int argc, char **argv)
 	static LEVEL_FUNC_PACK level_func_pack;
 	static VELO_FUNC_PACK velo_func_pack;
 	static EQN_PARAMS eqn_params;
-	int i;
 	RG_PARAMS rgb_params;
-        char test_name[100];
+    char test_name[100];
 
-	G_CARTESIAN	g_cartesian(front);
-
+	
+    G_CARTESIAN	g_cartesian(&front);
 
 	/* Initialize basic computational data */
 
 	FT_Init(argc,argv,&f_basic);
+
 	f_basic.size_of_intfc_state = sizeof(STATE);
 	
-	//Initialize the Petsc
-	//PetscInitialize(&argc,&argv,PETSC_NULL,PETSC_NULL);
-	//if (debugging("trace")) printf("Passed PetscInitialize()\n");
-
         in_name                 = f_basic.in_name;
         restart_state_name      = f_basic.restart_state_name;
         out_name                = f_basic.out_name;
@@ -76,7 +71,8 @@ int main(int argc, char **argv)
                         right_flush(RestartStep,7));
         sprintf(restart_name,"%s/intfc-ts%s",restart_name,
 			right_flush(RestartStep,7));
-	if (pp_numnodes() > 1)
+	
+    if (pp_numnodes() > 1)
 	{
             sprintf(restart_name,"%s-nd%s",restart_name,
 			right_flush(pp_mynode(),4));
@@ -85,10 +81,11 @@ int main(int argc, char **argv)
 	}
 
 	FT_ReadSpaceDomain(in_name,&f_basic);
-	FT_StartUp(&front,&f_basic);
+    FT_StartUp(&front,&f_basic);
 	FT_InitDebug(in_name);
+
 	if (debugging("sample_velocity"))
-            g_cartesian.initSampleVelocity(in_name);
+        g_cartesian.initSampleVelocity(in_name);
 
 	if (debugging("trace")) printf("Passed FT_StartUp()\n");
 
@@ -97,50 +94,68 @@ int main(int argc, char **argv)
 
 	if (eqn_params.use_base_soln == YES)
 	{
-            for (i = 0; i < f_basic.dim; ++i)
-                eqn_params.f_basic->subdomains[i] = f_basic.subdomains[i];
+        for (int i = 0; i < f_basic.dim; ++i)
+            eqn_params.f_basic->subdomains[i] = f_basic.subdomains[i];
 	}
 
 	front.extra1 = (POINTER)&eqn_params;
-	if (debugging("trace")) printf("Passed read_cFluid_params()\n");
+	front.extra3 = (POINTER)&rgb_params;
+	
+    if (debugging("trace")) printf("Passed read_cFluid_params()\n");
+
 
 	/* Initialize interface through level function */
-
-	g_cartesian.setProbParams(in_name);
-
 	if (!RestartRun)
 	{
 	    g_cartesian.setInitialIntfc(&level_func_pack,in_name);
-	    if (f_basic.dim == 3) level_func_pack.set_3d_bdry = YES;
-	    FT_InitIntfc(&front,&level_func_pack);
+	    
+        insert_boundary_objects(&front);
+
+        if (f_basic.dim == 3) level_func_pack.set_3d_bdry = YES;
+	    
+        FT_InitIntfc(&front,&level_func_pack);
+
 	    insert_objects(&front);
-	    rgb_init(&front,rgb_params);
-	    FT_PromptSetMixedTypeBoundary2d(in_name,&front);
-	    if (debugging("trace"))
+        initRigidBody(&front);
+        setRigidBodyMotionParams(&front,&rgb_params);
+	    
+        FT_PromptSetMixedTypeBoundary2d(in_name,&front);
+	    
+        if (debugging("trace"))
 	    	printf("Passed g_cartesian.setProbParams()\n");
+
 	    read_dirichlet_bdry_data(in_name,&front);
+
 	    read_open_end_bdry_data(in_name,&front);
-	    if (f_basic.dim < 3)
+	    
+        if (f_basic.dim < 3)
 	    	FT_ClipIntfcToSubdomain(&front);
-	    FT_RedistMesh(&front);
-	    if (debugging("trace"))
-                (void) printf("Passed FT_InitIntfc()\n");
-	    if (debugging("init_intfc"))
+	    
+        //    FT_RedistMesh(&front);
+	    
+        if (debugging("trace"))
+            (void) printf("Passed FT_InitIntfc()\n");
+	    
+        if (debugging("init_intfc"))
 	    {
-                switch (f_basic.dim)
-                {
-                case 2:
-                    sprintf(test_name,"init_intfc-%d.xg",pp_mynode());
-                    xgraph_2d_intfc(test_name,front.interf);
-                    break;
-                case 3:
-                    gview_plot_interface("gv-init",front.interf);
-                    break;
-                }
+            switch (f_basic.dim)
+            {
+            case 2:
+                sprintf(test_name,"init_intfc-%d.xg",pp_mynode());
+                xgraph_2d_intfc(test_name,front.interf);
+                break;
+            case 3:
+                sprintf(test_name,"%s/gv-init",OutName(&front));
+                gview_plot_interface(test_name,front.interf);
+                break;
+            }
 	    }
 	}
 	else
+    {
+	    //read_dirichlet_bdry_data(in_name,&front);
 	    restart_set_dirichlet_bdry_function(&front);
+    }
 
 	/* Initialize velocity field function */
 
@@ -149,13 +164,18 @@ int main(int argc, char **argv)
 	velo_func_pack.func = g_cartesian_vel;
 	velo_func_pack.point_propagate = cFluid_point_propagate;
 	FT_InitFrontVeloFunc(&front,&velo_func_pack);
-	if (debugging("trace"))
+
+    if (debugging("trace"))
 	    printf("Passed FT_InitFrontVeloFunc()\n");
 
 	g_cartesian.initMesh();
-        g_cartesian.initMovieVariables();
-	if (RestartRun)
+
+    g_cartesian.writeMeshFileVTK();
+    g_cartesian.writeCompGridMeshFileVTK();
+    
+    if (RestartRun)
 	{
+        //TODO: have a single function call these inside it
 	    readFrontStates(&front,restart_state_name);
 	    g_cartesian.readInteriorStates(restart_state_name);
 	}
@@ -163,6 +183,9 @@ int main(int argc, char **argv)
 	{
 	    g_cartesian.setInitialStates();
 	}
+
+    g_cartesian.initMovieVariables();
+
 	if (debugging("trace"))
 	    printf("Passed state initialization()\n");
 
@@ -170,20 +193,40 @@ int main(int argc, char **argv)
 
 	gas_driver(&front, g_cartesian);
 
-	//PetscFinalize();
 	clean_up(0);
 }
 
-static  void gas_driver(
+static void gas_driver(
         Front *front,
 	G_CARTESIAN &g_cartesian)
 {
-        double CFL;
+    double fixed_dt;
+    bool use_fixed_dt = false;
 
-	Curve_redistribution_function(front) = full_redistribute;
+    FILE* infile = fopen(InName(front),"r");
+    if (CursorAfterStringOpt(infile,"Enter yes to fix time step:"))
+    {
+        char s[25];
+        fscanf(infile,"%s",s);
+        (void) printf("%s\n",s);
+        if (s[0] == 'y' || s[0] == 'Y')
+        {
+            CursorAfterString(infile,"fixed time step:");
+            fscanf(infile,"%lf",&fixed_dt);
+            printf("%f\n",fixed_dt);
+            use_fixed_dt = true;
+        }
+    }
+
 
 	FT_ReadTimeControl(in_name,front);
-	CFL = Time_step_factor(front);
+	double CFL = Time_step_factor(front);
+	
+	Curve_redistribution_function(front) = full_redistribute;
+    if (!RestartRun)
+    {
+        FT_RedistMesh(front);
+    }
 
 	if (!RestartRun)
 	{
@@ -194,20 +237,30 @@ static  void gas_driver(
 	    g_cartesian.solve(front->dt);
 
 	    FT_Save(front);
-            g_cartesian.printFrontInteriorStates(out_name);
-            if (compare_with_base_data(front))
-            {
-                g_cartesian.compareWithBaseData(out_name);
-                g_cartesian.freeBaseFront();
-            }
-            FT_Draw(front);
+        g_cartesian.printFrontInteriorStates(out_name);
+            
+        if (compare_with_base_data(front))
+        {
+            g_cartesian.compareWithBaseData(out_name);
+            g_cartesian.freeBaseFront();
+        }
+        
+        FT_Draw(front);
 
 	    FT_SetTimeStep(front);
+        
 	    front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);
-	    FT_SetOutputCounter(front);
+        if (use_fixed_dt)
+        {
+            front->dt = fixed_dt;
         }
-        else
+
 	    FT_SetOutputCounter(front);
+    }
+    else
+    {
+        FT_SetOutputCounter(front);
+    }
 
 	FT_TimeControlFilter(front);
 	FT_PrintTimeStamp(front);
@@ -221,13 +274,11 @@ static  void gas_driver(
 
 	if (debugging("trace"))
         printf("Before time loop\n");
-        
+    
+    /* Propagating interface for time step dt */
     for (;;)
     {
-        /* Propagating interface for time step dt */
-
-        if(debugging("CLOCK"))
-                reset_clock();
+        if(debugging("CLOCK")) reset_clock();
 
         start_clock("time_loop");
         print_storage("Storage at start of time step","trace");
@@ -250,14 +301,18 @@ static  void gas_driver(
         //the interface such as curvature, and etc.
 
         FT_SetTimeStep(front);
+        
         if (debugging("step_size"))
         {
-            (void) printf("Step size from front:    %20.14f\n",front->dt);
-            (void) printf("Step size from interior: %20.14f\n",
-                        CFL*g_cartesian.max_dt);
+            printf("\nStep size from front:    %20.14f\n",front->dt);
+            printf("\nStep size from interior: %20.14f\n",CFL*g_cartesian.max_dt);
         }
         
         front->dt = std::min(front->dt,CFL*g_cartesian.max_dt);
+        if (use_fixed_dt)
+        {
+            front->dt = fixed_dt;
+        }
 
             /* Output section */
 
@@ -307,7 +362,8 @@ static  void gas_driver(
 
 	if (FT_Dimension() == 1)
 	    g_cartesian.errFunction();
-	if (debugging("trace")) printf("After time loop\n");
+	
+    if (debugging("trace")) printf("After time loop\n");
 }       /* end gas_driver */
 
 static int g_cartesian_vel(
@@ -319,7 +375,7 @@ static int g_cartesian_vel(
 	double *vel)
 {
 	double *coords = Coords(p);
-	((G_CARTESIAN_EB*)params)->getVelocity(coords, vel);
+	((G_CARTESIAN*)params)->getVelocity(coords, vel);
 	return YES;
 }	/* end g_cartesian_vel */
 
@@ -329,37 +385,3 @@ static boolean compare_with_base_data(Front *front)
 	return eqn_params->use_base_soln;
 }	/* end compare_with_base_data */
 
-static void rgb_init(Front *front,
-	RG_PARAMS rgb_params)
-{
-	CURVE **c;
-	SURFACE **s;
-
-	if (FT_Dimension() == 1) return;
-	else if (FT_Dimension() == 2)
-	{
-	    for (c = front->interf->curves; c && *c; ++c)
-	    {
-		if (wave_type(*c) == MOVABLE_BODY_BOUNDARY)
-		{
-		    prompt_for_rigid_body_params(front->f_basic->dim,
-				front->f_basic->in_name,&rgb_params);
-		    body_index(*c) = 0;
-		    set_rgbody_params(rgb_params,Hyper_surf(*c));
-		}
-	    }
-	}
-	else
-	{
-	    for (s = front->interf->surfaces; s && *s; ++s)
-	    {
-		if (wave_type(*s) == MOVABLE_BODY_BOUNDARY)
-		{
-		    prompt_for_rigid_body_params(front->f_basic->dim,
-				front->f_basic->in_name,&rgb_params);
-		    body_index(*s) = 0;
-		    set_rgbody_params(rgb_params,Hyper_surf(*s));
-		}
-	    }
-	}
-} /* end rgb_init */

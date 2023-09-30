@@ -84,31 +84,38 @@ EXPORT	void	f_principal_tangent(
 	double			*nor,
 	double			*vdir)
 {
-	int	i, imax, imin;
 	int	dim = hs->interface->dim;
-	double	len;
-
-	for (i = 0; i < dim; ++i)
-	    vdir[i] = 0.0;
-	if (dim == 1)
+    if (dim == 1)
+    {
+        for (int i = 0; i < dim; ++i)
+            vdir[i] = 0.0;
 	    return;
+    }
 
-	imax = 0;	imin = dim-1;
-	for (i = 1; i < dim; ++i)
+	for (int i = 0; i < dim; ++i)
+	    vdir[i] = nor[i];
+	
+    int imax = 0;
+	for (int i = 1; i < dim; ++i)
 	{
 	    if (nor[i] > nor[imax])
 	    	imax = i;
+    }
+
+    int imin = 0;
+	for (int i = 1; i < dim; ++i)
+	{
 	    if (nor[i] < nor[imin])
 	    	imin = i;
 	}
-	vdir[imax] = -nor[imin];
+
+	vdir[imax] = -1.0*nor[imin];
 	vdir[imin] =  nor[imax];
-	len = mag_vector(vdir,dim);
-	for (i = 0; i < dim; ++i)
+	
+    double len = mag_vector(vdir,dim);
+	for (int i = 0; i < dim; ++i)
 	    vdir[i] /= len;
 }		/*end f_principal_tangent*/
-
-
 
 /*
 *			f_copy_front():
@@ -475,7 +482,6 @@ EXPORT	double	f_max_front_time_step(
 	    else
 	        dt[i] = HUGE;
 	}
-
 	if (spfr[dim] > 0.0)
 	{
 	    dt[dim] = dim_fac*hmin/spfr[dim];
@@ -488,8 +494,7 @@ EXPORT	double	f_max_front_time_step(
 	}
 	else
 	    dt[dim] = HUGE;
-	
-    if (debugging("time_step") || debugging("step_size"))
+	if (debugging("time_step") || debugging("step_size"))
 	{
 	    (void) printf("In f_max_front_time_step()\n");
 	    for (i = 0; i < dim; ++i)
@@ -657,18 +662,16 @@ EXPORT	void	f_set_max_front_speed(
 	    if (coords != NULL)
 	    {
 	    	for (j = 0; j < dim; ++j)
-            {
-                if (coords[j] < L[j] - h[j] ||
-                coords[j] > U[j] + h[j])
-                return;		/* sufficiently outside domain */
-                    MaxFrontSpeedCoords(fr)[i][j] = coords[j];
-             
-            }
+		{
+		    if (coords[j] < L[j] - h[j] ||
+			coords[j] > U[j] + h[j])
+			return;		/* sufficiently outside domain */
+	    	    MaxFrontSpeedCoords(fr)[i][j] = coords[j];
+		 
+		}
 	    }
-	    
-        Spfr(fr)[i] = fabs(spd);
-	    
-        if (state != NULL)
+	    Spfr(fr)[i] = fabs(spd);
+	    if (state != NULL)
         {
             ft_assign(MaxFrontSpeedState(fr)[i],state,fr->sizest);
         }

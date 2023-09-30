@@ -470,6 +470,34 @@ extern "C" {
    				HYPER_SURF **hs ,
    				double *crx_coords );
 
+/*! \fn boolean FT_NormalAtGridCrossing2(Front *front, int *icoords, GRID_DIRECTION dir, int comp, double *nor, HYPER_SURF **hs, double *crx_coords)
+ *  \ingroup GRIDINTFC
+    \brief Standing at grid icoords, looking to the direction dir, this
+     function looks for the nearest interface cross on the grid line segment.
+     The function returns YES if the crossing exists, in such case, the
+     crossing coordinates are copied to crx_coords, the corresponding
+     hyper surface (curce in 2D and surface in 3D) is assigned to hs,
+     and the normal vector to the side of comp. If no crossing exists, 
+     the function return NO;
+    \param front @b in	Pointer to Front.
+    \param icoords @b in	Grid point coordinate indices.
+    \param dir @b in	Direction to which the crossing is to be found.
+    \param comp @b in	Component (domain index) of the grid point at icoord.
+    \param nor @b out	normal vector at the crossing to the side of comp.
+    \param hs @b out	Crossing hyper surface (curve in 2D and surface in 3D).
+    \param hse @b out	Crossing hyper surface element (bond in 2D and triangle in 3D).
+    \param crx_coords @b out	Crossing coordinates.
+ */
+
+   IMPORT  boolean FT_NormalAtGridCrossing2(Front *front ,
+   				int *icoords ,
+   				GRID_DIRECTION  dir ,
+   				int  comp ,
+   				double *nor ,
+   				HYPER_SURF **hs ,
+   				HYPER_SURF_ELEMENT **hse ,
+   				double *crx_coords );
+
 /*! \fn void FT_ComputeVolumeFraction(Front *front, int num_phases, COMPONENT *compsCELL_PART *cell_part)
  *  \ingroup GRIDINTFC
     \brief  This function compute fraction volume of each grid cell of
@@ -528,14 +556,35 @@ extern "C" {
     \param crx_coords @b out	Crossing coordinates.
  */
 
-   IMPORT  boolean FT_StateStructAtGridCrossing(Front *front ,
+   IMPORT  boolean FT_StateStructAtGridCrossing(Front *front,
 				INTERFACE *grid_intfc,
    				int *icoords,
-   				GRID_DIRECTION  dir,
+   				GRID_DIRECTION dir,
    				int  comp,
    				POINTER *state,
    				HYPER_SURF **hs,
    				double *crx_coords);
+
+/*TMP will move when mature*/
+IMPORT  boolean FT_StateStructAtGridCrossing2(Front *front,
+                int *icoords,
+                GRID_DIRECTION dir,
+                int  comp,
+                POINTER *state,
+                HYPER_SURF **hs,
+                HYPER_SURF_ELEMENT **hse,
+                double *crx_coords);
+
+/*TMP will move when mature*/
+IMPORT  boolean FT_StateStructsAtGridCrossing(Front *front,
+				INTERFACE *grid_intfc,
+                int *icoords,
+                GRID_DIRECTION dir,
+                POINTER *sl,
+                POINTER *sr,
+                HYPER_SURF **hs,
+                HYPER_SURF_ELEMENT **hse,
+                double *crx_coords);
 
 /*! \fn boolean FT_StateVarAtGridCrossing(Front *front, INTERFACE *grid_intfc, int *icoords, GRID_DIRECTION dir, int comp, double (*state_func)(Locstate), double *ans, double *crx_coords)
  *  \ingroup GRIDINTFC
@@ -713,6 +762,26 @@ extern "C" {
  */
 
    IMPORT  boolean FT_NearestRectGridVarInRange(Front *front ,
+   				int comp , 
+				double *coords , 
+				double *var_array , 
+				int range,
+				double *ans);
+
+/*! \fn boolean FT_NearestOldRectGridVarInRange(Front *front, int comp, double *coords, double *var_array, int range, double *ans)
+ *  \ingroup GRIDINTFC
+    \brief Find the state variable on old grid intfc rectangular grid point which
+     has the same component as the input and is nearest to the input
+     coordinate. Return YES if such point is found, and NO if no such point 
+     is found. In the latter case, the value of the ans is set to zero.
+    \param front @b in	Pointer to Front.
+    \param comp @b in	Component in which the state should be interpolated.
+    \param var_array @b in	Array of the variable on the expanded dual grid.
+    \param range @b in	Rnage of search in number of grid cells.
+    \param ans @b out	Address of the interpolated variable.
+ */
+
+   IMPORT  boolean FT_NearestOldRectGridVarInRange(Front *front ,
    				int comp , 
 				double *coords , 
 				double *var_array , 
@@ -1322,16 +1391,6 @@ extern "C" {
     \param ... @b Pointers to the addresses of these items.
  */
    IMPORT  void FT_FreeThese(int n,...);
-
-/*TMP will move when mature*/
-IMPORT  boolean FT_StateStructAtGridCrossing2(Front *front ,
-                                int *icoords ,
-                                GRID_DIRECTION  dir ,
-                                int  comp ,
-                                POINTER *state ,
-                                HYPER_SURF **hs ,
-                                HYPER_SURF_ELEMENT **hse ,
-                                double *crx_coords );
 
 /*! \fn double FT_ComputeTotalVolumeFraction(Front *front, COMPONENT comp_of_vol)
  *  \ingroup GRIDINTFC

@@ -680,6 +680,8 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	paintAllGridPoint(TO_SOLVE);
 	setGlobalIndex();
 
+    clearGhostData();
+
     start_clock("setSmoothedProperties");
 	setSmoothedProperties();
 	stop_clock("setSmoothedProperties");
@@ -688,10 +690,14 @@ void Incompress_Solver_Smooth_2D_Cartesian::solve(double dt)
 	start_clock("computeAdvection");
     
     if (iFparams->extrapolate_advection)
+    {
 	    computeAdvectionTerm();
+    }
     else
+    {
         computeAdvection();
-	
+    }
+
 	stop_clock("computeAdvection");
     if (debugging("check_div") || debugging("step_size"))
 	{
@@ -1002,18 +1008,35 @@ void Incompress_Solver_Smooth_2D_Cartesian::computeDiffusionCN(void)
                         }
                         else
                         {
-                            U_nb[nb] = ghost_data[nb][index].vel[l];
                             /*
-                            //Apply slip boundary condition
-                            //nb = 0; idir = 0, nbr = 0;
-                            //nb = 1; idir = 0, nbr = 1;
-                            //nb = 2; idir = 1, nbr = 0;
-                            //nb = 3; idir = 1, nbr = 1;
-                            double v_slip[MAXD] = {0.0};
-                            int idir = nb/2; int nbr = nb%2;
-                            setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
-                            U_nb[nb] = v_slip[l];
+                            //TODO: Temporary work around in the case we do not use eddy viscosity
+                            //      (do not call computeVremanEddyViscosity() specifically) and the
+                            //      ghost_data array does not get populated when setSmoothedProperties()
+                            //      is called at beginning of time step.
+                            //
+                            //      NEW WORKAROUND: now calling computeVelocityGradient() in
+                            //      setSmoothedProperties() when eddy viscosity isn't used so that
+                            //      the ghost_data array gets populated.
+                            
+                            if (iFparams->use_eddy_visc == YES)
+                            {
+                                U_nb[nb] = ghost_data[nb][index].vel[l];
+                            }
+                            else
+                            {
+                                //Apply slip boundary condition
+                                //nb = 0; idir = 0, nbr = 0;
+                                //nb = 1; idir = 0, nbr = 1;
+                                //nb = 2; idir = 1, nbr = 0;
+                                //nb = 3; idir = 1, nbr = 1;
+                                double v_slip[MAXD] = {0.0};
+                                int idir = nb/2; int nbr = nb%2;
+                                setSlipBoundary(icoords,idir,nbr,comp,hs,intfc_state,field->vel,v_slip);
+                                U_nb[nb] = v_slip[l];
+                            }
                             */
+
+                            U_nb[nb] = ghost_data[nb][index].vel[l];
                         }
                         
                         auto grad_phi_tangent = computeGradPhiTangential(

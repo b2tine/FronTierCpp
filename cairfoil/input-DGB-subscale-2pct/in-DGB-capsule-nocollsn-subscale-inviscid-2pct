@@ -1,0 +1,252 @@
+Domain limit in 0-th dimension: -1 1
+Domain limit in 1-th dimension: -1 1
+Domain limit in 2-th dimension:  -0.5 5.5
+Computational grid: 250 250 625
+
+Lower boundary in 0-th dimension: DIRICHLET_BOUNDARY 
+Upper boundary in 0-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 1-th dimension: DIRICHLET_BOUNDARY
+Lower boundary in 2-th dimension: DIRICHLET_BOUNDARY
+Upper boundary in 2-th dimension: DIRICHLET_BOUNDARY
+
+For lower boundary in 0-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+For upper boundary in 0-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+For lower boundary in 1-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+For upper boundary in 1-th dimension
+Enter type of Dirichlet boundary: FLOW_THROUGH
+
+For lower boundary in 2-th dimension
+Enter type of Dirichlet boundary: CONSTANT_STATE
+Enter velocity: 0 0 688.69
+Enter pressure: 1562.24
+Enter temperature: 294.93
+For upper boundary in 2-th dimension
+Enter type of Dirichlet boundary: SUPERSONIC_OUTFLOW
+
+Start test time control parameters
+Max time: 1.0
+Max step: 35000
+Print interval: 0.0005
+Movie frame interval: 0.00001
+CFL factor: 0.25
+Redistribution interval: 10000000
+type yes to turn off auto-redistribution: y
+
+//////////////////////////////////////////////////////////
+///////////  Start parameters for cFluid  ////////////////
+//////////////////////////////////////////////////////////
+
+Enter problem type: CHANNEL_FLOW
+Enter numerical scheme for interior solver: WENO_4th_ORDER
+Enter order of point propagator: 4
+
+Enter gamma, pinf, einf of ambient air: 1.4 0 0
+Enter the specific gas constant: 287.058
+Enter the Prandtl number: 0.71
+
+Enter the reference molecular viscosity: 1.716e-05
+Enter the reference temperature: 273.15
+Enter the effective temperature: 110.4
+
+Enter density and pressure of ambient air: 0.0184527 1562.24
+
+Enter yes to set initial velocity: yes
+Enter initial velocity: 0 0 688.69
+
+Enter gravity: 0 0 0
+
+Type yes to track the interface: no
+
+Entering yes to turn off fluid solver: no
+
+/////////////////////////////////////////////////////
+
+Enter yes for inviscid solver: no
+
+Enter yes to use eddy viscosity: yes
+Enter eddy viscosity model: Vreman
+Enter model constant: 0.025
+
+Enter the turbulent Prandtl number: 0.91
+
+
+//////////////////////////////////////////////////////////
+/////////     Start parameters for modules    ////////////
+//////////////////////////////////////////////////////////
+
+Enter yes for parachute system: yes
+Enter the number of fabric optimization rounds: 0
+
+Enter yes to add rigid body: y
+Enter the number of rigid bodies: 1
+Available type of rigid body include:
+        Sphere (S)
+        Box (B)
+        Human (H)
+        Cylinder (C)
+Enter type of rigid body: O
+Enter nose of the capsule: 0 0 1.0099854
+Enter radius of the capsule: 0.052
+Rigid body can be fixed (F) or Movable (M)
+The default is Movable (M)
+Type yes if the rigid body is fixed: yes
+Type yes to use CGAL for rigid body: yes
+
+For rigid body 1
+Type yes if motion is preset: yes
+Enter type of dynamic motion: COM_MOTION
+Enter the direction of motion: 0 0 1
+Enter the total mass for rigid body: 1300
+Enter the initial center of mass for rigid body: 0 0 1.031
+Enter the initial center of mass velocity: 0 0 0
+
+Enter number of canopy surfaces: 1
+Enter yes for complex connection: n
+
+Available canopy surface types are:
+        FLAT (F)
+        PARABOLIC (P)
+Enter canopy surface type: F
+Available types of canopy boundaries are:
+        Circular (C)
+        Rectangular (R)
+        Elliptic (E)
+        Cross (X)
+        Circular with belt (S)
+Enter type of canopy boundary: S
+Enter the height of the plane: 2.19867
+Enter circle center: 0 0
+Enter circle radius: 0.201
+Enter yes to attach gores to canopy: no
+Enter yes to cut a vent on canopy: yes
+Enter radius of the vent: 0.01422
+Enter yes to attach strings to canopy: yes
+Enter number of chords: 24
+
+Enter the length of the drape: 0.0484
+Enter the gap between canopy and drape: 0.0168
+
+Enter yes to install the strings to RGB: no
+Enter initial position of load: 0 0 1.22706
+Enter yes to fix the load node: yes
+
+Enter yes if connecting to disk gap band: yes
+
+Enter yes for string-fluid interaction: no
+Enter string radius: 0.000495
+Enter string linear density: 0.000827
+Enter drag coefficient: 0.5
+Enter fluid force scaling factor: 1.0
+
+Enter yes for string bending force: no
+
+Enter yes to fix new load node: no
+Enter yes to connect to RGB: yes
+Enter the body index of the target RGB: 1
+Enter yes to skip rg_nodes in x direction for 1: yes
+Enter yes to skip rg_nodes in y direction for 1: yes
+
+
+
+//////////////////////////////////////////////////////////
+//////  Start parameters for spring-mass system   ////////
+//////////////////////////////////////////////////////////
+
+Enter yes to use porosity: yes
+Enter fabric porosity: 0.08
+Enter porosity ghost fluid method: DARCY
+
+Enter viscous parameter: 1.3152e+11
+                                    XXXEnter viscous parameterXXX: 8.3516e+06
+                                    XXXEnter viscous parameterXXX: 152.1645
+Enter inertial parameter: 0
+                                    XXXEnter inertial parameterXXX: 168.1334
+Enter permeability: 7.6033e-12
+
+Enter interior propagator: p
+Enter interior sub step number: 2
+
+Enter yes for collision substepping: no
+Enter nsub per collision step: 25
+
+Enter area density of canopy: 0.038989
+Enter timestep to activate FSI: 1
+
+Enter yes to use total mass: yes
+Enter fabric total mass: 0.029083
+Enter string total mass: 0.0328
+
+Enter fabric spring constant: 79164
+Enter fabric damping constant: 0.05
+                                                XXXEnter fabric damping constantXXX: 0.01
+Enter fabric bending stiffness constant: 0.0001
+Enter fabric bending damping constant: 0.0000001
+Enter fabric friction constant: 0.0
+Enter fabric thickness: 0.0000635
+Enter fabric rounding tolerance: 0.00001
+Enter fabric band spring constant: 79164
+        XXXEnter fabric band spring constantXXX: 460769
+
+Enter string spring constant: 35661
+Enter string damping constant: 0.05
+                                                XXXEnter string damping constantXXX: 0.01
+Enter string bending stiffness constant: 0.0001
+Enter string friction constant: 0.0
+Enter string thickness: 0.00099
+Enter string rounding tolerance: 0.000004
+Enter diskgap string spring constant: 85000
+    XXXEnter diskgap string spring constantXXX: 111506
+                XXXEnter diskgap string spring constantXXX: 985120.709
+
+Enter strain limit: 0.03
+Enter compressive strain limit: 0.01
+Enter strain rate limit: 0.075
+Enter strain velocity constraint tolerance: 0.25
+
+Type yes to perturb the surface: n
+
+//////////////////////////////////////////////////////////
+/////////            Movie Options            ////////////
+//////////////////////////////////////////////////////////
+
+Type y to make yz cross section movie: n
+Type y to make xz cross section movie: n
+Type y to make xy cross section movie: n
+
+Type y to make scalar density field movie: y
+Type y to make scalar pressure field movie: y
+Type y to make scalar viscosity field movie: y
+Type y to make scalar eddy viscosity field movie: y
+Type y to make scalar temperature field movie: y
+Type y to make scalar turb kinetic energy field movie: y
+
+Type y to make vector velocity field movie: y
+Type y to make vector vorticity field movie: n
+
+/////////////////////////////
+//////  Debugging   ////////
+///////////////////////////
+
+Enter yes for debugging: yes
+
+Enter the debugging stringXXX: rigid_body_intfc
+
+Enter the debugging string: max_speed
+Enter the debugging string: cfluid_dt
+Enter the debugging string: elastic_params
+Enter the debugging string: collision_off
+
+Enter the debugging string: skip_strainvel
+Enter the debugging string: proximity
+Enter the debugging string: collision
+Enter the debugging stringXXX: strain_limiting
+
+Enter the debugging string: bendforce_off
+Enter the debugging stringXXX: no_viscflux
+
+Enter the debugging string: Xtrace

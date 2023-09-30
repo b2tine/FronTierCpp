@@ -158,6 +158,13 @@ enum {
 
 typedef unsigned char byte;	/* Generic object of size 1, sizeof(byte) = 1 */
 
+/*
+#if defined(__cplusplus)
+#define NO                 FALSE
+#define FUNCTION_FAILED    FALSE
+#define YES        TRUE
+#define FUNCTION_SUCCEEDED TRUE
+#else  defined(__cplusplus) */
 enum _boolean {
     FALSE              = 0,
     NO                 = FALSE,

@@ -1219,7 +1219,7 @@ EXPORT 	boolean track_comp_through_crxings3d(
     {
         //TODO: Complete ramifications of this not fully understood
         //
-        //THIS ALLOWS PARALLEL FABRIC RUN
+        //THIS ALLOWS PARALLEL FABRIC RUN (WITHOUT FLUID)
         return fill_default_component(smin,smax,gmax,intfc);
     }
 
@@ -1794,7 +1794,42 @@ EXPORT	void remove_unphysical_crxings(
 	    (void) printf("Leaving remove_unphysical_crxings()\n");
 }	/* end remove_unphysical_crxings */
 
-EXPORT	boolean next_ip_in_dir(
+EXPORT int next_index_in_dir(
+        const int* icoords,
+        GRID_DIRECTION dir,
+        const int* top_gmax,
+        int dim)
+{
+	int icrds[MAXD];
+	for (int i = 0; i < dim; ++i)
+	    icrds[i] = icoords[i];
+
+    switch (dir)
+    {
+        case WEST:
+            icrds[0] -= 1;
+            break;
+        case EAST:
+            icrds[0] += 1;
+            break;
+        case SOUTH:
+            icrds[1] -= 1;
+            break;
+        case NORTH:
+            icrds[1] += 1;
+            break;
+        case LOWER:
+            icrds[2] -= 1;
+            break;
+        case UPPER:
+            icrds[2] += 1;
+    }
+
+    int index = d_index(icrds,top_gmax,dim);
+	return index;
+}
+
+EXPORT boolean next_ip_in_dir(
 	const int *ip,
 	GRID_DIRECTION dir,
 	int       *ipn,
@@ -4790,6 +4825,7 @@ EXPORT 	int insert_grid_intfc_crossings3d(
 	    t = T->tris[k][j][i];
 	    s = T->surfaces[k][j][i];
             icrds[0] = i; icrds[1] = j; icrds[2] = k;
+
 	    insert_block_crossings(grid_intfc,rgr,crx_store,seg_crx_lists,
 			seg_crx_count,t,s,nt,icrds,&crx_index);
 	}

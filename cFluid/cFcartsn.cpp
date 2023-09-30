@@ -25,72 +25,54 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  * 		G_CARTESIAN.c
  *******************************************************************/
 #include "cFluid.h"
+#include "cFturb.h"
 
-class ToFill{
-public:
-int icoords[3];
+
+struct ToFill
+{
+    int icoords[3];
 };
 
-EXPORT  void    tecplot_interface_states(const char*, INTERFACE	*);
+EXPORT void tecplot_interface_states(const char*, INTERFACE*);
+
+static double (*getStateVel[MAXD])(Locstate) =
+               {getStateXvel,getStateYvel,getStateZvel};
 
 static double (*getStateMom[MAXD])(Locstate) =
                {getStateXmom,getStateYmom,getStateZmom};
+
 static void printInputStencil(SWEEP,int);
 
-//----------------------------------------------------------------
-//		L_RECTANGLE
-//----------------------------------------------------------------
-
-L_RECTANGLE::L_RECTANGLE(): m_index(-1), comp(-1)
-{
-}
-
-void L_RECTANGLE::setCoords(
-	double *coords,
-	int dim)
-{
-	int i;
-	for (i = 0; i < dim; ++i)
-	    m_coords[i] = coords[i];
-}
 //--------------------------------------------------------------------------
 // 		G_CARTESIAN
 //--------------------------------------------------------------------------
 
-G_CARTESIAN::~G_CARTESIAN()
-{
-}
-
-//---------------------------------------------------------------
-//	initMesh
-// include the following parts
-// 1) setup cell_center
-//---------------------------------------------------------------
 void G_CARTESIAN::initMesh(void)
 {
 	int i,j,k, index;
-	double coords[2];
-	int num_cells;
+	double coords[MAXD];
 
 	// init cell_center
-	L_RECTANGLE       rectangle;
+	L_RECTANGLE rectangle;
 
 	if (debugging("trace"))
 	    (void) printf("Entering g_cartesian.initMesh()\n");
-	/*TMP*/
+	
+    /*TMP*/
+    //TODO: Need input file options for these
 	min_dens = 0.0001;
 	min_pres = 0.0001;
+
 	FT_MakeGridIntfc(front);
 	setDomain();
-	num_cells = 1;
+	
+    int num_cells = 1;
 	for (i = 0; i < dim; ++i)
 	{
 	    num_cells *= (top_gmax[i] + 1);
 	}
 	cell_center.insert(cell_center.end(),num_cells,rectangle);
 	
-	// setup vertices
-	// left to right, down to up
 	switch (dim)
 	{
 	case 1:
@@ -132,7 +114,8 @@ void G_CARTESIAN::initMesh(void)
 	
 	setComponent();
 	FT_FreeGridIntfc(front);
-	if (debugging("trace"))
+	
+    if (debugging("trace"))
 	    (void) printf("Leaving g_cartesian.initMesh()\n");
 }
 
@@ -153,206 +136,68 @@ void G_CARTESIAN::setComponent(void)
 	int		size = (int)cell_center.size();
 	
 	// cell center components
-	if(state == NULL)
+	if (state == NULL)
+    {
 	    FT_ScalarMemoryAlloc((POINTER*)&state,sizeof(STATE));
+    }
 
 	for (i = 0; i < size; i++)
 	{
 	    icoords = cell_center[i].icoords;
 	    coords = cell_center[i].m_coords;
+
 	    old_comp = cell_center[i].comp;
 	    new_comp = top_comp[i];
-	    if (eqn_params->tracked && cell_center[i].comp != -1 &&
-		cell_center[i].comp != top_comp[i] && gas_comp(new_comp))
-	    {
-		if (!FrontNearestIntfcState(front,coords,new_comp,
-				(POINTER)state))
-		{
-		    (void) printf("In setComponent()\n");
-		    (void) printf("FrontNearestIntfcState() failed\n");
-		    (void) printf("old_comp = %d new_comp = %d\n",
-					old_comp,new_comp);
-		    clean_up(ERROR);
-		}
+	    
+        if (eqn_params->tracked && cell_center[i].comp != -1 &&
+		    cell_center[i].comp != top_comp[i] && gas_comp(new_comp))
+        {
+            if (!FrontNearestIntfcState(front,coords,new_comp,
+                    (POINTER)state))
+            {
+                (void) printf("In setComponent()\n");
+                (void) printf("FrontNearestIntfcState() failed\n");
+                (void) printf("old_comp = %d new_comp = %d\n", old_comp,new_comp);
+                LOC(); clean_up(ERROR);
+            }
 
-		//GFM
-		state->dim = dim;
-		state->eos = &eqn_params->eos[new_comp];
-		if (gas_comp(old_comp) && gas_comp(new_comp))
-		{
-		    if(new_comp == GAS_COMP1)
-			ind = 0;
-		    else
-			ind = 1;
+            //GFM
+            state->dim = dim;
+            state->eos = &eqn_params->eos[new_comp];
+            if (gas_comp(old_comp) && gas_comp(new_comp))
+            {
+                if(new_comp == GAS_COMP1)
+                    ind = 0;
+                else
+                    ind = 1;
 
-                    if (Gdens[ind][i] != 0.0) // Not unset
+                if (Gdens[ind][i] != 0.0) // Not unset
+                {
+                    state->dens = Gdens[ind][i];
+                    state->pres = Gpres[ind][i];
+                    for(j = 0; j < dim; ++j)
                     {
-		        state->dens = Gdens[ind][i];
-		        state->pres = Gpres[ind][i];
-		        for(j = 0; j < dim; ++j)
-			    state->momn[j] = Gvel[ind][j][i]*Gdens[ind][i];
-		        state->engy = EosEnergy(state);
+                        state->momn[j] = Gvel[ind][j][i]*Gdens[ind][i];
                     }
-		}
+                    state->engy = EosEnergy(state);
+                }
+            }
 
-		dens[i] = state->dens;
-		pres[i] = state->pres;
-		engy[i] = state->engy;
-		for (j = 0; j < dim; ++j)
-		    momn[j][i] = state->momn[j];
-	    }
-	    cell_center[i].comp = top_comp[i];
+            dens[i] = state->dens;
+            pres[i] = state->pres;
+            engy[i] = state->engy;
+
+            for (j = 0; j < dim; ++j)
+            {
+                momn[j][i] = state->momn[j];
+            }
+        }
+	    
+        cell_center[i].comp = top_comp[i];
 	}
 }	/* end setComponent() */
 
-void G_CARTESIAN::setInitialIntfc(
-	LEVEL_FUNC_PACK *level_func_pack,
-	char *inname)
-{
-	dim = front->rect_grid->dim;
-	eqn_params = (EQN_PARAMS*)front->extra1;
-	switch (eqn_params->prob_type)
-	{
-	case TWO_FLUID_RT:
-	case TWO_FLUID_RM:
-	    initSinePertIntfc(level_func_pack,inname);
-	    break;
-	case TWO_FLUID_RM_RAND:
-	    initRandPertIntfc(level_func_pack,inname);
-	    break;
-	case TWO_FLUID_BUBBLE:
-	case FLUID_SOLID_CIRCLE:
-	    initCirclePlaneIntfc(level_func_pack,inname);
-	    break;
-	case IMPLOSION:
-	    initImplosionIntfc(level_func_pack,inname);
-	    break;
-	case MT_FUSION:
-	    initMTFusionIntfc(level_func_pack,inname);
-	    break;
-	case PROJECTILE:
-	    initProjectileIntfc(level_func_pack,inname);
-	    break;
-	case FLUID_SOLID_RECT:
-	    initRectPlaneIntfc(level_func_pack,inname);
-	    break;
-	case FLUID_SOLID_TRIANGLE:
-	    initTrianglePlaneIntfc(level_func_pack,inname);
-	    break;
-	case FLUID_SOLID_CYLINDER:
-             initCylinderPlaneIntfc(level_func_pack,inname);
-             break;
-	case RIEMANN_PROB:
-	case ONED_BLAST:
-	case ONED_SSINE:
-	case ONED_ASINE:
-	    initRiemannProb(level_func_pack,inname);
-	    break;
-	case OBLIQUE_SHOCK_REFLECT:
-	    initObliqueIntfc(level_func_pack,inname);
-	    break;
-	default:
-	    (void) printf("Problem type not implemented, code needed!\n");
-	    clean_up(ERROR);
-	}
-}	/* end setInitialIntfc */
-
-void G_CARTESIAN::setProbParams(char *inname)
-{
-	dim = front->rect_grid->dim;
-	eqn_params = (EQN_PARAMS*)front->extra1;
-	switch (eqn_params->prob_type)
-	{
-	case TWO_FLUID_RT:
-	    setRayleiTaylorParams(inname);
-	    break;
-	case TWO_FLUID_RM:
-	case TWO_FLUID_RM_RAND:
-	    setRichtmyerMeshkovParams(inname);
-	    break;
-	case TWO_FLUID_BUBBLE:
-	    setBubbleParams(inname);
-	    break;
-	case IMPLOSION:
-	    setImplosionParams(inname);
-	    break;
-	case MT_FUSION:
-	    setMTFusionParams(inname);
-	    break;
-	case PROJECTILE:
-	case FLUID_SOLID_CIRCLE:
-	case FLUID_SOLID_RECT:
-	case FLUID_SOLID_TRIANGLE:
-	case FLUID_SOLID_CYLINDER:
-	    setProjectileParams(inname);
-	    break;
-	case RIEMANN_PROB:
-	    setRiemProbParams(inname);
-	    break;
-	case ONED_BLAST:
-	case ONED_SSINE:
-	case ONED_ASINE:
-	    setOnedParams(inname);
-	    break;
-	case OBLIQUE_SHOCK_REFLECT:
-	    setRichtmyerMeshkovParams(inname);
-	    break;
-	default:
-	    printf("In setProbParams(), unknown problem type!\n");
-	    clean_up(ERROR);
-	}
-}	/* end setProbParams */
-
-void G_CARTESIAN::setInitialStates()
-{
-	switch (eqn_params->prob_type)
-	{
-	case TWO_FLUID_RT:
-	    initRayleiTaylorStates();
-	    break;
-	case TWO_FLUID_RM:
-	case TWO_FLUID_RM_RAND:
-	    initRichtmyerMeshkovStates();
-	    break;
-	case TWO_FLUID_BUBBLE:
-	    initBubbleStates();
-	    break;
-	case IMPLOSION:
-	    initImplosionStates();
-	    break;
-	case MT_FUSION:
-	    initMTFusionStates();
-	    break;
-	case PROJECTILE:
-        case FLUID_SOLID_CIRCLE:
-        case FLUID_SOLID_RECT:
-        case FLUID_SOLID_TRIANGLE:
-        case FLUID_SOLID_CYLINDER:
-	    initProjectileStates();
-	    break;
-	case RIEMANN_PROB:
-	    initRiemProbStates();
-	    break;
-	case ONED_BLAST:
-	    initBlastWaveStates();
-	    break;
-	case ONED_SSINE:
-	    initShockSineWaveStates();
-	    break;
-	case ONED_ASINE:
-	    initAccuracySineWaveStates();
-	    break;
-	case OBLIQUE_SHOCK_REFLECT:
-	    initRichtmyerMeshkovStates();
-	    break;
-	default:
-	    (void) printf("In setInitialStates(), case not implemented!\n");
-	    clean_up(ERROR);
-	}
-	copyMeshStates();
-}	/* end setInitialStates */
-
-void G_CARTESIAN::computeAdvection(void)
+void G_CARTESIAN::advanceSolution(void)
 {
 	int order;
 	switch (eqn_params->num_scheme)
@@ -375,8 +220,9 @@ void G_CARTESIAN::computeAdvection(void)
 	default:
 	    order = -1;
 	}
-	solveRungeKutta(order);
-}	/* end computeAdvection */
+	
+    solveRungeKutta(order);
+}	/* end advanceSolution */
 
 
 void G_CARTESIAN::solveRungeKutta(int order)
@@ -384,7 +230,6 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	static SWEEP *st_field,st_tmp;
 	static FSWEEP *st_flux;
 	static double **a,*b;
-	double delta_t;
 	int i,j;
 
 	/* Allocate memory for Runge-Kutta of order */
@@ -396,17 +241,19 @@ void G_CARTESIAN::solveRungeKutta(int order)
 
 	    FT_VectorMemoryAlloc((POINTER*)&st_field,order,sizeof(SWEEP));
 	    FT_VectorMemoryAlloc((POINTER*)&st_flux,order,sizeof(FSWEEP));
+
 	    for (i = 0; i < order; ++i)
 	    {
-	    	allocMeshVst(&st_tmp);
 	    	allocMeshVst(&st_field[i]);
 	    	allocMeshFlux(&st_flux[i]);
 	    }
+        allocMeshVst(&st_tmp); //only needs to be called once.
+
 	    /* Set coefficient a, b, c for different order of RK method */
 	    switch (order)
 	    {
 	    case 1:
-		b[0] = 1.0;
+	    	b[0] = 1.0;
 	    	break;
 	    case 2:
 	    	a[0][0] = 1.0;
@@ -425,9 +272,9 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	    	clean_up(ERROR);
 	    }
 	}
-	delta_t = m_dt;
-
+	
 	/* Compute flux and advance field */
+	double delta_t = m_dt;
 
 	copyToMeshVst(&st_field[0]);
 	computeMeshFlux(st_field[0],&st_flux[0],delta_t);
@@ -435,30 +282,37 @@ void G_CARTESIAN::solveRungeKutta(int order)
 	for (i = 0; i < order-1; ++i)
 	{
 	    copyMeshVst(st_field[0],&st_field[i+1]);
-	    for (j = 0; j <= i; ++j)
+	    
+        for (j = 0; j <= i; ++j)
 	    {
-		if (a[i][j] != 0.0)
-		    addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
+		    if (a[i][j] != 0.0)
+            {
+                addMeshFluxToVst(&st_field[i+1],st_flux[j],a[i][j]);
+            }
 	    }
+
 	    computeMeshFlux(st_field[i+1],&st_flux[i+1],delta_t);
 	}
-	for (i = 0; i < order; ++i)
+	
+    for (i = 0; i < order; ++i)
 	{
 	    if (b[i] != 0.0)
-		addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
+	    {
+            addMeshFluxToVst(&st_field[0],st_flux[i],b[i]);
+        }
 	}
+
 	copyFromMeshVst(st_field[0]);
+
 	stop_clock("solveRungeKutta");
 }	/* end solveRungeKutta */
 
 void G_CARTESIAN::computeMeshFlux(
-	SWEEP m_vst,
-	FSWEEP *m_flux,
+	SWEEP& m_vst,
+	FSWEEP* m_flux,
 	double delta_t)
 {
-	int dir;
-
-	if(eqn_params->tracked)
+	if (eqn_params->tracked)
 	{
 	    start_clock("get_ghost_state");
 	    get_ghost_state(m_vst, 2, 0);
@@ -471,11 +325,18 @@ void G_CARTESIAN::computeMeshFlux(
 	}
 
 	resetFlux(m_flux);
-	for (dir = 0; dir < dim; ++dir)
+	
+	for (int dir = 0; dir < dim; ++dir)
 	{
 	    addFluxInDirection(dir,&m_vst,m_flux,delta_t);
 	}
-	addSourceTerm(m_vst,m_flux,delta_t);
+    
+	if (!eqn_params->is_inviscid)
+    {
+        addViscousFlux(&m_vst,m_flux,delta_t);
+    }
+	
+    addSourceTerm(&m_vst,m_flux,delta_t);
 }	/* end computeMeshFlux */
 
 void G_CARTESIAN::resetFlux(FSWEEP *m_flux)
@@ -498,7 +359,6 @@ void G_CARTESIAN::addFluxInDirection(
 	double delta_t)
 {
 	int i,j,icoords[MAXD];
-        int num_thread = get_num_of_thread();
 	switch (dim)
 	{
 	case 1:
@@ -663,123 +523,165 @@ void G_CARTESIAN::scatMeshFlux(FSWEEP *m_flux)
 	}
 }	/* end scatMeshFlux */
 
-void G_CARTESIAN::addSourceTerm(
+//TODO: WHY DID I CHANGE THIS TO A POINTER INSTEAD OF USING CONST REFERENCE?
+//      I THINK I USED IT FOR SOMETHING THAT ENDED UP NOT WORKING OUT ...
+//      IT SHOULD BE PROBABLY BE CHANGED BACK.
+//
+/*void G_CARTESIAN::addSourceTerm(
 	const SWEEP& m_vst,
 	FSWEEP *m_flux,
+	double delta_t)
+*/
+void G_CARTESIAN::addSourceTerm(
+	SWEEP* m_vst,
+	FSWEEP* m_flux,
 	double delta_t)
 {
 	int i,j,k,l,index;
 	double *gravity = eqn_params->gravity;
 
+    double** f_surf = field.f_surf;
+
 	switch (dim)
 	{
 	case 1:
-            for (i = imin[0]; i <= imax[0]; i++)
+        for (i = imin[0]; i <= imax[0]; i++)
+        {
+            index = d_index1d(i,top_gmax);
+            if (!gas_comp(top_comp[index]))
             {
-		index = d_index1d(i,top_gmax);
-		if (!gas_comp(top_comp[index]))
-		{
-		    for (l = 0; l < dim; ++l)
-		    {
-		    	m_flux->momn_flux[l][index] = 0.0; 
-		    	m_flux->engy_flux[index] = 0.0; 
-		    }
-		}
-		else
-		{
-		    for (l = 0; l < dim; ++l)
-		    {
-		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst.dens[index];
-		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst.momn[l][index];
-		    }
-		}
-	    }
+                for (l = 0; l < dim; ++l)
+                {
+                    m_flux->momn_flux[l][index] = 0.0; 
+                    m_flux->engy_flux[index] = 0.0; 
+                }
+            }
+            else
+            {
+                for (l = 0; l < dim; ++l)
+                {
+                    m_flux->momn_flux[l][index] += delta_t*gravity[l]*m_vst->dens[index];
+                    m_flux->engy_flux[index] += delta_t*gravity[l]*m_vst->momn[l][index];
+                }
+            }
+        }
 	    break;
+
 	case 2:
-            for (j = imin[1]; j <= imax[1]; j++)
-            for (i = imin[0]; i <= imax[0]; i++)
+        for (j = imin[1]; j <= imax[1]; j++)
+        for (i = imin[0]; i <= imax[0]; i++)
+        {
+            index = d_index2d(i,j,top_gmax);
+            if (!gas_comp(top_comp[index]))
             {
-		index = d_index2d(i,j,top_gmax);
-		if (!gas_comp(top_comp[index]))
-		{
-		    for (l = 0; l < dim; ++l)
-		    {
-		    	m_flux->momn_flux[l][index] = 0.0; 
-		    	m_flux->engy_flux[index] = 0.0; 
-		    }
-		}
-		else
-		{
-		    for (l = 0; l < dim; ++l)
-		    {
-		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst.dens[index];
-		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst.momn[l][index];
-		    }
-		}
+                for (l = 0; l < dim; ++l)
+                {
+                    m_flux->momn_flux[l][index] = 0.0; 
+                    m_flux->engy_flux[index] = 0.0; 
+                }
+            }
+            else
+            {
+                for (l = 0; l < dim; ++l)
+                {
+                    m_flux->momn_flux[l][index] += delta_t*gravity[l]*m_vst->dens[index];
+                    m_flux->engy_flux[index] += delta_t*gravity[l]*m_vst->momn[l][index];
+                }
+            }
 	    }
 	    break;
+
 	case 3:
-            for (k = imin[2]; k <= imax[2]; k++)
-            for (j = imin[1]; j <= imax[1]; j++)
-            for (i = imin[0]; i <= imax[0]; i++)
+        for (k = imin[2]; k <= imax[2]; k++)
+        for (j = imin[1]; j <= imax[1]; j++)
+        for (i = imin[0]; i <= imax[0]; i++)
+        {
+            index = d_index3d(i,j,k,top_gmax);
+            if (!gas_comp(top_comp[index]))
             {
-		index = d_index3d(i,j,k,top_gmax);
-		if (!gas_comp(top_comp[index]))
-		{
-		    for (l = 0; l < dim; ++l)
-		    {
-		    	m_flux->momn_flux[l][index] = 0.0; 
-		    	m_flux->engy_flux[index] = 0.0; 
-		    }
-		}
-		else
-		{
-		    for (l = 0; l < dim; ++l)
-		    {
-		    	m_flux->momn_flux[l][index] += 
-				delta_t*gravity[l]*m_vst.dens[index];
-		    	m_flux->engy_flux[index] += 
-				delta_t*gravity[l]*m_vst.momn[l][index];
-		    }
-		}
+                for (l = 0; l < dim; ++l)
+                {
+                    m_flux->momn_flux[l][index] = 0.0; 
+                    m_flux->engy_flux[index] = 0.0; 
+                }
+            }
+            else
+            {
+                for (l = 0; l < dim; ++l)
+                {
+                    m_flux->momn_flux[l][index] += delta_t*gravity[l]*m_vst->dens[index];
+                    m_flux->engy_flux[index] += delta_t*gravity[l]*m_vst->momn[l][index];
+                }
+                
+                //TODO: energy flux dot product with force?
+                for (l = 0; l < dim; ++l)
+                {
+                    m_flux->momn_flux[l][index] += delta_t*f_surf[l][index];
+                        //m_flux->engy_flux[index] += delta_t*f_surf[l][index]*vel[l][index];
+                }
+            }
 	    }
+        break;
 	}
-	
 }	/* end addSourceTerm */
 
-// for initial condition: 
-// 		setInitialCondition();	
-// this function should be called before solve()
-// for the source term of the momentum equation: 	
-// 		computeSourceTerm();
 void G_CARTESIAN::solve(double dt)
 {
 	m_dt = dt;
-	max_speed = 0.0;
+    max_speed = 0.0;
 
-	if (debugging("trace"))
-	    printf("Entering solve()\n");
+	if (debugging("trace")) printf("Entering solve()\n");
 	start_clock("solve");
-	setDomain();
-	appendOpenEndStates(); /* open boundary test */
-	scatMeshStates();
-
-	adjustGFMStates();
-	setComponent();
 	
+    setDomain();
+
+     
+    static bool first = true;
+    if (first)
+    {
+        computeDynamicViscosity();
+        first = false;
+    }
+
+    //TODO: Precompute wall shear stress magnitudes
+    //      (which are assumed to be constant over the time step)
+    //
+    //      Note that the wall shear stress  {\tau}_{wall} * (u_{T} / |u_{T}|)
+    //      will not remain constant since it is computed using the instantaneous
+    //      tangential velocity.
+    //
+    //      Just the magnitude of the wall stress is assumed to remain constant,
+    //      and it can be interpreted as an average value over the time step.
+
+    if (!eqn_params->is_inviscid)
+    {
+        
+        //TODO: implement this
+        //
+        //computeWallShearStressMagnitudes();
+
+
+        computeSGSTerms();
+    }
+    ///////////////////////////////////////////////////////////////////////////
+
+    scatMeshStates();
+	adjustGFMStates();
+    setComponent();
+
+    addImmersedForce();
+
 	if (debugging("trace"))
 	    printf("Passed setComponent()\n");
 
-	// 1) solve for intermediate velocity
-	start_clock("computeAdvection");
-	computeAdvection();
-	if (debugging("trace"))
+	start_clock("advanceSolution");
+
+	advanceSolution();
+
+	stop_clock("advanceSolution");
+	
+    if (debugging("trace"))
 	    printf("max_speed after computeAdvection(): %20.14f\n",max_speed);
-	stop_clock("computeAdvection");
 	
 	if (debugging("sample_velocity"))
 	{
@@ -790,26 +692,20 @@ void G_CARTESIAN::solve(double dt)
 	copyMeshStates();
 	stop_clock("copyMeshStates");
 
-	setAdvectionDt();
-	stop_clock("solve");
-	if (debugging("trace"))
-	    printf("Leaving solve()\n");
+	setMaxTimestep();
+	
+    stop_clock("solve");
+	if (debugging("trace")) printf("Leaving solve()\n");
 }	/* end solve */
 
 
-// check http://en.wikipedia.org/wiki/Bilinear_interpolation
 void G_CARTESIAN::getVelocity(double *p, double *U)
 {
-        double **vel = eqn_params->vel;
-
-        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[0],getStateXvel,&U[0],
-					NULL);
-        if (dim > 1)
-            FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[1],getStateYvel,&U[1],
-					NULL);
-        if (dim > 2)
-            FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[2],getStateZvel,&U[2],
-					NULL);
+    double **vel = eqn_params->vel;
+    for (int i = 0; i < dim; ++i)
+    {
+        FT_IntrpStateVarAtCoords(front,NO_COMP,p,vel[i],getStateVel[i],&U[i],nullptr);
+    }
 }
 
 void G_CARTESIAN::getRectangleIndex(int index, int &i, int &j)
@@ -856,8 +752,12 @@ void G_CARTESIAN::getRectangleCenter(
 
 double G_CARTESIAN::getDistance(double *c0, double *c1)
 {
-	return sqrt( (c0[0]-c1[0])*(c0[0]-c1[0])
-		    +(c0[1]-c1[1])*(c0[1]-c1[1]) );
+    double dist = 0.0;
+    for (int i = 0; i < dim; ++i)
+    {
+        dist += sqr(c0[i] - c1[i]);
+    }
+    return sqrt(dist);
 }
 
 
@@ -902,7 +802,7 @@ int G_CARTESIAN::getComponent(
 void G_CARTESIAN::save(char *filename)
 {
 	
-	INTERFACE *intfc    = front->interf;
+	INTERFACE *intfc = front->interf;
 		
 	FILE *hfile = fopen(filename, "w");
 	if(hfile==NULL)
@@ -912,9 +812,7 @@ void G_CARTESIAN::save(char *filename)
 		clean_up(EXIT_FAILURE);
 	}
 	
-	// secondly print out the interface
-		
-	if(exists_interface(intfc))
+	if (exists_interface(intfc))
 	{
 	    CURVE		**cur;
 	    CURVE		*curve;
@@ -934,10 +832,6 @@ void G_CARTESIAN::save(char *filename)
 		}					
 	}		
 	fclose(hfile);
-}
-
-G_CARTESIAN::G_CARTESIAN(Front &front):front(&front)
-{
 }
 
 void G_CARTESIAN::setDomain()
@@ -962,54 +856,70 @@ void G_CARTESIAN::setDomain()
 	    hmin = HUGE;
 	    size = 1;
 	    
-            for (i = 0; i < 3; ++i)
-	    	top_gmax[i] = 0;
+        for (i = 0; i < 3; ++i) top_gmax[i] = 0;
 
-            for (i = 0; i < dim; ++i)
+        for (i = 0; i < dim; ++i)
 	    {
 	    	lbuf[i] = front->rect_grid->lbuf[i];
 	    	ubuf[i] = front->rect_grid->ubuf[i];
-	    	top_gmax[i] = top_grid->gmax[i];
-	    	top_L[i] = top_grid->L[i];
+	    	
+            top_gmax[i] = top_grid->gmax[i];
+	    	
+            top_L[i] = top_grid->L[i];
 	    	top_U[i] = top_grid->U[i];
 	    	top_h[i] = top_grid->h[i];
 
-                if (hmin > top_h[i]) hmin = top_h[i];
-	        size *= (top_gmax[i]+1);
-	    	imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
-	    	imax[i] = (ubuf[i] == 0) ? top_gmax[i] - 1 : 
-				top_gmax[i] - ubuf[i];
-	    }
+            if (hmin > top_h[i])
+            {
+                hmin = top_h[i];
+            }
 
-	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->dens,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->pres,size,
-					sizeof(double));
-	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->engy,size,
-					sizeof(double));
-	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->vel,dim,size,
-					sizeof(double));
-	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->mom,dim,size,
-					sizeof(double));
-	    //GFM
-	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->gnor,dim,size,
-					sizeof(double));
-	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->Gdens,2,size,
-					sizeof(double));
-	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->Gpres,2,size,
-					sizeof(double));
-	    FT_TriArrayMemoryAlloc((POINTER*)&eqn_params->Gvel,2,dim,size,
-					sizeof(double));
+            size *= (top_gmax[i]+1);
+
+	    	imin[i] = (lbuf[i] == 0) ? 1 : lbuf[i];
+	    	imax[i] = (ubuf[i] == 0) ? top_gmax[i] - 1 : top_gmax[i] - ubuf[i];
+	    }
+	    
+        FT_VectorMemoryAlloc((POINTER*)&eqn_params->mu,size,sizeof(double));
+        FT_VectorMemoryAlloc((POINTER*)&eqn_params->mu_turb,size,sizeof(double));
+        FT_VectorMemoryAlloc((POINTER*)&eqn_params->k_turb,size,sizeof(double));
+        FT_VectorMemoryAlloc((POINTER*)&eqn_params->temp,size,sizeof(double));
+	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->dens,size,sizeof(double));
+	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->pres,size,sizeof(double));
+	    FT_VectorMemoryAlloc((POINTER*)&eqn_params->engy,size,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->vel,dim,size,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->mom,dim,size,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->f_surf,dim,size,sizeof(double));
+	    
+        //GFM
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->gnor,dim,size,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->Gdens,2,size,sizeof(double));
+	    FT_MatrixMemoryAlloc((POINTER*)&eqn_params->Gpres,2,size,sizeof(double));
+	    FT_TriArrayMemoryAlloc((POINTER*)&eqn_params->Gvel,2,dim,size,sizeof(double));
 
 	    FT_VectorMemoryAlloc((POINTER*)&array,size,sizeof(double));
-	    if (dim == 2)
-	    	FT_VectorMemoryAlloc((POINTER*)&eqn_params->vort,size,
-					sizeof(double));
-	    field.dens = eqn_params->dens;
+	    
+        if (dim == 2)
+        {
+	    	FT_VectorMemoryAlloc((POINTER*)&eqn_params->vort,size,sizeof(double));
+        }
+        else if (dim == 3)
+        {
+            FT_MatrixMemoryAlloc((POINTER*)&eqn_params->vorticity,dim,size,sizeof(double));
+        }
+	    
+	    field.mu = eqn_params->mu;
+	    field.mu_turb = eqn_params->mu_turb;
+	    field.k_turb = eqn_params->k_turb;
+	    field.temp = eqn_params->temp;
+        field.dens = eqn_params->dens;
 	    field.engy = eqn_params->engy;
 	    field.pres = eqn_params->pres;
 	    field.momn = eqn_params->mom;
 	    field.vel = eqn_params->vel;
+        field.vort = eqn_params->vort;
+	    field.vorticity = eqn_params->vorticity;
+	    field.f_surf = eqn_params->f_surf;
 	}
 
     //GFM
@@ -1019,89 +929,107 @@ void G_CARTESIAN::setDomain()
 	    eqn_params->Gdens[j][i] = 0.0;
 	    eqn_params->Gpres[j][i] = 0.0;
 	    for (k = 0; k < dim; ++k)
-		eqn_params->Gvel[j][k][i] = 0.0;
+        {
+            eqn_params->Gvel[j][k][i] = 0.0;
+        }
 	}
 }
 
 void G_CARTESIAN::allocMeshVst(
 	SWEEP *vst)
 {
-	int i,size;
-
-	size = 1;
-        for (i = 0; i < dim; ++i)
-	    size *= (top_gmax[i]+1);
+	int size = 1;
+    for (int i = 0; i < dim; ++i)
+    {
+        size *= (top_gmax[i] + 1);
+    }
 
 	FT_VectorMemoryAlloc((POINTER*)&vst->dens,size,sizeof(double));
+	FT_MatrixMemoryAlloc((POINTER*)&vst->momn,MAXD,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
-	FT_MatrixMemoryAlloc((POINTER*)&vst->momn,MAXD,size,sizeof(double));
-}	/* end allocMeshVstFlux */
+	FT_VectorMemoryAlloc((POINTER*)&vst->mu,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->mu_turb,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->k_turb,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->temp,size,sizeof(double));
+}	/* end allocMeshVst*/
 
 void G_CARTESIAN::allocMeshFlux(
 	FSWEEP *flux)
 {
-	int i,size;
-
-	size = 1;
-        for (i = 0; i < dim; ++i)
-	    size *= (top_gmax[i]+1);
+	int size = 1;
+    for (int i = 0; i < dim; ++i)
+    {
+        size *= (top_gmax[i]+1);
+    }
 
 	FT_VectorMemoryAlloc((POINTER*)&flux->dens_flux,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&flux->engy_flux,size,sizeof(double));
 	FT_MatrixMemoryAlloc((POINTER*)&flux->momn_flux,MAXD,size,sizeof(double));
-}	/* end allocMeshVstFlux */
+}	/* end allocMeshFlux */
 
 void G_CARTESIAN::allocDirVstFlux(
         SWEEP *vst,
         FSWEEP *flux)
 {
-	int i,size;
+	int size = 1;
+    for (int i = 0; i < dim; ++i)
+    {
+        if (size < top_gmax[i] + 7)
+        {
+            size = top_gmax[i] + 7;
+        }
+    }
 
-	size = 1;
-        for (i = 0; i < dim; ++i)
-	    if (size < top_gmax[i]+7) 
-		size = top_gmax[i]+7;
+	FT_MatrixMemoryAlloc((POINTER*)&vst->momn,MAXD,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->dens,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->engy,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&vst->pres,size,sizeof(double));
-	FT_MatrixMemoryAlloc((POINTER*)&vst->momn,MAXD,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->mu,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->mu_turb,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->k_turb,size,sizeof(double));
+	FT_VectorMemoryAlloc((POINTER*)&vst->temp,size,sizeof(double));
 
+	FT_MatrixMemoryAlloc((POINTER*)&flux->momn_flux,MAXD,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&flux->dens_flux,size,sizeof(double));
 	FT_VectorMemoryAlloc((POINTER*)&flux->engy_flux,size,sizeof(double));
-	FT_MatrixMemoryAlloc((POINTER*)&flux->momn_flux,MAXD,size,sizeof(double));
-}	/* end allocDirMeshVstFlux */
+}	/* end allocDirVstFlux */
 
 void G_CARTESIAN::freeDirVstFlux(
         SWEEP* vst,
         FSWEEP* flux)
 {
-        FT_FreeThese(4,vst->dens,vst->engy,vst->pres,vst->momn);
-        FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
+    FT_FreeThese(8,vst->dens,vst->engy,vst->pres,vst->momn,
+            vst->mu,vst->mu_turb,vst->temp,vst->k_turb);
+    FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }	/* end allocDirMeshVstFlux */
 
 void G_CARTESIAN::checkVst(SWEEP *vst)
 {
-	int i,j,index;
-	for (j = imin[1]; j < imax[1]; j++)
-	for (i = imin[0]; i < imax[0]; i++)
+	for (int j = imin[1]; j < imax[1]; j++)
+	for (int i = imin[0]; i < imax[0]; i++)
 	{	
-	    index  = d_index2d(i,j,top_gmax);
-	    if (isnan(vst->dens[index]))
-		printf("At %d %d: dens is nan\n",i,j);
-	    if (vst->dens[index] < 0.0)
-		printf("At %d %d: dens is negative\n",i,j);
+	    int index = d_index2d(i,j,top_gmax);
+	    
+        if (isnan(vst->dens[index]))
+        {
+            printf("At %d %d: dens is nan\n",i,j);
+        }
+        
+        if (vst->dens[index] < 0.0)
+        {
+            printf("At %d %d: dens is negative\n",i,j);
+        }
 	}
 }
 
 void G_CARTESIAN::checkFlux(FSWEEP *flux)
 {
-	int i,j,index;
-	//for (j = imin[1]; j < imax[1]; j++)
-	j = 140;
-	for (i = imin[0]; i <= imax[0]; i++)
+    int j_line = (imin[1] + imax[1])/2;
+	
+    for (int i = imin[0]; i <= imax[0]; i++)
 	{	
-	    index  = d_index2d(i,j,top_gmax);
+	    int index  = d_index2d(i,j_line,top_gmax);
 	    printf("%d %f  %f\n",i,flux->momn_flux[1][index],
 				flux->engy_flux[index]);
 	}
@@ -1113,10 +1041,16 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	char filename[100];
 	FILE *outfile;
 	INTERFACE *intfc = front->interf;
-        STATE *sl,*sr;
-        POINT *p;
-        HYPER_SURF *hs;
-        HYPER_SURF_ELEMENT *hse;
+   
+    STATE *sl,*sr;
+    POINT *p;
+    HYPER_SURF *hs;
+    HYPER_SURF_ELEMENT *hse;
+    
+    double *mu = field.mu;
+    double *mu_turb = field.mu_turb;
+    double *k_turb = field.k_turb;
+    double *temp = field.temp;
 	double *dens = field.dens;
 	double *engy = field.engy;
 	double **momn = field.momn;
@@ -1135,43 +1069,75 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
         DEC = 1;
     }
 
-        /* Initialize states at the interface */
-        fprintf(outfile,"Interface gas states:\n");
-        next_point(intfc,NULL,NULL,NULL);
-        while (next_point(intfc,&p,&hse,&hs))
+    //TODO: This block should be moved into its own function and mirror
+    //      the action of readFrontStates() in cFsub.cpp
+    //
+    /* Initialize states at the interface */
+    fprintf(outfile,"Interface gas states:\n");
+    next_point(intfc,NULL,NULL,NULL);
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+    
+        fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateTemp(sl),
+            WID,DEC,getStateTemp(sr));
+        
+        fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateKTurb(sl),
+            WID,DEC,getStateKTurb(sr));
+        
+        fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateMu(sl),
+            WID,DEC,getStateMu(sr));
+        
+        fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateMuTurb(sl),
+            WID,DEC,getStateMuTurb(sr));
+        
+        fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateDens(sl),
+            WID,DEC,getStateDens(sr));
+    
+        fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateEngy(sl),
+            WID,DEC,getStateEngy(sr));
+
+        for (i = 0; i < dim; ++i)
         {
-            FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
-            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateDens(sl),
-				WID,DEC,getStateDens(sr));
-            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateEngy(sl),
-				WID,DEC,getStateEngy(sr));
-	    for (i = 0; i < dim; ++i)
-            	fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateMom[i](sl),
-				WID,DEC,getStateMom[i](sr));
+            fprintf(outfile,"%*.*f %*.*f\n",WID,DEC,getStateMom[i](sl),
+                WID,DEC,getStateMom[i](sr));
         }
-	
+    }
+
 	fprintf(outfile,"\nInterior gas states:\n");
 	switch (dim)
 	{
 	case 1:
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
-		index = d_index1d(i,top_gmax);
+		    index = d_index1d(i,top_gmax);
+            fprintf(outfile,"%*.*f\n",WID,DEC,temp[index]);
+            fprintf(outfile,"%*.*f\n",WID,DEC,k_turb[index]);
+            fprintf(outfile,"%*.*f\n",WID,DEC,mu[index]);
+            fprintf(outfile,"%*.*f\n",WID,DEC,mu_turb[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
 	    	for (l = 0; l < dim; ++l)
+            {
 	            fprintf(outfile,"%*.*f\n",WID,DEC,momn[l][index]);
+            }
 	    }
 	    break;
 	case 2:
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    {
-		index = d_index2d(i,j,top_gmax);
+		    index = d_index2d(i,j,top_gmax);
+            fprintf(outfile,"%*.*f\n",WID,DEC,temp[index]);
+            fprintf(outfile,"%*.*f\n",WID,DEC,k_turb[index]);
+            fprintf(outfile,"%*.*f\n",WID,DEC,mu[index]);
+            fprintf(outfile,"%*.*f\n",WID,DEC,mu_turb[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
 	    	for (l = 0; l < dim; ++l)
+            {
 	            fprintf(outfile,"%*.*f\n",WID,DEC,momn[l][index]);
+            }
 	    }
 	    break;
 	case 3:
@@ -1179,16 +1145,86 @@ void G_CARTESIAN::printFrontInteriorStates(char *out_name)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    {
-		index = d_index3d(i,j,k,top_gmax);
+		    index = d_index3d(i,j,k,top_gmax);
+            fprintf(outfile,"%*.*f\n",WID,DEC,temp[index]);
+            fprintf(outfile,"%*.*f\n",WID,DEC,k_turb[index]);
+            fprintf(outfile,"%*.*f\n",WID,DEC,mu[index]);
+            fprintf(outfile,"%*.*f\n",WID,DEC,mu_turb[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,dens[index]);
 	        fprintf(outfile,"%*.*f\n",WID,DEC,engy[index]);
 	    	for (l = 0; l < dim; ++l)
+            {
 	            fprintf(outfile,"%*.*f\n",WID,DEC,momn[l][index]);
+            }
 	    }
 	}
 	fclose(outfile);
 }
 
+extern void readFrontStates(
+	Front		*front,
+	char		*restart_name)
+{
+	FILE 		*infile;
+	EQN_PARAMS 	*eqn_params = (EQN_PARAMS*)front->extra1;
+	INTERFACE 	*intfc = front->interf;
+        STATE 		*sl,*sr;
+        POINT 		*p;
+        HYPER_SURF 	*hs;
+        HYPER_SURF_ELEMENT *hse;
+	STATE 		*lstate,*rstate;
+	char 		fname[100];
+	int 		i,dim = front->rect_grid->dim;
+	int		comp;
+	EOS_PARAMS	*eos = eqn_params->eos;
+
+	sprintf(fname,"%s-gas",restart_name);
+	infile = fopen(fname,"r");
+	
+	/* Initialize states at the interface */
+    next_output_line_containing_string(infile,"Interface gas states:");
+    next_point(intfc,NULL,NULL,NULL);
+    while (next_point(intfc,&p,&hse,&hs))
+    {
+        FT_GetStatesAtPoint(p,hse,hs,(POINTER*)&sl,(POINTER*)&sr);
+        lstate = (STATE*)sl;	rstate = (STATE*)sr;
+
+        fscanf(infile,"%lf %lf",&lstate->temp,&rstate->temp);
+        fscanf(infile,"%lf %lf",&lstate->k_turb,&rstate->k_turb);
+        fscanf(infile,"%lf %lf",&lstate->mu,&rstate->mu);
+        fscanf(infile,"%lf %lf",&lstate->mu_turb,&rstate->mu_turb);
+        fscanf(infile,"%lf %lf",&lstate->dens,&rstate->dens);
+        fscanf(infile,"%lf %lf",&lstate->engy,&rstate->engy);
+        for (i = 0; i < dim; ++i)
+        {
+            fscanf(infile,"%lf %lf",&lstate->momn[i],&rstate->momn[i]);
+        }
+
+        comp = negative_component(hs);
+        lstate->eos = &eos[comp];
+        if (gas_comp(comp))
+        {
+            lstate->pres = EosPressure(lstate);
+        }
+
+        comp = positive_component(hs);
+        rstate->eos = &eos[comp];
+        if (gas_comp(comp))
+        {
+            rstate->pres = EosPressure(rstate);
+        }
+
+        lstate->dim = dim;
+        rstate->dim = dim;
+    }
+
+    FT_MakeGridIntfc(front);
+	fclose(infile);
+}
+
+//TODO: Why are we computing the pressure from the other read variables?
+//      Why not just read it in directly?
+//      (Assuming it is written when the states are printed)
 void G_CARTESIAN::readInteriorStates(char *restart_name)
 {
 	FILE *infile;
@@ -1197,24 +1233,40 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
 	char fname[100];
 	int		comp;
 	EOS_PARAMS	*eos = eqn_params->eos;
+    
+    double *mu = field.mu;
+    double *mu_turb = field.mu_turb;
+    double *k_turb = field.k_turb;
+    double *temp = field.temp;
 	double *dens = field.dens;
 	double *engy = field.engy;
 	double *pres = field.pres;
 	double **momn = field.momn;
+	double **vel = field.vel;
 
 	setDomain();
-	m_dens[0] = eqn_params->rho1;		
+	
+    m_dens[0] = eqn_params->rho1;		
 	m_dens[1] = eqn_params->rho2;		
-	m_mu[0] = eqn_params->mu1;		
+	
+    m_mu[0] = eqn_params->mu1;		
 	m_mu[1] = eqn_params->mu2;		
-	if (eqn_params->prob_type == FLUID_SOLID_CIRCLE ||
+	
+    if (eqn_params->prob_type == FLUID_SOLID_CIRCLE ||
 	    eqn_params->prob_type == FLUID_RIGID_BODY ||
-	    eqn_params->prob_type == FLUID_CRYSTAL)
-	    m_comp[0] = SOLID_COMP;
+	    eqn_params->prob_type == FLUID_CRYSTAL ||
+	    eqn_params->prob_type == CHANNEL_FLOW)
+    {
+        m_comp[0] = SOLID_COMP;
+    }
 	else
+    {
 	    m_comp[0] = GAS_COMP1;
+    }
 	m_comp[1] = GAS_COMP2;
-	m_smoothing_radius = top_h[0] < top_h[1] ? top_h[1] : top_h[0];
+    
+    m_smoothing_radius = std::max(top_h[0], top_h[1]);
+    m_smoothing_radius = std::max(m_smoothing_radius, top_h[2]);
 	m_smoothing_radius *= 2.0;
 	
 	st_tmp.dim = eqn_params->dim;
@@ -1230,60 +1282,146 @@ void G_CARTESIAN::readInteriorStates(char *restart_name)
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    {
-		index = d_index2d(i,j,top_gmax);
-		comp = top_comp[index];
-		st_tmp.eos = &(eos[comp]);
-	    	
-		fscanf(infile,"%lf",&dens[index]);
-	    	fscanf(infile,"%lf",&engy[index]);
-		st_tmp.dens = dens[index];
-		st_tmp.engy = engy[index];
-		for (l = 0; l < dim; ++l)
-		{
-	    	    fscanf(infile,"%lf",&momn[l][index]);
-		    st_tmp.momn[l] = momn[l][index];
-		}
-		pres[index] = EosPressure(&st_tmp);
+            index = d_index2d(i,j,top_gmax);
+            comp = top_comp[index];
+            st_tmp.eos = &(eos[comp]);
+                
+            fscanf(infile,"%lf",&temp[index]);
+            fscanf(infile,"%lf",&k_turb[index]);
+            fscanf(infile,"%lf",&mu[index]);
+            fscanf(infile,"%lf",&mu_turb[index]);
+            fscanf(infile,"%lf",&dens[index]);
+            fscanf(infile,"%lf",&engy[index]);
+            
+            st_tmp.mu = mu[index];
+            st_tmp.mu_turb = mu_turb[index];
+            st_tmp.dens = dens[index];
+            st_tmp.engy = engy[index];
+            st_tmp.k_turb = k_turb[index];
+            st_tmp.temp = temp[index];
+            
+            for (l = 0; l < dim; ++l)
+            {
+                fscanf(infile,"%lf",&momn[l][index]);
+                st_tmp.momn[l] = momn[l][index];
+                vel[l][index] = momn[l][index]/dens[index];
+            }
+            pres[index] = EosPressure(&st_tmp);
 	    }
 	    break;
+
 	case 3:
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    {
-		index = d_index3d(i,j,k,top_gmax);
-		comp = top_comp[index];
-		st_tmp.eos = &(eos[comp]);
+            index = d_index3d(i,j,k,top_gmax);
+            comp = top_comp[index];
+            st_tmp.eos = &(eos[comp]);
 
+            fscanf(infile,"%lf",&temp[index]);
+            fscanf(infile,"%lf",&k_turb[index]);
+            fscanf(infile,"%lf",&mu[index]);
+            fscanf(infile,"%lf",&mu_turb[index]);
 	    	fscanf(infile,"%lf",&dens[index]);
 	    	fscanf(infile,"%lf",&engy[index]);
-		st_tmp.dens = dens[index];
-		st_tmp.engy = engy[index];
-		for (l = 0; l < dim; ++l)
-		{
-	    	    fscanf(infile,"%lf",&momn[l][index]);
-		    st_tmp.momn[l] = momn[l][index];
-		}
-		pres[index] = EosPressure(&st_tmp);
+
+            st_tmp.mu = mu[index];
+            st_tmp.mu_turb = mu_turb[index];
+            st_tmp.dens = dens[index];
+            st_tmp.engy = engy[index];
+            st_tmp.k_turb = k_turb[index];
+            st_tmp.temp = temp[index];
+            
+            for (l = 0; l < dim; ++l)
+            {
+                fscanf(infile,"%lf",&momn[l][index]);
+                st_tmp.momn[l] = momn[l][index];
+                vel[l][index] = momn[l][index]/dens[index];
+            }
+            pres[index] = EosPressure(&st_tmp);
 	    }
+        break;
 	}
-	fclose(infile);
+	
+    fclose(infile);
 	scatMeshStates();
 	copyMeshStates();
 }
 
 
-void G_CARTESIAN::setAdvectionDt()
+void G_CARTESIAN::setMaxTimestep()
 {
-	double d = (double)dim;
+    max_dt = HUGE;
 	pp_global_max(&max_speed,1);
-	if (max_speed != 0.0)
-	    max_dt = hmin/max_speed/d;
-	else
-	    max_dt = 0.0;
-	if (debugging("trace"))
-	    printf("In setAdvectionDt: max_dt = %24.18g\n",max_dt);
-}	/* end setAdvectionDt */
+
+	if (max_speed > MACH_EPS)
+    {
+	    max_dt = hmin/max_speed;
+	    //max_dt = hmin/max_speed/static_cast<double>(dim);
+    }
+    
+    /*
+    //TODO: Do we need this? max_speed is really the maximum wave speed
+    //      computed in each direction -- above is more restrictive than this.
+	if (max_speed > MACH_EPS)
+    {
+        double mesh_val = 0.0;
+        for (int i = 0; i < dim; ++i)
+        {
+            mesh_val += abs_vmax[i]/top_h[i];
+        }
+        max_dt = 1.0/mesh_val;
+    }
+    */
+    
+    //viscous time step restriction
+    visc_max_dt = HUGE;
+	pp_global_max(&mu_max,1);
+        //pp_global_max(&rho_min,1);
+   
+    if (mu_max > MACH_EPS)
+    {
+        visc_max_dt = 0.5*hmin*hmin/mu_max;
+
+        /*
+        //TODO: Is this correct for our scheme?
+        double mesh_val = 0.0;
+        for (int i = 0; i < dim; ++i)
+        {
+            mesh_val += 2.0/sqr(top_h[i]);
+        }
+
+        visc_max_dt = 1.0/((mu_max/rho_min)*mesh_val);
+        */
+    }
+
+    //TODO: can calculate a single max_dt for advective and viscous flux
+    //      if we have the maximum eigenvalue of the jacobian of the inviscid
+    //      flux vector -- see weno code for this computation.
+    //      See Birken Habilitation paper on numerical methods for unsteady
+    //      compressible navier stokes (page 73) for this time step restriction.
+    //TODO: TEST THIS BOUND
+    
+    double joint_max_dt = hmin*hmin/(max_speed*hmin + 2.0*mu_max);
+
+
+    if (debugging("cfluid_dt"))
+    {
+	    printf("In setMaxTimestep: \
+                adv_max_dt = %24.18g , visc_max_dt = %24.18g , joint_max_dt = %24.18g\n",
+                max_dt, visc_max_dt, joint_max_dt);
+        printf("max_speed = %g , hmin = %g ,  mu_max = %g\n", max_speed, hmin, mu_max); 
+    }
+
+    //max_dt = std::min(max_dt,visc_max_dt);
+
+    max_dt = joint_max_dt;
+
+	
+    if (debugging("max_dt"))
+	    printf("In setMaxTimeStep: final max_dt = %24.18g\n",max_dt);
+}	/* end setMaxTimestep */
 
 
 void G_CARTESIAN::augmentMovieVariables()
@@ -1354,20 +1492,23 @@ void G_CARTESIAN::augmentMovieVariables()
 
 }	/* end augmentMovieVariables */
 
+//TODO: use CursorAfterStringOpt() for all movie options defaulting to none
 void G_CARTESIAN::initMovieVariables()
 {
-	boolean set_bound = NO;
 	FILE *infile = fopen(InName(front),"r");
 	char string[100];
 	double var_max,var_min;
 
+	boolean set_bound = NO;
 	if (CursorAfterStringOpt(infile,"Type y to set movie bounds:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
         {
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'Y' || string[0] == 'y')
-                set_bound = YES;
+            set_bound = YES;
         }
+    }
 
 	    /* Begin hdf movies */
 	switch (dim)
@@ -1435,22 +1576,74 @@ void G_CARTESIAN::initMovieVariables()
 				"dens",0,eqn_params->dens,getStateDens,
 				var_max,var_min);
 	    }
-	    CursorAfterString(infile,"Type y to make movie of pressure:");
-            fscanf(infile,"%s",string);
-            (void) printf("%s\n",string);
-            if (string[0] == 'Y' || string[0] == 'y')
+	    
+        CursorAfterString(infile,"Type y to make movie of pressure:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
+        {
+            if (set_bound)
+            {
+                CursorAfterString(infile,"Enter min and max pressure:");
+                        fscanf(infile,"%lf %lf",&var_min,&var_max);
+                        (void) printf("%f %f\n",var_min,var_max);
+            }
+            
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+                    "pres",0,eqn_params->pres,getStatePres,
+                    var_max,var_min);
+        }
+	    
+        CursorAfterString(infile,"Type y to make movie of turb kinetic energy:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
+        {
+            if (set_bound)
+            {
+                CursorAfterString(infile,"Enter min and max turb kinetic energy:");
+                        fscanf(infile,"%lf %lf",&var_min,&var_max);
+                        (void) printf("%f %f\n",var_min,var_max);
+            }
+            
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+                    "k_turb",0,eqn_params->k_turb,getStateKTurb,
+                    var_max,var_min);
+        }
+	    
+        CursorAfterString(infile,"Type y to make movie of temperature:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
 	    {
-		if (set_bound)
-		{
-		    CursorAfterString(infile,"Enter min and max pressure:");
-                    fscanf(infile,"%lf %lf",&var_min,&var_max);
-                    (void) printf("%f %f\n",var_min,var_max);
-		}
-		FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
-				"pres",0,eqn_params->pres,getStatePres,
-				var_max,var_min);
+            if (set_bound)
+            {
+                CursorAfterString(infile,"Enter min and max temperature:");
+                        fscanf(infile,"%lf %lf",&var_min,&var_max);
+                        (void) printf("%f %f\n",var_min,var_max);
+            }
+ 
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+                    "temp",0,eqn_params->temp,getStateTemp,var_max,var_min);
 	    }
-	    CursorAfterString(infile,"Type y to make movie of vorticity:");
+
+        CursorAfterString(infile,"Type y to make movie of viscosity:");
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'Y' || string[0] == 'y')
+	    {
+            if (set_bound)
+            {
+                CursorAfterString(infile,"Enter min and max viscosity:");
+                        fscanf(infile,"%lf %lf",&var_min,&var_max);
+                        (void) printf("%f %f\n",var_min,var_max);
+            }
+ 
+            FT_AddHdfMovieVariable(front,set_bound,YES,SOLID_COMP,
+                    "visc",0,eqn_params->mu,getStateMu,var_max,var_min);
+	    }
+
+        CursorAfterString(infile,"Type y to make movie of vorticity:");
             fscanf(infile,"%s",string);
             (void) printf("%s\n",string);
             if (string[0] == 'Y' || string[0] == 'y')
@@ -1572,7 +1765,7 @@ void G_CARTESIAN::initMovieVariables()
 	if (dim != 1)
 	{
 	    if (CursorAfterStringOpt(infile,
-		"Type y to make vector velocity field movie:"))
+		    "Type y to make vector velocity field movie:"))
 	    {
             	fscanf(infile,"%s",string);
             	(void) printf("%s\n",string);
@@ -1595,86 +1788,171 @@ void G_CARTESIAN::initMovieVariables()
                 if (string[0] == 'Y' || string[0] == 'y')
                     FT_AddVtkScalarMovieVariable(front,"PRESSURE",field.pres);
             }
+	    if (CursorAfterStringOpt(infile,
+               "Type y to make scalar viscosity field movie:"))
+            {
+                fscanf(infile,"%s",string);
+                (void)printf("%s\n",string);
+                if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkScalarMovieVariable(front,"VISC",field.mu);
+            }
+	    if (CursorAfterStringOpt(infile,
+               "Type y to make scalar eddy viscosity field movie:"))
+            {
+                fscanf(infile,"%s",string);
+                (void)printf("%s\n",string);
+                if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkScalarMovieVariable(front,"EDDY_VISC",field.mu_turb);
+            }
+	    if (CursorAfterStringOpt(infile,
+               "Type y to make scalar temperature field movie:"))
+            {
+                fscanf(infile,"%s",string);
+                (void)printf("%s\n",string);
+                if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkScalarMovieVariable(front,"TEMP",field.temp);
+            }
+	    if (CursorAfterStringOpt(infile,
+               "Type y to make scalar turb kinetic energy field movie:"))
+            {
+                fscanf(infile,"%s",string);
+                (void)printf("%s\n",string);
+                if (string[0] == 'Y' || string[0] == 'y')
+                    FT_AddVtkScalarMovieVariable(front,"KTURB",field.k_turb);
+            }
 	}
+
+    //TODO: get vorticity plot for 2d vtk
+    if (dim == 3)
+    {
+        if (CursorAfterStringOpt(infile,
+                    "Type y to make vector vorticity field movie:"))
+        {
+            fscanf(infile,"%s",string);
+            (void) printf("%s\n",string);
+            if (string[0] == 'Y' || string[0] == 'y')
+                FT_AddVtkVectorMovieVariable(front,"VORTICITY",field.vorticity);
+        }
+    }
+
 
 	fclose(infile);
 }	/* end initMovieVariables */
 
-double G_CARTESIAN::getVorticityX(int i, int j, int k)
+void G_CARTESIAN::computeVorticity()
 {
-	int index0,index00,index01,index10,index11;
-	double v00,v01,v10,v11;
-	double dy,dz;
-	double vorticity;
-	double *dens = field.dens;
-	double **momn = field.momn;
+    switch (dim)
+    {
+    case 2:
+        {
+	        double* vort = eqn_params->vort;
+            for (int j = imin[1]; j <= imax[1]; ++j)
+            for (int i = imin[0]; i <= imax[0]; ++i)
+            {
+                int index = d_index2d(i,j,top_gmax);
+                vort[index] = getVorticity(i,j);
+            }
+            break;
+        }
+    case 3:
+        {
+	        double** vorticity = eqn_params->vorticity;
+            for (int k = imin[2]; k <= imax[2]; ++k)
+            for (int j = imin[1]; j <= imax[1]; ++j)
+            for (int i = imin[0]; i <= imax[0]; ++i)
+            {
+                int index = d_index3d(i,j,k,top_gmax);
+                if (!gas_comp(top_comp[index]))
+                {
+                    for (int l = 0; l < dim; ++l)
+                        vorticity[l][index] = 0.0;
+                    continue;
+                }
+                //TODO: Write boundary aware implementation for 3d
+                vorticity[0][index] = getVorticityX(i,j,k);
+                vorticity[1][index] = getVorticityY(i,j,k);
+                vorticity[2][index] = getVorticityZ(i,j,k);
+            }
+            break;
+        }
+    default:
+        {
+            printf("computeVorticity() ERROR: Invalid Dimension\n");
+            LOC(); clean_up(EXIT_FAILURE);
+        }
+    }
+}
 
-	dy = top_h[1];
-	dz = top_h[2];
-	index0 = d_index3d(i,j,k,top_gmax);
-	index00 = d_index3d(i,j-1,k,top_gmax);
-	index01 = d_index3d(i,j+1,k,top_gmax);
-	index10 = d_index3d(i,j,k-1,top_gmax);
-	index11 = d_index3d(i,j,k+1,top_gmax);
-	v00 = -momn[2][index00]/dens[index00];
-	v01 =  momn[2][index01]/dens[index01];
-	v10 =  momn[1][index10]/dens[index10];
-	v11 = -momn[1][index11]/dens[index11];
-
-	vorticity = (v00 + v01)/2.0/dz + (v10 + v11)/2.0/dy;
-	return vorticity;
-}	/* end getVorticityX */
-
-double G_CARTESIAN::getVorticityY(int i, int j, int k)
+//TODO: Use this as model for 3d vorticity computation.
+double G_CARTESIAN::getVorticity(int i, int j)
 {
-	int index0,index00,index01,index10,index11;
-	double v00,v01,v10,v11;
-	double dx,dz;
-	double vorticity;
-	double *dens = field.dens;
-	double **momn = field.momn;
+    int icoords[MAXD] = {i,j,0};
+    int index = d_index(icoords,top_gmax,dim);
+    COMPONENT comp = top_comp[index];
+    
+    if (!gas_comp(comp)) return 0.0;
 
-	dx = top_h[0];
-	dz = top_h[2];
-	index0 = d_index3d(i,j,k,top_gmax);
-	index00 = d_index3d(i,j,k-1,top_gmax);
-	index01 = d_index3d(i,j,k+1,top_gmax);
-	index10 = d_index3d(i-1,j,k,top_gmax);
-	index11 = d_index3d(i+1,j,k,top_gmax);
-	v00 = -momn[0][index00]/dens[index00];
-	v01 =  momn[0][index01]/dens[index01];
-	v10 =  momn[2][index10]/dens[index10];
-	v11 = -momn[2][index11]/dens[index11];
+    const GRID_DIRECTION dir[2][2] = {
+        {WEST,EAST},{SOUTH,NORTH}
+    };
 
-	vorticity = (v00 + v01)/2.0/dx + (v10 + v11)/2.0/dz;
-	return vorticity;
-}	/* end getVorticityY */
+    POINTER intfc_state;
+    HYPER_SURF* hs;
+    HYPER_SURF_ELEMENT* hse;
+    double crx_coords[MAXD];
+    boolean intfc_crx;
+    
+    double **vel = eqn_params->vel;
+    double u_edge[2][2];
+    int icnb[MAXD];
+    int index_nb;
+    
+    for (int idir = 0; idir < dim; ++idir)
+    {
+        for (int l = 0; l < dim; ++l)
+            icnb[l] = icoords[l];
 
-double G_CARTESIAN::getVorticityZ(int i, int j, int k)
-{
-	int index0,index00,index01,index10,index11;
-	double v00,v01,v10,v11;
-	double dx,dy;
-	double vorticity;
-	double *dens = field.dens;
-	double **momn = field.momn;
+        for (int nb = 0; nb < 2; ++nb)
+        {
+            icnb[idir] = (nb == 0) ? icoords[idir] - 1 : icoords[idir] + 1;
+            index_nb = d_index(icnb,top_gmax,dim);
 
-	dx = top_h[0];
-	dy = top_h[1];
-	index0 = d_index3d(i,j,k,top_gmax);
-	index00 = d_index3d(i-1,j,k,top_gmax);
-	index01 = d_index3d(i+1,j,k,top_gmax);
-	index10 = d_index3d(i,j-1,k,top_gmax);
-	index11 = d_index3d(i,j+1,k,top_gmax);
-	v00 = -momn[1][index00]/dens[index00];
-	v01 =  momn[1][index01]/dens[index01];
-	v10 =  momn[0][index10]/dens[index10];
-	v11 = -momn[0][index11]/dens[index11];
+            intfc_crx = FT_StateStructAtGridCrossing2(front,icoords,
+                    dir[idir][nb],comp,&intfc_state,&hs,&hse,crx_coords);
 
-	vorticity = (v00 + v01)/2.0/dy + (v10 + v11)/2.0/dx;
-	return vorticity;
-}	/* end getVorticityZ */
+            if (!intfc_crx)
+            {
+                u_edge[idir][nb] = vel[(idir+1)%dim][index_nb];
+            }
+            else if (wave_type(hs) == DIRICHLET_BOUNDARY)
+            {
+                u_edge[idir][nb] = getStateVel[(idir+1)%dim](intfc_state);
+            }
+            else if (wave_type(hs) == NEUMANN_BOUNDARY ||
+                     wave_type(hs) == MOVABLE_BODY_BOUNDARY)
+            {
+                //TODO: Use a higher order approximation (3 point one sided)???
+                //      See iFluid computeDivSimple() for example.
+                //
+                //      Or should we get ghost vel by reflecting normal to interface?
+                u_edge[idir][nb] = vel[(idir+1)%dim][index];
+            }
+            else
+            {
+                //CONTACT DISCONTINUITY
+                u_edge[idir][nb] = vel[(idir+1)%dim][index_nb];
+            }
+        }
+    }
 
+    double vorticity = 0.5*(u_edge[0][1] - u_edge[0][0])/top_h[0]
+                        - 0.5*(u_edge[1][1] - u_edge[1][0])/top_h[1];
+
+    return vorticity;
+}
+
+/*
+//OLD boundary unaware -- division by zero density not protected
 double G_CARTESIAN::getVorticity(int i, int j)
 {
 	int index0,index00,index01,index10,index11;
@@ -1698,8 +1976,114 @@ double G_CARTESIAN::getVorticity(int i, int j)
 
 	vorticity = (v00 + v01)/2.0/dy + (v10 + v11)/2.0/dx;
 	return vorticity;
-}	/* end getVorticity */
+}*/	/* end getVorticity */
 
+double G_CARTESIAN::getVorticityX(int i, int j, int k)
+{
+	int index0,index00,index01,index10,index11;
+	double v00,v01,v10,v11;
+	double dy,dz;
+	double vorticity;
+
+    double **vel = field.vel;
+	    //double **momn = field.momn;
+        //double *dens = field.dens;
+
+	dy = top_h[1];
+	dz = top_h[2];
+	index0 = d_index3d(i,j,k,top_gmax);
+	index00 = d_index3d(i,j-1,k,top_gmax);
+	index01 = d_index3d(i,j+1,k,top_gmax);
+	index10 = d_index3d(i,j,k-1,top_gmax);
+	index11 = d_index3d(i,j,k+1,top_gmax);
+
+    v00 = -1.0*vel[2][index00];
+    v01 = vel[2][index01];
+    v10 = vel[1][index10];
+    v11 = -1.0*vel[1][index11];
+
+    /*
+	v00 = -momn[2][index00]/dens[index00];
+	v01 =  momn[2][index01]/dens[index01];
+	v10 =  momn[1][index10]/dens[index10];
+	v11 = -momn[1][index11]/dens[index11];
+    */
+
+	vorticity = (v00 + v01)/2.0/dz + (v10 + v11)/2.0/dy;
+	return vorticity;
+}	/* end getVorticityX */
+
+double G_CARTESIAN::getVorticityY(int i, int j, int k)
+{
+	int index0,index00,index01,index10,index11;
+	double v00,v01,v10,v11;
+	double dx,dz;
+	double vorticity;
+
+    double **vel = field.vel;
+	    //double **momn = field.momn;
+        //double *dens = field.dens;
+
+	dx = top_h[0];
+	dz = top_h[2];
+	index0 = d_index3d(i,j,k,top_gmax);
+	index00 = d_index3d(i,j,k-1,top_gmax);
+	index01 = d_index3d(i,j,k+1,top_gmax);
+	index10 = d_index3d(i-1,j,k,top_gmax);
+	index11 = d_index3d(i+1,j,k,top_gmax);
+
+	v00 = -1.0*vel[0][index00];
+	v01 = vel[0][index01];
+	v10 = vel[2][index10];
+	v11 = -1.0*vel[2][index11];
+
+    /*
+	v00 = -momn[0][index00]/dens[index00];
+	v01 =  momn[0][index01]/dens[index01];
+	v10 =  momn[2][index10]/dens[index10];
+	v11 = -momn[2][index11]/dens[index11];
+    */
+
+	vorticity = (v00 + v01)/2.0/dx + (v10 + v11)/2.0/dz;
+	return vorticity;
+}	/* end getVorticityY */
+
+double G_CARTESIAN::getVorticityZ(int i, int j, int k)
+{
+	int index0,index00,index01,index10,index11;
+	double v00,v01,v10,v11;
+	double dx,dy;
+	double vorticity;
+
+    double **vel = field.vel;
+	    //double **momn = field.momn;
+        //double *dens = field.dens;
+
+	dx = top_h[0];
+	dy = top_h[1];
+	index0 = d_index3d(i,j,k,top_gmax);
+	index00 = d_index3d(i-1,j,k,top_gmax);
+	index01 = d_index3d(i+1,j,k,top_gmax);
+	index10 = d_index3d(i,j-1,k,top_gmax);
+	index11 = d_index3d(i,j+1,k,top_gmax);
+
+	v00 = -1.0*vel[1][index00];
+	v01 = vel[1][index01];
+	v10 = vel[0][index10];
+	v11 = -1.0*vel[0][index11];
+
+    /*
+	v00 = -momn[1][index00]/dens[index00];
+	v01 =  momn[1][index01]/dens[index01];
+	v10 =  momn[0][index10]/dens[index10];
+	v11 = -momn[0][index11]/dens[index11];
+    */
+
+	vorticity = (v00 + v01)/2.0/dy + (v10 + v11)/2.0/dx;
+	return vorticity;
+}	/* end getVorticityZ */
+
+//TODO: This is more of a communication routine than a copy routine -- rename
 void G_CARTESIAN::copyMeshStates()
 {
 	int i,j,k,l,index;
@@ -1708,22 +2092,38 @@ void G_CARTESIAN::copyMeshStates()
 	double *dens = eqn_params->dens;
 	double *pres = eqn_params->pres;
 	double *engy = eqn_params->engy;
+	double *mu = eqn_params->mu;
+	double *mu_turb = eqn_params->mu_turb;
+	double *k_turb = eqn_params->k_turb;
+	double *temp = eqn_params->temp;
 	double *vort = eqn_params->vort;
+	double **vorticity = eqn_params->vorticity;
 	int symmetry[MAXD];
 
 	switch (dim)
 	{
 	case 1:
 	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index1d(i,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    vel[l][index] = mom[l][index]/dens[index];	
-	    }
+        {
+            index = d_index1d(i,top_gmax);
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = 0.0;
+
+            if (!gas_comp(top_comp[index])) continue;
+            
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = mom[l][index]/dens[index];	
+        }
 	    FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
-	    symmetry[0] = ODD;
+	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(mu_turb,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
+	    
+        FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
+	    
+        symmetry[0] = ODD;
 	    FT_ParallelExchGridArrayBuffer(mom[0],front,symmetry);
 	    FT_ParallelExchGridArrayBuffer(vel[0],front,symmetry);
 	    break;
@@ -1731,16 +2131,31 @@ void G_CARTESIAN::copyMeshStates()
 	    for (i = imin[0]; i <= imax[0]; ++i)
 	    for (j = imin[1]; j <= imax[1]; ++j)
 	    {
-		index = d_index2d(i,j,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    vel[l][index] = mom[l][index]/dens[index];	
+            index = d_index2d(i,j,top_gmax);
+
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = 0.0;
+
+            if (!gas_comp(top_comp[index])) continue;
+
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = mom[l][index]/dens[index];	
 	    }
-	    FT_ParallelExchGridArrayBuffer(dens,front,NULL);
+        computeVorticity();
+	
+        FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(mu_turb,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
+
+	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
+
 	    symmetry[0] = symmetry[1] = ODD;
 	    FT_ParallelExchGridArrayBuffer(vort,front,symmetry);
-	    for (l = 0; l < dim; ++l)
+	    
+        for (l = 0; l < dim; ++l)
 	    {
 	    	symmetry[0] = symmetry[1] = EVEN;
 		symmetry[l] = ODD;
@@ -1753,24 +2168,45 @@ void G_CARTESIAN::copyMeshStates()
 	    for (j = imin[1]; j <= imax[1]; ++j)
 	    for (k = imin[2]; k <= imax[2]; ++k)
 	    {
-		index = d_index3d(i,j,k,top_gmax);
-		for (l = 0; l < dim; ++l)
-		    vel[l][index] = mom[l][index]/dens[index];	
+            index = d_index3d(i,j,k,top_gmax);
+            
+            for (l = 0; l < dim; ++l) 
+                vel[l][index] = 0.0;
+
+            if (!gas_comp(top_comp[index])) continue;
+            
+            for (l = 0; l < dim; ++l)
+                vel[l][index] = mom[l][index]/dens[index];	
 	    }
-	    FT_ParallelExchGridArrayBuffer(dens,front,NULL);
+        computeVorticity();
+	    
+        FT_ParallelExchGridArrayBuffer(dens,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(pres,front,NULL);
 	    FT_ParallelExchGridArrayBuffer(engy,front,NULL);
-	    for (l = 0; l < dim; ++l)
+	    FT_ParallelExchGridArrayBuffer(mu,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(mu_turb,front,NULL);
+	    FT_ParallelExchGridArrayBuffer(temp,front,NULL);
+
+	    FT_ParallelExchGridArrayBuffer(k_turb,front,NULL);
+	    
+	    symmetry[0] = symmetry[1] = symmetry[2] = ODD;
+        for (l = 0; l < dim; ++l)
+	    {
+            FT_ParallelExchGridArrayBuffer(vorticity[l],front,symmetry);
+        }
+
+        for (l = 0; l < dim; ++l)
 	    {
 	    	symmetry[0] = symmetry[1] = symmetry[2] = EVEN;
-		symmetry[l] = ODD;
-	    	FT_ParallelExchGridArrayBuffer(mom[l],front,symmetry);
+            symmetry[l] = ODD;
+            FT_ParallelExchGridArrayBuffer(mom[l],front,symmetry);
 	    	FT_ParallelExchGridArrayBuffer(vel[l],front,symmetry);
 	    }
 	    break;
 	}
 }	/* end copyMeshStates */
 
+//OLD -- 2d only
 void G_CARTESIAN::compSGS(void)
 {
         int i,j,k,index,index0,index1,index2,index3,index4,size;  
@@ -2684,188 +3120,14 @@ void G_CARTESIAN::numericalFlux(
 
 void G_CARTESIAN::scatMeshVst(SWEEP *m_vst)
 {
-	int i,j,k,l,index;
-
-	FT_ParallelExchGridArrayBuffer(m_vst->dens,front,NULL);
-	FT_ParallelExchGridArrayBuffer(m_vst->engy,front,NULL);
-	FT_ParallelExchGridArrayBuffer(m_vst->pres,front,NULL);
+	FT_ParallelExchGridArrayBuffer(m_vst->dens,front,nullptr);
 	FT_ParallelExchGridVectorArrayBuffer(m_vst->momn,front);
-	/*
-	switch (dim)
-	{
-	case 1:
-
-	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index1d(i,top_gmax);
-		array[index] = m_vst->dens[index];
-	    }
-	    FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            for (i = 0; i <= top_gmax[0]; i++)
-            {
-                index  = d_index1d(i,top_gmax);
-		m_vst->dens[index] = array[index];
-	    }
-	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index1d(i,top_gmax);
-		array[index] = m_vst->engy[index];
-	    }
-	    FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            for (i = 0; i <= top_gmax[0]; i++)
-            {
-                index  = d_index1d(i,top_gmax);
-		m_vst->engy[index] = array[index];
-	    }
-	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index1d(i,top_gmax);
-		array[index] = m_vst->pres[index];
-	    }
-	    FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            for (i = 0; i <= top_gmax[0]; i++)
-            {
-                index  = d_index1d(i,top_gmax);
-		m_vst->pres[index] = array[index];
-	    }
-	    for (l = 0; l < dim; ++l)
-	    {
-	    	for (i = imin[0]; i <= imax[0]; ++i)
-	    	{
-		    index = d_index1d(i,top_gmax);
-		    array[index] = m_vst->momn[l][index];
-	    	}
-	    	FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            	for (i = 0; i <= top_gmax[0]; i++)
-            	{
-                    index = d_index1d(i,top_gmax);
-		    m_vst->momn[l][index] = array[index];
-	    	}
-	    }
-	    break;
-	case 2:
-	    for (j = imin[1]; j <= imax[1]; ++j)
-	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index2d(i,j,top_gmax);
-		array[index] = m_vst->dens[index];
-	    }
-	    FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            for (j = 0; j <= top_gmax[1]; j++)
-            for (i = 0; i <= top_gmax[0]; i++)
-            {
-                index  = d_index2d(i,j,top_gmax);
-		m_vst->dens[index] = array[index];
-	    }
-	    for (j = imin[1]; j <= imax[1]; ++j)
-	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index2d(i,j,top_gmax);
-		array[index] = m_vst->engy[index];
-	    }
-	    FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            for (j = 0; j <= top_gmax[1]; j++)
-            for (i = 0; i <= top_gmax[0]; i++)
-            {
-                index  = d_index2d(i,j,top_gmax);
-		m_vst->engy[index] = array[index];
-	    }
-	    for (j = imin[1]; j <= imax[1]; ++j)
-	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index2d(i,j,top_gmax);
-		array[index] = m_vst->pres[index];
-	    }
-	    FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            for (j = 0; j <= top_gmax[1]; j++)
-            for (i = 0; i <= top_gmax[0]; i++)
-            {
-                index  = d_index2d(i,j,top_gmax);
-		m_vst->pres[index] = array[index];
-	    }
-	    for (l = 0; l < dim; ++l)
-	    {
-	    	for (j = imin[1]; j <= imax[1]; ++j)
-	    	for (i = imin[0]; i <= imax[0]; ++i)
-	    	{
-		    index = d_index2d(i,j,top_gmax);
-		    array[index] = m_vst->momn[l][index];
-	    	}
-	    	FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            	for (j = 0; j <= top_gmax[1]; j++)
-            	for (i = 0; i <= top_gmax[0]; i++)
-            	{
-                    index = d_index2d(i,j,top_gmax);
-		    m_vst->momn[l][index] = array[index];
-	    	}
-	    }
-	    break;
-	case 3:
-	    for (k = imin[2]; k <= imax[2]; ++k)
-	    for (j = imin[1]; j <= imax[1]; ++j)
-	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index3d(i,j,k,top_gmax);
-                array[index] = m_vst->dens[index];
-	    }
-	    FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            for (k = 0; k <= top_gmax[2]; k++)
-            for (j = 0; j <= top_gmax[1]; j++)
-            for (i = 0; i <= top_gmax[0]; i++)
-            {
-		index = d_index3d(i,j,k,top_gmax);
-                m_vst->dens[index] = array[index];
-	    }
-	    for (k = imin[2]; k <= imax[2]; ++k)
-	    for (j = imin[1]; j <= imax[1]; ++j)
-	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index3d(i,j,k,top_gmax);
-                array[index] = m_vst->engy[index];
-	    }
-	    FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            for (k = 0; k <= top_gmax[2]; k++)
-            for (j = 0; j <= top_gmax[1]; j++)
-            for (i = 0; i <= top_gmax[0]; i++)
-            {
-                index  = d_index3d(i,j,k,top_gmax);
-                m_vst->engy[index] = array[index];
-	    }
-	    for (k = imin[2]; k <= imax[2]; ++k)
-	    for (j = imin[1]; j <= imax[1]; ++j)
-	    for (i = imin[0]; i <= imax[0]; ++i)
-	    {
-		index = d_index3d(i,j,k,top_gmax);
-                array[index] = m_vst->pres[index];
-	    }
-	    FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            for (k = 0; k <= top_gmax[2]; k++)
-            for (j = 0; j <= top_gmax[1]; j++)
-            for (i = 0; i <= top_gmax[0]; i++)
-            {
-                index  = d_index3d(i,j,k,top_gmax);
-                m_vst->pres[index] = array[index];
-	    }
-	    for (l = 0; l < dim; ++l)
-	    {
-	    	for (k = imin[2]; k <= imax[2]; ++k)
-	    	for (j = imin[1]; j <= imax[1]; ++j)
-	    	for (i = imin[0]; i <= imax[0]; ++i)
-	    	{
-		    index = d_index3d(i,j,k,top_gmax);
-                    array[index] = m_vst->momn[l][index];
-	    	}
-	    	FT_ParallelExchGridArrayBuffer(array,front,NULL);
-            	for (k = 0; k <= top_gmax[2]; k++)
-            	for (j = 0; j <= top_gmax[1]; j++)
-            	for (i = 0; i <= top_gmax[0]; i++)
-            	{
-		    index = d_index3d(i,j,k,top_gmax);
-                    m_vst->momn[l][index] = array[index];
-	    	}
-	    }
-	}
-	*/
+	FT_ParallelExchGridArrayBuffer(m_vst->engy,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->pres,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->mu,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->mu_turb,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->temp,front,nullptr);
+	FT_ParallelExchGridArrayBuffer(m_vst->k_turb,front,nullptr);
 }	/* end scatMeshStates */
 
 void G_CARTESIAN::copyMeshVst(
@@ -2878,24 +3140,32 @@ void G_CARTESIAN::copyMeshVst(
 	case 1:
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
-		index = d_index1d(i,top_gmax);
-		m_vst->dens[index] = m_vst_orig.dens[index];
-		m_vst->engy[index] = m_vst_orig.engy[index];
-		m_vst->pres[index] = m_vst_orig.pres[index];
-		for (l = 0; l < dim; ++l)
-		    m_vst->momn[l][index] = m_vst_orig.momn[l][index];
+            index = d_index1d(i,top_gmax);
+            m_vst->dens[index] = m_vst_orig.dens[index];
+            m_vst->engy[index] = m_vst_orig.engy[index];
+            m_vst->pres[index] = m_vst_orig.pres[index];
+            m_vst->mu[index] = m_vst_orig.mu[index];
+            m_vst->mu_turb[index] = m_vst_orig.mu_turb[index];
+            m_vst->k_turb[index] = m_vst_orig.k_turb[index];
+            m_vst->temp[index] = m_vst_orig.temp[index];
+            for (l = 0; l < dim; ++l)
+                m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
 	    break;
 	case 2:
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
-		index = d_index2d(i,j,top_gmax);
-		m_vst->dens[index] = m_vst_orig.dens[index];
-		m_vst->engy[index] = m_vst_orig.engy[index];
-		m_vst->pres[index] = m_vst_orig.pres[index];
-		for (l = 0; l < dim; ++l)
-		    m_vst->momn[l][index] = m_vst_orig.momn[l][index];
+            index = d_index2d(i,j,top_gmax);
+            m_vst->dens[index] = m_vst_orig.dens[index];
+            m_vst->engy[index] = m_vst_orig.engy[index];
+            m_vst->pres[index] = m_vst_orig.pres[index];
+            m_vst->mu[index] = m_vst_orig.mu[index];
+            m_vst->mu_turb[index] = m_vst_orig.mu_turb[index];
+            m_vst->k_turb[index] = m_vst_orig.k_turb[index];
+            m_vst->temp[index] = m_vst_orig.temp[index];
+            for (l = 0; l < dim; ++l)
+                m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
 	    break;
 	case 3:
@@ -2903,12 +3173,16 @@ void G_CARTESIAN::copyMeshVst(
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
-		index = d_index3d(i,j,k,top_gmax);
-		m_vst->dens[index] = m_vst_orig.dens[index];
-		m_vst->engy[index] = m_vst_orig.engy[index];
-		m_vst->pres[index] = m_vst_orig.pres[index];
-		for (l = 0; l < dim; ++l)
-		    m_vst->momn[l][index] = m_vst_orig.momn[l][index];
+            index = d_index3d(i,j,k,top_gmax);
+            m_vst->dens[index] = m_vst_orig.dens[index];
+            m_vst->engy[index] = m_vst_orig.engy[index];
+            m_vst->pres[index] = m_vst_orig.pres[index];
+            m_vst->mu[index] = m_vst_orig.mu[index];
+            m_vst->mu_turb[index] = m_vst_orig.mu_turb[index];
+            m_vst->k_turb[index] = m_vst_orig.k_turb[index];
+            m_vst->temp[index] = m_vst_orig.temp[index];
+            for (l = 0; l < dim; ++l)
+                m_vst->momn[l][index] = m_vst_orig.momn[l][index];
 	    }
 	}
 }	/* end copyMeshVst */
@@ -2917,50 +3191,74 @@ void G_CARTESIAN::copyToMeshVst(
 	SWEEP *m_vst)
 {
 	int i,j,k,l,index;
-	double *dens = field.dens;
+	
+    double *dens = field.dens;
+	double **momn = field.momn;
 	double *engy = field.engy;
 	double *pres = field.pres;
-	double **momn = field.momn;
+	double *mu = field.mu;
+	double *mu_turb = field.mu_turb;
+	double *k_turb = field.k_turb;
+	double *temp = field.temp;
+
 	switch (dim)
 	{
 	case 1:
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
-		index = d_index1d(i,top_gmax);
-		m_vst->dens[index] = dens[index];
-		m_vst->engy[index] = engy[index];
-		m_vst->pres[index] = pres[index];
-		for (l = 0; l < dim; ++l)
-		    m_vst->momn[l][index] = momn[l][index];
+            index = d_index1d(i,top_gmax);
+            m_vst->dens[index] = dens[index];
+            m_vst->engy[index] = engy[index];
+            m_vst->pres[index] = pres[index];
+            m_vst->mu[index] = mu[index];
+            m_vst->mu_turb[index] = mu_turb[index];
+            m_vst->k_turb[index] = k_turb[index];
+            m_vst->temp[index] = temp[index];
+            for (l = 0; l < dim; ++l)
+                m_vst->momn[l][index] = momn[l][index];
 	    }
 	    break;
+
 	case 2:
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
-		index = d_index2d(i,j,top_gmax);
-		m_vst->dens[index] = dens[index];
-		m_vst->engy[index] = engy[index];
-		m_vst->pres[index] = pres[index];
-		for (l = 0; l < dim; ++l)
-		    m_vst->momn[l][index] = momn[l][index];
+            index = d_index2d(i,j,top_gmax);
+            m_vst->dens[index] = dens[index];
+            m_vst->engy[index] = engy[index];
+            m_vst->pres[index] = pres[index];
+            m_vst->mu[index] = mu[index];
+            m_vst->mu_turb[index] = mu_turb[index];
+            m_vst->k_turb[index] = k_turb[index];
+            m_vst->temp[index] = temp[index];
+            for (l = 0; l < dim; ++l)
+                m_vst->momn[l][index] = momn[l][index];
 	    }
 	    break;
+
 	case 3:
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
-		index = d_index3d(i,j,k,top_gmax);
-		m_vst->dens[index] = dens[index];
-		m_vst->engy[index] = engy[index];
-		m_vst->pres[index] = pres[index];
-		for (l = 0; l < dim; ++l)
-		    m_vst->momn[l][index] = momn[l][index];
+            index = d_index3d(i,j,k,top_gmax);
+            m_vst->dens[index] = dens[index];
+            m_vst->engy[index] = engy[index];
+            m_vst->pres[index] = pres[index];
+            m_vst->mu[index] = mu[index];
+            m_vst->mu_turb[index] = mu_turb[index];
+            m_vst->k_turb[index] = k_turb[index];
+            m_vst->temp[index] = temp[index];
+            for (l = 0; l < dim; ++l)
+                m_vst->momn[l][index] = momn[l][index];
 	    }
+        break;
 	}
 }	/* end copyToMeshVst */
 
+//NOTE: DO NOT COPY mu_turb back to field.mu_turb !!!!!!!
+//
+//Not sure what is happening but it is not good when we do.
 void G_CARTESIAN::copyFromMeshVst(
 	const SWEEP& m_vst)
 {
@@ -2968,9 +3266,13 @@ void G_CARTESIAN::copyFromMeshVst(
 	STATE state;
 	COMPONENT comp;
 	double *dens = field.dens;
+	double **momn = field.momn;
 	double *engy = field.engy;
 	double *pres = field.pres;
-	double **momn = field.momn;
+	double *mu = field.mu;
+	double *temp = field.temp;
+	
+    double *k_turb = field.k_turb;
 	
 	//GFM
 	if(eqn_params->tracked)
@@ -2988,74 +3290,124 @@ void G_CARTESIAN::copyFromMeshVst(
 	case 1:
 	    for (i = 0; i <= top_gmax[0]; ++i)
 	    {
-		index = d_index1d(i,top_gmax);
-		comp = top_comp[index];
-		state.dens = m_vst.dens[index];
-		state.engy = m_vst.engy[index];
-		state.pres = m_vst.pres[index];
-		for (l = 0; l < dim; ++l)
-		    state.momn[l] = m_vst.momn[l][index];
-		if (gas_comp(top_comp[index]))
-		{
-		    state.eos = &(eqn_params->eos[comp]);
-		    checkCorrectForTolerance(&state);
-		}
-		dens[index] = state.dens;
-		engy[index] = state.engy;
-		pres[index] = state.pres;
-		for (l = 0; l < dim; ++l)
-		    momn[l][index] = state.momn[l];
-	    }
-	    break;
-	case 2:
+            index = d_index1d(i,top_gmax);
+            comp = top_comp[index];
+        
+            state.dens = m_vst.dens[index];
+            state.engy = m_vst.engy[index];
+            state.pres = m_vst.pres[index];
+            state.mu = m_vst.mu[index];
+            state.temp = m_vst.temp[index];
+            state.k_turb = m_vst.k_turb[index];
+        
+            for (l = 0; l < dim; ++l)
+            {
+                state.momn[l] = m_vst.momn[l][index];
+            }
+
+            if (gas_comp(top_comp[index]))
+            {
+                state.eos = &(eqn_params->eos[comp]);
+                checkCorrectForTolerance(&state);
+            }
+        
+            dens[index] = state.dens;
+            engy[index] = state.engy;
+            pres[index] = state.pres;
+            mu[index] = state.mu;
+            temp[index] = state.temp;
+            k_turb[index] = state.k_turb;
+        
+            for (l = 0; l < dim; ++l)
+            {
+                momn[l][index] = state.momn[l];
+            }
+        }
+        break;
+	
+    case 2:
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    for (i = 0; i <= top_gmax[0]; ++i)
-	    {
-		index = d_index2d(i,j,top_gmax);
-		comp = top_comp[index];
-		state.dens = m_vst.dens[index];
-		state.engy = m_vst.engy[index];
-		state.pres = m_vst.pres[index];
-		for (l = 0; l < dim; ++l)
-		    state.momn[l] = m_vst.momn[l][index];
-		if (gas_comp(top_comp[index]))
-		{
-		    state.eos = &(eqn_params->eos[comp]);
-		    checkCorrectForTolerance(&state);
-		}
-		dens[index] = state.dens;
-		engy[index] = state.engy;
-		pres[index] = state.pres;
-		for (l = 0; l < dim; ++l)
-		    momn[l][index] = state.momn[l];
-	    }
+        {
+            index = d_index2d(i,j,top_gmax);
+            comp = top_comp[index];
+        
+            state.dens = m_vst.dens[index];
+            state.engy = m_vst.engy[index];
+            state.pres = m_vst.pres[index];
+            state.mu = m_vst.mu[index];
+            state.temp = m_vst.temp[index];
+            state.k_turb = m_vst.k_turb[index];
+        
+            for (l = 0; l < dim; ++l)
+            {
+                state.momn[l] = m_vst.momn[l][index];
+            }
+
+            if (gas_comp(top_comp[index]))
+            {
+                state.eos = &(eqn_params->eos[comp]);
+                checkCorrectForTolerance(&state);
+            }
+        
+            dens[index] = state.dens;
+            engy[index] = state.engy;
+            pres[index] = state.pres;
+            mu[index] = state.mu;
+            temp[index] = state.temp;
+            k_turb[index] = state.k_turb;
+        
+            for (l = 0; l < dim; ++l)
+            {
+                momn[l][index] = state.momn[l];
+            }
+        }
 	    break;
+
 	case 3:
 	    for (k = 0; k <= top_gmax[2]; ++k)
 	    for (j = 0; j <= top_gmax[1]; ++j)
 	    for (i = 0; i <= top_gmax[0]; ++i)
-	    {
-		index = d_index3d(i,j,k,top_gmax);
-		comp = top_comp[index];
-		state.dens = m_vst.dens[index];
-		state.engy = m_vst.engy[index];
-		state.pres = m_vst.pres[index];
-		for (l = 0; l < dim; ++l)
-		    state.momn[l] = m_vst.momn[l][index];
-		if (gas_comp(top_comp[index]))
-		{
-		    state.eos = &(eqn_params->eos[comp]);
-		    checkCorrectForTolerance(&state);
-		}
-		dens[index] = state.dens;
-		engy[index] = state.engy;
-		pres[index] = state.pres;
-		for (l = 0; l < dim; ++l)
-		    momn[l][index] = state.momn[l];
-	    }
+        {
+            index = d_index3d(i,j,k,top_gmax);
+            comp = top_comp[index];
+        
+            state.dens = m_vst.dens[index];
+            state.engy = m_vst.engy[index];
+            state.pres = m_vst.pres[index];
+            state.mu = m_vst.mu[index];
+            state.temp = m_vst.temp[index];
+            state.k_turb = m_vst.k_turb[index];
+        
+            for (l = 0; l < dim; ++l)
+            {
+                state.momn[l] = m_vst.momn[l][index];
+            }
+
+            if (gas_comp(top_comp[index]))
+            {
+                state.eos = &(eqn_params->eos[comp]);
+                checkCorrectForTolerance(&state);
+            }
+        
+            dens[index] = state.dens;
+            engy[index] = state.engy;
+            pres[index] = state.pres;
+            mu[index] = state.mu;
+            temp[index] = state.temp;
+            k_turb[index] = state.k_turb;
+        
+            for (l = 0; l < dim; ++l)
+            {
+                momn[l][index] = state.momn[l];
+            }
+        }
+        break;
 	}
 }	/* end copyFromMeshVst */
 
+
+//UNUSED
 void G_CARTESIAN::appendStencilBuffer2d(
 	SWEEP *vst,
 	SWEEP *m_vst,
@@ -3126,7 +3478,7 @@ void G_CARTESIAN::appendStencilBuffer2d(
 		switch (wave_type(hs))
 		{
 		case DIRICHLET_BOUNDARY:
-		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,0,0,1);
+		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,0,0,1,comp);
 		    break;
 		default: 
 		    printf("ERROR appendStencilBuffer2d: "
@@ -3189,7 +3541,7 @@ void G_CARTESIAN::appendStencilBuffer2d(
 		case DIRICHLET_BOUNDARY:
 		    offset = imax[dir] - imin[dir] + nrad;
 		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,1,
-					offset,1);
+					offset,1,comp);
 		    break;
 		default: 
 		    printf("ERROR appendStencilBuffer2d"
@@ -3252,7 +3604,7 @@ void G_CARTESIAN::appendStencilBuffer2d(
 		switch (wave_type(hs))
 		{
 		case DIRICHLET_BOUNDARY:
-		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,0,0,1);
+		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,0,0,1,comp);
 		    break;
 		default: 
 		    printf("ERROR appendStencilBuffer2d"
@@ -3317,7 +3669,7 @@ void G_CARTESIAN::appendStencilBuffer2d(
 		case DIRICHLET_BOUNDARY:
 		    offset = imax[dir] - imin[dir] + nrad;
 		    setDirichletStates(state,vst,m_vst,hs,icoords,dir,1,
-					offset,1);
+					offset,1,comp);
 		    break;
 		default: 
 		    printf("ERROR appendStencilBuffer2d"
@@ -3329,6 +3681,7 @@ void G_CARTESIAN::appendStencilBuffer2d(
 
 }	/* end appendStencilBuffer2d */
 
+//UNUSED
 void G_CARTESIAN::appendStencilBuffer3d(
 	SWEEP *vst,
 	SWEEP *m_vst,
@@ -3511,8 +3864,9 @@ void G_CARTESIAN::scatMeshStates()
 void G_CARTESIAN::freeVst(
 	SWEEP *vst)
 {
-	FT_FreeThese(4,vst->dens,vst->engy,vst->pres,vst->momn);
-}	/* end freeVstFlux */
+	FT_FreeThese(8,vst->dens,vst->momn,vst->engy,vst->pres,
+            vst->mu,vst->mu_turb,vst->k_turb,vst->temp);
+}	/* end freeVst */
 
 void G_CARTESIAN::freeFlux(
 	FSWEEP *flux)
@@ -3520,6 +3874,7 @@ void G_CARTESIAN::freeFlux(
 	FT_FreeThese(3,flux->dens_flux,flux->engy_flux,flux->momn_flux);
 }
 
+//NOTE: DO NOT COPY MU_TURB
 void G_CARTESIAN::addMeshFluxToVst(
 	SWEEP *m_vst,
 	const FSWEEP& m_flux,
@@ -3530,7 +3885,7 @@ void G_CARTESIAN::addMeshFluxToVst(
 	EOS_PARAMS	*eos;
 	STATE		st;
 	int		comp;
-	double		temp;
+	double	maxeig;	
 
 	switch (dim)
 	{
@@ -3554,22 +3909,25 @@ void G_CARTESIAN::addMeshFluxToVst(
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
-		    m_vst->momn[l][index] += 
-			chi*m_flux.momn_flux[l][index];
+		    m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
 		
-		CovertVstToState(&st, m_vst, eos, index, dim);
+		ConvertVstToState(&st, m_vst, eos, index, dim);
 		checkCorrectForTolerance(&st);
-		m_vst->dens[index] = st.dens;
+		
+        m_vst->dens[index] = st.dens;
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
-		u = sqrt(u)/m_vst->dens[index];
+        m_vst->temp[index] = st.temp;
+        m_vst->mu[index] = st.mu;
+		
+        u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
-		temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
-                if (max_speed < temp)
-                    max_speed = temp;
+		maxeig = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
+                if (max_speed < maxeig)
+                    max_speed = maxeig;
 	    }
 	    scatMeshVst(m_vst);
 	    break;
@@ -3594,22 +3952,25 @@ void G_CARTESIAN::addMeshFluxToVst(
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
-		    m_vst->momn[l][index] += 
-			chi*m_flux.momn_flux[l][index];
+		    m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
 		
-		CovertVstToState(&st, m_vst, eos, index, dim);
-		checkCorrectForTolerance(&st);
+		ConvertVstToState(&st, m_vst, eos, index, dim);
+        checkCorrectForTolerance(&st);
+
 		m_vst->dens[index] = st.dens;
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
-		u = sqrt(u)/m_vst->dens[index];
+        m_vst->temp[index] = st.temp;
+        m_vst->mu[index] = st.mu;
+		
+        u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
-		temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
-                if (max_speed < temp)
-                    max_speed = temp;
+		maxeig = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
+                if (max_speed < maxeig)
+                    max_speed = maxeig;
 	    }
 	    scatMeshVst(m_vst);
 	    break;
@@ -3620,6 +3981,14 @@ void G_CARTESIAN::addMeshFluxToVst(
 	    {
 		index = d_index3d(i,j,k,top_gmax);
 		comp = top_comp[index];
+		if (!gas_comp(comp))
+		{
+		    m_vst->dens[index] = 0.0;
+		    m_vst->engy[index] = 0.0;
+		    for (l = 0; l < dim; ++l)
+		    	m_vst->momn[l][index] = 0.0; 
+		    continue;
+		}
 		eos = &(eqn_params->eos[comp]);
 
 		m_vst->dens[index] += chi*m_flux.dens_flux[index];
@@ -3627,22 +3996,25 @@ void G_CARTESIAN::addMeshFluxToVst(
 		ke = u = 0.0;
 		for (l = 0; l < dim; ++l)
 		{
-		    m_vst->momn[l][index] += 
-				chi*m_flux.momn_flux[l][index];
+		    m_vst->momn[l][index] += chi*m_flux.momn_flux[l][index];
 		    ke += sqr(m_vst->momn[l][index]);
 		    u += sqr(m_vst->momn[l][index]);
 		}
 		
-		CovertVstToState(&st, m_vst, eos, index, dim);
-		checkCorrectForTolerance(&st);
-		m_vst->dens[index] = st.dens;
+		ConvertVstToState(&st, m_vst, eos, index, dim);
+        checkCorrectForTolerance(&st);
+		
+        m_vst->dens[index] = st.dens;
 		m_vst->pres[index] = st.pres;
 		m_vst->engy[index] = st.engy;
+        m_vst->temp[index] = st.temp;
+        m_vst->mu[index] = st.mu;
+
 		u = sqrt(u)/m_vst->dens[index];
 		c = EosSoundSpeed(&st);
-		temp = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
-                if (max_speed < temp)
-                    max_speed = temp;
+		maxeig = std::max((std::max(u,fabs(u-c))),(fabs(u+c)));
+                if (max_speed < maxeig)
+                    max_speed = maxeig;
 	    }
 	    scatMeshVst(m_vst);
 	}
@@ -3781,6 +4153,7 @@ void G_CARTESIAN::appendGhostBuffer(
 			    }
                         }
 		    }
+
 		    switch (wave_type(hs))
 		    {
 		    case NEUMANN_BOUNDARY:
@@ -3790,7 +4163,7 @@ void G_CARTESIAN::appendGhostBuffer(
 		    	break;
 		    case DIRICHLET_BOUNDARY:
 		    	setDirichletStates(state,vst,m_vst,hs,ic_next,
-					idir,nb,0,i);
+					idir,nb,0,i,comp);
 		    	break;
 		    case FIRST_PHYSICS_WAVE_TYPE:
 		    	//GFM
@@ -3931,6 +4304,7 @@ void G_CARTESIAN::appendGhostBuffer(
 			    }
 			}
 		    }
+
 		    switch (wave_type(hs))
 		    {
 		    case NEUMANN_BOUNDARY:
@@ -3940,7 +4314,7 @@ void G_CARTESIAN::appendGhostBuffer(
 		    	break;
 		    case DIRICHLET_BOUNDARY:
 		    	setDirichletStates(state,vst,m_vst,hs,ic_next,idir,nb,
-						n,i);
+						n,i,comp);
 		    	break;
 		    case FIRST_PHYSICS_WAVE_TYPE:
 		    	//GFM
@@ -5058,11 +5432,463 @@ void G_CARTESIAN::setNeumannStates(
 	int		istart,
 	COMPONENT	comp)
 {
+    if (debugging("use_new_neumann"))
+    {
+        setNeumannStatesNEW(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
+    }
+    else
+    {
+        setNeumannStatesOLD(vst,m_vst,hs,state,icoords,idir,nb,n,istart,comp);
+    }
+}
+
+void G_CARTESIAN::setNeumannStatesNEW(
+	SWEEP		*vst,
+	SWEEP		*m_vst,
+	HYPER_SURF 	*hs,
+	STATE		*state,
+	int		*icoords,
+	int		idir,
+	int		nb,
+	int		n,
+	int		istart,
+	COMPONENT	comp)
+{
+	int index;
+	int ind2[2][2] = {{0,1},{1,0}};
+    int ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
+	int ghost_ic[MAXD];
+	double coords[MAXD], coords_reflect[MAXD], crx_coords[MAXD];
+	double nor[MAXD];
+	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
+	GRID_DIRECTION 	rdir[3] = {EAST,NORTH,UPPER};
+	GRID_DIRECTION  dir;
+	STATE st_tmp;
+
+	st_tmp.eos = &eqn_params->eos[comp];
+	st_tmp.dim = dim;
+
+	index = d_index(icoords,top_gmax,dim);
+	for (int i = 0; i < dim; ++i)
+	{
+	    coords[i] = top_L[i] + icoords[i]*top_h[i];
+	    ghost_ic[i] = icoords[i];
+	}
+
+	//dir = (nb == 0) ? ldir[idir] : rdir[idir];
+	//FT_NormalAtGridCrossing(front,icoords,dir,comp,nor,&hs,crx_coords);
+
+	if (debugging("neumann_buffer"))
+	{
+	    (void) printf("Entering setNeumannStatesNEW()\n");
+	    (void) printf("comp = %d\n",comp);
+	    (void) printf("icoords = %d %d %d\n",icoords[0],icoords[1],icoords[2]);
+	    (void) printf("idir = %d nb = %d\n",idir,nb);
+	    (void) printf("istart = %d nrad = %d n = %d\n",istart,nrad,n);
+	    (void) print_general_vector("coords = ",coords,dim,"\n");
+	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
+	    (void) print_general_vector("nor = ",nor,dim,"\n");
+	        //(void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
+	}
+
+    double v_slip[MAXD] = {0.0};
+    double coords_ghost[MAXD];
+
+	for (int i = istart; i < istart + 1; ++i) //for (int i = istart; i <= nrad; ++i)
+	{
+	    /* Find ghost point */
+	    ghost_ic[idir] = (nb == 0) ? 
+            icoords[idir] - (i - istart + 1) : icoords[idir] + (i - istart + 1);
+	    
+        for (int j = 0; j < dim; ++j)
+            coords_ghost[j] = top_L[j] + ghost_ic[j]*top_h[j];
+
+        double intrp_coeffs[MAXD] = {0.0};
+        HYPER_SURF_ELEMENT* hsurf_elem;
+        HYPER_SURF* hsurf;
+
+        bool nip_found = nearest_interface_point(coords_ghost,comp,front->grid_intfc,
+                NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+
+        /*
+        bool nip_found = nearest_interface_point(coords_ghost,comp,front->interf,
+                NO_SUBDOMAIN,nullptr,crx_coords,intrp_coeffs,&hsurf_elem,&hsurf);
+        */
+
+        if (!nip_found)
+        {
+            printf("ERROR G_CARTESIAN::setNeumannStatesNEW(): "
+                    "can't find nearest interface point\n");
+            LOC(); clean_up(EXIT_FAILURE);
+        }
+
+
+        double dist_ghost = distance_between_positions(coords_ghost,crx_coords,dim);
+
+
+        //compute the normal and velocity vectors at the interface point
+        double vel_intfc[MAXD] = {0.0};
+        switch (dim)
+        {
+            case 2:
+                {
+                    double ns[MAXD] = {0.0};
+                    double ne[MAXD] = {0.0};
+                    
+                    normal(Bond_of_hse(hsurf_elem)->start,hsurf_elem,hsurf,ns,front);
+                    normal(Bond_of_hse(hsurf_elem)->end,hsurf_elem,hsurf,ne,front);
+
+                    STATE* ss;
+                    STATE* se;
+
+                    if (gas_comp(negative_component(hsurf)))
+                    {
+                        ss = (STATE*)left_state(Bond_of_hse(hsurf_elem)->start);
+                        se = (STATE*)left_state(Bond_of_hse(hsurf_elem)->end);
+                    }
+                    else if (gas_comp(positive_component(hsurf)))
+                    {
+                        ss = (STATE*)right_state(Bond_of_hse(hsurf_elem)->start);
+                        se = (STATE*)right_state(Bond_of_hse(hsurf_elem)->end);
+                    }
+                    else
+                    {
+                        printf("ERROR setNeumannStatesNEW(): "
+                                "no fluid component on hypersurface\n");
+                        LOC(); clean_up(EXIT_FAILURE);
+                    }
+
+                    for (int i = 0; i < dim; ++i)
+                    {
+                        nor[i] = (1.0 - intrp_coeffs[0])*ns[i] + intrp_coeffs[0]*ne[i];
+                        vel_intfc[i] = (1.0 - intrp_coeffs[0])*ss->vel[i] + intrp_coeffs[0]*se->vel[i];
+                    }
+                }
+                break;
+
+            case 3:
+                {
+                    TRI* nearTri = Tri_of_hse(hsurf_elem);
+                    const double* tnor = Tri_normal(nearTri);
+                    
+                    STATE* st[3];
+
+                    if (gas_comp(negative_component(hsurf)))
+                    {
+                        for (int j = 0; j < 3; ++j)
+                            st[j] = (STATE*)left_state(Point_of_tri(nearTri)[j]);
+                    }
+                    else if (gas_comp(positive_component(hsurf)))
+                    {
+                        for (int j = 0; j < 3; ++j)
+                            st[j] = (STATE*)right_state(Point_of_tri(nearTri)[j]);
+                    }
+                    else
+                    {
+                        printf("ERROR setNeumannStatesNEW(): "
+                                "no fluid component on hypersurface\n");
+                        LOC(); clean_up(EXIT_FAILURE);
+                    }
+
+                    for (int i = 0; i < dim; ++i)
+                    {
+                        nor[i] = tnor[i];
+
+                        vel_intfc[i] = 0.0;
+                        for (int j = 0; j < 3; ++j)
+                            vel_intfc[i] += intrp_coeffs[j]*st[j]->vel[i];
+                    }
+                }
+                break;
+        }
+
+        //NOTE: Tri_normal() does not return a unit vector
+        double mag_nor = Magd(nor,dim);
+        for (int i = 0; i < dim; ++i)
+            nor[i] /= mag_nor;
+            
+        if (comp == negative_component(hsurf))
+        {
+            for (int i = 0; i < dim; ++i)
+                nor[i] *= -1.0;
+        }
+        
+
+        double dist_reflect;
+        if (eqn_params->use_preset_dist_reflect)
+        {
+            dist_reflect = eqn_params->dist_reflect;
+        }
+        else
+        {
+            //NOTE: must use unit-length vectors with FT_GridSizeInDir()
+            dist_reflect = FT_GridSizeInDir(nor,front);
+        }
+
+
+        //The desired reflected point
+        for (int j = 0; j < dim; ++j)
+        {
+            coords_reflect[j] = crx_coords[j] + dist_reflect*nor[j];
+        }
+
+	    /* Interpolate the state at the reflected point */
+	    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->dens,
+                getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->pres,
+                getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->k_turb,
+                getStateKTurb,&st_tmp.k_turb,&m_vst->k_turb[index]);
+	    
+        for (int l = 0; l < dim; ++l)
+        {
+            FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->momn[l],
+                    getStateMom[l],&st_tmp.momn[l],&m_vst->momn[l][index]);
+        }
+
+        double vel_reflect[MAXD] = {0.0};
+	    for (int j = 0; j < dim; j++)
+	    {
+		    vel_reflect[j] = st_tmp.momn[j]/st_tmp.dens;
+        }
+		
+		/* relative velocity wrt intfc */
+        double vel_rel[MAXD] = {0.0};
+	    double vn = 0.0;
+
+	    for (int j = 0; j < dim; j++)
+	    {
+		    vel_rel[j] = vel_reflect[j] - vel_intfc[j];
+		    vn += vel_rel[j]*nor[j];
+	    }
+
+//////////////////////////////////////////////////////////////////////////////////////////
+        if (eqn_params->is_inviscid)
+        {
+            // reflect normal component of velocity, relative tangent velocity unchanged
+            for (int j = 0; j < dim; ++j)
+            {
+                v_slip[j] = vel_reflect[j] - 2.0*vn*nor[j];
+                    //st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
+            }
+            //st_tmp.engy = EosEnergy(&st_tmp);
+
+            break;
+        }
+        else if (eqn_params->no_slip_wall)
+        {
+            for (int j = 0; j < dim; ++j)
+            {
+                v_slip[j] = vel_intfc[j];
+            }
+
+            break;
+        }
+//////////////////////////////////////////////////////////////////////////////////////////
+        
+        double vel_rel_tan[MAXD] = {0.0};
+        double vel_rel_nor[MAXD] = {0.0};
+        double vel_ghost_nor[MAXD] = {0.0};
+
+        for (int j = 0; j < dim; ++j)
+        {
+            vel_rel_tan[j] = vel_rel[j] - vn*nor[j];
+            vel_rel_nor[j] = vn*nor[j];
+            vel_ghost_nor[j] = -1.0*(dist_ghost/dist_reflect)*vn*nor[j];
+        }
+        double mag_vtan = Magd(vel_rel_tan,dim);
+
+        EOS_PARAMS eos = eqn_params->eos[GAS_COMP2];
+        double R_specific = eos.R_specific;
+        double gamma = eos.gamma;
+        double Pr = eos.Pr;
+
+        double Cp = gamma/(gamma - 1.0)*R_specific;
+        double sqrmag_vel_tan = Dotd(vel_rel_tan, vel_rel_tan, dim);
+
+        double temp_wall;
+        if (!eqn_params->use_fixed_wall_temp)
+        {
+            //Interpolate the temperature at the reflected point
+            double temp_reflect;
+            FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->temp,
+                    getStateTemp,&temp_reflect,&m_vst->temp[index]);
+
+            //Compute Wall Temperature
+            temp_wall = temp_reflect + 0.5*pow(Pr,1.0/3.0)*sqrmag_vel_tan/Cp;
+        }
+        else
+        {
+            temp_wall = eqn_params->fixed_wall_temp;
+        }
+
+        //Compute density near wall using the wall temperature and the pressure at the reflected point
+        double dens_wall = st_tmp.pres/temp_wall/R_specific;
+            //double dens_wall = pres_reflect/temp_wall/R_specific;
+
+        //Interpolate the viscosity at the reflected point
+        double mu_reflect;
+        FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu,
+                getStateMu,&mu_reflect,&m_vst->mu[index]);
+        
+        if (std::isnan(mu_reflect) || std::isinf(mu_reflect))
+        {
+           printf("\nsetSlipBoundaryNIP() ERROR: nan/inf mu_reflect\n");
+           printf("mu_reflect = %g , mu[%d] = %g\n",mu_reflect,index,m_vst->mu[index]);
+           LOC(); clean_up(EXIT_FAILURE);
+        }
+        
+        double mu_turb_reflect = 0.0;
+        if (eqn_params->use_eddy_viscosity)
+        {
+            FT_IntrpStateVarAtCoords(front,comp,coords_reflect,m_vst->mu_turb,
+                    getStateMuTurb,&mu_turb_reflect,&m_vst->mu_turb[index]);
+            mu_reflect += mu_turb_reflect;
+        }
+        
+        double tau_wall[MAXD] = {0.0};
+        
+        double mag_tau_wall = computeWallShearStress(mag_vtan,dist_reflect,mu_reflect,dens_wall,100.0);
+        
+        if (mag_vtan > MACH_EPS)
+        {
+            for (int j = 0; j < dim; ++j)
+                tau_wall[j] = mag_tau_wall*vel_rel_tan[j]/mag_vtan;
+        }
+
+        double vel_ghost_tan[MAXD] = {0.0};
+        double vel_ghost_rel[MAXD] = {0.0};
+        
+        double coeff_tau = (mu_reflect == 0) ? 0.0 : (dist_reflect - dist_ghost)/mu_reflect;
+        
+        for (int j = 0; j < dim; ++j)
+        {
+            vel_ghost_tan[j] = vel_rel_tan[j] - coeff_tau*tau_wall[j];
+            vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
+        }
+    
+        for (int j = 0; j < dim; ++j)
+        {
+            v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];
+        }
+
+        /*
+        if (!eqn_params->is_inviscid)
+        {
+            // Only normal component is reflected, relative tangent velocity is zero
+            for (int j = 0; j < dim; j++)
+            {
+                v_slip[j] = vel_intfc[j] - 1.0*vn*nor[j];
+                st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
+            }
+        }
+        */
+        
+    }
+
+///////////////////////////////////////////////////////////////////////
+    for (int j = 0; j < dim; j++)
+    {
+        st_tmp.momn[j] = v_slip[j]*st_tmp.dens;
+    }
+    st_tmp.engy = EosEnergy(&st_tmp);
+
+    /* debugging printout */
+    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
+    {
+        printf("negative energy! \n");
+        printf("icoords = %d %d %d \n", icoords[0],icoords[1],icoords[2]);
+        printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],st_tmp.momn[1],
+                st_tmp.momn[2],st_tmp.pres,st_tmp.engy);
+        printf("st_tmp.dim = %d, idir = %d, nb = %d \n",st_tmp.dim,idir,nb);
+        printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp.eos->gamma,
+                st_tmp.eos->einf,st_tmp.eos->pinf);
+    
+        printf("coords_reflect = %f %f %f \n",
+                coords_reflect[0],coords_reflect[1],coords_reflect[2]);
+        LOC(); clean_up(EXIT_FAILURE);
+    }
+///////////////////////////////////////////////////////////////////////
+
+
+    for (int i = istart; i <= nrad; ++i)
+    {
+	    if (nb == 0)
+        {
+            vst->dens[nrad-i] = st_tmp.dens;
+            vst->engy[nrad-i] = st_tmp.engy;
+            vst->pres[nrad-i] = st_tmp.pres;
+            vst->k_turb[nrad-i] = st_tmp.k_turb;
+                
+            for (int j = 0; j < 3; j++)
+                vst->momn[j][nrad-i] = 0.0;
+            
+            if (dim == 1)
+            {
+                vst->momn[0][nrad-i] = st_tmp.momn[0];
+            }
+            else if (dim == 2)
+            {
+                for (int j = 0; j < 2; j++)
+                    vst->momn[j][nrad-i] = st_tmp.momn[ind2[idir][j]];
+            }
+            else if (dim == 3)
+            {
+                for (int j = 0; j < 3; j++)
+                    vst->momn[j][nrad-i] = st_tmp.momn[ind3[idir][j]];
+            }
+        }
+	    else
+        {
+            vst->dens[n+nrad+i-1] = st_tmp.dens;
+            vst->engy[n+nrad+i-1] = st_tmp.engy;
+            vst->pres[n+nrad+i-1] = st_tmp.pres;
+            vst->k_turb[n+nrad+i-1] = st_tmp.k_turb;
+        
+            for (int j = 0; j < 3; j++)
+                vst->momn[j][n+nrad+i-1] = 0.0;
+    
+            if (dim == 1)
+            {
+                vst->momn[0][n+nrad+i-1] = st_tmp.momn[0];
+            }
+            else if (dim == 2)
+            {
+                for (int j = 0; j < 2; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp.momn[ind2[idir][j]];
+            }
+            else if (dim == 3)
+            {
+                for (int j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp.momn[ind3[idir][j]];
+            }
+        }
+	}
+
+	if (debugging("neumann_buffer"))
+	    (void) printf("Leaving setNeumannStatesNEW()\n");
+}	/* end setNeumannStatesNEW */
+
+//void G_CARTESIAN::setNeumannStates(
+void G_CARTESIAN::setNeumannStatesOLD(
+	SWEEP		*vst,
+	SWEEP		*m_vst,
+	HYPER_SURF 	*hs,
+	STATE		*state,
+	int		*icoords,
+	int		idir,
+	int		nb,
+	int		n,
+	int		istart,
+	COMPONENT	comp)
+{
 	int 		i,j,index;
 	int             ind2[2][2] = {{0,1},{1,0}};
         int             ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
 	int 		ic[MAXD];
-	double		*vel_ref = state->vel;
+	double		*vel_intfc = state->vel;
 	double		coords[MAXD],coords_ref[MAXD],crx_coords[MAXD];
 	double		nor[MAXD],vn,v[MAXD];
 	GRID_DIRECTION 	ldir[3] = {WEST,SOUTH,LOWER};
@@ -5070,7 +5896,6 @@ void G_CARTESIAN::setNeumannStates(
 	GRID_DIRECTION  dir;
 	STATE		st_tmp;
 
-	//st_tmp.eos = state->eos;
 	st_tmp.eos = &eqn_params->eos[comp];
 	st_tmp.dim = dim;
 	index = d_index(icoords,top_gmax,dim);
@@ -5093,7 +5918,7 @@ void G_CARTESIAN::setNeumannStates(
 	    (void) print_general_vector("coords = ",coords,dim,"\n");
 	    (void) print_general_vector("crx_coords = ",crx_coords,dim,"\n");
 	    (void) print_general_vector("nor = ",nor,dim,"\n");
-	    (void) print_general_vector("vel_ref = ",vel_ref,dim,"\n");
+	    (void) print_general_vector("vel_intfc = ",vel_intfc,dim,"\n");
 	}
 
 	for (i = istart; i <= nrad; ++i)
@@ -5105,106 +5930,156 @@ void G_CARTESIAN::setNeumannStates(
 		coords_ref[j] = top_L[j] + ic[j]*top_h[j];
 
 	    /* Reflect ghost point through intfc-mirror at crossing */
-	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
 	    vn = 0.0;
-	    for (j = 0; j < dim; ++j)
+	    coords_ref[idir] = 2.0*crx_coords[idir] - coords_ref[idir];
+	    
+        for (j = 0; j < dim; ++j)
 	    {
-		v[j] = coords_ref[j] - crx_coords[j];
-		vn += v[j]*nor[j];
+		    v[j] = coords_ref[j] - crx_coords[j];
+		    vn += v[j]*nor[j];
 	    }
-	    for (j = 0; j < dim; ++j)
-		v[j] = 2.0*vn*nor[j] - v[j];
-	    for (j = 0; j < dim; ++j)
-		coords_ref[j] = crx_coords[j] + v[j];
+	    
+        for (j = 0; j < dim; ++j)
+		    v[j] = 2.0*vn*nor[j] - v[j];
+	    
+        for (j = 0; j < dim; ++j)
+		    coords_ref[j] = crx_coords[j] + v[j];
 			
 	    /* Interpolate the state at the reflected point */
 	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-		m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
-	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-		m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
-	    FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-			m_vst->momn[0],getStateXmom,&st_tmp.momn[0],
-			&m_vst->momn[0][index]);
-	    if (dim > 1)
-		FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-			m_vst->momn[1],getStateYmom,&st_tmp.momn[1],
-			&m_vst->momn[1][index]);
-	    if (dim > 2)
-		FT_IntrpStateVarAtCoords(front,comp,coords_ref,
-			m_vst->momn[2],getStateZmom,&st_tmp.momn[2],
-			&m_vst->momn[2][index]);
-		/* Galileo Transformation */
+                m_vst->dens,getStateDens,&st_tmp.dens,&m_vst->dens[index]);
+	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->pres,getStatePres,&st_tmp.pres,&m_vst->pres[index]);
+	    
+        FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                m_vst->k_turb,getStateKTurb,&st_tmp.k_turb,&m_vst->k_turb[index]);
+	    
+        for (int l = 0; l < dim; ++l)
+        {
+            FT_IntrpStateVarAtCoords(front,comp,coords_ref,
+                    m_vst->momn[l],getStateMom[l],&st_tmp.momn[l],
+                    &m_vst->momn[l][index]);
+        }
+
+        double vel_reflect[MAXD] = {0.0};
+	    for (j = 0; j < dim; j++)
+	    {
+		    vel_reflect[j] = st_tmp.momn[j]/st_tmp.dens;
+        }
+		
+		/* relative velocity wrt intfc */
+        /*
 	    vn = 0.0;
 	    for (j = 0; j < dim; j++)
 	    {
-		v[j] = st_tmp.momn[j]/st_tmp.dens - vel_ref[j];
-		vn += v[j]*nor[j];
-	    }
-            /* Only normal component is reflected, 
-               relative tangent velocity is zero */
-            for (j = 0; j < dim; j++)
-	    {
-            //NOTE: vel_ref is the intfc velocity
-                v[j] = vel_ref[j] - 1.0*vn*nor[j];
-		st_tmp.momn[j] = v[j]*st_tmp.dens;
+		    v[j] = vel_reflect[j] - vel_intfc[j];
+		    vn += v[j]*nor[j];
 	    }
 
+	    if (!eqn_params->is_inviscid)
+        {
+            // Only normal component is reflected, relative tangent velocity is zero
+            for (j = 0; j < dim; j++)
+            {
+                v[j] = vel_intfc[j] - 1.0*vn*nor[j];
+                st_tmp.momn[j] = v[j]*st_tmp.dens;
+            }
+        }
+        else
+        {
+            // reflect normal component of velocity, relative tangent velocity unchanged
+            for (j = 0; j < dim; ++j)
+            {
+                v[j] = vel_reflect[j] - 2.0*vn*nor[j];
+                st_tmp.momn[j] = v[j]*st_tmp.dens;
+            }
+        }
+        */
+        
+//////////////////////////////////////////////////////////////////////////////////////////
+        // reflect normal component of velocity, relative tangent velocity unchanged
+        for (j = 0; j < dim; ++j)
+        {
+            v[j] = vel_reflect[j] - 2.0*vn*nor[j];
+            st_tmp.momn[j] = v[j]*st_tmp.dens;
+        }
+//////////////////////////////////////////////////////////////////////////////////////////
+
+        for (j = 0; j < dim; j++)
+	    {
+    		st_tmp.momn[j] = v[j]*st_tmp.dens;
+        }
+
 	    st_tmp.engy = EosEnergy(&st_tmp);
-	    /* debugging printout */
+
+        /* debugging printout */
 	    if (st_tmp.engy < 0.0 || st_tmp.eos->gamma < 0.001)
 	    {
-		printf("negative engrgy! \n");
-		printf("icoords = %d %d %d \n", icoords[0],icoords[1],
-						icoords[2]);
-		printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],
-			st_tmp.momn[1],st_tmp.momn[2],st_tmp.pres,
-			st_tmp.engy);
-		printf("st_tmp.dim = %d, idir = %d, nb = %d \n",
-			st_tmp.dim,idir,nb);
-		printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp.eos->gamma,
-			st_tmp.eos->einf,st_tmp.eos->pinf);
-		printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],
-						coords_ref[2]);
-		clean_up(0);
+    		printf("negative energy! \n");
+	    	printf("icoords = %d %d %d \n", icoords[0],icoords[1],icoords[2]);
+		    printf("%f %f %f %f %f %f \n",st_tmp.dens,st_tmp.momn[0],st_tmp.momn[1],
+                    st_tmp.momn[2],st_tmp.pres,st_tmp.engy);
+		    printf("st_tmp.dim = %d, idir = %d, nb = %d \n",st_tmp.dim,idir,nb);
+		    printf("gamma = %f, einf = %f, pinf = %f \n",st_tmp.eos->gamma,
+                    st_tmp.eos->einf,st_tmp.eos->pinf);
+		
+            printf("coords_ref = %f %f %f \n",coords_ref[0],coords_ref[1],coords_ref[2]);
+            LOC(); clean_up(EXIT_FAILURE);
 	    }
 
 	    if (nb == 0)
-	    {
-		vst->dens[nrad-i] = st_tmp.dens;
-		vst->engy[nrad-i] = st_tmp.engy;
-		vst->pres[nrad-i] = st_tmp.pres;
-	    	for (j = 0; j < 3; j++)
-		    vst->momn[j][nrad-i] = 0.0;
-		if (dim == 1)
-		   vst->momn[0][nrad-i] = st_tmp.momn[0];
-	    	else if (dim == 2)
-		    for (j = 0; j < 2; j++)
-		    	vst->momn[j][nrad-i] = 
-				st_tmp.momn[ind2[idir][j]];
-	    	else if (dim == 3)
-		    for (j = 0; j < 3; j++)
-		    	vst->momn[j][nrad-i] = 
-				st_tmp.momn[ind3[idir][j]];
-	    }
+        {
+            vst->dens[nrad-i] = st_tmp.dens;
+            vst->engy[nrad-i] = st_tmp.engy;
+            vst->pres[nrad-i] = st_tmp.pres;
+            vst->k_turb[nrad-i] = st_tmp.k_turb;
+                
+            for (j = 0; j < 3; j++)
+                vst->momn[j][nrad-i] = 0.0;
+            
+            if (dim == 1)
+            {
+                vst->momn[0][nrad-i] = st_tmp.momn[0];
+            }
+            else if (dim == 2)
+            {
+                for (j = 0; j < 2; j++)
+                    vst->momn[j][nrad-i] = st_tmp.momn[ind2[idir][j]];
+            }
+            else if (dim == 3)
+            {
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][nrad-i] = st_tmp.momn[ind3[idir][j]];
+            }
+        }
 	    else
-	    {
-		vst->dens[n+nrad+i-1] = st_tmp.dens;
-		vst->engy[n+nrad+i-1] = st_tmp.engy;
-		vst->pres[n+nrad+i-1] = st_tmp.pres;
-	    	for (j = 0; j < 3; j++)
-		    vst->momn[j][n+nrad+i-1] = 0.0;
-		if (dim == 1)
-		   vst->momn[0][n+nrad+i-1] = st_tmp.momn[0];
-	    	else if (dim == 2)
-		    for (j = 0; j < 2; j++)
-		    	vst->momn[j][n+nrad+i-1] = 
-				st_tmp.momn[ind2[idir][j]];
-	    	else if (dim == 3)
-		    for (j = 0; j < 3; j++)
-		    	vst->momn[j][n+nrad+i-1] = 
-				st_tmp.momn[ind3[idir][j]];
-	    }
+        {
+            vst->dens[n+nrad+i-1] = st_tmp.dens;
+            vst->engy[n+nrad+i-1] = st_tmp.engy;
+            vst->pres[n+nrad+i-1] = st_tmp.pres;
+            vst->k_turb[n+nrad+i-1] = st_tmp.k_turb;
+        
+            for (j = 0; j < 3; j++)
+                vst->momn[j][n+nrad+i-1] = 0.0;
+    
+            if (dim == 1)
+            {
+                vst->momn[0][n+nrad+i-1] = st_tmp.momn[0];
+            }
+            else if (dim == 2)
+            {
+                for (j = 0; j < 2; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp.momn[ind2[idir][j]];
+            }
+            else if (dim == 3)
+            {
+                for (j = 0; j < 3; j++)
+                    vst->momn[j][n+nrad+i-1] = st_tmp.momn[ind3[idir][j]];
+            }
+        }
 	}
+
 	if (debugging("neumann_buffer"))
 	    (void) printf("Leaving setNeumannStates()\n");
 }	/* end setNeumannStates */
@@ -5218,7 +6093,8 @@ void G_CARTESIAN::setDirichletStates(
 	int		dir,
 	int		nb,
 	int		n,
-	int		istart)
+	int		istart,
+    COMPONENT comp)
 {
 	int		j, k, index;
 	STATE 		*state;
@@ -5226,113 +6102,161 @@ void G_CARTESIAN::setDirichletStates(
 	int		ind3[3][3] = {{0,1,2},{1,2,0},{2,0,1}};
 
 	if (nb == 0)
-	{
-	  if (boundary_state(hs) != NULL)
-	  {
-	    //preset state bdry
-	    state = (STATE*)boundary_state(hs);
-	    for (k = istart; k <= nrad; ++k)
-	    {
-		vst->dens[nrad-k] = state->dens;
-		vst->engy[nrad-k] = state->engy;
-		vst->pres[nrad-k] = state->pres;
-		
-		for (j = 0; j < 3; j++)
+    {
+        if (boundary_state_function(hs) &&
+            (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_constantWithWhiteNoise") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_symmetryBoundaryState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
+        {
+            //TODO: Should the boundary_state_function be called here and then use the
+            //      computed boundary state to fill the stencil (constant extrapolation)
+            //
+            //      WE CAN INTERPOLATE THE INTFC STATE AT THE CROSSING:
+            //
+            //      SEE setDirichletViscousGhostState() for how to do this.
+            
+
+            for (k = istart; k <= nrad; ++k)
+            {
+                index = d_index(icoords,top_gmax, dim);
+                vst->dens[nrad-k] = m_vst->dens[index];
+                vst->engy[nrad-k] = m_vst->engy[index];
+                vst->pres[nrad-k] = m_vst->pres[index];
+                vst->k_turb[nrad-k] = m_vst->k_turb[index];
+
+                for (j = 0; j < 3; j++)
                     vst->momn[j][nrad-k] = 0.0;
-		if (dim == 1)
-		    vst->momn[0][nrad-k] = state->momn[0];
-		else if (dim == 2)
-		  for (j = 0; j < 2; j++)
-		    vst->momn[j][nrad-k] = state->momn[ind2[dir][j]];
-		else if (dim == 3)
-		  for (j = 0; j < 3; j++)
-		    vst->momn[j][nrad-k] = state->momn[ind3[dir][j]];
-	    }
-	  }
-	  else if (boundary_state_function(hs) &&
-              strcmp(boundary_state_function_name(hs),
-	      "cF_flowThroughBoundaryState") == 0)
-	  {
-	    //flow through bdry
-	    for (k = istart; k <= nrad; ++k)
-	    {
-		index = d_index(icoords,top_gmax, dim);
-		vst->dens[nrad-k] = m_vst->dens[index];
-		vst->engy[nrad-k] = m_vst->engy[index];
-		vst->pres[nrad-k] = m_vst->pres[index];
-		
-		for (j = 0; j < 3; j++)
-                    vst->momn[j][nrad-k] = 0.0;
-		if (dim == 1)
-		    vst->momn[0][nrad-k] = m_vst->momn[0][index];
-		else if (dim == 2)
-		  for (j = 0; j < 2; j++)
-		    vst->momn[j][nrad-k] = m_vst->momn[ind2[dir][j]][index];
-		else if (dim == 3)
-		  for (j = 0; j < 3; j++)
-		    vst->momn[j][nrad-k] = m_vst->momn[ind3[dir][j]][index];
-	    }
-	  }
-	  else
-	  {
-	    (void) printf("Unimplemented Dirichlet boundary type!\n");
-	    clean_up(ERROR);
-	  }
-	}
+
+                if (dim == 1)
+                {
+                    vst->momn[0][nrad-k] = m_vst->momn[0][index];
+                }
+                else if (dim == 2)
+                {
+                    for (j = 0; j < 2; j++)
+                        vst->momn[j][nrad-k] = m_vst->momn[ind2[dir][j]][index];
+                }
+                else if (dim == 3)
+                {
+                    for (j = 0; j < 3; j++)
+                        vst->momn[j][nrad-k] = m_vst->momn[ind3[dir][j]][index];
+                }
+            }
+
+        }
+        else if (boundary_state(hs) != NULL)
+        {
+          //preset state bdry
+          state = (STATE*)boundary_state(hs);
+          for (k = istart; k <= nrad; ++k)
+          {
+              vst->dens[nrad-k] = state->dens;
+              vst->engy[nrad-k] = state->engy;
+              vst->pres[nrad-k] = state->pres;
+              vst->k_turb[nrad-k] = state->k_turb;
+            
+              for (j = 0; j < 3; j++)
+                  vst->momn[j][nrad-k] = 0.0;
+
+              if (dim == 1)
+              {
+                  vst->momn[0][nrad-k] = state->momn[0];
+              }
+              else if (dim == 2)
+              {
+                  for (j = 0; j < 2; j++)
+                      vst->momn[j][nrad-k] = state->momn[ind2[dir][j]];
+              }
+              else if (dim == 3)
+              {
+                  for (j = 0; j < 3; j++)
+                      vst->momn[j][nrad-k] = state->momn[ind3[dir][j]];
+              }
+          }
+        }
+        else
+        {
+            printf("\n\nUnrecognized Dirichlet boundary type!\n\n");
+            LOC(); clean_up(ERROR);
+        }
+    }
 	else
 	{
-	  if (boundary_state(hs) != NULL)
-	  {
-	    state = (STATE*)boundary_state(hs);
-	    for (k = istart; k <= nrad; ++k)
-	    {
-		vst->dens[n+nrad+k-1] = state->dens;
-		vst->engy[n+nrad+k-1] = state->engy;
-		vst->pres[n+nrad+k-1] = state->pres;
-		
-		for (j = 0; j < 3; j++)
+        if (boundary_state_function(hs) &&
+            (strcmp(boundary_state_function_name(hs),"cF_flowThroughBoundaryState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_constantWithWhiteNoise") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_supersonicOutflowState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_symmetryBoundaryState") == 0 ||
+             strcmp(boundary_state_function_name(hs),"cF_farfieldBoundaryState") == 0))
+        {
+            //TODO: Should the boundary_state_function be called here and then use the
+            //      computed boundary state to fill the stencil (constant extrapolation)
+            
+            for (k = istart; k <= nrad; ++k)
+            {
+                index = d_index(icoords,top_gmax, dim);
+                vst->dens[n+nrad+k-1] = m_vst->dens[index];
+                vst->engy[n+nrad+k-1] = m_vst->engy[index];
+                vst->pres[n+nrad+k-1] = m_vst->pres[index];
+                vst->k_turb[n+nrad+k-1] = m_vst->k_turb[index];
+
+                for (j = 0; j < 3; j++)
                     vst->momn[j][n+nrad+k-1] = 0.0;
-		if (dim == 1)
-		    vst->momn[0][n+nrad+k-1] = state->momn[0];
-		else if (dim == 2)
-		  for (j = 0; j < 2; j++)
-		    vst->momn[j][n+nrad+k-1] = state->momn[ind2[dir][j]];
-		else if (dim == 3)
-		  for (j = 0; j < 3; j++)
-		    vst->momn[j][n+nrad+k-1] = state->momn[ind3[dir][j]];
-	    }
-	  }
-	  else if (boundary_state_function(hs) &&
-              strcmp(boundary_state_function_name(hs),
-	      "cF_flowThroughBoundaryState") == 0)
-	  {
-	    for (k = istart; k <= nrad; ++k)
-	    {
-		index = d_index(icoords,top_gmax, dim);
-		vst->dens[n+nrad+k-1] = m_vst->dens[index];
-		vst->engy[n+nrad+k-1] = m_vst->engy[index];
-		vst->pres[n+nrad+k-1] = m_vst->pres[index];
-		
-		for (j = 0; j < 3; j++)
+
+                if (dim == 1)
+                {
+                    vst->momn[0][n+nrad+k-1] = m_vst->momn[0][index];
+                }
+                else if (dim == 2)
+                {
+                    for (j = 0; j < 2; j++)
+                        vst->momn[j][n+nrad+k-1] = m_vst->momn[ind2[dir][j]][index];
+                }
+                else if (dim == 3)
+                {
+                    for (j = 0; j < 3; j++)
+                        vst->momn[j][n+nrad+k-1] = m_vst->momn[ind3[dir][j]][index];
+                }
+            }
+
+        }
+        else if (boundary_state(hs) != NULL)
+        {
+            state = (STATE*)boundary_state(hs);
+            for (k = istart; k <= nrad; ++k)
+            {
+                vst->dens[n+nrad+k-1] = state->dens;
+                vst->engy[n+nrad+k-1] = state->engy;
+                vst->pres[n+nrad+k-1] = state->pres;
+                vst->k_turb[n+nrad+k-1] = state->k_turb;
+                
+                for (j = 0; j < 3; j++)
                     vst->momn[j][n+nrad+k-1] = 0.0;
-		if (dim == 1)
-		    vst->momn[0][n+nrad+k-1] = m_vst->momn[0][index];
-		else if (dim == 2)
-		  for (j = 0; j < 2; j++)
-		    vst->momn[j][n+nrad+k-1] = 
-					m_vst->momn[ind2[dir][j]][index];
-		else if (dim == 3)
-		  for (j = 0; j < 3; j++)
-		    vst->momn[j][n+nrad+k-1] = 
-					m_vst->momn[ind3[dir][j]][index];
-	    }
-	  }
-	  else
-	  {
-	    (void) printf("Unimplemented Dirichlet boundary type!\n");
-	    clean_up(ERROR);
-	  }
-	}
+
+                if (dim == 1)
+                {
+                    vst->momn[0][n+nrad+k-1] = state->momn[0];
+                }
+                else if (dim == 2)
+                {
+                    for (j = 0; j < 2; j++)
+                        vst->momn[j][n+nrad+k-1] = state->momn[ind2[dir][j]];
+                }
+                else if (dim == 3)
+                {
+                    for (j = 0; j < 3; j++)
+                        vst->momn[j][n+nrad+k-1] = state->momn[ind3[dir][j]];
+                }
+            }
+        }
+        else
+        {
+            printf("\n\nUnrecognized Dirichlet boundary type!\n\n");
+            LOC(); clean_up(ERROR);
+        }
+    }
 }
 
 void G_CARTESIAN::initSampleVelocity(char *in_name)
@@ -5381,11 +6305,28 @@ void G_CARTESIAN::initSampleVelocity(char *in_name)
 
 void G_CARTESIAN::checkCorrectForTolerance(STATE *state)
 {
-	if (state->dens < min_dens)
-	    state->dens = min_dens;
-	if (state->pres < min_pres)
-	    state->pres = min_pres;
-	state->engy = EosEnergy(state);
+    if (state->dens < min_dens)
+    {
+        printf("\n\nWARNING checkCorrectForTolerance(): \
+                state->dens = %g < min_dens = %g\n",state->dens, min_dens);
+        printf("setting to min_dens\n\n");
+        
+        state->dens = min_dens;
+    }
+    
+    if (state->pres < min_pres)
+    {
+        printf("\n\nWARNING checkCorrectForTolerance(): \
+                state->pres = %g < min_pres = %g\n",state->pres, min_pres);
+        printf("setting to min_pres\n\n");
+        
+        state->pres = min_pres;
+    }
+
+    //TODO: put into separate function
+    state->temp = EosTemperature(state);
+    state->engy = EosEnergy(state);
+    state->mu = EosViscosity(state);
 }	/* end checkCorrectForTolerance */
 
 boolean G_CARTESIAN::needBufferFromIntfc(
@@ -5447,7 +6388,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	int *grid_icoords,
 	double dt,
 	SWEEP *m_vst,
-        FSWEEP *m_flux)
+    FSWEEP *m_flux)
 {
 	int i,l,n,index;
 	SCHEME_PARAMS scheme_params;
@@ -5465,7 +6406,8 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	scheme_params.artificial_compression = eqn_params->articomp;
 	for (i = 0; i < dim; ++i)
 	    icoords[i] = grid_icoords[i];
-	seg_min = imin[idir];
+	
+    seg_min = imin[idir];
 	while (seg_min <= imax[idir])
 	{
 	    for (; seg_min <= imax[idir]; ++seg_min)
@@ -5481,6 +6423,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    	vst.dens[i] = 0.0; 
 	    	vst.pres[i] = 0.0; 
 	    	vst.engy[i] = 0.0; 
+	    	vst.k_turb[i] = 0.0; 
 	    	vst.momn[0][i] = vst.momn[1][i] = vst.momn[2][i] = 0.0;
 	    }
 	    i = seg_min;
@@ -5488,15 +6431,19 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    index = d_index(icoords,top_gmax,dim);
 	    comp = top_comp[index];
 	    n = 0;
+
 	    vst.dens[n+nrad] = m_vst->dens[index];
-            vst.engy[n+nrad] = m_vst->engy[index];
-            vst.pres[n+nrad] = m_vst->pres[index];
-	    for (l = 0; l < dim; ++l)
+        vst.engy[n+nrad] = m_vst->engy[index];
+        vst.pres[n+nrad] = m_vst->pres[index];
+        vst.k_turb[n+nrad] = m_vst->k_turb[index];
+	    
+        for (l = 0; l < dim; ++l)
             	vst.momn[l][n+nrad] = m_vst->momn[(l+idir)%dim][index];
 	    for (l = dim; l < 3; ++l)
             	vst.momn[l][n+nrad] = 0.0;
 	    seg_max = i;
 	    n++;
+
 	    for (i = seg_min+1; i <= imax[idir]; i++)
 	    {
 		icoords[idir] = i;
@@ -5508,6 +6455,7 @@ void G_CARTESIAN::addFluxAlongGridLine(
 	    	    vst.dens[n+nrad] = m_vst->dens[index];
 	    	    vst.engy[n+nrad] = m_vst->engy[index];
 	    	    vst.pres[n+nrad] = m_vst->pres[index];
+	    	    vst.k_turb[n+nrad] = m_vst->k_turb[index];
 		    for (l = 0; l < dim; ++l)
 	    	    	vst.momn[l][n+nrad] = m_vst->momn[(l+idir)%dim][index];
 		    for (l = dim; l < 3; ++l)
@@ -5516,7 +6464,8 @@ void G_CARTESIAN::addFluxAlongGridLine(
 		}
 		seg_max = i;
 	    }
-	    icoords[idir] = seg_min;
+	    
+        icoords[idir] = seg_min;
 	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,0);
 	    icoords[idir] = seg_max;
 	    appendGhostBuffer(&vst,m_vst,n,icoords,idir,1);
@@ -5603,85 +6552,266 @@ void G_CARTESIAN::errFunction()
 
 void G_CARTESIAN::adjustGFMStates()
 {
-        if(eqn_params->tracked)
-        {
-           double ***Gvel = eqn_params->Gvel;
-           double **Gdens = eqn_params->Gdens;
-           double **Gpres = eqn_params->Gpres;
-           int i,j,k,ii,jj,kk,index,index1,ind;
-           int icoords[3];
+    if (eqn_params->tracked)
+    {
+       double ***Gvel = eqn_params->Gvel;
+       double **Gdens = eqn_params->Gdens;
+       double **Gpres = eqn_params->Gpres;
+       int i,j,k,ii,jj,kk,index,index1,ind;
+       int icoords[3];
 
-           for (i = 0; i <= top_gmax[0]; i++)
-           for (j = 0; j <= top_gmax[1]; j++)
-           for (k = 0; k <= top_gmax[2]; k++)
-           {
-                icoords[0] = i;
-                icoords[1] = j;
-                icoords[2] = k;
-                index = d_index(icoords,top_gmax,dim);
+       for (i = 0; i <= top_gmax[0]; i++)
+       for (j = 0; j <= top_gmax[1]; j++)
+       for (k = 0; k <= top_gmax[2]; k++)
+       {
+            icoords[0] = i;
+            icoords[1] = j;
+            icoords[2] = k;
+            index = d_index(icoords,top_gmax,dim);
 
-                if (cell_center[index].comp != top_comp[index])
+            if (cell_center[index].comp != top_comp[index])
+            {
+                if (top_comp[index] == GAS_COMP1)
+                    ind = 0;
+                else
+                    ind = 1;
+
+                for (jj = 0; (j+jj) <= top_gmax[1]; jj++)
                 {
-                    if (top_comp[index] == GAS_COMP1)
-                        ind = 0;
-                    else
-                        ind = 1;
+                     icoords[1] = j+jj;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     
+                     Gdens[ind][index] = Gdens[ind][index1];
+                     for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
 
-                    for (jj = 0; (j+jj) <= top_gmax[1]; jj++)
-                    {
-                         icoords[1] = j+jj;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
-
-                    for (jj = 0; (j+jj) >= 0; jj--)
-                    {
-                         icoords[1] = j+jj;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
-
-                    for (ii = 0; (i+ii) >= 0; ii--)
-                    {
-                         icoords[0] = i+ii;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
-
-                    for (ii = 0; (i+ii) <= top_gmax[0]; ii++)
-                    {
-                         icoords[0] = i+ii;
-                         index1 = d_index(icoords,top_gmax,dim);
-                         Gdens[ind][index] = Gdens[ind][index1];
-			 for (kk = 0; kk < dim; ++kk)
-                             Gvel[ind][kk][index] = Gvel[ind][kk][index1];
-                         Gpres[ind][index] = Gpres[ind][index1];
-
-                         if (Gdens[ind][index] != 0)
-                             break;
-                    }
+                     if (Gdens[ind][index] != 0) break;
                 }
-           }
-        }
+
+                for (jj = 0; (j+jj) >= 0; jj--)
+                {
+                     icoords[1] = j+jj;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     
+                     Gdens[ind][index] = Gdens[ind][index1];
+                     for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
+
+                     if (Gdens[ind][index] != 0) break;
+                }
+
+                for (ii = 0; (i+ii) >= 0; ii--)
+                {
+                     icoords[0] = i+ii;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     
+                     Gdens[ind][index] = Gdens[ind][index1];
+                     for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
+
+                     if (Gdens[ind][index] != 0) break;
+                }
+
+                for (ii = 0; (i+ii) <= top_gmax[0]; ii++)
+                {
+                     icoords[0] = i+ii;
+                     index1 = d_index(icoords,top_gmax,dim);
+                     
+                     Gdens[ind][index] = Gdens[ind][index1];
+                     for (kk = 0; kk < dim; ++kk)
+                         Gvel[ind][kk][index] = Gvel[ind][kk][index1];
+                     Gpres[ind][index] = Gpres[ind][index1];
+
+                     if (Gdens[ind][index] != 0) break;
+                }
+
+            }
+       }
+    }
 }	/* end adjustGFMState */
+
+void G_CARTESIAN::addImmersedForce()
+{
+    if (dim != 3) return;
+    
+    double** f_surf = field.f_surf;
+
+    //TODO: set up for arbitrary usage in 2d and 3d
+    for (int k = imin[2]; k <= imax[2]; ++k)
+    for (int j = imin[1]; j <= imax[1]; ++j)
+    for (int i = imin[0]; i <= imax[0]; ++i)
+    {
+        int index = d_index3d(i,j,k,top_gmax);
+        for (int l = 0; l < dim; ++l)
+            f_surf[l][index] = 0.0;
+    }
+
+    if (front->step < eqn_params->fsi_startstep) return;
+    if (!eqn_params->with_string_fsi) return;
+    
+    double radius = eqn_params->string_radius;
+    double rhoS = eqn_params->string_density;
+    double c_drag = eqn_params->string_drag_coef;
+    double ampFluidFactor = eqn_params->string_ampFactor;
+
+    /*
+    //FINITE_STRING* params = &(eqn_params->string_fsi_params);
+    FINITE_STRING* params = eqn_params->string_fsi_params;
+    double radius = params->radius;
+    double rhoS = params->dens;
+    double c_drag = params->c_drag;
+    double ampFluidFactor = params->ampFluidFactor;
+    */
+
+    INTERFACE *grid_intfc = front->grid_intfc;
+    CURVE **c,*curve;
+    BOND *b;
+    POINT *p;
+
+    double* dens = field.dens;
+    double** momn = field.momn;
+    double** vel = field.vel;
+
+    int icoords[MAXD];
+    intfc_curve_loop(grid_intfc,c)
+    {
+        if (hsbdry_type(*c) != STRING_HSBDRY &&
+            hsbdry_type(*c) != DISKGAP_STRING_HSBDRY) continue;
+
+        curve = *c;
+        for (b = curve->first; b != curve->last; b = b->next)
+        {
+            p = b->end;
+            STATE* state_intfc = (STATE*)left_state(p);
+
+            rect_in_which(Coords(p),icoords,top_grid);
+            int index = d_index(icoords,top_gmax,dim);
+
+            //tangential direction along string BOND
+            double ldir[3];
+            for (int i = 0; i < 3; ++i)
+                ldir[i] = Coords(b->end)[i] - Coords(b->start)[i];
+            double length = Mag3d(ldir);
+            if (length < MACH_EPS)
+            {
+                printf("BOND length < MACH_EPS\n");
+                LOC(); clean_up(EXIT_FAILURE);
+            }
+
+            for (int i = 0; i < 3; ++i)
+                ldir[i] /= length;
+
+            double* vel_intfc = state_intfc->vel;
+
+            double dens_fluid;
+            FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
+                    dens,getStateDens,&dens_fluid,&dens[index]);
+           
+            double vfluid[3];
+            double momn_fluid[3];
+            for (int i = 0; i < 3; ++i)
+            {
+                FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
+                        vel[i],getStateVel[i],&vfluid[i],&vel[i][index]);
+                /*
+                FT_IntrpStateVarAtCoords(front,NO_COMP,Coords(p),
+                        momn[i],getStateMom[i],&momn_fluid[i],&momn[i][index]);
+                
+                vfluid[i] = momn_fluid[i]/dens_fluid;
+                */
+            }
+
+            double vrel[3];
+            double vt = 0.0;
+            
+            for (int i = 0; i < 3; ++i)
+            {
+                vrel[i] = vfluid[i] - vel_intfc[i];
+                vt += vrel[i]*ldir[i];
+            }
+
+            double nor_speed = 0.0;
+            double vtan[3], vnor[3];
+            for (int i = 0; i < 3; ++i)
+            {   
+                vtan[i] = vt*ldir[i];
+                vnor[i] = vrel[i] - vtan[i];
+                nor_speed += sqr(vnor[i]);
+            }
+            nor_speed = sqrt(nor_speed);
+
+            double A_ref = 2.0*radius*length;
+                //double A_ref = 2.0*PI*radius*length;
+            double mass_str_bond = rhoS*length;
+
+            double dragForce[MAXD] = {0.0};
+            for (int i = 0; i < 3; ++i)
+            {
+                dragForce[i] = 0.5*dens_fluid*c_drag*A_ref*nor_speed*vnor[i];
+                dragForce[i] *= ampFluidFactor;
+            }
+
+            if (debugging("string_fluid"))
+            {
+                printf("\n");
+                printf("pt = %f %f %f\n",Coords(p)[0],Coords(p)[1],Coords(p)[2]);
+                printf("\tdragForce = %g %g %g \n",dragForce[0],dragForce[1],dragForce[2]);
+                printf("\tc_drag = %f  |  A_ref = %f  |  dens_fluid = %f\n",c_drag,A_ref,dens_fluid);
+                printf("\tnor_speed = %f  |  ampfactor = %f\n\n",nor_speed,ampFluidFactor);
+            }
+
+            double coords[MAXD];
+
+            for (int k = icoords[2]-2; k <= icoords[2]+2; k++)
+            for (int j = icoords[1]-2; j <= icoords[1]+2; j++)
+            for (int i = icoords[0]-2; i <= icoords[0]+2; i++)
+            {
+                if (i < 0 || j < 0 || k < 0) continue;
+                if (i > top_gmax[0] || j > top_gmax[1] || k > top_gmax[2]) continue;
+
+                int ic = d_index3d(i,j,k,top_gmax);
+                
+                coords[0] = top_L[0] + i*top_h[0];
+                coords[1] = top_L[1] + j*top_h[1];
+                coords[2] = top_L[2] + k*top_h[2];
+                
+                double dist = distance_between_positions(Coords(p),coords,3);
+
+                double vec[MAXD];
+                for (int l = 0; l < dim; ++l)
+                    vec[l] = (coords[l] - Coords(p)[l])/dist;
+
+                double dir_h = FT_GridSizeInDir(vec,front);
+
+                //TODO: use smooth radial basis function e.g. smooothed dirac delta
+                double alpha = (dir_h*4.0 - dist)/(dir_h*4.0);
+
+                if (alpha < 0) continue;
+
+                double dV = top_h[0]*top_h[1]*top_h[2];
+
+                for (int l = 0; l < dim; ++l)
+                {
+                    f_surf[l][ic] -= alpha*dragForce[l];
+                        //f_surf[l][ic] -= alpha*dragForce[l]/dV;
+                }
+
+                if (debugging("f_surf"))
+                {
+                    printf("\nimmersed force at coords : %d %d %d\n",i,j,k);
+                    printf("crds = %f %f %f dist = %f alpha = %f f_surf -= %f %f %f\n",
+                        coords[0],coords[1],coords[2],dist,alpha,
+                        f_surf[0][ic],f_surf[1][ic],f_surf[2][ic]);
+                }
+            }
+        }
+    }
+
+    FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
+}   /* end addImmersedForce() */
 
 void G_CARTESIAN::appendOpenEndStates()
 {

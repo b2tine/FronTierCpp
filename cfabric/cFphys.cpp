@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 static void getFabricState(STATE*,EQN_PARAMS*,double*,COMPONENT);
 
-
 void read_cFluid_params(char* inname, EQN_PARAMS* eqn_params)
 {
 	char string[100];
@@ -34,11 +33,12 @@ void read_cFluid_params(char* inname, EQN_PARAMS* eqn_params)
 	int i,dim = eqn_params->dim;
 
 	eqn_params->prob_type = ERROR_TYPE;
-	eqn_params->tracked = YES;		// Default
+	eqn_params->tracked = NO;		// Default
 	CursorAfterString(infile,"Enter problem type:");
 	fscanf(infile,"%s",string);
 	(void) printf("%s\n",string);
 	
+    eqn_params->prob_type = FABRIC; //default
     if (string[0] == 'F' || string[0] == 'f')
     {
         if (string[1] == 'A' || string[1] == 'a')
@@ -174,6 +174,15 @@ void read_cFluid_params(char* inname, EQN_PARAMS* eqn_params)
 	    clean_up(ERROR);
 	}
 
+    eqn_params->use_eddy_viscosity = false;
+    if (CursorAfterStringOpt(infile,"Enter yes to use eddy viscosity:"))
+    {
+        fscanf(infile,"%s",string);
+        (void) printf("%s\n",string);
+        if (string[0] == 'y' || string[0] == 'Y')
+            eqn_params->use_eddy_viscosity = true;
+    }
+
 	eqn_params->use_base_soln = NO;
 	if (CursorAfterStringOpt(infile,
 		"Enter yes for comparison with base data:"))
@@ -209,7 +218,7 @@ void read_cFluid_params(char* inname, EQN_PARAMS* eqn_params)
     if (eqn_params->prob_type == ERROR_TYPE)
     {
         printf("eqn_params->prob_type == ERROR_TYPE\n");
-        clean_up(ERROR);
+        LOC(); clean_up(ERROR);
     }
 
 	fclose(infile);
@@ -218,6 +227,7 @@ void read_cFluid_params(char* inname, EQN_PARAMS* eqn_params)
 	    FT_ReadComparisonDomain(inname,eqn_params->f_basic);
 }	/* end read_cFluid_params */
 
+//TODO: should move to another file -- 
 void set_cFluid_params(char* inname, EQN_PARAMS* eqn_params)
 {
 	switch (eqn_params->prob_type)
@@ -262,11 +272,13 @@ void set_cFluid_params(char* inname, EQN_PARAMS* eqn_params)
 	    break;
         */
 	default:
-	    printf("In setProbParams(), unknown problem type!\n");
-	    clean_up(ERROR);
+	    printf("\nIn set_cFluid_Params(), only FABRIC problem type supported currently!\n");
+	        //printf("In set_cFluid_Params(), unknown problem type!\n");
+	    LOC(); clean_up(ERROR);
 	}
-}	/* end setProbParams */
+}	/* end set_cFluid_params */
 
+//TODO: Change to setChannelFlowParams() and match to cFluid dir version
 void setFabricParams(char* inname, EQN_PARAMS* eqn_params)
 {
     int dim = eqn_params->dim;
@@ -304,12 +316,17 @@ void setFabricParams(char* inname, EQN_PARAMS* eqn_params)
 	fscanf(infile,"%lf %lf",&eqn_params->rho2,&eqn_params->mu2);
 	(void) printf("%f %f\n",eqn_params->rho2,eqn_params->mu2);
 
+    eqn_params->rho1 = eqn_params->rho2;
+    eqn_params->mu1 = eqn_params->mu2;
+    eqn_params->p1 = eqn_params->p2;
+
 	CursorAfterString(infile,"Enter gravity:");
 	for (int i = 0; i < dim; ++i)
 	{
 	    fscanf(infile,"%lf",&eqn_params->gravity[i]);
-	    (void) printf("%f\n",eqn_params->gravity[i]);
+	    (void) printf("%f",eqn_params->gravity[i]);
 	}
+    (void) printf("\n");
 
 	CursorAfterString(infile,"Type yes to track the interface:");
 	fscanf(infile,"%s",s);
@@ -376,6 +393,7 @@ void G_CARTESIAN::setInitialStates()
 	copyMeshStates();
 }	/* end setInitialStates */
 
+//TODO: rename to initChannelFlowStates() like in cFluid dir
 void G_CARTESIAN::initFabricStates()
 {
 	int i,j,k,l,index;
@@ -383,14 +401,26 @@ void G_CARTESIAN::initFabricStates()
 	double coords[MAXD];
 	COMPONENT comp;
 	STATE *sl,*sr,state;
-        POINT *p;
-        HYPER_SURF *hs;
-        HYPER_SURF_ELEMENT *hse;
+    POINT *p;
+    HYPER_SURF *hs;
+    HYPER_SURF_ELEMENT *hse;
 	INTERFACE *intfc = front->interf;
+
+    double *mu = field.mu;
 	double *dens = field.dens;
 	double *engy = field.engy;
 	double *pres = field.pres;
 	double **momn = field.momn;
+	double **vel = field.vel;
+
+    m_dens[0] = eqn_params->rho1;
+    m_dens[1] = eqn_params->rho2;
+
+    m_mu[0] = eqn_params->mu1;
+    m_mu[1] = eqn_params->mu2;
+
+    m_comp[0] = SOLID_COMP;
+    m_comp[1] = GAS_COMP2;
 
     next_point(intfc,NULL,NULL,NULL);
     while (next_point(intfc,&p,&hse,&hs))
@@ -413,12 +443,18 @@ void G_CARTESIAN::initFabricStates()
             index = d_index2d(i,j,top_gmax);
             comp = top_comp[index];
             getRectangleCenter(index,coords);
-                getFabricState(&state,eqn_params,coords,comp);
+            
+            getFabricState(&state,eqn_params,coords,comp);
+            
+            mu[index] = state.mu;
             dens[index] = state.dens;
             pres[index] = state.pres;
             engy[index] = state.engy;
             for (l = 0; l < dim; ++l)
+            {
                 momn[l][index] = state.momn[l];
+                vel[l][index] = state.vel[l];
+            }
 	    }
         break;
 	case 3:
@@ -429,19 +465,25 @@ void G_CARTESIAN::initFabricStates()
             index = d_index3d(i,j,k,top_gmax);
             comp = top_comp[index];
             getRectangleCenter(index,coords);
+            
             getFabricState(&state,eqn_params,coords,comp);
             
+            mu[index] = state.mu;
             dens[index] = state.dens;
             pres[index] = state.pres;
             engy[index] = state.engy;
             for (l = 0; l < dim; ++l)
+            {
                 momn[l][index] = state.momn[l];
+                vel[l][index] = state.vel[l];
+            }
         }
         break;
 	}
 	scatMeshStates();
 }	/* end initFabricStates */
 
+//TODO: This is same as getAmbientState() -- reuse from cFinit.cpp
 static void getFabricState(
 	STATE *state,
 	EQN_PARAMS *eqn_params,
@@ -449,6 +491,8 @@ static void getFabricState(
 	COMPONENT comp)
 {
 	EOS_PARAMS	*eos;
+    double mu1 = eqn_params->mu1;
+    double mu2 = eqn_params->mu2;
 	double rho1 = eqn_params->rho1;
 	double rho2 = eqn_params->rho2;
 	double p1 = eqn_params->p1;
@@ -462,16 +506,19 @@ static void getFabricState(
 				coords[0],coords[1]);
 	dim = eqn_params->dim;
 
-	/* Constant density */
 	for (i = 0; i < dim; ++i)
-	    state->vel[i] = state->momn[i] = 0.0;
-	state->dim = dim;
+    {
+	    state->vel[i] = 0.0;
+        state->momn[i] = 0.0;
+    }
+    state->dim = dim;
 	eos = &(eqn_params->eos[comp]);
 	state->eos = eos;
 	
 	switch (comp)
 	{
 	case GAS_COMP1:
+        state->mu = mu1;
 	    state->dens = rho1;
 	    state->pres = p1;
 	    for (i = 0; i < dim; ++i)
@@ -482,6 +529,7 @@ static void getFabricState(
 	    state->engy = EosEnergy(state);
 	    break;
 	case GAS_COMP2:
+        state->mu = mu2;
 	    state->dens = rho2;
 	    state->pres = p2;
 	    for (i = 0; i < dim; ++i)
@@ -492,8 +540,14 @@ static void getFabricState(
 	    state->engy = EosEnergy(state);
 	    break;
 	case SOLID_COMP:
+        state->mu = 0.0;
 	    state->dens = 0.0;
 	    state->pres = 0.0;
+        for (i = 0; i < dim; ++i)
+        {
+            state->vel[i] = 0.0;
+            state->momn[i] = 0.0;
+        }
 	    state->engy = 0.0;
 	    break;
 	default:

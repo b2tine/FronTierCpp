@@ -188,11 +188,9 @@ EXPORT  double dist_stable(
 
 	if (uniform_params == NULL)
 	{
-	    //FT_ScalarMemoryAlloc((POINTER*)&uniform_params,sizeof(UNIFORM_PARAMS));
         (void) array_T("scalar",(POINTER*)&uniform_params,1,1,sizeof(UNIFORM_PARAMS));
         zero_scalar(uniform_params,sizeof(UNIFORM_PARAMS));
 
-	    //FT_ScalarMemoryAlloc((POINTER*)&exp_params,sizeof(EXP_PARAMS));
         (void) array_T("scalar",(POINTER*)&exp_params,1,1,sizeof(EXP_PARAMS));
         zero_scalar(exp_params,sizeof(EXP_PARAMS));
 	    

@@ -1130,8 +1130,9 @@ LOCAL	void detach_and_propagate_curves(
 	for(s=newfront->interf->surfaces; s && *s; s++)
 	{
 	    /*ASSUME the moving surface type */
-	    if (wave_type(*s) >= FIRST_PHYSICS_WAVE_TYPE&&
-                wave_type(*s) != ELASTIC_BOUNDARY)
+	    if (wave_type(*s) >= FIRST_PHYSICS_WAVE_TYPE &&
+            wave_type(*s) != ELASTIC_BOUNDARY &&
+            wave_type(*s) != ELASTIC_BAND_BOUNDARY)
 	    {
 	        olds = *s;
 		news = detach_one_surface(olds);

@@ -2062,6 +2062,12 @@ LOCAL	boolean match_overlaps(
 		}
 
 		dist = separation(ol1->cr1,ol2->cr1,2);
+                if (is_local_node(ol1->n1))
+                    user_copy_hyper_surf(Hyper_surf(ol2->c1),
+                            Hyper_surf(ol1->c1));
+                else if (is_local_node(ol2->n1))
+                    user_copy_hyper_surf(Hyper_surf(ol1->c1),
+                            Hyper_surf(ol2->c1));
 
 		if (DEBUG)
 		{

@@ -24,10 +24,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #include "cFluid.h"
 #include "rigidbody.h"
 
+static void getAmbientState(STATE*,EQN_PARAMS*,double*,COMPONENT);
+
 static void getRTState(STATE*,EQN_PARAMS*,double*,COMPONENT);
 static void getRMState(STATE*,EQN_PARAMS*,double*,COMPONENT);
 static void getBubbleState(STATE*,EQN_PARAMS*,double*,COMPONENT);
-static void getAmbientState(STATE*,EQN_PARAMS*,double*,COMPONENT);
 static void getBlastState(STATE*,EQN_PARAMS*,double*,COMPONENT);
 static void getShockSineWaveState(STATE*,EQN_PARAMS*,double*,COMPONENT);
 static void getAccuracySineWaveState(STATE*,EQN_PARAMS*,double*,COMPONENT);
@@ -38,6 +39,134 @@ static void pertCoeff(double**,double**,double**,double**,int,double*,double*);
 static void init_gun_and_bullet(Front*);
 static double intfcPertHeight(FOURIER_POLY*,double*);
 static double getStationaryVelocity(EQN_PARAMS*);
+
+
+void G_CARTESIAN::setInitialIntfc(
+	LEVEL_FUNC_PACK *level_func_pack,
+	char *inname)
+{
+	dim = front->rect_grid->dim;
+	eqn_params = (EQN_PARAMS*)front->extra1;
+	switch (eqn_params->prob_type)
+	{
+	case TWO_FLUID_RT:
+	case TWO_FLUID_RM:
+	    initSinePertIntfc(level_func_pack,inname);
+	    break;
+	case TWO_FLUID_RM_RAND:
+	    initRandPertIntfc(level_func_pack,inname);
+	    break;
+	case TWO_FLUID_BUBBLE:
+	case FLUID_SOLID_CIRCLE:
+	    initCirclePlaneIntfc(level_func_pack,inname);
+	    break;
+	case IMPLOSION:
+	    initImplosionIntfc(level_func_pack,inname);
+	    break;
+	case MT_FUSION:
+	    initMTFusionIntfc(level_func_pack,inname);
+	    break;
+	case PROJECTILE:
+	    initProjectileIntfc(level_func_pack,inname);
+	    break;
+	case FLUID_SOLID_RECT:
+	    initRectPlaneIntfc(level_func_pack,inname);
+	    break;
+	case FLUID_SOLID_TRIANGLE:
+	    initTrianglePlaneIntfc(level_func_pack,inname);
+	    break;
+	case FLUID_SOLID_CYLINDER:
+             initCylinderPlaneIntfc(level_func_pack,inname);
+             break;
+	case RIEMANN_PROB:
+	case ONED_BLAST:
+	case ONED_SSINE:
+	case ONED_ASINE:
+	    initRiemannProb(level_func_pack,inname);
+	    break;
+	case OBLIQUE_SHOCK_REFLECT:
+	    initObliqueIntfc(level_func_pack,inname);
+	    break;
+	default:
+	    (void) printf("Problem type not implemented, code needed!\n");
+	    clean_up(ERROR);
+	}
+}	/* end setInitialIntfc */
+
+static void getAmbientState(
+	STATE *state,
+	EQN_PARAMS *eqn_params,
+	double *coords,
+	COMPONENT comp)
+{
+	EOS_PARAMS	*eos;
+    double mu1 = eqn_params->mu1;
+    double mu2 = eqn_params->mu2;
+	double rho1 = eqn_params->rho1;
+	double rho2 = eqn_params->rho2;
+	double p1 = eqn_params->p1;
+	double p2 = eqn_params->p2;
+	double *v1 = eqn_params->v1;
+	double *v2 = eqn_params->v2;
+	int i,dim;
+ 
+	if (debugging("ambient"))
+	    printf("Entering getAmbientState(), coords = %f %f\n",
+				coords[0],coords[1]);
+	dim = eqn_params->dim;
+
+	/* Constant density */
+	for (i = 0; i < dim; ++i)
+	    state->vel[i] = state->momn[i] = 0.0;
+	state->dim = dim;
+	eos = &(eqn_params->eos[comp]);
+	state->eos = eos;
+	
+	switch (comp)
+	{
+	case GAS_COMP1:
+        state->mu = mu1;
+	    state->dens = rho1;
+	    state->pres = p1;
+	    for (i = 0; i < dim; ++i)
+	    {
+	    	state->vel[i] = v1[i];
+	    	state->momn[i] = rho1*v1[i];
+	    }
+	    state->engy = EosEnergy(state);
+	    break;
+	case GAS_COMP2:
+        state->mu = mu2;
+	    state->dens = rho2;
+	    state->pres = p2;
+	    for (i = 0; i < dim; ++i)
+	    {
+	    	state->vel[i] = v2[i];
+	    	state->momn[i] = rho2*v2[i];
+	    }
+	    state->engy = EosEnergy(state);
+	    break;
+	case SOLID_COMP:
+        state->mu = 0.0;
+	    state->dens = 0.0;
+	    state->pres = 0.0;
+        for (i = 0; i < dim; ++i)
+        {
+            state->vel[i] = 0.0;
+            state->momn[i] = 0.0;
+        }
+	    state->engy = 0.0;
+	    break;
+	default:
+	    printf("ERROR: Unknown component %d in getAmbientState()!\n",
+				comp);
+	    clean_up(ERROR);
+	}
+	if (debugging("ambient_state"))
+	    (void) printf("Leaving getAmbientState(): state = %d %f %f %f\n",
+			comp,state->dens,state->pres,state->engy);
+}	/* end getAmbientState */
+
 
 void G_CARTESIAN::initSinePertIntfc(
 	LEVEL_FUNC_PACK *level_func_pack,
@@ -618,10 +747,11 @@ void G_CARTESIAN::initCirclePlaneIntfc(
 	char *inname)
 {
 	EQN_PARAMS *eqn_params = (EQN_PARAMS*)front->extra1;
+	PROB_TYPE prob_type = eqn_params->prob_type;
 	FILE *infile = fopen(inname,"r");
 	static CIRCLE_PARAMS *circle_params;
 	int i,dim;
-	PROB_TYPE prob_type = eqn_params->prob_type;
+    char string[100];
 
 	FT_ScalarMemoryAlloc((POINTER*)&circle_params,sizeof(CIRCLE_PARAMS));
         circle_params->dim = dim = front->rect_grid->dim;
@@ -661,6 +791,13 @@ void G_CARTESIAN::initCirclePlaneIntfc(
             level_func_pack->pos_component = GAS_COMP1;
             level_func_pack->func = level_circle_func;
 	    level_func_pack->wave_type = MOVABLE_BODY_BOUNDARY;
+            if (CursorAfterStringOpt(infile,"Enter yes if the object is fixed:"))
+            {
+                fscanf(infile,"%s",string);
+                (void) printf("%s\n",string);
+                if (string[0] == 'y' || string[0] == 'Y')
+                    level_func_pack->wave_type = NEUMANN_BOUNDARY;
+            }
             break;
 	default:
 	    (void) printf("ERROR Wrong type in initCirclePlaneIntfc()\n");
@@ -1352,70 +1489,6 @@ void G_CARTESIAN::initMTFusionStates()
 	}
 	scatMeshStates();
 }	/* end initMTFusionStates */
-
-static void getAmbientState(
-	STATE *state,
-	EQN_PARAMS *eqn_params,
-	double *coords,
-	COMPONENT comp)
-{
-	EOS_PARAMS	*eos;
-	double rho1 = eqn_params->rho1;
-	double rho2 = eqn_params->rho2;
-	double p1 = eqn_params->p1;
-	double p2 = eqn_params->p2;
-	double *v1 = eqn_params->v1;
-	double *v2 = eqn_params->v2;
-	int i,dim;
- 
-	if (debugging("ambient"))
-	    printf("Entering getAmbientState(), coords = %f %f\n",
-				coords[0],coords[1]);
-	dim = eqn_params->dim;
-
-	/* Constant density */
-	for (i = 0; i < dim; ++i)
-	    state->vel[i] = state->momn[i] = 0.0;
-	state->dim = dim;
-	eos = &(eqn_params->eos[comp]);
-	state->eos = eos;
-	
-	switch (comp)
-	{
-	case GAS_COMP1:
-	    state->dens = rho1;
-	    state->pres = p1;
-	    for (i = 0; i < dim; ++i)
-	    {
-	    	state->vel[i] = v1[i];
-	    	state->momn[i] = rho1*v1[i];
-	    }
-	    state->engy = EosEnergy(state);
-	    break;
-	case GAS_COMP2:
-	    state->dens = rho2;
-	    state->pres = p2;
-	    for (i = 0; i < dim; ++i)
-	    {
-	    	state->vel[i] = v2[i];
-	    	state->momn[i] = rho2*v2[i];
-	    }
-	    state->engy = EosEnergy(state);
-	    break;
-	case SOLID_COMP:
-	    state->dens = 0.0;
-	    state->pres = 0.0;
-	    state->engy = 0.0;
-	    break;
-	default:
-	    printf("ERROR: Unknown component %d in getAmbientState()!\n",
-				comp);
-	    clean_up(ERROR);
-	}
-	if (debugging("ambient_state"))
-	    (void) printf("Leaving getAmbientState(): state = %d %f %f %f\n",
-			comp,state->dens,state->pres,state->engy);
-}	/* end getAmbientState */
 
 void setProjectileParams(char *inname, EQN_PARAMS* eqn_params)
 {
@@ -2142,6 +2215,7 @@ void G_CARTESIAN::initCylinderPlaneIntfc(
         fclose(infile);
 }       /* end initCylinderPlaneIntfc */
 
+//TODO: Move to rigidbody.cpp
 extern  void prompt_for_rigid_body_params(
         int dim,
         char *inname,
@@ -2395,6 +2469,7 @@ extern  void prompt_for_rigid_body_params(
             (void) printf("Leaving prompt_for_rigid_body_params()\n");
 }       /* end prompt_for_rigid_body_params */
 
+//TODO: Move to rigidbody.cpp
 extern void set_rgbody_params(
         RG_PARAMS rg_params,
         HYPER_SURF *hs)

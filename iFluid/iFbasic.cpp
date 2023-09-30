@@ -1661,6 +1661,28 @@ void Incompress_Solver_Smooth_2D_Basis::sampleVelocity()
 	count++;
 }	/* end sampleVelocity2d */
 
+void Incompress_Solver_Smooth_Basis::clearGhostData()
+{
+    int num_cells = 1;
+    for (int i = 0; i < dim; ++i)
+    {
+        num_cells *= (top_gmax[i] + 1);
+    }
+
+    int nfaces = 2*dim;
+	for (int l = 0; l < nfaces; ++l)
+    {
+        for (int i = 0; i < num_cells; ++i)
+        {
+            for (int j = 0; j < dim; ++j)
+            {
+                ghost_data[l][i].vel[j] = 0.0;
+                ghost_data[l][i].force[j] = 0.0;
+            }
+        }
+    }
+}
+
 //TODO: factor into separate components -- surf tension, turbulence etc.
 //
 //TODO: put clock() calls on LES turb models
@@ -1728,6 +1750,7 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
         icoords[0] = i;
         icoords[1] = j;
 
+        //TODO: Skip this if surface tension not being used
         status = FT_FindNearestIntfcPointInRange(front,
                 comp,center,NO_BOUNDARIES,point,t,&hse,&hs,range);
 
@@ -1818,6 +1841,9 @@ void Incompress_Solver_Smooth_2D_Basis::setSmoothedProperties(void)
                 rho[index] = m_rho[1];
                 break;
             }
+
+            //CALLING THIS HERE ONLY SO THE SLIP WALL VELOCITY IS SET IN THE "ghost_data" ARRAY
+            auto alpha = computeVelocityGradient(icoords);
 	    }
 
         //For computing viscous flux time step restriction
@@ -2543,9 +2569,9 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
 	for (j = jmin; j <= jmax; j++)
     for (i = imin; i <= imax; i++)
 	{
-	    index  = d_index3d(i,j,k,top_gmax);			
+	    index = d_index3d(i,j,k,top_gmax);			
 	    
-        comp  = cell_center[index].comp;
+        comp = cell_center[index].comp;
 	    if (!ifluid_comp(comp)) 
         {
             mu[index] = 0.0;
@@ -2648,6 +2674,12 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
                 rho[index] = m_rho[1];
                 break;
             }
+
+            //TODO: Handle this better
+            //
+            //      CALLING THIS HERE ONLY SO THE SLIP WALL VELOCITY IS SET
+            //      IN THE "ghost_data" ARRAY
+            auto alpha = computeVelocityGradient(icoords);
 	    }
 
         //For computing viscous flux time step restriction
@@ -2655,6 +2687,7 @@ void Incompress_Solver_Smooth_3D_Basis::setSmoothedProperties(void)
         if (rho[index] < rho_min) rho_min = rho[index];
 	}
 
+    //TODO: communicate ghost_data array?
 	FT_ParallelExchGridArrayBuffer(mu,front,NULL);
 	FT_ParallelExchGridArrayBuffer(rho,front,NULL);
 	FT_ParallelExchGridVectorArrayBuffer(f_surf,front);
@@ -5331,6 +5364,9 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     }
     double mag_vtan = Magd(vel_rel_tan,dim);
 
+    /*
+    //TODO: CAN WE GET RID OF THIS?
+    //      THIS SHOULD ONLY BE DONE IF NO DIFFUSIVE FLUX BEING USED?
     /////////////////////////////////////////////////////////////////////////
     if (iFparams->use_eddy_visc == NO)
     {
@@ -5345,7 +5381,8 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
         return;
     }
     /////////////////////////////////////////////////////////////////////////
-    
+    */
+
     if (debugging("slip_boundary"))
     {
         fprint_general_vector(stdout,"vel_reflect",vel_reflect,dim,"\n");
@@ -5392,16 +5429,14 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     
     //TODO: Need to ensure intfc state is set correctly if we want to
     //      use it as the default value (by passing nullptr as last arg).
-    //
-    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
-                getStateMu,&mu_reflect,nullptr);
-    
-    if (mu_reflect < MACH_EPS) mu_reflect = field->mu[index];
-
     /*
     FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
-                getStateMu,&mu_reflect,&field->mu[index]);
+                getStateMu,&mu_reflect,nullptr);
     */
+    FT_IntrpStateVarAtCoords(front,comp,coords_reflect,field->mu,
+                getStateMu,&mu_reflect,&field->mu[index]);
+    
+    if (mu_reflect < MACH_EPS) mu_reflect = field->mu[index];
 
     double vel_ghost_tan[MAXD] = {0.0};
     double vel_ghost_rel[MAXD] = {0.0};
@@ -5410,6 +5445,11 @@ void Incompress_Solver_Smooth_Basis::setSlipBoundaryNIP(
     {
         vel_ghost_tan[j] = vel_rel_tan[j]
             - (dist_reflect - dist_ghost)/mu_reflect*tau_wall[j];
+
+        /*
+        vel_ghost_tan[j] = vel_rel_tan[j]
+            - (dist_reflect + dist_ghost)/mu_reflect*tau_wall[j];
+        */
 
         vel_ghost_rel[j] = vel_ghost_tan[j] + vel_ghost_nor[j];
         v_slip[j] = vel_ghost_rel[j] + vel_intfc[j];

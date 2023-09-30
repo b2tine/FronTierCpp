@@ -981,7 +981,7 @@ EXPORT INTERFACE *collect_hyper_surfaces(
 
 	    /* prepare interface to send */
 	sav_copy = copy_intfc_states();
-        set_copy_intfc_states(YES);
+    set_copy_intfc_states(YES);
 
 	cut_intfc = cut_intfc_to_wave_types(intfc,w_type,ntypes);
 	gr = computational_grid(cut_intfc);
@@ -1001,28 +1001,28 @@ EXPORT INTERFACE *collect_hyper_surfaces(
 	    ip[2] = myic[2];
 	    for (i = 1; i < G[0]; ++i)
 	    {
-		ip[0] = myic[0] + i;
-		if (ip[0] < G[0])
-		{
-	    	    dst_id = domain_id(ip,G,dim);
-		    recv_intfc = receive_interface(dst_id);
-		    status = buffer_extension3d3(cut_intfc,recv_intfc,
-					0,1,status);
-		    recv_gr = computational_grid(recv_intfc);
-		    merge_rect_grids(gr,gr,recv_gr);
-		    delete_interface(recv_intfc);
-		}
-		ip[0] = myic[0] - i;
-		if (ip[0] >= 0)
-		{
-	    	    dst_id = domain_id(ip,G,dim);
-		    recv_intfc = receive_interface(dst_id);
-		    status = buffer_extension3d3(cut_intfc,recv_intfc,
-					0,0,status);
-		    recv_gr = computational_grid(recv_intfc);
-		    merge_rect_grids(gr,gr,recv_gr);
-		    delete_interface(recv_intfc);
-		}
+            ip[0] = myic[0] + i;
+            if (ip[0] < G[0])
+            {
+                    dst_id = domain_id(ip,G,dim);
+                recv_intfc = receive_interface(dst_id);
+                status = buffer_extension3d3(cut_intfc,recv_intfc,
+                        0,1,status);
+                recv_gr = computational_grid(recv_intfc);
+                merge_rect_grids(gr,gr,recv_gr);
+                delete_interface(recv_intfc);
+            }
+            ip[0] = myic[0] - i;
+            if (ip[0] >= 0)
+            {
+                    dst_id = domain_id(ip,G,dim);
+                recv_intfc = receive_interface(dst_id);
+                status = buffer_extension3d3(cut_intfc,recv_intfc,
+                        0,0,status);
+                recv_gr = computational_grid(recv_intfc);
+                merge_rect_grids(gr,gr,recv_gr);
+                delete_interface(recv_intfc);
+            }
 	    }
 	}
 	pp_gsync();
@@ -1120,6 +1120,8 @@ EXPORT INTERFACE *collect_hyper_surfaces(
 	    (void) printf("Passed consistent_interface()\n");
 	}
 	
+	//set_copy_intfc_states(sav_copy);
+
     if (myid == owner_id)
 	{
 	    install_subdomain_bdry_curves(cut_intfc);    

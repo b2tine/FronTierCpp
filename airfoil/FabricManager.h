@@ -44,7 +44,7 @@ public:
 public:
 
     void setCollisionTimeStep(double collsn_dt);
-    void setCollisionParams(FABRIC_COLLISION_PARAMS params);
+    void setCollisionParams(const FABRIC_COLLISION_PARAMS& params);
 
     void initializeSystem();
 

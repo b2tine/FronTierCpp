@@ -82,8 +82,13 @@ cfabric/fabric
 cfabric/cgal_intfc_test
 cfabric/fabric_Fortn
 cfabric/fabric_Cplus
+cAirfoil/cfabric_Cplus
+cairfoil/cairfoil
+cairfoil/cairfoil-coatintfc-dev
 FrontWrapper/example00
 CGAL_Interface/cgal_intfc_test
+CGAL_Interface/cgal_capsule_intfc_test
+CGAL_Interface/cgal_cylindrical_shell
 *Tests
 *.txt
 *.xg

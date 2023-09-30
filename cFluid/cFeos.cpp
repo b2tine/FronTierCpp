@@ -23,25 +23,72 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "cFluid.h"
 
+
+//Sutherland's Law
+extern double EosViscosity(
+	STATE *state)
+{
+    double T = state->temp;
+
+    EOS_PARAMS* eos = state->eos;
+	double T_ref = eos->T_ref;
+	double mu_ref = eos->mu_ref;
+    double S = eos->S;
+
+    double mu = mu_ref*std::pow(T/T_ref,1.5)*(T_ref + S)/(T + S);
+	return mu;
+}	/* end EosViscosity */
+
+extern double EosTemperature(
+	STATE *state)
+{
+    //TODO: Should throw error/exception
+	if (state->dens <= 0.0) return 0.0;
+
+    EOS_PARAMS* eos = state->eos;
+	double R_specific = eos->R_specific;
+
+    double temp = state->pres/state->dens/R_specific;
+	return temp;
+}	/* end EosTemperature */
+
+extern double EosDensity(
+	STATE *state)
+{
+    //TODO: Should throw error/exception
+	if (state->temp <= 0.0) return 0.0;
+
+    EOS_PARAMS* eos = state->eos;
+	double R_specific = eos->R_specific;
+
+    double dens = state->pres/state->temp/R_specific;
+	return dens;
+}	/* end EosTemperature */
+
 extern double EosPressure(
 	STATE *state)
 {
 	double 		dens = state->dens;
 	double 		engy = state->engy;
 	double 		*momn = state->momn;
-	double 		ke,pres;
+	    //double 		k_turb = state->k_turb;
+	
+    double 		ke,pres;
 	int		i;
 	int		dim = state->dim;
 	EOS_PARAMS	*eos = state->eos;
 	double		gamma = eos->gamma;
 
-	if (dens <= 0.0)
-	    return 0.0;
+	if (dens <= 0.0) return 0.0;
+
 	ke = 0.0;
 	for (i = 0; i < dim; ++i)
 	    ke += sqr(momn[i]);
 	ke *= 0.5/dens;
-	pres = (gamma - 1.0)*(engy - ke + dens*eos->einf) - gamma*eos->pinf;
+    
+    pres = (gamma - 1.0)*(engy - ke + dens*eos->einf) - gamma*eos->pinf;
+	
+        //pres = (gamma - 1.0)*(engy - ke - k_turb + dens*eos->einf) - gamma*eos->pinf;
 	
 	return pres;
 }	/* end EosPressure */
@@ -67,24 +114,41 @@ extern double EosInternalEnergy(
 {
 	double		pres = state->pres;
 	double		dens = state->dens;
-	EOS_PARAMS	*eos = state->eos;
+	EOS_PARAMS* eos = state->eos;
 	double		gamma = eos->gamma;
 
-	return (pres+gamma*eos->pinf)/(gamma-1) - dens*eos->einf;
+	return (pres + gamma*eos->pinf)/(gamma - 1.0) - dens*eos->einf;
 }
+
+/*
+extern double EosInternalEnergy(
+	STATE *state)
+{
+	EOS_PARAMS* eos = state->eos;
+    double R = eos->R_specific;
+	double gamma = eos->gamma;
+
+	return state->temp*R/(gamma - 1.0);
+}
+*/
 
 extern double EosEnergy(
 	STATE *state)
 {
-	int	i,dim = state->dim;
-	double	dens = state->dens;
-	double	*momn = state->momn;
-	double	e;
+	int	dim = state->dim;
+	double dens = state->dens;
+	double* momn = state->momn;
+	    //double k_turb = state->k_turb;
 	
-	e = 0.0;
-	for (i = 0; i < dim; ++i)
-	    e += 0.5*sqr(momn[i])/dens;
-	e += EosInternalEnergy(state);
+	double e = 0.0;
+	for (int i = 0; i < dim; ++i)
+    {
+        e += 0.5*sqr(momn[i])/dens;
+            //e += 0.5*sqr(momn[i])/dens + k_turb;
+    }
+
+    e += EosInternalEnergy(state);
+        //e += dens*EosInternalEnergy(state);
 
 	return e;
 }
@@ -100,28 +164,36 @@ extern double EosMaxBehindShockPres(
 	double c4,c5,p1;
 
 	im2 = M2*gamma*pres*dens;
-	c4 = (gamma -1.0)/(gamma + 1.0);
+	c4 = (gamma - 1.0)/(gamma + 1.0);
 	c5 = 2.0/(gamma + 1.0);
 	p1 = c5*im2/dens - c4*pres;
 	return p1;
 }	/* end EosMaxBehindShockPres */
 
-extern void CovertVstToState(
+extern void ConvertVstToState(
 	STATE		*state,
 	SWEEP		*vst,
 	EOS_PARAMS	*eos,
 	int		ind,
 	int		dim)
 {
-	int	i;
-
 	state->dim = dim;
 	state->eos = eos;
 	state->dens = vst->dens[ind];
 	state->engy = vst->engy[ind];
-	for (i = 0; i < dim; ++i)
-	    state->momn[i] = vst->momn[i][ind];
-	state->pres = EosPressure(state);
+
+	for (int i = 0; i < dim; ++i)
+    {
+        state->momn[i] = vst->momn[i][ind];
+    }
+   
+    state->pres = EosPressure(state);
+
+    //NOTE: Don't call these since they will get called again in
+    //      checkCorrectForTolerance() as soon as this function returns.
+
+    //state->temp = EosTemperature(state);
+    //state->mu = EosViscosity(state);
 }
 
 extern void EosSetTVDParams(

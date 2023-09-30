@@ -3,6 +3,7 @@
 
 #include <FronTier.h>
 #include "state.h"
+#include "cFvisc.h"
 
 #include <vector>
 #include <string>
@@ -51,19 +52,6 @@ struct EOS_PARAMS
     double  pinf;
     double  einf;
 };
-
-//Now in state.h
-//
-//struct STATE {
-//	double dens;			/* density */
-//	double engy;			/* energy density */
-//	double momn[MAXD];		/* momentum deisnty */
-//	double pres;			/* Pressure */
-//	double vel[MAXD];		/* Velocities */
-//	double vort;			/* Vorticity */
-//	EOS_PARAMS *eos;
-//	int dim;
-//};
 
 enum NUM_SCHEME
 {
@@ -133,13 +121,16 @@ struct EQN_PARAMS
 	double Mach_number;
 	double shock_position;
 	double contact_vel;
+
 	double **vel;
+	double *vort;       //2d
+	double **vorticity; //3d
+
 	double **mom;
 	double *dens;
 	double *engy;
 	double *pres;
-	double *vort;       //2d
-	double **vorticity; //3d
+	double *mu;
 
     //GFM
 	double **gnor;
@@ -147,16 +138,19 @@ struct EQN_PARAMS
 	double ***Gvel;
 	double **Gpres;
 
+    //LES Turbulence
+    bool use_eddy_viscosity {false};
+
+    boolean with_porosity;
+    double porosity;
+    PORO_SCHEME poro_scheme;
+
 	// Base front for comparison
 	boolean use_base_soln;
     char base_dir_name[200];
     int num_step;
     int *steps;
     F_BASIC_DATA *f_basic;
-
-    boolean with_porosity;
-    double porosity;
-    PORO_SCHEME poro_scheme;
 };
 
 struct SCHEME_PARAMS
@@ -174,28 +168,6 @@ struct FLOW_THROUGH_PARAMS
     EQN_PARAMS *eqn_params;
 };
 
-//Now in rigid_body.h
-//
-//struct RG_PARAMS
-//{
-//    int dim;
-//	boolean no_fluid;               /* For benchmark tests */
-//        double  total_mass;             /* Total mass */
-//        double  moment_of_inertial;     /* Moment of inertial about the axis */
-//        double  center_of_mass[MAXD];   /* Center of mass */
-//        double  rotation_dir[MAXD];     /* Direction of rotation */
-//        double  translation_dir[MAXD];  /* Restricted direction of motion */
-//        double  rotation_cen[MAXD];     /* Center of rotation */
-//        double  cen_of_mass_velo[MAXD]; /* Center of mass velocity */
-//        double  angular_velo;           /* Angular velocity of rotation */
-//        double  p_moment_of_inertial[MAXD];
-//        double  p_angular_velo[MAXD];
-//        double  euler_params[4];
-//        double  old_euler_params[4];
-//        MOTION_TYPE motion_type;
-//};
-
-
 struct VAR_BDRY_PARAMS
 {
 	int dim;
@@ -207,6 +179,19 @@ struct VAR_BDRY_PARAMS
     double bdry_pres;           /* Boundary pressure */
     int number_pistons;         /* Number of pistons */
 	double jet_duration_time;   /* Time duration for the jet */
+};
+
+struct OPEN_PIPE_PARAMS
+{
+	int dir;
+	int side;
+	double center[MAXD];
+	double radius;
+	int in_pipe_bdry;
+	int out_pipe_bdry;
+	boolean in_flow_through;
+	boolean out_flow_through;
+	STATE state[2];
 };
 
 /*********************************************************************
@@ -254,19 +239,6 @@ struct RIEMANN_INPUT
     RIEM_STATE right_state;
 };
 
-struct OPEN_PIPE_PARAMS
-{
-	int dir;
-	int side;
-	double center[MAXD];
-	double radius;
-	int in_pipe_bdry;
-	int out_pipe_bdry;
-	boolean in_flow_through;
-	boolean out_flow_through;
-	STATE state[2];
-};
-
 struct L_RECTANGLE
 {
     int comp {-1};			 
@@ -279,6 +251,11 @@ struct L_RECTANGLE
         for (int i = 0; i < dim; ++i)
             m_coords[i] = coords[i];
     }
+
+    std::vector<double> getCoords()
+    {
+        return std::vector<double>(m_coords,m_coords+3);
+    }
 };
 
 struct FIELD
@@ -290,6 +267,7 @@ struct FIELD
 	double *pres;
 	double *vort;       //2d
 	double **vorticity; //3d
+    double *mu;
 };
 
 struct SWEEP
@@ -298,6 +276,7 @@ struct SWEEP
     double **momn;      /* momentum vector */
     double *engy;       /* internal energy vector */
     double *pres;       /* used for EOS */
+    double *mu;
 };
 
 struct FSWEEP
@@ -358,7 +337,7 @@ public:
     void freeBaseFront();
     void errFunction();
 
-    //cFbase.cpp
+    //cFbasic.cpp
     void applicationSetComponent();
     void applicationSetStates();
 
@@ -400,7 +379,14 @@ private:
 
 	double m_t;                     // time
 	double max_speed;		// for stability of convection
-	double min_dens,min_pres;	// minimum physical variables
+
+    //for viscous flux time step restriction
+    double mu_max {-1};
+    double rho_min {-1};
+
+    //User defined minimum physical variables
+	double min_dens;
+    double min_pres;
 
 	// for parallel partition
 	int NLblocks,ilower,iupper;
@@ -430,11 +416,8 @@ private:
 
 	// compressible solver functions
 	void setAdvectionDt();
-	void computeAdvection();
-	void computeConvectiveFlux();
-        FSWEEP *cFlux;
-	void computeDiffusion();
-
+	void advanceSolution();
+	
 	/* Mesh memory management */
 	bool withinStencilLen(int*,int);
 	void allocMeshVst(SWEEP*);
@@ -463,6 +446,47 @@ private:
 	void appendStencilBuffer3d(SWEEP*,SWEEP*,int,int,int);
 	void appendGhostBuffer(SWEEP*,SWEEP*,int,int*,int,int);
 	
+    /* Viscous flux */
+    void addViscousFlux(SWEEP* m_vst, FSWEEP* m_flux, double delta_t);
+    void fillViscousFluxStencil2d(int* icoords, SWEEP* m_vst, VStencil2d* vsten);
+    void fillViscousFluxStencil3d(int* icoords, SWEEP* m_vst, VStencil3d* vsten);
+    void setViscousGhostState(int*, COMPONENT comp, VSWEEP* vs, SWEEP* m_vst);
+
+    void setDirichletViscousGhostState(VSWEEP* vs, COMPONENT comp, double* intrp_coeffs,
+            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
+
+    void setNeumannViscousGhostState(int* iccords, SWEEP* m_vst, VSWEEP* vs, double* ghost_coords,
+            double* crx_coords, COMPONENT comp, double* intrp_coeffs,
+            HYPER_SURF_ELEMENT* hse, HYPER_SURF* hs);
+
+    void computeViscousFlux2d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
+            double delta_t, VStencil2d* vsten);
+
+    void computeViscousFlux3d(int* icoords, SWEEP* m_vst, VFLUX* v_flux,
+            double delta_t, VStencil3d* vsten);
+
+
+    //For LES turbulence
+    void computeSGSTerms();
+
+    void computeEddyViscosity();
+    void computeEddyViscosity2d();
+    void computeEddyViscosity3d();
+
+    double computeEddyViscosityVremanModel(int *icoords);
+
+    double computeEddyViscosityVremanModel_BdryAware(int *icoords);
+
+    std::vector<std::vector<double>> computeVelocityGradient(int *icoords);
+
+    void setSlipBoundary(int* icoords, int idir, int nb, int comp,
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
+
+    void setSlipBoundaryNIP(int* icoords, int idir, int nb, int comp,
+            HYPER_SURF* hs, POINTER state, double** vel, double* v_slip);
+
+
+    //Initialization functions
     void initFabricStates();
 
     //TODO: move out of class
@@ -566,6 +590,9 @@ private:
 
 // cFphys.cpp
 extern void read_cFluid_params(char*,EQN_PARAMS*);
+void set_cFluid_params(char*, EQN_PARAMS*);
+void setFabricParams(char*,EQN_PARAMS*);
+
 
 // cFsub.cpp
 extern double burger_flux(double,double,double);
@@ -598,7 +625,7 @@ extern double EosSoundSpeed(STATE*);
 extern double EosSoundSpeedSqr(STATE*);
 extern double EosMaxBehindShockPres(double,STATE*);
 extern void   EosSetTVDParams(SCHEME_PARAMS*,EOS_PARAMS*);
-extern void   CovertVstToState(STATE*,SWEEP*,EOS_PARAMS*,int,int);
+extern void   ConvertVstToState(STATE*,SWEEP*,EOS_PARAMS*,int,int);
 extern void   findGhostState(STATE,STATE,STATE*);
 
 	/* Riemann solution functions */
@@ -644,9 +671,6 @@ private:
 
 // cFinit.cpp
 extern void insert_objects(Front*);
-
-void set_cFluid_params(char*, EQN_PARAMS*);
-void setFabricParams(char*,EQN_PARAMS*);
 
 void setRayleiTaylorParams(char*,EQN_PARAMS*);
 void setRichtmyerMeshkovParams(char*,EQN_PARAMS*);

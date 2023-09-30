@@ -1421,10 +1421,13 @@ LIB_LOCAL boolean long_nearest_similar_interface_point3d(
 LOCAL void shortest_distance3d(
 	TRI_PROJECTION	*tri_proj)
 {
-	shortest_distance3d_new(tri_proj);
-	/*
-	shortest_distance3d_old(tri_proj);
-	*/
+    //TODO: shortest_distance3d_new() appears to have problem
+    //      handling interface triangles that have normal vector
+    //      parallel to a direction vector of the coordinate system.
+    //      e.g. tri is parallel to xy plane.
+    
+    //shortest_distance3d_new(tri_proj);
+	    shortest_distance3d_old(tri_proj);
 }	/* end shortest_distance3d */
 
 LOCAL void shortest_distance3d_old(
@@ -2974,7 +2977,6 @@ LOCAL void blocks_on_tri(
     //TODO: can this be bypassed in some circumstances, e.g fabric surface stretching?
     if (i_diff[0] > 6)
 	{
-        //TODO: skip if tri hyper surface has wave type ELASTIC_BOUNDARY ???
 	    printf("In blocks_on_tri():\n");
 	    print_int_vector("i_diff = ", i_diff, 3, "\n");
 	    print_tri_global_index(t);
@@ -3767,7 +3769,7 @@ LOCAL void show_TRI_list(
 	(void) printf("\n\n");
 }		/*end show_TRI_list*/
 
-LOCAL void set_tri_list_tolerance(RECT_GRID *rgr)
+LOCAL	void set_tri_list_tolerance(RECT_GRID *rgr)
 {
     double* h = rgr->h;
 	double hmin = min3(h[0],h[1],h[2]);
@@ -4646,7 +4648,7 @@ LOCAL void shortest_distance3d_new(
 	nor = Tri_normal(tri);
 	for (i = 0; i < 3; i++)
 	     ptori[i] = pt[i] = tri_proj->pt[i];
-        tri_proj->pv = tri_proj->p1 = tri_proj->p2 = NULL;
+    tri_proj->pv = tri_proj->p1 = tri_proj->p2 = NULL;
 
         P0 = Point_of_tri(tri)[0]; 
 	for (i = 0; i < 3; i++)
@@ -4656,12 +4658,12 @@ LOCAL void shortest_distance3d_new(
 	     p1[i] = Coords(P1)[i];
         P2 = Point_of_tri(tri)[2]; 
 	for (i = 0; i < 3; i++)
-	     p2[i] = Coords(P2)[i];
+	    p2[i] = Coords(P2)[i];
 	
 	PtoV(p0,pt,dp0);
 
 	for (i = 0; i < 3; i++)
-             p_temp[i] = p0[i]; 
+        p_temp[i] = p0[i]; 
 
 	np = Dot3d(dp0,nor);
 	L = Dot3d(nor,nor); 
@@ -4900,53 +4902,66 @@ LOCAL void shortest_distance3d_new(
 	    }	
 	    else if (judge3 <= 0 && judge8 >= 0 && judge9 <= 0)
 	    {
-		/*  Closest point is on side p2 -> p0 */
+		    /*  Closest point is on side p2 -> p0 */
 
-                tri_proj->d2 = sqr(pt[0]) + sqr(dist_point_line_2d(pt,p2,p0));
-		tri_proj->p1 = P2;
-                tri_proj->p2 = P0;
-		p_close[0] = 0;
-                p_close[1] = pt[1];
-                p_close[2] = pt[2];
+            tri_proj->d2 = sqr(pt[0]) + sqr(dist_point_line_2d(pt,p2,p0));
+		    tri_proj->p1 = P2;
+            tri_proj->p2 = P0;
+		    p_close[0] = 0;
+            p_close[1] = pt[1];
+            p_close[2] = pt[2];
 
-                if (judge3 == 0)
-		{
-		    a1 = 0;
-                    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
-                    a0 = 1 - a2;
+            if (judge3 == 0)
+            {
+                a1 = 0;
+                a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+                a0 = 1 - a2;
 
-		    rot_and_trans(p_close,p_temp,rot_matrix);
+                rot_and_trans(p_close,p_temp,rot_matrix);
 
-		    for (i = 0; i < 3; i++)
-                         tri_proj->dpt[i] = ptori[i] - p_close[i];
-		}
-		else
-		{
-		    PtoV(p_close,p0,v_temp2);
-                    PtoV(p_close,p2,v_temp1);
-                    Cross3d(v_temp2,v_temp1,v_temp);
-                    Cross3d(v_temp,v20,v_temp2);
-                    s_temp1 = Dot3d(v_temp1,v_temp2) / 
-			(sqrt(Dot3d(v_temp1,v_temp1)) * 
-			sqrt(Dot3d(v_temp2,v_temp2)));
-		    s_temp2 = sqrt(Dot3d(v_temp1,v_temp1)) * s_temp1;
-                    s_temp1 = s_temp2 / sqrt(Dot3d(v_temp2,v_temp2));
-                    Scal3d(s_temp1,v_temp2,v_temp);
-                    for (i = 0; i < 3; i++)
-                         p_close[i] += v_temp[i];
-
-                    a1 = 0;
-		    a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
-		    a0 = 1 - a2;
-
-                    rot_and_trans(p_close,p_temp,rot_matrix);
-                    for (i = 0; i < 3; i++)
-                         tri_proj->dpt[i] = ptori[i] - p_close[i];
-		}
-
-                tri_proj->side = ONEDGE;
-                tri_proj->side_index = 2;
+                for (i = 0; i < 3; i++)
+                             tri_proj->dpt[i] = ptori[i] - p_close[i];
             }
+		    else
+            {
+                //TODO: Division by zero can occur if v_temp1 = 0 --> (p_close == p2)
+                //      or if v_temp2 = 0 ... 
+                PtoV(p_close,p0,v_temp2);
+                PtoV(p_close,p2,v_temp1);
+                Cross3d(v_temp2,v_temp1,v_temp);
+                Cross3d(v_temp,v20,v_temp2);
+                
+                /*
+                s_temp1 = Dot3d(v_temp1,v_temp2) / (sqrt(Dot3d(v_temp1,v_temp1)) * sqrt(Dot3d(v_temp2,v_temp2)));
+                s_temp2 = sqrt(Dot3d(v_temp1,v_temp1)) * s_temp1;
+                s_temp1 = s_temp2 / sqrt(Dot3d(v_temp2,v_temp2));
+                */
+
+                double sqr_mag = Dot3d(v_temp2,v_temp2);
+                if (sqr_mag == 0)
+                {
+                    printf("\nERROR: Dot3d(v_temp2,v_temp2) == 0\n");
+                    LOC(); clean_up(EXIT_FAILURE);
+                }
+
+                s_temp1 = Dot3d(v_temp1,v_temp2)/sqr_mag;
+
+                Scal3d(s_temp1,v_temp2,v_temp);
+                for (i = 0; i < 3; i++)
+                     p_close[i] += v_temp[i];
+
+                a1 = 0;
+                a2 = fabs(p1[2] * p_close[1]) * 0.5 / area;
+                a0 = 1 - a2;
+
+                rot_and_trans(p_close,p_temp,rot_matrix);
+                for (i = 0; i < 3; i++)
+                    tri_proj->dpt[i] = ptori[i] - p_close[i];
+            }
+
+            tri_proj->side = ONEDGE;
+            tri_proj->side_index = 2;
+        }
 	    else
 	    {
 		/* Closest point is p0 */
@@ -5256,7 +5271,7 @@ LOCAL  double edge_equation(
 	double dx, 
 	double dy)
 {
-	return ((x - lx) * dy- (y - ly) * dx);
+	return ((x - lx) * dy - (y - ly) * dx);
 }
 
 LOCAL void rotate_point(

@@ -918,7 +918,17 @@ static void print_strings(
 {
 	static int dim = FT_Dimension();
 	if (dim != 3) return;
-    if (!FT_FrontContainHsbdryType(front,STRING_HSBDRY)) return;
+
+	CURVE **curve;
+	INTERFACE *intfc = front->interf;
+        
+    boolean status = NO;
+    intfc_curve_loop(intfc, curve)
+	{
+        if (hsbdry_type(*curve) == STRING_HSBDRY)
+            status = YES;
+    }
+    if (!status) return;
 
 	char dirname[512];
 	sprintf(dirname,"%s/string_info", OutName(front));
@@ -933,9 +943,6 @@ static void print_strings(
 	    }
 	}
 
-	CURVE **curve;
-	INTERFACE *intfc = front->interf;
-	
     AF_PARAMS *af_params = (AF_PARAMS*)front->extra2;
 	static double kl = af_params->kl;
 	

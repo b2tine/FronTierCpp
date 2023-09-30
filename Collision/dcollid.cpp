@@ -525,15 +525,21 @@ void CollisionSolver3d::resolveCollisionSubstep()
 	//update position using final midstep velocity
 	updateFinalPosition();
 
+    /*
     //TODO: is this helping or hurting us?
     // Zero out the relative velocity between adjacent mesh vertices
     // with excess edge strain directed along their connecting edge.
     if (debugging("strain_limiting")) //if (!debugging("strainlim_off"))
     {
-        limitStrainVelJAC();
-            //limitStrainVelGS();
-                //computeMaxSpeed(); //debug
+        if (!debugging("skip_strainvel"))
+        {
+            limitStrainVelJAC();
+                //limitStrainVelGS();
+                    //computeMaxSpeed(); //debug
+        }
     }
+    */
+
 
 	updateFinalVelocity();
 

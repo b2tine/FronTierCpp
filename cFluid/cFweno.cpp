@@ -31,9 +31,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #endif
 
 static double weno5_scal(double *f);
-static void matmvec(double *b, double L[5][5], std::vector<double> x);
+static void matmvec(double *b, double L[5][5], const std::vector<double>& x);
 static void f2is(double *f, double *s);
-static void u2f(std::vector<double>,std::vector<double>&);
+static void u2f(const std::vector<double>&, std::vector<double>&);
 static void weno5_get_flux(POINTER,int,int,double**,double**);
 static void arti_compression(POINTER,double*,double*,double,double,double*,
                 int,double &c);
@@ -44,7 +44,7 @@ extern void WENO_flux(
         FSWEEP *vflux,
         int n)
 {
-	double *u_old[6];
+    double *u_old[6]; //double *u_old[7];
 	double *flux[5];
 	int i,extend_size,ghost_size;
 	SCHEME_PARAMS *scheme_params = (SCHEME_PARAMS*)params;
@@ -56,6 +56,12 @@ extern void WENO_flux(
 	u_old[3] = vst->momn[2];
 	u_old[4] = vst->engy;
 	u_old[5] = vst->pres;
+
+    //TODO: k_turb flux independent of pressure flux?
+    /*
+    u_old[6] = vst->k_turb;
+*/
+
 	flux[0] = vflux->dens_flux;
 	flux[1] = vflux->momn_flux[0];
 	flux[2] = vflux->momn_flux[1];
@@ -81,12 +87,13 @@ extern void WENO_flux(
 	    vflux->engy_flux[i] = -lambda*(flux[4][i+1] - flux[4][i]);
 	    if (isnan(vflux->dens_flux[i]))
 	    {
-		int j;
-		for (j = 0; j < extend_size; ++j)
-		    printf("u = %f %f %f %f %f\n",
-			u_old[0][j],u_old[1][j],u_old[2][j],
-			u_old[3][j],u_old[4][j]);
-		clean_up(ERROR);
+            for (int j = 0; j < extend_size; ++j)
+            {
+                printf("u = %f %f %f %f %f\n",
+                u_old[0][j],u_old[1][j],u_old[2][j],
+                u_old[3][j],u_old[4][j]);
+            }
+            clean_up(ERROR);
 	    }
 	}
 }	/* end weno5_flux */
@@ -118,14 +125,17 @@ static void weno5_get_flux(
 
     	for(i = 0; i < extend_size; ++i)
     	{
-	    a = sqrt(gamma * u_old[5][i]/u_old[0][i]);
-	    v = u_old[1][i]/u_old[0][i];
-	    maxeig[0] = std::max(maxeig[0], fabs(v - a));
-	    maxeig[1] = std::max(maxeig[1], fabs(v));
-	    maxeig[4] = std::max(maxeig[4], fabs(v + a));
-	    for (j = 0; j < 6; ++j)
+            v = u_old[1][i]/u_old[0][i];
+            a = sqrt(gamma * u_old[5][i]/u_old[0][i]);
+            
+            maxeig[0] = std::max(maxeig[0], fabs(v - a));
+            maxeig[1] = std::max(maxeig[1], fabs(v));
+            maxeig[4] = std::max(maxeig[4], fabs(v + a));
+            
+            for (j = 0; j < 6; ++j)
                 u[j] = u_old[j][i];
-	    u2f(u,f[i]);
+	    
+            u2f(u,f[i]);
     	}
     	maxeig[2] = maxeig[1];
     	maxeig[3] = maxeig[1];
@@ -138,12 +148,19 @@ static void weno5_get_flux(
 	    {
 	    	u_mid[j] = 0.5*(u_old[j][i-1] + u_old[j][i]);
 	    }
-	    u_mid[5] = u_mid[1]/u_mid[0];
-	    u_mid[6] = u_mid[2]/u_mid[0];
-	    u_mid[7] = u_mid[3]/u_mid[0];
+	    
+        u_mid[5] = u_mid[1]/u_mid[0]; //u
+	    u_mid[6] = u_mid[2]/u_mid[0]; //v
+	    u_mid[7] = u_mid[3]/u_mid[0]; //w
 	    u_mid[9] = sqr(u_mid[5]) + sqr(u_mid[6]) + sqr(u_mid[7]);
-	    u_mid[8] = (u_mid[4] - 0.5*u_mid[0]*u_mid[9])*(gamma - 1.0);
-	    u_mid[10] = sqrt(gamma*u_mid[8]/u_mid[0]);
+        
+        /*
+        double k_turb = 0.5*(u_old[6][i-1] + u_old[6][i]);
+        u_mid[8] = (u_mid[4] - 0.5*u_mid[0]*u_mid[9] - k_turb)*(gamma - 1.0);
+        */
+        u_mid[8] = (u_mid[4] - 0.5*u_mid[0]*u_mid[9])*(gamma - 1.0); //pressure
+
+        u_mid[10] = sqrt(gamma*u_mid[8]/u_mid[0]);
 
 	    /*** R(u_1/2) & R^-1(u_1/2) ***/
 
@@ -227,8 +244,7 @@ static void weno5_get_flux(
 	    for(k = 0; k < 5; ++k)
 	    {
 		gfluxp[j][k] = 0.5*(sten_f[k][j] + maxeig[j]*sten_u[k][j]);
-		gfluxm[j][k] = 0.5*(sten_f[5 - k][j] - maxeig[j]*
-				sten_u[5 - k][j]);
+		gfluxm[j][k] = 0.5*(sten_f[5 - k][j] - maxeig[j]*sten_u[5 - k][j]);
 	    }
 
 	    for(j = 0; j < 5; ++j)
@@ -265,9 +281,8 @@ static void weno5_get_flux(
 		    (void) printf("In weno5_get_flux(): flux[%d][%d] = %f\n",
                                         j,i,flux[j][i]);
 		    for (k = 0; k < extend_size; ++k)
-                        printf("u[%d] = %f %f %f %f %f\n",k,u_old[0][k],
-				u_old[1][k],u_old[2][k],u_old[3][k],
-				u_old[4][k]);
+                        printf("u[%d] = %f %f %f %f %f %f\n",k,u_old[0][k],
+				u_old[1][k],u_old[2][k],u_old[3][k],u_old[4][k],u_old[5][k]);
                     clean_up(ERROR);
 		}
 	    }
@@ -285,9 +300,9 @@ static double weno5_scal(double *f)
     	double alpha[3];
     	double omega[3]; // weights for stencils
     	double sum;
-    	double a[3][5] = {{1.0/3, -7.0/6, 11.0/6, 0, 0}, 
-			  {0, -1.0/6, 5.0/6, 1.0/3, 0}, 
-			  {0, 0, 1.0/3, 5.0/6, -1.0/6}}; 
+    	double a[3][5] = {{1.0/3.0, -7.0/6.0, 11.0/6.0, 0, 0}, 
+			  {0, -1.0/6.0, 5.0/6.0, 1.0/3.0, 0}, 
+			  {0, 0, 1.0/3.0, 5.0/6.0, -1.0/6.0}}; 
 		//*** coefficients for 2nd-order ENO interpolation stencil
     	double w[5]; //weight for every point
 	double flux = 0.0;
@@ -325,42 +340,40 @@ static void f2is(
 	double *f, 
 	double *s)
 {
-	s[0] = 13.0/12*sqr((f[0] - 2.0*f[1] + f[2])) +
+	s[0] = 13.0/12.0*sqr((f[0] - 2.0*f[1] + f[2])) +
                 0.25*sqr((f[0] - 4.0*f[1] + 3.0*f[2]));
-        s[1] = 13.0/12*sqr((f[1] - 2.0*f[2] + f[3])) +
-                0.25*sqr((f[1] - f[3]));
-        s[2] = 13.0/12*sqr((f[2] - 2.0*f[3] + f[4])) +
-                0.25*sqr((3.0*f[2] - 4.0*f[3] + f[4]));
+    s[1] = 13.0/12.0*sqr((f[1] - 2.0*f[2] + f[3])) +
+            0.25*sqr((f[1] - f[3]));
+    s[2] = 13.0/12.0*sqr((f[2] - 2.0*f[3] + f[4])) +
+            0.25*sqr((3.0*f[2] - 4.0*f[3] + f[4]));
 }
 
 static void matmvec(
 	double *b, 
 	double L[5][5], 
-	std::vector<double> x)
+	const std::vector<double>& x)
 {
-    	int i, j;
-
-    	for(i = 0; i < 5; ++i)
-    	{
-	    b[i] = 0.0;
-	    for(j = 0; j < 5; ++j)
-	    {
-	    	b[i] += L[i][j] * x[j]; 
-	    }
-    	}
+    for (int i = 0; i < 5; ++i)
+    {
+        b[i] = 0.0;
+        for (int j = 0; j < 5; ++j)
+        {
+            b[i] += L[i][j] * x[j]; 
+        }
+    }
 }
 
 static void u2f(
-	std::vector<double> u,
-        std::vector<double> &f)
+    const std::vector<double>& u,
+    std::vector<double>& f)
 {
 	double v = u[1]/u[0];
 
-    	f[0] = u[1];
-    	f[1] = v*u[1] + u[5];
-    	f[2] = v*u[2];
-    	f[3] = v*u[3];
-    	f[4] = v*(u[4] + u[5]);
+    f[0] = u[1];
+    f[1] = v*u[1] + u[5];
+    f[2] = v*u[2];
+    f[3] = v*u[3];
+    f[4] = v*(u[4] + u[5]);
 }
 
 //TODO: Not working correctly

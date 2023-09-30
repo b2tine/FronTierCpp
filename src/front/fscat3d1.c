@@ -3880,10 +3880,12 @@ EXPORT	void communicate_default_comp(
 	int	     max_G;
 
 	if (pp_numnodes() == 1) return;
+
 	dim = intfc->dim;
 	myid = pp_mynode();
-        G = pp_grid->gmax;
-        find_Cartesian_coordinates(myid,pp_grid,me);
+        
+    G = pp_grid->gmax;
+    find_Cartesian_coordinates(myid,pp_grid,me);
 
 	if (debugging("default_comp"))
 	{
@@ -3895,11 +3897,15 @@ EXPORT	void communicate_default_comp(
 	}
 
 	intfc->default_comp = NO_COMP;
-	count = 0;
+	
+    count = 0;
 	max_G = G[0];
 	for (i = 1; i < dim; ++i)
-	    if (max_G < G[i]) max_G = G[i];
-	max_count = 1;
+    {
+        if (max_G < G[i]) max_G = G[i];
+    }
+
+    max_count = 1;
 	while (max_G != 1)
 	{
 	    max_count++;
@@ -3914,58 +3920,60 @@ EXPORT	void communicate_default_comp(
 	    for (i = 0; i < dim; ++i)
 	    {
 	    	for (j = 0; j < 2; ++j)
-		{
-		    if(debugging("default_comp"))
-		        printf("\n#comm buf %d %d\n", i, j);
-		    pp_gsync();
+            {
+                if(debugging("default_comp"))
+                    printf("\n#comm buf %d %d\n", i, j);
+                pp_gsync();
 
-		    /*send to adj proc */
-		    for (k = 0; k < dim; ++k)
-		    	him[k] = me[k];
-		    if (rect_boundary_type(intfc,i,j) == SUBDOMAIN_BOUNDARY)
-		    {
-		    	him[i] = (me[i] + 2*j - 1 + G[i])%G[i];
-			dst_id = domain_id(him,G,dim);
-			comp_buf = buffer_component(intfc,i,j);
-			if (comp_buf != NO_COMP)
-	    		    intfc->default_comp = comp_buf;
-			pp_send(0,&comp_buf,INT,dst_id);
-			
-			if (debugging("default_comp"))
-			{
-			    (void) printf("comp_buf = %d\n",comp_buf);
-			    (void) printf("Send dst_id = %d\n",dst_id);
-			    (void) printf("him = %d %d %d\n",him[0],
-			    		him[1],him[2]);
-			}
-		    }
-			
-		    /*recv from adj proc */
-		    for (k = 0; k < dim; ++k)
-		    	him[k] = me[k];
-		    if (rect_boundary_type(intfc,i,(j+1)%2) == 
-		    			SUBDOMAIN_BOUNDARY)
-		    {
-		    	him[i] = (me[i] - 2*j + 1 + G[i])%G[i];
-			dst_id = domain_id(him,G,dim);
-			pp_recv(0,dst_id,&comp_buf,INT);
-			if (comp_buf != NO_COMP)
-			    intfc->default_comp = comp_buf;
-			if (debugging("default_comp"))
-			{
-			    (void) printf("received comp_buf = %d\n",comp_buf);
-			    (void) printf("Receive dst_id = %d\n",dst_id);
-			    (void) printf("him = %d %d %d\n",him[0],
-			    			him[1],him[2]);
-			}
-		    }
-		}  /*for j: side */
+                /*send to adj proc */
+                for (k = 0; k < dim; ++k)
+                    him[k] = me[k];
+
+                if (rect_boundary_type(intfc,i,j) == SUBDOMAIN_BOUNDARY)
+                {
+                    him[i] = (me[i] + 2*j - 1 + G[i])%G[i];
+                    dst_id = domain_id(him,G,dim);
+                    comp_buf = buffer_component(intfc,i,j);
+                    if (comp_buf != NO_COMP)
+                    {
+                        intfc->default_comp = comp_buf;
+                    }
+                    pp_send(0,&comp_buf,INT,dst_id);
+                    
+                    if (debugging("default_comp"))
+                    {
+                        (void) printf("comp_buf = %d\n",comp_buf);
+                        (void) printf("Send dst_id = %d\n",dst_id);
+                        (void) printf("him = %d %d %d\n",him[0],him[1],him[2]);
+                    }
+                }
+                
+                /*recv from adj proc */
+                for (k = 0; k < dim; ++k)
+                    him[k] = me[k];
+                
+                if (rect_boundary_type(intfc,i,(j+1)%2) == SUBDOMAIN_BOUNDARY)
+                {
+                    him[i] = (me[i] - 2*j + 1 + G[i])%G[i];
+                    dst_id = domain_id(him,G,dim);
+                    pp_recv(0,dst_id,&comp_buf,INT);
+                    if (comp_buf != NO_COMP)
+                        intfc->default_comp = comp_buf;
+                    
+                    if (debugging("default_comp"))
+                    {
+                        (void) printf("received comp_buf = %d\n",comp_buf);
+                        (void) printf("Receive dst_id = %d\n",dst_id);
+                        (void) printf("him = %d %d %d\n",him[0],him[1],him[2]);
+                    }
+                }
+            }  /*for j: side */
 	    }      /*for i: direction */
 
 	    status = (intfc->default_comp == NO_COMP) ? NO : YES;
 	    if (count++ > max_count)
 	    {
-		intfc->default_comp = save_default_comp;
+		    intfc->default_comp = save_default_comp;
 	    }
 	}
 	if (debugging("default_comp"))
@@ -4350,13 +4358,22 @@ EXPORT 	boolean surfaces_matched(
 	    if (wave_type(s) == ICE_PARTICLE_BOUNDARY ||
 		wave_type(as) == ICE_PARTICLE_BOUNDARY)
 	    {
-		return (body_index(s) == body_index(as)) ? YES : NO;
+		    return (body_index(s) == body_index(as)) ? YES : NO;
 	    }
-	    else if (wave_type(s) == ELASTIC_BOUNDARY && 
-		     wave_type(as) == ELASTIC_BOUNDARY)
-		return (body_index(s) == body_index(as)) ? YES : NO;
+	    else if (wave_type(s) == ELASTIC_BOUNDARY &&
+                wave_type(as) == ELASTIC_BOUNDARY)
+        {
+            return (body_index(s) == body_index(as)) ? YES : NO;
+        }
+	    else if (wave_type(s) == ELASTIC_BAND_BOUNDARY && 
+                wave_type(as) == ELASTIC_BAND_BOUNDARY)
+        {
+            return (body_index(s) == body_index(as)) ? YES : NO;
+        }
 	    else
+        {
 	    	return YES;
+        }
 	}
 	else
 	    return NO;

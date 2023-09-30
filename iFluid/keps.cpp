@@ -15,7 +15,6 @@ static double (*getStateVel[3])(POINTER) = {getStateXvel,getStateYvel,
                                         getStateZvel};
 static int find_state_at_crossing(Front*,int*,GRID_DIRECTION,int,
                                 POINTER*,HYPER_SURF**,double*);
-//static int next_index_in_dir(int*,GRID_DIRECTION,int,int*);
 
 
 //--------------------------------------------------------------------------
@@ -2325,7 +2324,7 @@ double KE_CARTESIAN::computePointFieldCmu(int* icoords)
 		
             if (!fr_crx_grid_seg)
             {
-                index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
+                index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
                 vel_nb[nb] = vel[l][index_nb];
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -2366,7 +2365,7 @@ double KE_CARTESIAN::computePointFieldCmu(int* icoords)
 		
             if (!fr_crx_grid_seg)
             {
-                index_nb = next_index_in_dir(icoords,dir[l][nb],dim,top_gmax);
+                index_nb = next_index_in_dir(icoords,dir[l][nb],top_gmax,dim);
                 vel_nb[nb] = vel[m][index_nb];
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -3282,38 +3281,6 @@ static int find_state_at_crossing(
     }
 }       /* find_state_at_crossing */
 
-/*
-//NOTE: Now a global function defined in iFsub.cpp
-static int next_index_in_dir(int* icoords,GRID_DIRECTION dir,int dim,int* top_gmax)
-{
-	int index,i;
-	int icrds[MAXD];
-	for (i = 0; i < dim; i++)
-	    icrds[i] = icoords[i];
-        switch (dir)
-        {
-        case WEST:
-            icrds[0] -= 1;
-            break;
-        case EAST:
-            icrds[0] += 1;
-            break;
-        case SOUTH:
-            icrds[1] -= 1;
-            break;
-        case NORTH:
-            icrds[1] += 1;
-            break;
-        case LOWER:
-            icrds[2] -= 1;
-            break;
-        case UPPER:
-            icrds[2] += 1;
-        }
-	index = d_index(icrds,top_gmax,dim);
-	return index;
-}
-*/
 //TODO: incomplete
 //NOTE: only used for 2d
 void KE_CARTESIAN::setTKEatWall(
@@ -3541,7 +3508,7 @@ void KE_CARTESIAN::computeSource()
     
                     if (!fr_crx_grid_seg)
                     {
-                        index_nb = next_index_in_dir(icrds,dir[m][nb],dim,top_gmax);
+                        index_nb = next_index_in_dir(icrds,dir[m][nb],top_gmax,dim);
                         vel_nb[nb] = vel[l][index_nb];
                     }
                     else if (fr_crx_grid_seg &&
@@ -3585,7 +3552,7 @@ void KE_CARTESIAN::computeSource()
     
                     if (!fr_crx_grid_seg)
                     {
-                        index_nb = next_index_in_dir(icrds,dir[l][nb],dim,top_gmax);
+                        index_nb = next_index_in_dir(icrds,dir[l][nb],top_gmax,dim);
                         vel_nb[nb] = vel[m][index_nb];
                     }
                     else if (fr_crx_grid_seg &&
@@ -3655,7 +3622,7 @@ void KE_CARTESIAN::computeSource()
             
                     if (!fr_crx_grid_seg)
                     {
-                        index_nb = next_index_in_dir(icrds,dir[m][nb],dim,top_gmax);
+                        index_nb = next_index_in_dir(icrds,dir[m][nb],top_gmax,dim);
                         vel_nb[nb] = vel[l][index_nb];
                     }
                     else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -3698,7 +3665,7 @@ void KE_CARTESIAN::computeSource()
 			    
                     if (!fr_crx_grid_seg)
                     {
-                        index_nb = next_index_in_dir(icrds,dir[l][nb],dim,top_gmax);
+                        index_nb = next_index_in_dir(icrds,dir[l][nb],top_gmax,dim);
                         vel_nb[nb] = vel[m][index_nb];
                     }
                     else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -3798,7 +3765,7 @@ void KE_CARTESIAN::computeTangentialStress(int* icoords, double* tau_wall)
 		
             if (!fr_crx_grid_seg)
             {
-                index_nb = next_index_in_dir(icoords,dir[m][nb],dim,top_gmax);
+                index_nb = next_index_in_dir(icoords,dir[m][nb],top_gmax,dim);
                 vel_nb[nb] = vel[l][index_nb];
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||
@@ -3839,7 +3806,7 @@ void KE_CARTESIAN::computeTangentialStress(int* icoords, double* tau_wall)
 		
             if (!fr_crx_grid_seg)
             {
-                index_nb = next_index_in_dir(icoords,dir[l][nb],dim,top_gmax);
+                index_nb = next_index_in_dir(icoords,dir[l][nb],top_gmax,dim);
                 vel_nb[nb] = vel[m][index_nb];
             }
             else if (wave_type(hs) == NEUMANN_BOUNDARY ||

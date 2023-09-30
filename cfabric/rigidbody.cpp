@@ -22,6 +22,24 @@ static void surf_com_translation(SURFACE*,double*);
 static void surf_enlargement(SURFACE*,double);
 
 
+/*
+extern void unsort_surf_point(SURFACE *surf)
+{
+	TRI *tri;
+	POINT *p;
+
+	for (tri = first_tri(surf); !at_end_of_tri_list(tri,surf); 
+			tri = tri->next)
+	{
+	    for (int i = 0; i < 3; ++i)
+	    {
+            p = Point_of_tri(tri)[i];
+            sorted(p) = NO;
+	    }
+	}
+}*/	/* end unsort_surf_point */
+
+
 extern void initRigidBodies(Front* front)
 {
 	FILE *infile = fopen(InName(front),"r");
@@ -237,7 +255,7 @@ static void init_rigid_box(
         (void) printf("The default is Movable (M)\n");
         w_type = MOVABLE_BODY_BOUNDARY;
         neg_comp = SOLID_COMP;
-        pos_comp = LIQUID_COMP2;
+        pos_comp = GAS_COMP2;
         if (CursorAfterStringOpt(infile,"Type yes if the rigid body is fixed:"))
         {
             fscanf(infile,"%s",string);

@@ -616,6 +616,7 @@ EXPORT	POINT *f_copy_point(
 	    newp->force[i] = p->force[i];
 	    newp->pshift[i] = p->pshift[i];
 	}
+
 	return newp;
 }		/*end f_copy_point*/
 
@@ -842,6 +843,8 @@ EXPORT	const char *f_wave_type_as_string(
 	    return "ICE_PARTICLE_BOUNDARY";
 	case ELASTIC_BOUNDARY:
 	    return "ELASTIC_BOUNDARY";
+	case ELASTIC_BAND_BOUNDARY:
+	    return "ELASTIC_BAND_BOUNDARY";
 	case ELASTIC_STRING:
 	    return "ELASTIC_STRING";
 	case FIRST_PHYSICS_WAVE_TYPE:
@@ -896,6 +899,7 @@ EXPORT	int f_read_wave_type_from_string(
 	    {"ICE_PARTICLE_BOUNDARY",   ICE_PARTICLE_BOUNDARY},
 	    {"G",                  GROWING_BODY_BOUNDARY},
 	    {"ELASTIC_BOUNDARY",   ELASTIC_BOUNDARY},
+	    {"ELASTIC_BAND_BOUNDARY",   ELASTIC_BAND_BOUNDARY},
 	    {"ELASTIC_STRING",     ELASTIC_STRING},
 	    {"DIRICHLET_BOUNDARY", DIRICHLET_BOUNDARY},
 	    {"D",                  DIRICHLET_BOUNDARY},
@@ -983,6 +987,9 @@ EXPORT	void f_fprint_hsbdry_type(
 	case STRING_HSBDRY:
 	    (void) fprintf(file,"STRING_%s",suffix);
 	    break;
+	case DISKGAP_STRING_HSBDRY:
+	    (void) fprintf(file,"DISKGAP_STRING_%s",suffix);
+	    break;
 	case GORE_HSBDRY:
 	    (void) fprintf(file,"GORE_%s",suffix);
 	    break;
@@ -1053,6 +1060,9 @@ EXPORT	char *f_hsbdry_type_as_string(
 	case STRING_HSBDRY:
 	    (void) sprintf(string,"STRING_%s",suffix);
 	    break;
+	case DISKGAP_STRING_HSBDRY:
+	    (void) sprintf(string,"DISKGAP_STRING_%s",suffix);
+	    break;
 	case GORE_HSBDRY:
 	    (void) sprintf(string,"GORE_%s",suffix);
 	    break;
@@ -1116,7 +1126,17 @@ EXPORT	int f_read_hsbdry_type_from_string(
 	    }
 	    break;
 	case 'D':
-	    hsb_type = DIRICHLET_HSBDRY;
+	    switch (type[2])
+	    {
+            case 'R':
+                hsb_type = DIRICHLET_HSBDRY;
+                break;
+            case 'S':
+                hsb_type = DISKGAP_STRING_HSBDRY;
+                break;
+            default:
+                break;
+        }
 	    break;
 	case 'S':
 	    switch (type[1])

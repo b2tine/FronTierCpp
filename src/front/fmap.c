@@ -830,12 +830,14 @@ EXPORT	boolean FT_NormalAtGridCrossing(
 		len = sqr_norm(t);
 		len = sqrt(len);
 		tnor = Tri_normal(t);
-	    	for (i = 0; i < dim; ++i)
+	    	
+        for (i = 0; i < dim; ++i)
 		    nor[i] = tnor[i]/len;
-		if (comp == negative_component(*hs))
+		
+        if (comp == negative_component(*hs))
 		{
-	    	    for (i = 0; i < dim; ++i)
-			nor[i] *= -1.0;
+            for (i = 0; i < dim; ++i)
+			    nor[i] *= -1.0;
 		}
 		break;
 	    default: 
@@ -846,6 +848,84 @@ EXPORT	boolean FT_NormalAtGridCrossing(
 	}
 	return YES;
 }	/* end FT_NormalAtGridCrossing */
+
+EXPORT	boolean FT_NormalAtGridCrossing2(
+	Front *front,
+	int *icoords,
+	GRID_DIRECTION dir,
+	COMPONENT comp,
+	double *nor,
+	HYPER_SURF **hs,
+	HYPER_SURF_ELEMENT **hse,
+	double *crx_coords)
+{
+        int j;
+	int crx_index;
+	INTERFACE *grid_intfc = front->grid_intfc;
+	CRXING *crxs[MAX_NUM_CRX];
+	int i,nc,dim = grid_intfc->dim;
+	POINT *p;
+	BOND *b;
+	TRI *t;
+	double len;
+	const double *tnor;
+
+	nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
+	if (nc == 0) return NO;
+
+	if (dir == EAST || dir == NORTH || dir == UPPER)
+	    crx_index = 0;
+	else
+	    crx_index = nc - 1;
+
+	*hs = crxs[crx_index]->hs;
+	p = crxs[crx_index]->pt;
+	/* if comp is not associated with hs or not specified, normal
+	   is the natural normal of the surface.
+	if (comp == negative_component(*hs) ||
+	    comp == positive_component(*hs))
+	*/
+	{
+	    for (i = 0; i < dim; ++i)
+		crx_coords[i] = Coords(p)[i];
+	    switch (dim)
+	    {
+	    case 2:
+		b = crxs[crx_index]->bond;
+		if (b == NULL)
+		    b = crxs[crx_index]->bond = Bond_of_hse(p->hse);
+	    *hse = Hyper_surf_element(b);
+		normal(p,Hyper_surf_element(b),*hs,nor,front);
+		if (comp == negative_component(*hs))
+		{
+	    	    for (i = 0; i < dim; ++i)
+			nor[i] *= -1.0;
+		}
+		break;
+	    case 3:
+		t = crxs[crx_index]->tri;
+	    *hse = Hyper_surf_element(crxs[crx_index]->tri);
+		len = sqr_norm(t);
+		len = sqrt(len);
+		tnor = Tri_normal(t);
+	    	
+        for (i = 0; i < dim; ++i)
+		    nor[i] = tnor[i]/len;
+		
+        if (comp == negative_component(*hs))
+		{
+            for (i = 0; i < dim; ++i)
+			    nor[i] *= -1.0;
+		}
+		break;
+	    default: 
+	    	screen("ERROR: In FT_NormalAtGridCrossing(),"
+			"unsupported dimension dim = %d\n",dim);
+		return NO;
+	    }
+	}
+	return YES;
+}	/* end FT_NormalAtGridCrossing2 */
 
 #define         MAX_NUM_VERTEX_IN_CELL          20
 EXPORT	boolean FT_StateStructAtGridCrossing(
@@ -858,13 +938,10 @@ EXPORT	boolean FT_StateStructAtGridCrossing(
 	HYPER_SURF **hs,
 	double *crx_coords)
 {
-        int j;
-	int crx_index;
-	CRXING *crxs[MAX_NUM_CRX];
-	int i,nc,dim = grid_intfc->dim;
+	static CRXING *crxs[MAX_NUM_CRX];
 
-	crx_index = 0;
-	nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
+	int crx_index = 0;
+	int nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
 	if (nc == 0) return NO;
 
 	*hs = crxs[crx_index]->hs;
@@ -875,13 +952,28 @@ EXPORT	boolean FT_StateStructAtGridCrossing(
 	else
 	{
 	    *state = NULL;
-	    screen("ERROR: In FT_StateVarAtGridCrossing(),"
+	    /*screen("ERROR: In FT_StateVarAtGridCrossing(),"
+			"component does not match\n");*/
+	    printf("ERROR: In FT_StateVarAtGridCrossing(),"
 			"component does not match\n");
+        printf("comp = %d\n",comp);
+        printf("positive_component(*hs) = %d\n",positive_component(*hs));
+        printf("negative_component(*hs) = %d\n",negative_component(*hs));
+        printf("wave_type(*hs) = %d\n",wave_type(*hs));
+        printf("crx_coords = %f %f %f\n",
+                Coords(crxs[crx_index]->pt)[0],
+                Coords(crxs[crx_index]->pt)[1],
+                Coords(crxs[crx_index]->pt)[2]);
+
 	    return NO;
 	}
-	for (i = 0; i < dim; ++i)
+	
+	int dim = grid_intfc->dim;
+
+    for (int i = 0; i < dim; ++i)
 	    crx_coords[i] = Coords(crxs[crx_index]->pt)[i];
-	return YES;
+	
+    return YES;
 }	/* end FT_StateStructAtGridCrossing */
 
 EXPORT	boolean FT_StateStructAtGridCrossing2(
@@ -894,14 +986,11 @@ EXPORT	boolean FT_StateStructAtGridCrossing2(
 	HYPER_SURF_ELEMENT **hse,
 	double *crx_coords)
 {
-        int j;
-	int crx_index;
 	INTERFACE *grid_intfc = front->grid_intfc;
 	static CRXING *crxs[MAX_NUM_CRX];
-	int i,nc,dim = grid_intfc->dim;
 
-	crx_index = 0;
-	nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
+	int crx_index = 0;
+	int nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
 	if (nc == 0) return NO;
 
 	*hs = crxs[crx_index]->hs;
@@ -916,9 +1005,13 @@ EXPORT	boolean FT_StateStructAtGridCrossing2(
 			"component does not match\n");
 	    return NO;
 	}
-	for (i = 0; i < dim; ++i)
+	
+	int dim = grid_intfc->dim;
+
+    for (int i = 0; i < dim; ++i)
 	    crx_coords[i] = Coords(crxs[crx_index]->pt)[i];
-	if (dim == 2)
+	
+    if (dim == 2)
 	{
 	    *hse = Hyper_surf_element(crxs[crx_index]->bond);
 	}
@@ -926,6 +1019,60 @@ EXPORT	boolean FT_StateStructAtGridCrossing2(
 	{
 	    *hse = Hyper_surf_element(crxs[crx_index]->tri);
 	}
+
+	return YES;
+}	/* end FT_StateStructAtGridCrossing2 */
+
+EXPORT	boolean FT_StateStructsAtGridCrossing(
+	Front *front,
+	INTERFACE *grid_intfc,
+	int *icoords,
+	GRID_DIRECTION dir,
+	Locstate *sl,
+	Locstate *sr,
+	HYPER_SURF **hs,
+	HYPER_SURF_ELEMENT **hse,
+	double *crx_coords)
+{
+	static CRXING *crxs[MAX_NUM_CRX];
+
+	int crx_index = 0;
+	int nc = GridSegCrossing(crxs,icoords,dir,grid_intfc);
+	if (nc == 0) return NO;
+
+	*hs = crxs[crx_index]->hs;
+
+    *sl = left_state(crxs[crx_index]->pt);
+    *sr = right_state(crxs[crx_index]->pt);
+    
+    /*
+	if (comp == negative_component(*hs))
+	    *state = left_state(crxs[crx_index]->pt);
+	else if (comp == positive_component(*hs))
+	    *state = right_state(crxs[crx_index]->pt);
+	else
+	{
+	    *state = NULL;
+	    screen("ERROR: In FT_StateVarAtGridCrossing(),"
+			"component does not match\n");
+	    return NO;
+	}
+    */
+	
+	int dim = grid_intfc->dim;
+
+    for (int i = 0; i < dim; ++i)
+	    crx_coords[i] = Coords(crxs[crx_index]->pt)[i];
+	
+    if (dim == 2)
+	{
+	    *hse = Hyper_surf_element(crxs[crx_index]->bond);
+	}
+	else if (dim == 3)
+	{
+	    *hse = Hyper_surf_element(crxs[crx_index]->tri);
+	}
+
 	return YES;
 }	/* end FT_StateStructAtGridCrossing2 */
 
@@ -1304,6 +1451,113 @@ EXPORT boolean FT_NearestRectGridVarInRange(
             return NO;
 	}
 }	/* end FT_NearestRectGridVarInRange */
+
+EXPORT boolean FT_NearestOldRectGridVarInRange(
+	Front *front,
+	COMPONENT comp,
+	double *coords,
+	double *grid_array,
+	int range,
+	double *ans)
+{
+    INTERFACE *grid_intfc = front->old_grid_intfc;
+    if (!grid_intfc)
+    {
+        *ans = 0.0;
+        return NO;
+    }
+
+	RECT_GRID *gr = &topological_grid(grid_intfc);
+	struct Table *T = table_of_interface(grid_intfc);
+        COMPONENT *top_comp = T->components;
+	int *top_gmax = gr->gmax;
+	double *L = gr->L;
+	double *h = gr->h;
+	double grid_p[MAXD];
+	double dist,min_dist = HUGE;
+        int i,j,k,index,dim = gr->dim;
+	int imin[MAXD],imax[MAXD];
+	int icoords[MAXD];
+	boolean grid_pt_found = NO;
+
+	if (!rect_in_which(coords,icoords,gr))
+        {
+            *ans = 0.0;
+            return NO;
+        }
+	for (i = 0; i < dim; ++i)
+	{
+	    imin[i] = max(icoords[i]-range,0);
+	    imax[i] = min(icoords[i]+range+1,top_gmax[i]+1);
+	}
+	switch (dim)
+	{
+	case 1:
+	    for (i = imin[0]; i <= imax[0]; ++i)
+	    {
+		index = d_index1d(i,top_gmax);
+		if (top_comp[index] != comp) continue;
+		grid_p[0] = L[0] + i*h[0];
+		dist = distance_between_positions(coords,grid_p,dim);
+		if (dist < min_dist)
+		{
+		    min_dist = dist;
+		    icoords[0] = i;    
+		    grid_pt_found = YES;
+		}
+	    }
+	    break;
+	case 2:
+	    for (i = imin[0]; i <= imax[0]; ++i)
+	    for (j = imin[1]; j <= imax[1]; ++j)
+	    {
+		index = d_index2d(i,j,top_gmax);
+		if (top_comp[index] != comp) continue;
+		grid_p[0] = L[0] + i*h[0];
+		grid_p[1] = L[1] + j*h[1];
+		dist = distance_between_positions(coords,grid_p,dim);
+		if (dist < min_dist)
+		{
+		    min_dist = dist;
+		    icoords[0] = i;    
+		    icoords[1] = j;    
+		    grid_pt_found = YES;
+		}
+	    }
+	    break;
+	case 3:
+	    for (i = imin[0]; i <= imax[0]; ++i)
+	    for (j = imin[1]; j <= imax[1]; ++j)
+	    for (k = imin[2]; k <= imax[2]; ++k)
+	    {
+		index = d_index3d(i,j,k,top_gmax);
+		if (top_comp[index] != comp) continue;
+		grid_p[0] = L[0] + i*h[0];
+		grid_p[1] = L[1] + j*h[1];
+		grid_p[2] = L[2] + k*h[2];
+		dist = distance_between_positions(coords,grid_p,dim);
+		if (dist < min_dist)
+		{
+		    min_dist = dist;
+		    icoords[0] = i;    
+		    icoords[1] = j;    
+		    icoords[2] = k;    
+		    grid_pt_found = YES;
+		}
+	    }
+	}
+	if (grid_pt_found == YES)
+	{
+	    index = d_index(icoords,top_gmax,dim);
+            *ans = grid_array[index];
+            return YES;
+	}
+	else
+	{
+            *ans = 0.0;
+            return NO;
+	}
+}	/* end FT_NearestOldRectGridVarInRange */
 
 LOCAL boolean build_linear_element(
 	INTRP_CELL *blk_cell,
@@ -2060,10 +2314,10 @@ EXPORT void FT_ReadSpaceDomain(
 	infile = fopen(in_name,"r");
 	for (i = 0; i < f_basic->dim; ++i)
 	{
-            sprintf(input_string,"Domain limit in %d-th dimension:",i);
-            CursorAfterString(infile,input_string);
-            status = fscanf(infile,"%lf %lf",&f_basic->L[i],&f_basic->U[i]);
-            (void) printf("%f %f\n",f_basic->L[i],f_basic->U[i]);
+        sprintf(input_string,"Domain limit in %d-th dimension:",i);
+        CursorAfterString(infile,input_string);
+        status = fscanf(infile,"%lf %lf",&f_basic->L[i],&f_basic->U[i]);
+        (void) printf("%f %f\n",f_basic->L[i],f_basic->U[i]);
 	}
 	CursorAfterString(infile,"Computational grid:");
 	for (i = 0; i < f_basic->dim; ++i)
@@ -3065,7 +3319,8 @@ LOCAL void FrontPreAdvance3d(
 	bi_array(&torque,max_body_index,MAXD,FLOAT);
 	bi_array(&force,max_body_index,MAXD,FLOAT);
 	uni_array(&flags,max_body_index,INT);
-	for (i = 0; i < max_body_index; ++i)
+	
+    for (i = 0; i < max_body_index; ++i)
 	{
 	    for (j = 0; j < dim; ++j)
 	    {
@@ -3494,7 +3749,8 @@ EXPORT	boolean FT_FindNearestIntfcPointInRange(
 	int range)
 {
     //TODO: Is this a problem? Several functions pass INCLUDE_BOUNDARIES
-	return nearest_interface_point_within_range(coords,comp,front->interf,
+	
+    return nearest_interface_point_within_range(coords,comp,front->interf,
             bdry,NULL,p,t,phse,phs,range);
 	/*
     return nearest_interface_point_within_range(coords,comp,front->interf,
@@ -3966,6 +4222,8 @@ EXPORT void FT_PromptSetMixedTypeBoundary2d(
 		}
 	    }
 	}
+
+    fclose(infile);
 }	/* end FT_PromptSetMixedTypeBoundary2d */
 
 static boolean is_rect_side_node(
@@ -4143,6 +4401,11 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	double		*coordsref,
 	double		*nor)
 {
+    /////////////////////////////////////////////////////////////////////////////
+        printf("ERROR: FT_ReflectPointThroughBdry() not implemented yet.\n");
+        LOC(); clean_up(EXIT_FAILURE);
+    /////////////////////////////////////////////////////////////////////////////
+
 	HYPER_SURF_ELEMENT *hsebdry;
     HYPER_SURF *hsbdry;
     double t[MAXD];
@@ -4156,6 +4419,7 @@ EXPORT	boolean FT_ReflectPointThroughBdry(
 	    wave_type(hs) != GROWING_BODY_BOUNDARY &&
 	    wave_type(hs) != ICE_PARTICLE_BOUNDARY &&
 	    wave_type(hs) != ELASTIC_BOUNDARY &&
+	    wave_type(hs) != ELASTIC_BAND_BOUNDARY &&
 	    wave_type(hs) != ELASTIC_STRING)
 	    return NO;
 

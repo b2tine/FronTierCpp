@@ -30,7 +30,9 @@ struct RG_PARAMS
 
 
 // rigidbody.cpp
+//extern void unsort_surf_point(SURFACE*);
 extern void initRigidBodies(Front *front);
+//extern void initRigidBody(Front *front);
 //extern void rgb_init(Front*,RG_PARAMS*);
 
 #endif
